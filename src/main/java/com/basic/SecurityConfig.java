@@ -1,7 +1,8 @@
-package com.basic.app;
+package com.basic;
 
-import com.basic.service.SpringDataUserDetailsService;
+import com.basic.service.SpringDataUserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,9 +27,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
     }
 
     @Bean
-    public SpringDataUserDetailsService springDataUserDetailsService()
+    public SpringDataUserDetailsServiceImpl springDataUserDetailsService()
     {
-        return new SpringDataUserDetailsService();
+        return new SpringDataUserDetailsServiceImpl();
     }
 
     /**
