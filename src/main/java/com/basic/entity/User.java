@@ -5,6 +5,7 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 @Entity(name="users")
@@ -24,7 +25,7 @@ public class User {
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private HashSet<Role> roles;
+    private Set<Role> roles;
 
 
     public Long getId() {
@@ -35,7 +36,7 @@ public class User {
         return email;
     }
 
-    public HashSet<Role> getRoles() {
+    public Set<Role> getRoles() {
         return roles;
     }
 
@@ -45,7 +46,7 @@ public class User {
 
     public void setPassword(String password) { this.password = password; }
 
-    public void setRoles(HashSet<Role> roles) { this.roles = roles; }
+    public void setRoles(Set<Role> roles) { this.roles = roles; }
 
     //TODO setters and getter with lombok
 }
