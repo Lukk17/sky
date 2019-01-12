@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 @Service
 public class UserService implements IUserService
@@ -37,6 +38,13 @@ public class UserService implements IUserService
     {
 
         return userRepository.findById(id).get();
+    }
+
+    @Override
+    public List<User> findAll()
+    {
+
+        return userRepository.findAll();
     }
 
     @Override

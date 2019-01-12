@@ -2,6 +2,8 @@ package com.basic.service;
 
 import com.basic.entity.User;
 
+import java.util.List;
+
 
 public interface IUserService {
 
@@ -20,6 +22,13 @@ public interface IUserService {
      * @return      Return one User.
      */
     User findById(Long id);
+
+
+    /**
+     *
+     * @return all registered users as list
+     */
+    List<User> findAll();
 
     /**
      * Save new, given User.
