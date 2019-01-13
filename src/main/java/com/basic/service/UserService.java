@@ -51,7 +51,7 @@ public class UserService implements IUserService
     public void saveUser(User user)
     {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        Role userRole = roleRepository.findByName("ROLE_USER");
+        Role userRole = roleRepository.findByName("USER");
         user.setRoles(new HashSet<>(Arrays.asList(userRole)));
         userRepository.save(user);
     }

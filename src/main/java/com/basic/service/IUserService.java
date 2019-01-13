@@ -38,7 +38,7 @@ public interface IUserService {
      *
      * @param user      User which will be saved.
      */
-    public void saveUser(User user);
+    void saveUser(User user);
 
 
     /**

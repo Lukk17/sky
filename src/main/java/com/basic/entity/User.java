@@ -1,5 +1,7 @@
 package com.basic.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
@@ -18,14 +20,22 @@ public class User {
     @NotBlank
     @Email
     @Column(nullable = false, unique = true, length = 100)
-    private String email;
+    @JsonProperty("email") private String email;
 
     @NotBlank
-    private String password;
+    @JsonProperty("password") private String password;
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
+
+    public User(@NotBlank @Email String email, @NotBlank String password) {
+        this.email = email;
+        this.password = password;
+    }
+
+    public User() {
+    }
 
 
     public Long getId() {
