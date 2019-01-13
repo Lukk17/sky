@@ -36,7 +36,6 @@ public class UserService implements IUserService
     @Override
     public User findById(Long id)
     {
-
         return userRepository.findById(id).get();
     }
 

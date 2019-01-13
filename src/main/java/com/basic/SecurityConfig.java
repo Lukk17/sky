@@ -55,6 +55,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
                 .and().formLogin().loginPage("/login")
                 .failureUrl("/loginError")
                 .and().logout().logoutUrl("/").permitAll();
+
+        // TODO check if roles in DB should be named 'USER' or 'ROLE_USER' etc.
     }
 
 
