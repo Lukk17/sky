@@ -29,6 +29,12 @@ public class User {
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
+    @OneToMany
+    private List<Message> receivedMessage;
+
+    @OneToMany
+    private List<Message> sentMessage;
+
     public User(@NotBlank @Email String email, @NotBlank String password) {
         this.email = email;
         this.password = password;
