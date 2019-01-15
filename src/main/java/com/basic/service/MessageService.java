@@ -24,7 +24,7 @@ public class MessageService implements IMessageService
         message.setReceiver(userRepo.findById(receiverId).get());
         message.setSender(userRepo.findByEmail(senderEmail));
 
-        //  undeletable entries:
+        //  indelible entries:
         message.setPermaReceiver(message.getReceiver());
         message.setPermaSender(message.getSender());
 
@@ -39,7 +39,7 @@ public class MessageService implements IMessageService
     }
 
     @Override
-    public void readed(Long messageId, String receiverEmail) {
+    public void read(Long messageId, String receiverEmail) {
 
     }
 }

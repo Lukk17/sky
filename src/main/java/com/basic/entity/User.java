@@ -1,6 +1,7 @@
 package com.basic.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
@@ -9,60 +10,40 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
-@Entity(name="users")
-public class User {
+@Data                       // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
+@AllArgsConstructor         // lombok's constructor with all arguments
+@NoArgsConstructor          // lombok's constructor with no arguments
+@Entity(name="user")        // Spring's entity name
+@Table (name = "users")     // DB table name (without it will be same as entity name)
+public class User
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Setter(AccessLevel.PROTECTED)
     private Long id;
 
     @NotBlank
     @Email
     @Column(nullable = false, unique = true, length = 100)
-    @JsonProperty("email") private String email;
+    @JsonProperty("email")
+    @Setter(AccessLevel.PROTECTED)
+    private String email;
 
     @NotBlank
-    @JsonProperty("password") private String password;
+    @JsonProperty("password")
+    private String password;
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
     @OneToMany
+    @Setter(AccessLevel.PROTECTED)
     private List<Message> receivedMessage;
 
     @OneToMany
+    @Setter(AccessLevel.PROTECTED)
     private List<Message> sentMessage;
 
-    public User(@NotBlank @Email String email, @NotBlank String password) {
-        this.email = email;
-        this.password = password;
-    }
-
-    public User() {
-    }
-
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) { this.password = password; }
-
-    public void setRoles(Set<Role> roles) { this.roles = roles; }
-
-    //TODO setters and getter with lombok
 }

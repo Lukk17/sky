@@ -24,11 +24,11 @@ public interface IMessageService
     void remove(Long messageId, String userEmail);
 
     /**
-     * Set readed attribute of given Message to true,
+     * Set read attribute of given Message to true,
      * if given user is receiver.
      *
      * @param messageId         ID of Message.
      * @param receiverEmail     Email of message receiver.
      */
-    void readed(Long messageId, String receiverEmail);
+    void read(Long messageId, String receiverEmail);
 }
