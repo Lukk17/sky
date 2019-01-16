@@ -6,15 +6,14 @@ import lombok.*;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Data                       // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
 @AllArgsConstructor         // lombok's constructor with all arguments
 @NoArgsConstructor          // lombok's constructor with no arguments
-@Entity(name="user")        // Spring's entity name
-@Table (name = "users")     // DB table name (without it will be same as entity name)
+@Entity(name="User")        // Spring's entity name
+@Table (name = "user")     // DB table name (without it will be same as entity name)
 public class User
 {
 
@@ -38,11 +37,11 @@ public class User
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
-    @OneToMany
+    @OneToMany(mappedBy = "receiver")
     @Setter(AccessLevel.PROTECTED)
     private List<Message> receivedMessage;
 
-    @OneToMany
+    @OneToMany(mappedBy = "sender")
     @Setter(AccessLevel.PROTECTED)
     private List<Message> sentMessage;
 

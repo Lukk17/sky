@@ -35,8 +35,45 @@ CREATE TABLE `hibernate_sequence` (
 
 LOCK TABLES `hibernate_sequence` WRITE;
 /*!40000 ALTER TABLE `hibernate_sequence` DISABLE KEYS */;
-INSERT INTO `hibernate_sequence` VALUES (6),(6);
+INSERT INTO `hibernate_sequence` VALUES (3),(3),(3);
 /*!40000 ALTER TABLE `hibernate_sequence` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `message`
+--
+
+DROP TABLE IF EXISTS `message`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+ SET character_set_client = utf8mb4 ;
+CREATE TABLE `message` (
+  `id` bigint(20) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `is_read` bit(1) NOT NULL,
+  `text` varchar(255) DEFAULT NULL,
+  `perma_receiver` bigint(20) DEFAULT NULL,
+  `perma_sender` bigint(20) DEFAULT NULL,
+  `receiver` bigint(20) DEFAULT NULL,
+  `sender` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKpigmybcskb82w18mcs74vvjki` (`perma_receiver`),
+  KEY `FK8ojretjem5bpb87wwnr3c1np8` (`perma_sender`),
+  KEY `FK1wn5617q01o90dwqjua8yhvux` (`receiver`),
+  KEY `FKob83vkf2oo4r68pn9d69kgwf8` (`sender`),
+  CONSTRAINT `FK1wn5617q01o90dwqjua8yhvux` FOREIGN KEY (`receiver`) REFERENCES `user` (`id`),
+  CONSTRAINT `FK8ojretjem5bpb87wwnr3c1np8` FOREIGN KEY (`perma_sender`) REFERENCES `user` (`id`),
+  CONSTRAINT `FKob83vkf2oo4r68pn9d69kgwf8` FOREIGN KEY (`sender`) REFERENCES `user` (`id`),
+  CONSTRAINT `FKpigmybcskb82w18mcs74vvjki` FOREIGN KEY (`perma_receiver`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `message`
+--
+
+LOCK TABLES `message` WRITE;
+/*!40000 ALTER TABLE `message` DISABLE KEYS */;
+/*!40000 ALTER TABLE `message` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -64,6 +101,32 @@ INSERT INTO `role` VALUES (0,'ADMIN'),(1,'USER');
 UNLOCK TABLES;
 
 --
+-- Table structure for table `user`
+--
+
+DROP TABLE IF EXISTS `user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+ SET character_set_client = utf8mb4 ;
+CREATE TABLE `user` (
+  `id` bigint(20) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK_ob8kqyqqgmefl0aco34akdtpe` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user`
+--
+
+LOCK TABLES `user` WRITE;
+/*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'admin@admin','$2a$10$.HimDNoY0XhHSCrHsH/1X.3kWBFDO4oiLUeLvgQ96tjPv6M2I3DmK'),(2,'user@user','$2a$10$w2k3kHSl7Y2zFImCxVLf.ugk2Jlhup17hgoNNdKWf4kq53xA6A8pu');
+/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user_role`
 --
 
@@ -75,8 +138,8 @@ CREATE TABLE `user_role` (
   `role_id` bigint(20) NOT NULL,
   PRIMARY KEY (`user_id`,`role_id`),
   KEY `FKa68196081fvovjhkek5m97n3y` (`role_id`),
-  CONSTRAINT `FKa68196081fvovjhkek5m97n3y` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`),
-  CONSTRAINT `FKj345gk1bovqvfame88rcx7yyx` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+  CONSTRAINT `FK859n2jvi8ivhui0rl0esws6o` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
+  CONSTRAINT `FKa68196081fvovjhkek5m97n3y` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -86,34 +149,8 @@ CREATE TABLE `user_role` (
 
 LOCK TABLES `user_role` WRITE;
 /*!40000 ALTER TABLE `user_role` DISABLE KEYS */;
-INSERT INTO `user_role` VALUES (0,0),(1,1);
+INSERT INTO `user_role` VALUES (1,0),(2,1);
 /*!40000 ALTER TABLE `user_role` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `users`
---
-
-DROP TABLE IF EXISTS `users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
- SET character_set_client = utf8mb4 ;
-CREATE TABLE `users` (
-  `id` bigint(20) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UK_6dotkott2kjsp8vw4d0m25fb7` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `users`
---
-
-LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (0,'admin@admin','$2a$10$RV/27VblQwa6Fn8uBEKtXuvBmTIjw9pn1a9ZejBDSRrLfsFdYfN8W'),(1,'user@user','$2a$10$lYB6mH3NLPmWFkd033/IOudBhGs9rp8nVnq6CRPB7cPy7vt5djaSq');
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -125,4 +162,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-01-13 19:39:22
+-- Dump completed on 2019-01-16 22:42:28

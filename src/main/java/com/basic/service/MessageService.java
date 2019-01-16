@@ -3,12 +3,14 @@ package com.basic.service;
 import com.basic.entity.Message;
 import com.basic.repository.MessageRepository;
 import com.basic.repository.UserRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
+@Log4j2
 public class MessageService implements IMessageService
 {
     @Autowired
@@ -28,9 +30,11 @@ public class MessageService implements IMessageService
         message.setPermaReceiver(message.getReceiver());
         message.setPermaSender(message.getSender());
 
-        message.setReaded(false);
+        message.setRead(false);
         message.setCreated(LocalDateTime.now());
         messageRepo.save(message);
+
+        log.debug("sending message from "+ message.getSender()+" to "+message.getReceiver());
     }
 
     @Override
