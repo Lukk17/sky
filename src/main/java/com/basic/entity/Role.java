@@ -1,25 +1,22 @@
 package com.basic.entity;
 
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.Setter;
+
 import javax.persistence.*;
 
-@Entity
+@Data
+@Entity(name = "Role")
 @Table(name = "role")
 public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Setter(AccessLevel.PROTECTED)
     private Long id;
 
     @Column(name = "name")
+    @Setter(AccessLevel.PROTECTED)
     private String name;
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    //TODO setters and getter with lombok
 }
