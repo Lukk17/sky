@@ -1,0 +1,29 @@
+version: "3"
+services:
+  mysql:
+    image: 'mysql:latest'
+    environment:
+      - MYSQL_ROOT_PASSWORD=Lukk1234
+      - MYSQL_DATABASE=sky
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=Lukk1234
+  server:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: sky
+    depends_on:
+      - "mysql"
+    logging:
+      driver: json-file
+    expose:
+      - 5555
+    ports:
+      - 5555:5555
+    volumes:
+      - ./target:/app
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=root
+      - MYSQL_PASS=Lukk1234
