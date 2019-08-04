@@ -1,14 +1,8 @@
 version: "3"
 services:
-  mysql:
-    image: 'mysql:latest'
-    environment:
-      - MYSQL_ROOT_PASSWORD=Lukk1234
-      - MYSQL_DATABASE=sky
-      - MYSQL_PASSWORD=Lukk1234
   server:
     build:
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
       context: .
     image: sky
     depends_on:
@@ -24,3 +18,9 @@ services:
       - MYSQL_PORT=3306
       - MYSQL_USER=root
       - MYSQL_PASS=Lukk1234
+  mysql:
+    image: 'mysql:latest'
+    environment:
+      - MYSQL_ROOT_PASSWORD=Lukk1234
+      - MYSQL_DATABASE=sky
+      - MYSQL_PASSWORD=Lukk1234
