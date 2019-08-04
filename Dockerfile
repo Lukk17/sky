@@ -3,5 +3,5 @@ VOLUME /tmp
 EXPOSE 5555
 COPY ./ ./
 RUN mvn -f ./pom.xml clean install -DskipTests
-ADD ./target/*.jar app.jar
+COPY ./target/*.jar app.jar
 ENTRYPOINT ["java","-jar","app.jar"]
