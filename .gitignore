@@ -63,6 +63,3 @@ local.properties
 
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
-!/.idea/
-/.idea/libraries/
-.idea/workspace.xml
