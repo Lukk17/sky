@@ -5,4 +5,8 @@ services:
 after_success:
   - docker-compose build
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker tag mysql lukk17/sky_galery
+  - docker push lukk17/sky_galery
+  - docker tag sky lukk17/sky
   - docker push lukk17/sky
+  - docker images
