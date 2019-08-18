@@ -1,0 +1,18 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "containerDefinitions": [
+    {
+      "name": "sky",
+      "image": "lukk17/sky",
+      "hostname": "sky",
+      "essential": false,
+      "memoryReservation": 128,
+      "portMappings": [
+        {
+          "hostPort": 5555,
+          "containerPort": 5555
+        }
+      ]
+    }
+  ]
+}
