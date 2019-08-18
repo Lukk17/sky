@@ -5,7 +5,7 @@
       "name": "sky",
       "image": "lukk17/sky",
       "hostname": "sky",
-      "essential": false,
+      "essential": true,
       "memoryReservation": 128,
       "portMappings": [
         {
