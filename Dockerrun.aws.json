@@ -10,7 +10,7 @@
       "portMappings": [
         {
           "hostPort": 8080,
-          "containerPort": 8080
+          "containerPort": 5555
         }
       ]
     }
