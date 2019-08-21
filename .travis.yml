@@ -3,7 +3,8 @@ sudo: required
 services:
   - docker
 after_success:
-  - docker-compose build
+  - docker-compose rm -f
+  - docker-compose build --no-cache
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
   - docker tag sky lukk17/sky
   - docker push lukk17/sky
