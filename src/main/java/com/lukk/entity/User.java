@@ -1,6 +1,7 @@
 package com.lukk.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.Expose;
 import lombok.*;
 
 import javax.persistence.*;
@@ -20,6 +21,7 @@ public class User
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Setter(AccessLevel.PROTECTED)
+    @Expose
     private Long id;
 
     @NotBlank
@@ -27,6 +29,7 @@ public class User
     @Column(nullable = false, unique = true, length = 100)
     @JsonProperty("email")
     @Setter(AccessLevel.PROTECTED)
+    @Expose
     private String email;
 
     @NotBlank
