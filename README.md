@@ -19,3 +19,7 @@ then run docker composer:
 
 ` sudo docker-compose up --build`
 
+clean build:
+
+`sudo docker-compose build --no-cache `
+
