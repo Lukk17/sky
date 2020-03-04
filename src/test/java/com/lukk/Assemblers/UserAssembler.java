@@ -1,5 +1,6 @@
 package com.lukk.Assemblers;
 
+import com.google.gson.Gson;
 import com.lukk.entity.User;
 
 import java.util.ArrayList;
@@ -16,6 +17,14 @@ public class UserAssembler {
         user.setSentMessage(new ArrayList<>());
 
         return user;
+    }
+
+    public static String createJsonUser(){
+        User user = new User();
+        user.setEmail(TEST_USER_EMAIL);
+        user.setPassword("test");
+
+        return new Gson().toJson(user);
     }
 
 }
