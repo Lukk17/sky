@@ -3,25 +3,21 @@ package com.lukk.service;
 import com.lukk.entity.Message;
 import com.lukk.repository.MessageRepository;
 import com.lukk.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
 @Log4j2
-public class MessageService implements IMessageService
-{
-    @Autowired
-    MessageRepository messageRepo;
-
-    @Autowired
-    UserRepository userRepo;
+@RequiredArgsConstructor
+public class MessageService implements IMessageService {
+    final MessageRepository messageRepo;
+    final UserRepository userRepo;
 
     @Override
-    public void send(Message message, String senderEmail, Long receiverId)
-    {
+    public void send(Message message, String senderEmail, Long receiverId) {
         //  entries which users can delete from mailbox:
         message.setReceiver(userRepo.findById(receiverId).get());
         message.setSender(userRepo.findByEmail(senderEmail));
@@ -34,7 +30,7 @@ public class MessageService implements IMessageService
         message.setCreated(LocalDateTime.now());
         messageRepo.save(message);
 
-        log.debug("sending message from "+ message.getSender()+" to "+message.getReceiver());
+        log.debug("sending message from " + message.getSender() + " to " + message.getReceiver());
     }
 
     @Override

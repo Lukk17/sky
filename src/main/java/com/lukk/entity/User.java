@@ -10,13 +10,13 @@ import javax.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Set;
 
-@Data                       // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
+// lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
+@Data
 @AllArgsConstructor         // lombok's constructor with all arguments
 @NoArgsConstructor          // lombok's constructor with no arguments
-@Entity(name="User")        // Spring's entity name
-@Table (name = "user")     // DB table name (without it will be same as entity name)
-public class User
-{
+@Entity(name = "User")        // Spring's entity name
+@Table(name = "user")     // DB table name (without it will be same as entity name)
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

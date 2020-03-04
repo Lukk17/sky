@@ -4,21 +4,19 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lukk.entity.User;
 import com.lukk.service.IUserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
 @RestController
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    IUserService userService;
+    final IUserService userService;
 
     @GetMapping("/registration")
     public ResponseEntity getRegister() {
@@ -33,7 +31,7 @@ public class UserController {
         return ResponseEntity.accepted().build();
     }
 
-    @RequestMapping(value="/login", method={RequestMethod.OPTIONS,RequestMethod.GET})
+    @RequestMapping(value = "/login", method = {RequestMethod.OPTIONS, RequestMethod.GET})
     public ResponseEntity login() {
         // get logged user details from spring security
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
