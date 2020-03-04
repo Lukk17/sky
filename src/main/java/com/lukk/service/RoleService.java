@@ -1,35 +1,38 @@
 package com.lukk.service;
 
 import com.lukk.entity.Role;
-import com.lukk.repository.RoleRepository;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
-@Log4j2
-public class RoleService implements IRoleService
+public interface RoleService
 {
-    @Autowired
-    private RoleRepository roleRepository;
+    /**
+     * Give Role with same name as given.
+     *
+     * @param name      Name of role.
+     * @return          Return one Role.
+     */
+    Role findByName(String name);
 
-    @Override
-    public Role findByName(String name)
-    {
-        return roleRepository.findByName(name);
-    }
+    /**
+     * Give all of Roles in database.
+     *
+     * @return  Return list of all Roles.
+     */
+    List<Role> findAll();
 
-    @Override
-    public List<Role> findAll()
-    {
-        return roleRepository.findAll();
-    }
+    /**
+     * Give Role with given ID.
+     *
+     * @param id    ID of Role.
+     * @return      Return one Role.
+     */
+    Role findById(Long id);
 
-    @Override
-    public Role findById(Long id) { return roleRepository.findById(id).get(); }
-
-    @Override
-    public void removeRole(Long id) { roleRepository.deleteById(id); }
+    /**
+     * Remove Role with given ID.
+     *
+     * @param id    ID of Role to remove.
+     */
+    void removeRole(Long id);
 }

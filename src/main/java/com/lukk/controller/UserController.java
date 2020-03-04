@@ -3,7 +3,7 @@ package com.lukk.controller;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lukk.entity.User;
-import com.lukk.service.IUserService;
+import com.lukk.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,23 +16,23 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
 
-    final IUserService userService;
+    final UserService userService;
 
     @GetMapping("/registration")
-    public ResponseEntity getRegister() {
+    public ResponseEntity<?> getRegister() {
 
-        return new ResponseEntity("Give User", HttpStatus.OK);
+        return new ResponseEntity<>("Give User", HttpStatus.OK);
     }
 
     @PutMapping("/registration")
-    public ResponseEntity putRegister(@RequestBody User newUser) {
+    public ResponseEntity<?> putRegister(@RequestBody User newUser) {
         userService.saveUser(newUser);
 
         return ResponseEntity.accepted().build();
     }
 
     @RequestMapping(value = "/login", method = {RequestMethod.OPTIONS, RequestMethod.GET})
-    public ResponseEntity login() {
+    public ResponseEntity<?> login() {
         // get logged user details from spring security
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
@@ -45,11 +45,11 @@ public class UserController {
                 .create();
         String userDetails = gson.toJson(user);
 
-        return new ResponseEntity(userDetails, HttpStatus.OK);
+        return new ResponseEntity<>(userDetails, HttpStatus.OK);
     }
 
     @GetMapping("/userList")
-    public ResponseEntity userList() {
+    public ResponseEntity<?> userList() {
 
         return ResponseEntity.ok(userService.findAll());
     }

@@ -1,22 +1,34 @@
 package com.lukk.entity;
 
-import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.Collection;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity(name = "Role")
 @Table(name = "role")
 public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Setter(AccessLevel.PROTECTED)
     private Long id;
 
     @Column(name = "name")
-    @Setter(AccessLevel.PROTECTED)
     private String name;
+
+    @ManyToMany(mappedBy = "roles")
+    private Collection<User> users;
+
+    public Collection<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Collection<User> users) {
+        this.users = users;
+    }
 }
