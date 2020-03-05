@@ -1,5 +1,7 @@
 package com.lukk.service;
 
+import com.lukk.H2TestProfileJPAConfig;
+import com.lukk.SkyApplication;
 import com.lukk.entity.Role;
 import com.lukk.entity.User;
 import com.lukk.repository.RoleRepository;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.*;
@@ -23,7 +26,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = {
+        SkyApplication.class,
+        H2TestProfileJPAConfig.class})
+@ActiveProfiles("test")
 class UserServiceImplTest {
 
     @Autowired
