@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity(name = "Message")
-@Table (name = "message")
+@Table(name = "message")
 public class Message {
 
     @Id
@@ -31,7 +31,7 @@ public class Message {
     private User receiver;
 
     @ManyToOne
-    @JoinColumn(name ="sender")
+    @JoinColumn(name = "sender")
     private User sender;
 
 
@@ -41,7 +41,7 @@ public class Message {
     private User permaReceiver;
 
     @ManyToOne
-    @JoinColumn(name ="permaSender")
+    @JoinColumn(name = "permaSender")
     private User permaSender;
 
 }
