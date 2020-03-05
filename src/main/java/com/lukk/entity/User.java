@@ -1,5 +1,6 @@
 package com.lukk.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.Expose;
 import lombok.AllArgsConstructor;
@@ -41,9 +42,11 @@ public class User {
     private Set<Role> roles;
 
     @OneToMany(mappedBy = "receiver")
+    @JsonIgnore
     private List<Message> receivedMessage;
 
     @OneToMany(mappedBy = "sender")
+    @JsonIgnore
     private List<Message> sentMessage;
 
 }

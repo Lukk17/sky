@@ -1,6 +1,5 @@
 package com.lukk.controller;
 
-import com.google.gson.Gson;
 import com.lukk.entity.User;
 import com.lukk.service.SpringDataUserDetailsServiceImpl;
 import com.lukk.service.UserService;
@@ -28,6 +27,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserController.class)
 class UserControllerTest {
 
+    private final String DEFAULT_USER = "test@test";
+    private final String DEFAULT_PASS = "test";
+
+
     @Autowired
     private MockMvc mvc;
 
@@ -39,10 +42,10 @@ class UserControllerTest {
 
 
     @Test
-    void getRegister() throws Exception {
+    void whenGetRegister_thenReturnString() throws Exception {
         //Given
-        User expected = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userService.saveUser(expected)).thenReturn(expected);
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        Mockito.when(userService.saveUser(expectedUser)).thenReturn(expectedUser);
 
         //When
         mvc.perform(
@@ -57,10 +60,10 @@ class UserControllerTest {
     }
 
     @Test
-    void putRegister() throws Exception {
+    void whenPutRegister_thenAddNewUser() throws Exception {
         //Given
-        User expected = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userService.saveUser(expected)).thenReturn(expected);
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        Mockito.when(userService.saveUser(expectedUser)).thenReturn(expectedUser);
 
         //When
         mvc.perform(
@@ -72,19 +75,47 @@ class UserControllerTest {
     }
 
     @Test
-    void login() {
+    @WithMockUser(username = DEFAULT_USER, password = DEFAULT_PASS, roles = "USER")
+    void whenLogin_thenReturnLoggedUser() throws Exception {
+        //Given
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        String expectedJson = "{\"email\":\"testUser@user\"}";
+        Mockito.when(userService.findByUserEmail(DEFAULT_USER)).thenReturn(expectedUser);
 
+        //When
+        mvc.perform(
+                get("/login")
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                //Then
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(expectedJson))
+                );
     }
 
     @Test
-    @WithMockUser(username = "test@test", password = "test", roles = "USER")
-    void userList() throws Exception {
+    void whenLoginWithoutCredentials_thenReturnLoggedUser() throws Exception {
+        //Given
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        Mockito.when(userService.findByUserEmail(DEFAULT_USER)).thenReturn(expectedUser);
+
+        //When
+        mvc.perform(
+                get("/login")
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                //Then
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = DEFAULT_USER, password = DEFAULT_PASS, roles = "USER")
+    void whenRequestUserList_andLogged_thenReturnListOfUsers() throws Exception {
 
         //Given
-        User expected = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userService.findAll()).thenReturn(Collections.singletonList(expected));
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        Mockito.when(userService.findAll()).thenReturn(Collections.singletonList(expectedUser));
         String expectedJson = "[{\"id\":null,\"roles\":null,\"receivedMessage\":[],\"sentMessage\":[],\"email\":\"testUser@user\",\"password\":\"test\"}]";
-
 
         //When
         mvc.perform(
@@ -95,6 +126,21 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString(expectedJson))
                 );
+    }
 
+    @Test
+    void whenRequestUserList_andNotLogged_thenReturnListOfUsers() throws Exception {
+
+        //Given
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        Mockito.when(userService.findAll()).thenReturn(Collections.singletonList(expectedUser));
+
+        //When
+        mvc.perform(
+                get("/userList")
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                //Then
+                .andExpect(status().isUnauthorized());
     }
 }
