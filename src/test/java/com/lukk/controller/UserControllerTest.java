@@ -20,6 +20,7 @@ import static com.lukk.Assemblers.UserAssembler.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -51,6 +52,7 @@ class UserControllerTest {
         mvc.perform(
                 get("/registration")
                         .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
 
                 //Then
                 .andExpect(status().isOk())
@@ -70,6 +72,8 @@ class UserControllerTest {
                 put("/registration")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createJsonUser()))
+                .andDo(print())
+
                 //Then
                 .andExpect(status().is2xxSuccessful());
     }
@@ -86,6 +90,7 @@ class UserControllerTest {
         mvc.perform(
                 get("/login")
                         .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
 
                 //Then
                 .andExpect(status().isOk())
@@ -103,6 +108,7 @@ class UserControllerTest {
         mvc.perform(
                 get("/login")
                         .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
 
                 //Then
                 .andExpect(status().isUnauthorized());
@@ -115,12 +121,13 @@ class UserControllerTest {
         //Given
         User expectedUser = createTestUser(TEST_USER_EMAIL);
         Mockito.when(userService.findAll()).thenReturn(Collections.singletonList(expectedUser));
-        String expectedJson = "[{\"id\":null,\"roles\":null,\"receivedMessage\":[],\"sentMessage\":[],\"email\":\"testUser@user\",\"password\":\"test\"}]";
+        String expectedJson = "[{\"id\":null,\"roles\":null,\"email\":\"testUser@user\",\"password\":\"test\"}]";
 
         //When
         mvc.perform(
                 get("/userList")
                         .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
 
                 //Then
                 .andExpect(status().isOk())
@@ -139,6 +146,7 @@ class UserControllerTest {
         mvc.perform(
                 get("/userList")
                         .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
 
                 //Then
                 .andExpect(status().isUnauthorized());
