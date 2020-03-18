@@ -96,7 +96,7 @@ class UserServiceImplTest {
         User expected = createTestUser(TEST_USER_EMAIL);
         // another instance required to not make changes in expected user when saving
         User processed = createTestUser(TEST_USER_EMAIL);
-        Role expectedRole = new Role(1L, "USER");
+        Role expectedRole = new Role(1L, "USER", new ArrayList<User>());
 
         Mockito.when(userRepository.save(processed)).thenReturn(processed);
         Mockito.when(roleRepository.findByName("USER")).thenReturn(expectedRole);

@@ -1,5 +1,6 @@
 package com.lukk;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -12,11 +13,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @ComponentScan(basePackageClasses = Component.class)
  */
 
+@Log4j2
 @SpringBootApplication
 public class SkyApplication {
 
     public static void main(String[] args) {
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> App start <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> App start <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
         SpringApplication.run(SkyApplication.class, args);
     }
 

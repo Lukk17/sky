@@ -6,6 +6,8 @@ import com.google.gson.annotations.Expose;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
@@ -34,10 +36,11 @@ public class User {
     private String email;
 
     @NotBlank
-    @JsonProperty("password")
+    @JsonIgnore
     private String password;
 
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToMany
+    @Fetch(FetchMode.JOIN)
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
@@ -48,5 +51,8 @@ public class User {
     @OneToMany(mappedBy = "sender")
     @JsonIgnore
     private List<Message> sentMessage;
+
+    @OneToMany(mappedBy = "user")
+    private List<Booked> booked;
 
 }

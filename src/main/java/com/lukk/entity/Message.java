@@ -37,11 +37,11 @@ public class Message {
 
     //  perma sender and receiver to save who send/receive even if sender/receiver delete it from mailbox
     @ManyToOne
-    @JoinColumn(name = "permaReceiver")
+    @JoinColumn(name = "perma_receiver")
     private User permaReceiver;
 
     @ManyToOne
-    @JoinColumn(name = "permaSender")
+    @JoinColumn(name = "perma_sender")
     private User permaSender;
 
 }

@@ -13,8 +13,9 @@ import java.time.LocalDateTime;
 @Log4j2
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
-    final MessageRepository messageRepo;
-    final UserRepository userRepo;
+
+    private final MessageRepository messageRepo;
+    private final UserRepository userRepo;
 
     @Override
     public void send(Message message, String senderEmail, Long receiverId) {
