@@ -1,6 +1,8 @@
 package com.lukk.entity;
 
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -9,6 +11,8 @@ import java.util.List;
 
 @Entity
 @Data
+@Builder
+@NoArgsConstructor
 public class Offer {
 
     @Id
@@ -25,7 +29,7 @@ public class Offer {
     private BigDecimal price;
 
     @ElementCollection
-    private List<String> photos;
+    private List<String> photoPath;
 
     @ManyToOne
     private User owner;
@@ -38,6 +42,5 @@ public class Offer {
 
     @OneToMany(mappedBy = "offer")
     private List<Booked> booked;
-
 
 }

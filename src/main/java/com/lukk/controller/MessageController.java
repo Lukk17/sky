@@ -9,9 +9,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
 public class MessageController {
 
-    final MessageService messageService;
+    private final MessageService messageService;
 
     @PutMapping("/sendMessage")
     public ResponseEntity<?> putRegister(@RequestBody MessageDTO message, Authentication auth) {
