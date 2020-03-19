@@ -3,10 +3,7 @@ package com.lukk.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.Expose;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -17,10 +14,11 @@ import java.util.List;
 import java.util.Set;
 
 
-@Data                   // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
+@Data                     // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
 @Entity(name = "User")    // Spring's entity name
 @Table(name = "user")     // DB table name (without it will be same as entity name)
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class User {
 
@@ -37,7 +35,6 @@ public class User {
     private String email;
 
     @NotBlank
-    @JsonIgnore
     private String password;
 
     @ManyToMany

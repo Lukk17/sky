@@ -1,7 +1,9 @@
 package com.lukk.service;
 
+import com.lukk.Assemblers.UserAssembler;
 import com.lukk.H2TestProfileJPAConfig;
 import com.lukk.SkyApplication;
+import com.lukk.dto.UserDTO;
 import com.lukk.entity.Role;
 import com.lukk.entity.User;
 import com.lukk.repository.RoleRepository;
@@ -20,9 +22,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.*;
 
-import static com.lukk.Assemblers.UserAssembler.TEST_USER_EMAIL;
-import static com.lukk.Assemblers.UserAssembler.createTestUser;
+import static com.lukk.Assemblers.UserAssembler.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 
 @RunWith(SpringRunner.class)
@@ -48,28 +50,28 @@ class UserServiceImplTest {
     @Test
     void whenFindByUserEmail_thenReturnUser() {
         //Given
-        User expected = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userRepository.findByEmail(TEST_USER_EMAIL)).thenReturn(expected);
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        Mockito.when(userRepository.findByEmail(TEST_USER_EMAIL)).thenReturn(expectedUser);
 
         //When
         User found = userService.findByUserEmail(TEST_USER_EMAIL);
 
         //Then
-        assertEquals(expected.getEmail(), found.getEmail());
+        assertEquals(expectedUser.getEmail(), found.getEmail());
 
     }
 
     @Test
     void whenFindById_thenReturnUser() {
         //Given
-        User expected = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(expected));
+        User expectedUser = createTestUser(TEST_USER_EMAIL);
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(expectedUser));
 
         //When
         User found = userService.findById(1L);
 
         //Then
-        assertEquals(expected.getEmail(), found.getEmail());
+        assertEquals(expectedUser.getEmail(), found.getEmail());
     }
 
     @Test
@@ -95,21 +97,22 @@ class UserServiceImplTest {
         //Given
         User expected = createTestUser(TEST_USER_EMAIL);
         // another instance required to not make changes in expected user when saving
-        User processed = createTestUser(TEST_USER_EMAIL);
+        UserDTO processedDTO = createTestUserDTO(TEST_USER_EMAIL);
+        User processedUser = UserAssembler.convertUserDTO_toEntity(processedDTO);
+
         Role expectedRole = new Role(1L, "USER", new ArrayList<User>());
 
-        Mockito.when(userRepository.save(processed)).thenReturn(processed);
+        System.out.println(processedUser);
+        Mockito.when(userRepository.save(any())).thenReturn(processedUser);
         Mockito.when(roleRepository.findByName("USER")).thenReturn(expectedRole);
 
         //When
-        User found = userService.saveUser(processed);
+        User found = userService.saveUser(processedDTO);
 
         //Then
         assertEquals(expected.getEmail(), found.getEmail());
         assertEquals(new HashSet<>(Collections.singletonList(expectedRole)), found.getRoles());
         Assertions.assertTrue(bCryptPasswordEncoder.matches(expected.getPassword(), found.getPassword()));
-
-
     }
 
     @Test

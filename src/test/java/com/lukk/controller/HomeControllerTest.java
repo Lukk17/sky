@@ -35,7 +35,7 @@ class HomeControllerTest {
 
                 //Then
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Hello World!"))
+                .andExpect(content().string(containsString("Hello World !"))
                 );
     }
 }
