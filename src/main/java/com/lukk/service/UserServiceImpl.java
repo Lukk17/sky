@@ -1,9 +1,11 @@
 package com.lukk.service;
 
+import com.lukk.dto.UserDTO;
 import com.lukk.entity.Role;
 import com.lukk.entity.User;
 import com.lukk.repository.RoleRepository;
 import com.lukk.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,45 +14,49 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
     @Override
     public User findByUserEmail(String email) {
-        log.debug("finding user by email");
+        log.info("finding user by email");
         return userRepository.findByEmail(email);
     }
 
     @Override
     public User findById(Long id) {
-        log.debug("finding user by id");
+        log.info("Finding user by id");
         return userRepository.findById(id).orElse(null);
     }
 
     @Override
     public List<User> findAll() {
-        log.info("finding all users");
+        log.info("Finding all users");
         return userRepository.findAll();
     }
 
     @Override
-    public User saveUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        Role userRole = roleRepository.findByName("USER");
-        user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
-        log.debug("saving user: " + user.getEmail() + " " + user.getId() + " " + user.getRoles());
+    public List<UserDTO> findAllAndConvertToDTO() {
+        List<User> users = findAll();
+
+        return users.stream()
+                .map(this::convertUserEntity_toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public User saveUser(UserDTO userDTO) {
+        User user = convertUserDTO_toEntity(userDTO);
+
+        log.info("Saving user: " + user.getEmail() + " " + user.getId() + " " + user.getRoles());
         return userRepository.save(user);
     }
 
@@ -58,7 +64,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElse(null);
         try {
-            log.debug("Removing user: " + Objects.requireNonNull(user).getEmail() + " " + user.getId() + " " + user.getRoles());
+            log.info("Removing user: " + Objects.requireNonNull(user).getEmail() + " " + user.getId() + " " + user.getRoles());
             userRepository.delete(user);
 
         } catch (NullPointerException e) {
@@ -68,9 +74,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean checkPassword(String newPassword, String password) {
-        log.debug("checking password");
+        log.info("checking password");
         return passwordEncoder.matches(newPassword, password);
     }
 
+
+    private UserDTO convertUserEntity_toDTO(User user) {
+
+        return UserDTO.builder()
+                .email(user.getEmail())
+                .roles(user.getRoles())
+                .build();
+
+    }
+
+    private User convertUserDTO_toEntity(UserDTO userDTO) {
+        Role userRole = roleRepository.findByName("USER");
+
+        return User.builder()
+                .email(userDTO.getEmail())
+                .password(passwordEncoder.encode(userDTO.getPassword()))
+                .roles(new HashSet<>(Collections.singletonList(userRole)))
+                .build();
+
+    }
 
 }

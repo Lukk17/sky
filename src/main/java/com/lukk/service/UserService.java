@@ -1,5 +1,6 @@
 package com.lukk.service;
 
+import com.lukk.dto.UserDTO;
 import com.lukk.entity.User;
 
 import java.util.List;
@@ -8,27 +9,28 @@ import java.util.List;
 public interface UserService {
 
     /**
-     *  Search for user by his unique email address.
+     * Search for user by his unique email address.
      *
-     * @param email     User's email.
-     * @return          Return only one user with given unique email.
+     * @param email User's email.
+     * @return Return only one user with given unique email.
      */
     User findByUserEmail(String email);
 
     /**
      * Give user with ID same as given.
      *
-     * @param id    ID of user.
-     * @return      Return one User.
+     * @param id ID of user.
+     * @return Return one User.
      */
     User findById(Long id);
 
 
     /**
-     *
      * @return all registered users as list
      */
     List<User> findAll();
+
+    List<UserDTO> findAllAndConvertToDTO();
 
     /**
      * Save new, given User.
@@ -36,16 +38,16 @@ public interface UserService {
      * Set Role to ROLE_USER.
      * Set default photo.
      *
-     * @param user      User which will be saved.
+     * @param user User which will be saved.
      * @return User that was saved to DB
      */
-    User saveUser(User user);
+    User saveUser(UserDTO user);
 
 
     /**
      * Delete User with given ID.
      *
-     * @param id    ID of user to delete.
+     * @param id ID of user to delete.
      */
     void deleteUser(Long id);
 
@@ -53,9 +55,9 @@ public interface UserService {
      * Check if given newPassword is same as saved in database.
      * Used in login.
      *
-     * @param newPassword   Password from login.
-     * @param password      Password from database.
-     * @return              Return true if passwords are same.
+     * @param newPassword Password from login.
+     * @param password    Password from database.
+     * @return Return true if passwords are same.
      */
     boolean checkPassword(String newPassword, String password);
 

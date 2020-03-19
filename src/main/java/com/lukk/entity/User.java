@@ -3,9 +3,10 @@ package com.lukk.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.Expose;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -16,11 +17,11 @@ import java.util.List;
 import java.util.Set;
 
 
-@Data // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
-@NoArgsConstructor
-@AllArgsConstructor
-@Entity(name = "User")        // Spring's entity name
+@Data                   // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
+@Entity(name = "User")    // Spring's entity name
 @Table(name = "user")     // DB table name (without it will be same as entity name)
+@NoArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -46,10 +47,12 @@ public class User {
 
     @OneToMany(mappedBy = "receiver")
     @JsonIgnore
+    @ToString.Exclude
     private List<Message> receivedMessage;
 
     @OneToMany(mappedBy = "sender")
     @JsonIgnore
+    @ToString.Exclude
     private List<Message> sentMessage;
 
     @OneToMany(mappedBy = "user")

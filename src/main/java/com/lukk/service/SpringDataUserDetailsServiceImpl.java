@@ -12,7 +12,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SpringDataUserDetailsServiceImpl implements UserDetailsService{
+public class SpringDataUserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     private UserServiceImpl userServiceImpl;
@@ -21,12 +21,12 @@ public class SpringDataUserDetailsServiceImpl implements UserDetailsService{
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
         User user = userServiceImpl.findByUserEmail(email);
-        if(user == null) {
+        if (user == null) {
             throw new UsernameNotFoundException(email);
         }
 
         Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-        for (Role role: user.getRoles()) {
+        for (Role role : user.getRoles()) {
             grantedAuthorities.add(new SimpleGrantedAuthority(role.getName()));
         }
 

@@ -1,34 +1,40 @@
 package com.lukk.service;
 
-import com.lukk.entity.Message;
+import com.lukk.dto.MessageDTO;
 
-public interface MessageService
-{
+import java.util.List;
+
+public interface MessageService {
     /**
      * Send message of given text to given receiver.
      *
-     * @param message           Text of message.
-     * @param senderEmail       Mail of sender.
-     * @param receiverId        ID of message receiver.
+     * @param message     Text of message.
+     * @param senderEmail Email of message sender
      */
-    void send(Message message, String senderEmail, Long receiverId);
+    void send(MessageDTO messageDTO);
 
     /**
      * Remove message with given ID.
-     * User email confirm authorization for deleting.
-     * Message will be still visible to sender/receiver.
      *
-     * @param messageId     ID of message to delete.
-     * @param userEmail     Email of user who delete message.
+     * @param messageId ID of message to delete.
      */
-    void remove(Long messageId, String userEmail);
+    void remove(Long messageId);
+
 
     /**
-     * Set read attribute of given Message to true,
-     * if given user is receiver.
+     * Get all messages in which given user is receiver.
      *
-     * @param messageId         ID of Message.
-     * @param receiverEmail     Email of message receiver.
+     * @param userEmail Receiver mail
+     * @return List of Messages as DTO
      */
-    void read(Long messageId, String receiverEmail);
+    List<MessageDTO> getReceivedMessages(String userEmail);
+
+
+    /**
+     * Get all messages in which given user is sender.
+     *
+     * @param userEmail Sender mail
+     * @return List of Messages as DTO
+     */
+    List<MessageDTO> getSentMessages(String userEmail);
 }

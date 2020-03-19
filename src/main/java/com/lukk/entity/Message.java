@@ -1,15 +1,17 @@
 package com.lukk.entity;
 
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity(name = "Message")
 @Table(name = "message")
+@Builder
 public class Message {
 
     @Id
@@ -28,20 +30,15 @@ public class Message {
     // which are used for linking this two tables.
     @ManyToOne
     @JoinColumn(name = "receiver")
+    @JsonIgnore
+    @ToString.Exclude
     private User receiver;
 
     @ManyToOne
     @JoinColumn(name = "sender")
+    @JsonIgnore
+    @ToString.Exclude
     private User sender;
 
-
-    //  perma sender and receiver to save who send/receive even if sender/receiver delete it from mailbox
-    @ManyToOne
-    @JoinColumn(name = "perma_receiver")
-    private User permaReceiver;
-
-    @ManyToOne
-    @JoinColumn(name = "perma_sender")
-    private User permaSender;
 
 }
