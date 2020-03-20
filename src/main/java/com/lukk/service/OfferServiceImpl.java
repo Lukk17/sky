@@ -88,6 +88,7 @@ public class OfferServiceImpl implements OfferService {
                 .price(offer.getPrice())
                 .roomCapacity(offer.getRoomCapacity())
                 .booked(offer.getBooked())
+                .photoPath(offer.getPhotoPath())
                 .build();
     }
 
@@ -104,6 +105,7 @@ public class OfferServiceImpl implements OfferService {
                 .price(offerDTO.getPrice())
                 .roomCapacity(offerDTO.getRoomCapacity())
                 .booked(offerDTO.getBooked())
+                .photoPath(offerDTO.getPhotoPath())
                 .build();
     }
 }

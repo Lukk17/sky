@@ -1,5 +1,6 @@
 package com.lukk.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,8 +12,9 @@ import java.util.List;
 
 @Entity
 @Data
-@Builder
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Offer {
 
     @Id
@@ -28,8 +30,7 @@ public class Offer {
 
     private BigDecimal price;
 
-    @ElementCollection
-    private List<String> photoPath;
+    private String photoPath;
 
     @ManyToOne
     private User owner;

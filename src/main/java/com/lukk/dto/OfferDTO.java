@@ -1,8 +1,10 @@
 package com.lukk.dto;
 
 import com.lukk.entity.Booked;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,5 +23,5 @@ public class OfferDTO {
     private String city;
     private String country;
     private List<Booked> booked;
-
+    private String photoPath;
 }
