@@ -71,7 +71,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
                 .antMatchers("/offer/**").authenticated()
                 .antMatchers("/userList").authenticated()
                 .antMatchers("/login").authenticated()
-                .and().httpBasic().and().csrf().disable();
+//                .and().httpBasic().and().csrf().disable();
+                .and().oauth2Login().and().csrf().disable();
 
     }
 
