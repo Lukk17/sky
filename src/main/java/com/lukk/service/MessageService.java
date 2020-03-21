@@ -1,49 +1,40 @@
 package com.lukk.service;
 
-import com.lukk.entity.Message;
-import com.lukk.repository.MessageRepository;
-import com.lukk.repository.UserRepository;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import com.lukk.dto.MessageDTO;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
-@Service
-@Log4j2
-public class MessageService implements IMessageService
-{
-    @Autowired
-    MessageRepository messageRepo;
+public interface MessageService {
+    /**
+     * Send message of given text to given receiver.
+     *
+     * @param message     Text of message.
+     * @param senderEmail Email of message sender
+     */
+    void send(MessageDTO messageDTO);
 
-    @Autowired
-    UserRepository userRepo;
+    /**
+     * Remove message with given ID.
+     *
+     * @param messageId ID of message to delete.
+     */
+    void remove(Long messageId);
 
-    @Override
-    public void send(Message message, String senderEmail, Long receiverId)
-    {
-        //  entries which users can delete from mailbox:
-        message.setReceiver(userRepo.findById(receiverId).get());
-        message.setSender(userRepo.findByEmail(senderEmail));
 
-        //  indelible entries:
-        message.setPermaReceiver(message.getReceiver());
-        message.setPermaSender(message.getSender());
+    /**
+     * Get all messages in which given user is receiver.
+     *
+     * @param userEmail Receiver mail
+     * @return List of Messages as DTO
+     */
+    List<MessageDTO> getReceivedMessages(String userEmail);
 
-        message.setRead(false);
-        message.setCreated(LocalDateTime.now());
-        messageRepo.save(message);
 
-        log.debug("sending message from "+ message.getSender()+" to "+message.getReceiver());
-    }
-
-    @Override
-    public void remove(Long messageId, String userEmail) {
-
-    }
-
-    @Override
-    public void read(Long messageId, String receiverEmail) {
-
-    }
+    /**
+     * Get all messages in which given user is sender.
+     *
+     * @param userEmail Sender mail
+     * @return List of Messages as DTO
+     */
+    List<MessageDTO> getSentMessages(String userEmail);
 }
