@@ -9,8 +9,7 @@ import java.util.List;
 
 @Service
 @Log4j2
-public class RoleServiceImpl implements RoleService
-{
+public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
 
     public RoleServiceImpl(RoleRepository roleRepository) {
@@ -18,20 +17,22 @@ public class RoleServiceImpl implements RoleService
     }
 
     @Override
-    public Role findByName(String name)
-    {
+    public Role findByName(String name) {
         return roleRepository.findByName(name);
     }
 
     @Override
-    public List<Role> findAll()
-    {
+    public List<Role> findAll() {
         return roleRepository.findAll();
     }
 
     @Override
-    public Role findById(Long id) { return roleRepository.findById(id).orElse(null); }
+    public Role findById(Long id) {
+        return roleRepository.findById(id).orElse(null);
+    }
 
     @Override
-    public void removeRole(Long id) { roleRepository.deleteById(id); }
+    public void removeRole(Long id) {
+        roleRepository.deleteById(id);
+    }
 }

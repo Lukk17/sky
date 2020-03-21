@@ -1,11 +1,14 @@
 package com.lukk.repository;
 
+import com.lukk.entity.Booked;
 import com.lukk.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+import java.util.List;
 
-    User findByEmail(String email);
+@Repository
+public interface BookedRepository extends JpaRepository<Booked, Long> {
+
+    List<Booked> findAllByUser(User user);
 }

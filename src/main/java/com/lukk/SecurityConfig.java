@@ -3,28 +3,23 @@ package com.lukk;
 import com.lukk.service.SpringDataUserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter{
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     /**
-     *
      * For password encryption
      *
      * @return encrypted password
      */
     @Bean
-    public BCryptPasswordEncoder passwordEncoder()
-    {
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
@@ -44,17 +39,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 //    }
 
     @Bean
-    public SpringDataUserDetailsServiceImpl springDataUserDetailsService()
-    {
+    public SpringDataUserDetailsServiceImpl springDataUserDetailsService() {
         return new SpringDataUserDetailsServiceImpl();
     }
 
     /**
-     *
      * Method set up website's addresses and permission to access them.
      * It is specified by authentication.
-     *
-     *
      *
      * @param httpSecurity
      * @throws Exception
@@ -64,17 +55,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
         httpSecurity.csrf().disable().cors().and()
                 .authorizeRequests()
                 .antMatchers("/").permitAll()
-                .antMatchers("/user").hasAnyRole("USER","ADMIN")
-                .antMatchers("/user/**").hasAnyRole("USER","ADMIN")
+                .antMatchers("/user").hasAnyRole("USER", "ADMIN")
+                .antMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                 .antMatchers("/admin").hasRole("ADMIN")
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 .antMatchers("/offer/**").authenticated()
                 .antMatchers("/userList").authenticated()
                 .antMatchers("/login").authenticated()
+                .antMatchers("/sendMessage").authenticated()
                 .and().httpBasic().and().csrf().disable();
 
     }
-
 
 
 }

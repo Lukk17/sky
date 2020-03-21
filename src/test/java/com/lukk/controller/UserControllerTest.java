@@ -1,5 +1,6 @@
 package com.lukk.controller;
 
+import com.lukk.dto.UserDTO;
 import com.lukk.entity.User;
 import com.lukk.service.SpringDataUserDetailsServiceImpl;
 import com.lukk.service.UserService;
@@ -41,31 +42,12 @@ class UserControllerTest {
     @MockBean
     private SpringDataUserDetailsServiceImpl springDataUserDetailsService;
 
-
-    @Test
-    void whenGetRegister_thenReturnString() throws Exception {
-        //Given
-        User expectedUser = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userService.saveUser(expectedUser)).thenReturn(expectedUser);
-
-        //When
-        mvc.perform(
-                get("/registration")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-
-                //Then
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Give User"))
-                );
-
-    }
-
     @Test
     void whenPutRegister_thenAddNewUser() throws Exception {
         //Given
+        UserDTO testUserDTO = createTestUserDTO(TEST_USER_EMAIL);
         User expectedUser = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userService.saveUser(expectedUser)).thenReturn(expectedUser);
+        Mockito.when(userService.saveUser(testUserDTO)).thenReturn(expectedUser);
 
         //When
         mvc.perform(
@@ -119,9 +101,9 @@ class UserControllerTest {
     void whenRequestUserList_andLogged_thenReturnListOfUsers() throws Exception {
 
         //Given
-        User expectedUser = createTestUser(TEST_USER_EMAIL);
-        Mockito.when(userService.findAll()).thenReturn(Collections.singletonList(expectedUser));
-        String expectedJson = "[{\"id\":null,\"roles\":null,\"email\":\"testUser@user\",\"password\":\"test\"}]";
+        UserDTO expectedUser = createTestUserDTO(TEST_USER_EMAIL);
+        Mockito.when(userService.findAllAndConvertToDTO()).thenReturn(Collections.singletonList(expectedUser));
+        String expectedJson = "[{\"id\":null,\"email\":\"testUser@user\",\"password\":\"test\",\"roles\":null}]";
 
         //When
         mvc.perform(
@@ -136,7 +118,7 @@ class UserControllerTest {
     }
 
     @Test
-    void whenRequestUserList_andNotLogged_thenReturnListOfUsers() throws Exception {
+    void whenRequestUserList_andNotLogged_thenUnauthorized() throws Exception {
 
         //Given
         User expectedUser = createTestUser(TEST_USER_EMAIL);
