@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,6 +22,7 @@ public class Offer {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @NotNull
     private String name;
 
     @Size(max = 3000)
@@ -28,17 +30,21 @@ public class Offer {
 
     private String comment;
 
+    @NotNull
     private BigDecimal price;
 
     private String photoPath;
 
     @ManyToOne
+    @NotNull
     private User owner;
 
     private Long roomCapacity;
 
+    @NotNull
     private String city;
 
+    @NotNull
     private String country;
 
     @OneToMany(mappedBy = "offer")

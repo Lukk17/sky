@@ -76,6 +76,18 @@ public class OfferServiceImpl implements OfferService {
         return offers;
     }
 
+    @Override
+    public List<OfferDTO> searchOffer(String searched) {
+        List<OfferDTO> offers = getAllOffers();
+        return offers.stream()
+                .filter(offer -> offer.getName().contains(searched)
+                        || offer.getOwnerEmail().contains(searched)
+                        || offer.getCity().contains(searched)
+                        || offer.getCountry().contains(searched)
+                        || Long.toString(offer.getId()).contains(searched))
+                .collect(Collectors.toList());
+    }
+
     private OfferDTO convertOfferEntity_toDTO(Offer offer) {
         return OfferDTO.builder()
                 .name(offer.getName())

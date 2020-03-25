@@ -15,4 +15,6 @@ public interface OfferService {
     List<OfferDTO> getOwnedOffers(String ownerEmail);
 
     List<OfferDTO> getBookedOffers(String userEmail);
+
+    List<OfferDTO> searchOffer(String searched);
 }
