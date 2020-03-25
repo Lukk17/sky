@@ -78,10 +78,16 @@ public class UserServiceImpl implements UserService {
         return passwordEncoder.matches(newPassword, password);
     }
 
+    @Override
+    public UserDTO findUserDetails(String email) {
+        return convertUserEntity_toDTO(findByUserEmail(email));
+    }
+
 
     private UserDTO convertUserEntity_toDTO(User user) {
 
         return UserDTO.builder()
+                .id(user.getId())
                 .email(user.getEmail())
                 .roles(user.getRoles())
                 .build();

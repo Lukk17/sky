@@ -11,6 +11,7 @@ import java.util.List;
 
 @Builder
 @Data
+@AllArgsConstructor
 public class OfferDTO {
 
     private Long id;

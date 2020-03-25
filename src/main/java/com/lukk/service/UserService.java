@@ -61,4 +61,5 @@ public interface UserService {
      */
     boolean checkPassword(String newPassword, String password);
 
+    UserDTO findUserDetails(String email);
 }

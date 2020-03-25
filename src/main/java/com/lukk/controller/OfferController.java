@@ -21,16 +21,18 @@ public class OfferController {
         return ResponseEntity.ok(offerService.getAllOffers());
     }
 
-    @PostMapping("/addOffer")
-    public ResponseEntity<OfferDTO> addOffer(OfferDTO offer, Authentication auth) {
-        offer.setOwnerEmail(auth.getName());
+    @PostMapping(value = "/addOffer")
+    public ResponseEntity<OfferDTO> addOffer(@RequestBody OfferDTO offer, Authentication auth) {
+        System.out.println("\n\n\n " + offer.toString());
+        offer.setOwnerEmail(
+                auth.getName());
         OfferDTO addedOffer = offerService.addOffer(offer);
 
         return ResponseEntity.ok(addedOffer);
     }
 
     @DeleteMapping("/deleteOffer")
-    public ResponseEntity<?> deleteOffer(Long id, Authentication auth) {
+    public ResponseEntity<?> deleteOffer(@RequestAttribute Long id, Authentication auth) {
         offerService.deleteOffer(id, auth.getName());
 
         return ResponseEntity.accepted().build();
