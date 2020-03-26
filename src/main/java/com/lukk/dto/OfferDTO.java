@@ -4,7 +4,6 @@ import com.lukk.entity.Booked;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
 public class OfferDTO {
 
     private Long id;
-    private String name;
+    private String hotelName;
     private String description;
     private String comment;
     private BigDecimal price;

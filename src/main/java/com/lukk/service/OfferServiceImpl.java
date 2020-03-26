@@ -80,7 +80,7 @@ public class OfferServiceImpl implements OfferService {
     public List<OfferDTO> searchOffer(String searched) {
         List<OfferDTO> offers = getAllOffers();
         return offers.stream()
-                .filter(offer -> offer.getName().contains(searched)
+                .filter(offer -> offer.getHotelName().contains(searched)
                         || offer.getOwnerEmail().contains(searched)
                         || offer.getCity().contains(searched)
                         || offer.getCountry().contains(searched)
@@ -91,13 +91,15 @@ public class OfferServiceImpl implements OfferService {
     @Override
     public OfferDTO editOffer(OfferDTO offerDTO) {
         Offer offer = convertOfferDTO_toEntity(offerDTO);
+        offer.setId(offerDTO.getId());
+
         offerRepository.save(offer);
         return convertOfferEntity_toDTO(offer);
     }
 
     private OfferDTO convertOfferEntity_toDTO(Offer offer) {
         return OfferDTO.builder()
-                .name(offer.getName())
+                .hotelName(offer.getName())
                 .id(offer.getId())
                 .city(offer.getCity())
                 .country(offer.getCountry())
@@ -115,7 +117,7 @@ public class OfferServiceImpl implements OfferService {
         User owner = userRepository.findByEmail(offerDTO.getOwnerEmail());
 
         return Offer.builder()
-                .name(offerDTO.getName())
+                .name(offerDTO.getHotelName())
                 .city(offerDTO.getCity())
                 .country(offerDTO.getCountry())
                 .owner(owner)

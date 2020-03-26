@@ -32,8 +32,8 @@ public class OfferController {
     }
 
     @DeleteMapping("/deleteOffer")
-    public ResponseEntity<?> deleteOffer(@RequestAttribute Long id, Authentication auth) {
-        offerService.deleteOffer(id, auth.getName());
+    public ResponseEntity<?> deleteOffer(@RequestBody String id, Authentication auth) {
+        offerService.deleteOffer(Long.parseLong(id), auth.getName());
 
         return ResponseEntity.accepted().build();
     }
@@ -59,8 +59,9 @@ public class OfferController {
 
     }
 
-    @PutMapping("edit")
-    public ResponseEntity<OfferDTO> edit(@RequestBody OfferDTO offer) {
+    @PutMapping("/edit")
+    public ResponseEntity<OfferDTO> edit(@RequestBody OfferDTO offer, Authentication auth) {
+        offer.setOwnerEmail(auth.getName());
         return ResponseEntity.ok(offerService.editOffer(offer));
     }
 }
