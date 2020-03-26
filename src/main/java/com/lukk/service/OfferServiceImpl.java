@@ -88,6 +88,13 @@ public class OfferServiceImpl implements OfferService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public OfferDTO editOffer(OfferDTO offerDTO) {
+        Offer offer = convertOfferDTO_toEntity(offerDTO);
+        offerRepository.save(offer);
+        return convertOfferEntity_toDTO(offer);
+    }
+
     private OfferDTO convertOfferEntity_toDTO(Offer offer) {
         return OfferDTO.builder()
                 .name(offer.getName())

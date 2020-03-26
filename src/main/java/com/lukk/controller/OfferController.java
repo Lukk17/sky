@@ -55,9 +55,12 @@ public class OfferController {
 
     @PostMapping("/search")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
-        System.out.println("\n\n\n " + searched);
-        System.out.println("\n\n\n");
         return ResponseEntity.ok(offerService.searchOffer(searched));
 
+    }
+
+    @PutMapping("edit")
+    public ResponseEntity<OfferDTO> edit(@RequestBody OfferDTO offer) {
+        return ResponseEntity.ok(offerService.editOffer(offer));
     }
 }

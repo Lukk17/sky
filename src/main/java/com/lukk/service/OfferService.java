@@ -17,4 +17,6 @@ public interface OfferService {
     List<OfferDTO> getBookedOffers(String userEmail);
 
     List<OfferDTO> searchOffer(String searched);
+
+    OfferDTO editOffer(OfferDTO offer);
 }
