@@ -1,6 +1,7 @@
 package com.lukk.controller;
 
 import com.lukk.dto.OfferDTO;
+import com.lukk.exception.OfferException;
 import com.lukk.service.OfferService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,17 +23,19 @@ public class OfferController {
         return ResponseEntity.ok(offerService.getAllOffers());
     }
 
-    @PostMapping("/addOffer")
-    public ResponseEntity<OfferDTO> addOffer(OfferDTO offer, Authentication auth) {
-        offer.setOwnerEmail(auth.getName());
+    @PostMapping(value = "/addOffer")
+    public ResponseEntity<OfferDTO> addOffer(@RequestBody OfferDTO offer, Authentication auth) {
+        System.out.println("\n\n\n " + offer.toString());
+        offer.setOwnerEmail(
+                auth.getName());
         OfferDTO addedOffer = offerService.addOffer(offer);
 
         return ResponseEntity.ok(addedOffer);
     }
 
     @DeleteMapping("/deleteOffer")
-    public ResponseEntity<?> deleteOffer(Long id, Authentication auth) {
-        offerService.deleteOffer(id, auth.getName());
+    public ResponseEntity<?> deleteOffer(@RequestBody String offerID, Authentication auth) {
+        offerService.deleteOffer(Long.parseLong(offerID), auth.getName());
 
         return ResponseEntity.accepted().build();
     }
@@ -51,4 +55,27 @@ public class OfferController {
         return ResponseEntity.ok(offers);
     }
 
+    @PostMapping("/search")
+    public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
+        return ResponseEntity.ok(offerService.searchOffer(searched));
+
+    }
+
+    @PutMapping("/edit")
+    public ResponseEntity<OfferDTO> edit(@RequestBody OfferDTO offer, Authentication auth) {
+        offer.setOwnerEmail(auth.getName());
+        return ResponseEntity.ok(offerService.editOffer(offer));
+    }
+
+    @PostMapping("/book")
+    public ResponseEntity<?> bookOffer(@RequestBody Map<String, String> json, Authentication auth) {
+        String offerID = json.get("offerID");
+        String dateToBook = json.get("dateToBook");
+        try {
+            offerService.bookOffer(offerID, dateToBook, auth.getName());
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        return ResponseEntity.accepted().build();
+    }
 }
