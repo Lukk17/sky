@@ -20,7 +20,7 @@ import java.util.Collections;
 import static com.lukk.Assemblers.UserAssembler.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,7 +43,7 @@ class UserControllerTest {
     private SpringDataUserDetailsServiceImpl springDataUserDetailsService;
 
     @Test
-    void whenPutRegister_thenAddNewUser() throws Exception {
+    void whenPostRegister_thenAddNewUser() throws Exception {
         //Given
         UserDTO testUserDTO = createTestUserDTO(TEST_USER_EMAIL);
         User expectedUser = createTestUser(TEST_USER_EMAIL);
@@ -51,7 +51,7 @@ class UserControllerTest {
 
         //When
         mvc.perform(
-                put("/registration")
+                post("/registration")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createJsonUser()))
                 .andDo(print())
@@ -97,7 +97,7 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = DEFAULT_USER, password = DEFAULT_PASS, roles = "USER")
+    @WithMockUser(username = DEFAULT_USER, password = DEFAULT_PASS, roles = "ADMIN")
     void whenRequestUserList_andLogged_thenReturnListOfUsers() throws Exception {
 
         //Given
