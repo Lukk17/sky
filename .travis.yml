@@ -11,12 +11,12 @@ after_success:
   - docker images
 
 deploy:
-  provider: elasticbeanstalk
+  provider: s3
   region: eu-west-2
   app: Sky
   env: Sky-env
-  bucket_name: elasticbeanstalk-eu-west-2-564476143638
-  bucket_path: sky
+  bucket: elasticbeanstalk-eu-west-2-564476143638
+  skip_cleanup: true
   on:
     branch: master
   access_key_id:
