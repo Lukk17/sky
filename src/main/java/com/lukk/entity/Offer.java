@@ -4,8 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -22,7 +25,7 @@ public class Offer {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @NotNull
+    @NotBlank
     private String name;
 
     @Size(max = 3000)
@@ -41,10 +44,10 @@ public class Offer {
 
     private Long roomCapacity;
 
-    @NotNull
+    @NotBlank
     private String city;
 
-    @NotNull
+    @NotBlank
     private String country;
 
     @OneToMany(mappedBy = "offer")

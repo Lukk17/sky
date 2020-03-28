@@ -4,13 +4,14 @@ import com.lukk.dto.OfferDTO;
 import com.lukk.entity.Booked;
 import com.lukk.entity.Offer;
 import com.lukk.entity.User;
-import com.lukk.repository.BookedRepository;
+import com.lukk.exception.OfferException;
 import com.lukk.repository.OfferRepository;
-import com.lukk.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,9 +21,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OfferServiceImpl implements OfferService {
 
+    public final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
+
     private final OfferRepository offerRepository;
-    private final UserRepository userRepository;
-    private final BookedRepository bookedRepository;
+    private final UserService userService;
+    private final BookedService bookedService;
 
     @Override
     public List<OfferDTO> getAllOffers() {
@@ -41,9 +44,9 @@ public class OfferServiceImpl implements OfferService {
     }
 
     @Override
-    public void deleteOffer(Long id, String userEmail) {
+    public void deleteOffer(Long offerID, String userEmail) {
 
-        offerRepository.findById(id).ifPresent(offer -> {
+        offerRepository.findById(offerID).ifPresent(offer -> {
                     // delete offer only if its owner want to delete it
                     if (offer.getOwner().getEmail().equals(userEmail)) {
                         log.info("Deleting offer of ID: " + offer.getId());
@@ -55,7 +58,7 @@ public class OfferServiceImpl implements OfferService {
 
     @Override
     public List<OfferDTO> getOwnedOffers(String ownerEmail) {
-        User owner = userRepository.findByEmail(ownerEmail);
+        User owner = userService.findByUserEmail(ownerEmail);
         List<Offer> offers = offerRepository.findAllByOwner(owner);
 
         return offers.stream()
@@ -66,12 +69,10 @@ public class OfferServiceImpl implements OfferService {
     @Override
     public List<OfferDTO> getBookedOffers(String userEmail) {
         List<OfferDTO> offers = new ArrayList<>();
-        User user = userRepository.findByEmail(userEmail);
-        List<Booked> booked = bookedRepository.findAllByUser(user);
+        User user = userService.findByUserEmail(userEmail);
+        List<Booked> booked = bookedService.findAllByUser(user);
 
-        booked.forEach(b -> {
-            offers.add(convertOfferEntity_toDTO(offerRepository.findOfferByBooked(b)));
-        });
+        booked.forEach(b -> offers.add(convertOfferEntity_toDTO(offerRepository.findOfferByBooked(b))));
 
         return offers;
     }
@@ -97,6 +98,54 @@ public class OfferServiceImpl implements OfferService {
         return convertOfferEntity_toDTO(offer);
     }
 
+    @Override
+    public void bookOffer(String offerID, String dateToBookUnparsed, String bookingUserEmail) throws OfferException {
+
+        User bookingUser = userService.findByUserEmail(bookingUserEmail);
+        Offer offer = offerRepository.findById(Long.parseLong(offerID))
+                .orElseThrow(() -> new OfferException("Offer could not be found in repository."));
+
+        LocalDate dateToBook = LocalDate.parse(dateToBookUnparsed, DATE_FORMAT);
+        List<Booked> bookedList = offer.getBooked();
+
+
+        checkIfAlreadyBooked(bookedList, dateToBook);
+        checkIfBookingDateIsInFuture(dateToBook);
+
+        System.out.println(bookedList);
+
+        bookedList.add(createNewBooked(offer, bookingUser, dateToBook));
+        offer.setBooked(bookedList);
+
+        offerRepository.save(offer);
+    }
+
+    private static void checkIfAlreadyBooked(List<Booked> bookedList, LocalDate dateToBook) throws OfferException {
+        for (Booked booked : bookedList) {
+            if (booked.getBookedDate().compareTo(dateToBook) == 0) {
+                throw new OfferException("Offer you try to book was already booked on that date.");
+            }
+        }
+    }
+
+    private static void checkIfBookingDateIsInFuture(LocalDate dateToBook) throws OfferException {
+        LocalDate now = LocalDate.now();
+        if (now.compareTo(dateToBook) > 0) {
+            throw new OfferException("You try to book offer with date in the past.");
+        }
+    }
+
+    private Booked createNewBooked(Offer offer, User bookingUser, LocalDate dateToBook) {
+        Booked newBook = Booked.builder()
+                .offer(offer)
+                .user(bookingUser)
+                .bookedDate(dateToBook).build();
+        System.out.println("\n\n\n\n\n\n" + newBook.getBookedDate());
+        bookedService.addBooked(newBook);
+        return newBook;
+    }
+
+
     private OfferDTO convertOfferEntity_toDTO(Offer offer) {
         return OfferDTO.builder()
                 .hotelName(offer.getName())
@@ -114,7 +163,7 @@ public class OfferServiceImpl implements OfferService {
     }
 
     private Offer convertOfferDTO_toEntity(OfferDTO offerDTO) {
-        User owner = userRepository.findByEmail(offerDTO.getOwnerEmail());
+        User owner = userService.findByUserEmail(offerDTO.getOwnerEmail());
 
         return Offer.builder()
                 .name(offerDTO.getHotelName())
