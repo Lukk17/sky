@@ -17,7 +17,7 @@ deploy:
   env: Sky-env
   bucket_name: elasticbeanstalk-eu-west-2-564476143638
   bucket_path: sky
-  skip_cleanup: true
+  cleanup: true
   on:
     branch: master
   access_key_id:
