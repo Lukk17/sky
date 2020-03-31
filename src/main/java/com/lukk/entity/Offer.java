@@ -50,7 +50,7 @@ public class Offer {
     @NotBlank
     private String country;
 
-    @OneToMany(mappedBy = "offer")
+    @OneToMany(mappedBy = "offer", cascade = CascadeType.REMOVE)
     private List<Booked> booked;
 
 }
