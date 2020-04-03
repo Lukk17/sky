@@ -16,8 +16,12 @@
     <description>Offer service for Sky</description>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
         <spring-cloud.version>Hoxton.SR3</spring-cloud.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <start-class>com.lukk.sky.offer.SkyOfferApplication</start-class>
     </properties>
 
     <dependencies>

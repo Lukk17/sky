@@ -9,11 +9,11 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.lukk</groupId>
-    <artifactId>zuul-service</artifactId>
+    <artifactId>auth-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>zuul-service</name>
-    <description>Gateway for Sky</description>
+    <name>auth-service</name>
+    <description>Authentication service for Sky</description>
 
     <properties>
         <java.version>11</java.version>
@@ -21,7 +21,7 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <start-class>com.lukk.sky.zuulservice.ZuulServiceApplication</start-class>
+        <start-class>com.lukk.sky.authservice.AuthServiceApplication</start-class>
     </properties>
 
     <dependencies>
@@ -33,11 +33,6 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-zuul</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -62,15 +57,15 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
-            <version>0.9.0</version>
+            <version>0.9.1</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!--               needed for JwtTokenAuthenticationFilter -> Base64Codec                               -->
-        <!--               without : java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter           -->
+<!--               needed for JwtTokenAuthenticationFilter -> Base64Codec                               -->
+<!--               without : java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter           -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
