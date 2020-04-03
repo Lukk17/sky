@@ -7,6 +7,7 @@ import com.lukk.sky.user.repository.RoleRepository;
 import com.lukk.sky.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -22,7 +23,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-//    private final BCryptPasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public User findByUserEmail(String email) {
@@ -71,11 +72,11 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-//    @Override
-//    public boolean checkPassword(String newPassword, String password) {
-//        log.info("checking password");
-//        return passwordEncoder.matches(newPassword, password);
-//    }
+    @Override
+    public boolean checkPassword(String newPassword, String password) {
+        log.info("checking password");
+        return passwordEncoder.matches(newPassword, password);
+    }
 
     @Override
     public UserDTO findUserDetails(String email) {
@@ -98,7 +99,7 @@ public class UserServiceImpl implements UserService {
 
         return User.builder()
                 .email(userDTO.getEmail())
-//                .password(passwordEncoder.encode(userDTO.getPassword()))
+                .password(passwordEncoder.encode(userDTO.getPassword()))
                 .roles(new HashSet<>(Collections.singletonList(userRole)))
                 .build();
 

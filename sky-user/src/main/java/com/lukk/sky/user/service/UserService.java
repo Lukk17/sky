@@ -59,7 +59,7 @@ public interface UserService {
      * @param password    Password from database.
      * @return Return true if passwords are same.
      */
-//    boolean checkPassword(String newPassword, String password);
+    boolean checkPassword(String newPassword, String password);
 
     UserDTO findUserDetails(String email);
 }

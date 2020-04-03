@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @DataJpaTest
-class UserRepositoryTest {
+public class UserRepositoryTest {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -23,7 +23,7 @@ class UserRepositoryTest {
     private UserRepository userRepository;
 
     @Test
-    void whenFindByEmail_thenReturnUser() {
+    public void whenFindByEmail_thenReturnUser() {
         //Given
         User user = createTestUser(TEST_USER_EMAIL);
         entityManager.persist(user);

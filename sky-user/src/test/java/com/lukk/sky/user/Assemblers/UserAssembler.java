@@ -15,13 +15,10 @@ public class UserAssembler {
     public static final String TEST_USER_EMAIL = "testUser@user";
 
     public static User createTestUser(String email) {
-        User user = User.builder()
+        return User.builder()
                 .email(email)
                 .password("test")
-//                .receivedMessage(new ArrayList<>())
-//                .sentMessage(new ArrayList<>())
                 .build();
-        return user;
     }
 
     public static UserDTO createTestUserDTO(String email) {
@@ -42,7 +39,7 @@ public class UserAssembler {
 
     public static User convertUserDTO_toEntity(UserDTO userDTO) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        Role userRole = new Role(1L, "USER", new ArrayList<User>());
+        Role userRole = new Role(1L, "USER", new ArrayList<>());
 
         return User.builder()
                 .email(userDTO.getEmail())

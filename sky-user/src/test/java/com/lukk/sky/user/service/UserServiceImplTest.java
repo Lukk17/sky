@@ -15,6 +15,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -30,10 +31,13 @@ import static org.mockito.Mockito.doNothing;
         SkyUserApplication.class,
         H2TestProfileJPAConfig.class})
 @ActiveProfiles("test")
-class UserServiceImplTest {
+public class UserServiceImplTest {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @MockBean
     private UserRepository userRepository;
@@ -43,7 +47,7 @@ class UserServiceImplTest {
 
 
     @Test
-    void whenFindByUserEmail_thenReturnUser() {
+    public void whenFindByUserEmail_thenReturnUser() {
         //Given
         User expectedUser = createTestUser(TEST_USER_EMAIL);
         Mockito.when(userRepository.findByEmail(TEST_USER_EMAIL)).thenReturn(expectedUser);
@@ -57,7 +61,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void whenFindById_thenReturnUser() {
+    public void whenFindById_thenReturnUser() {
         //Given
         User expectedUser = createTestUser(TEST_USER_EMAIL);
         Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(expectedUser));
@@ -70,7 +74,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void whenFindAll_thenReturnAllUsers() {
+    public void whenFindAll_thenReturnAllUsers() {
         //Given
         List<User> expectedList = Arrays.asList(
                 createTestUser(TEST_USER_EMAIL),
@@ -88,7 +92,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void whenSaveUser_thenReturnUserWithEncodedPassAndRoles() {
+    public void whenSaveUser_thenReturnUserWithEncodedPassAndRoles() {
         //Given
         User expected = createTestUser(TEST_USER_EMAIL);
         // another instance required to not make changes in expected user when saving
@@ -111,7 +115,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void deleteUserTest() {
+    public void deleteUserTest() {
         //Given
         User expected = createTestUser(TEST_USER_EMAIL);
         expected.setId(99L);
@@ -128,15 +132,15 @@ class UserServiceImplTest {
         assertEquals(expected, valueCapture.getValue());
     }
 
-//    @Test
-//    void checkPasswordTest() {
-//        //Given
-//        User expected = createTestUser(TEST_USER_EMAIL);
-//
-//        //When
-//        String encoded = bCryptPasswordEncoder.encode(expected.getPassword());
-//
-//        //Then
-//        bCryptPasswordEncoder.matches(expected.getPassword(), encoded);
-//    }
+    @Test
+    public void checkPasswordTest() {
+        //Given
+        User expected = createTestUser(TEST_USER_EMAIL);
+
+        //When
+        String encoded = bCryptPasswordEncoder.encode(expected.getPassword());
+
+        //Then
+        bCryptPasswordEncoder.matches(expected.getPassword(), encoded);
+    }
 }

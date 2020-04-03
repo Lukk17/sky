@@ -15,16 +15,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(HomeController.class)
-class HomeControllerTest {
+public class HomeControllerTest {
 
     @Autowired
     private MockMvc mvc;
 
-//    @MockBean
-//    private SpringDataUserDetailsServiceImpl springDataUserDetailsService;
-
     @Test
-    void whenRequestHomePage_thenReturnString() throws Exception {
+    public void whenRequestHomePage_thenReturnString() throws Exception {
 
         //When
         mvc.perform(
@@ -33,7 +30,7 @@ class HomeControllerTest {
 
                 //Then
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Hello World !"))
+                .andExpect(content().string(containsString("${lukk.helloWorld}"))
                 );
     }
 }
