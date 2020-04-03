@@ -12,8 +12,8 @@ public class MessageDTO {
 
     private Long id;
     private String text;
-    private String receiver;
-    private String sender;
-    private LocalDateTime created;
+    private String receiverEmail;
+    private String senderEmail;
+    private LocalDateTime createdTime;
     private boolean isRead;
 }

@@ -2,6 +2,8 @@ package com.lukk.sky.message.service;
 
 import com.lukk.sky.message.dto.MessageDTO;
 
+import java.util.List;
+
 public interface MessageService {
     /**
      * Send message of given text to given receiver.
@@ -25,7 +27,7 @@ public interface MessageService {
      * @param userEmail Receiver mail
      * @return List of Messages as DTO
      */
-//    List<MessageDTO> getReceivedMessages(String userEmail);
+    List<MessageDTO> getReceivedMessages(String userEmail);
 
 
     /**
@@ -34,5 +36,5 @@ public interface MessageService {
      * @param userEmail Sender mail
      * @return List of Messages as DTO
      */
-//    List<MessageDTO> getSentMessages(String userEmail);
+    List<MessageDTO> getSentMessages(String userEmail);
 }

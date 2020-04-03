@@ -1,14 +1,12 @@
 package com.lukk.sky.message.controller;
 
+import com.lukk.sky.message.dto.MessageDTO;
 import com.lukk.sky.message.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,25 +20,25 @@ public class MessageController {
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
-//    @PostMapping("/send")
-//    public ResponseEntity<?> sendMessage(@RequestBody MessageDTO message, Authentication auth) {
-//        message.setSender(auth.getName());
-//        messageService.send(message);
-//        return ResponseEntity.accepted().build();
-//    }
+    @PostMapping("/send")
+    public ResponseEntity<?> sendMessage(@RequestBody MessageDTO message, @RequestHeader("username") String username) {
+        message.setSenderEmail(username);
+        messageService.send(message);
+        return ResponseEntity.accepted().build();
+    }
 
-//    @GetMapping("/received")
-//    public ResponseEntity<?> getReceivedMessages(Authentication auth) {
-//        return ResponseEntity.ok(messageService.getReceivedMessages(auth.getName()));
-//    }
-//
-//    @GetMapping("/sent")
-//    public ResponseEntity<?> getSentMessages(Authentication auth) {
-//        return ResponseEntity.ok(messageService.getSentMessages(auth.getName()));
-//    }
+    @GetMapping("/received")
+    public ResponseEntity<?> getReceivedMessages(@RequestHeader("username") String username) {
+        return ResponseEntity.ok(messageService.getReceivedMessages(username));
+    }
+
+    @GetMapping("/sent")
+    public ResponseEntity<?> getSentMessages(@RequestHeader("username") String username) {
+        return ResponseEntity.ok(messageService.getSentMessages(username));
+    }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteMessage(Long id) {
+    public ResponseEntity<?> deleteMessage(@RequestBody Long id) {
         messageService.remove(id);
         return ResponseEntity.accepted().build();
     }

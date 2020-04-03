@@ -1,43 +1,40 @@
 package com.lukk.sky.message.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity(name = "Message")
-@Table(name = "message")
 @Builder
+@Entity
 public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Setter(AccessLevel.PROTECTED)
     private Long id;
 
-    @Setter(AccessLevel.PROTECTED)
+    @NotBlank
     private String text;
 
-    private LocalDateTime created;
+    private LocalDateTime createdTime;
 
     private boolean isRead;
 
-    // Without @JoinColumn Hibernate will generate additional table in db for storing id of msg and user
-    // which are used for linking this two tables.
-//    @ManyToOne
-//    @JoinColumn(name = "receiver")
-//    @JsonIgnore
-//    @ToString.Exclude
-//    private User receiver;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "sender")
-//    @JsonIgnore
-//    @ToString.Exclude
-//    private User sender;
+    @NotBlank
+    private String receiverEmail;
+
+    @NotBlank
+    private String senderEmail;
 
 
 }
