@@ -1,7 +1,7 @@
 package com.lukk.sky.common.service;
 
-import com.lukk.sky.common.repository.RoleRepository;
 import com.lukk.sky.common.entity.Role;
+import com.lukk.sky.common.repository.RoleRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
