@@ -2,6 +2,7 @@ package com.lukk.sky.common.service;
 
 import com.lukk.sky.common.entity.Role;
 import com.lukk.sky.common.repository.RoleRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -9,12 +10,10 @@ import java.util.List;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
-    private final RoleRepository roleRepository;
 
-    public RoleServiceImpl(RoleRepository roleRepository) {
-        this.roleRepository = roleRepository;
-    }
+    private final RoleRepository roleRepository;
 
     @Override
     public Role findByName(String name) {

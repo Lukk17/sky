@@ -3,6 +3,7 @@ package com.lukk.sky.zuulservice.auth;
 import com.lukk.sky.common.auth.JwtConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,13 +17,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtConfig jwtConfig;
-
-    public JwtTokenAuthenticationFilter(JwtConfig jwtConfig) {
-        this.jwtConfig = jwtConfig;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
