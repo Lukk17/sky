@@ -1,9 +1,9 @@
-package com.lukk.sky.user.Assemblers;
+package com.lukk.sky.common.Assemblers;
 
 import com.google.gson.Gson;
-import com.lukk.sky.user.dto.UserDTO;
-import com.lukk.sky.user.entity.Role;
-import com.lukk.sky.user.entity.User;
+import com.lukk.sky.common.dto.UserDTO;
+import com.lukk.sky.common.entity.Role;
+import com.lukk.sky.common.entity.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.ArrayList;

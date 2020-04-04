@@ -1,7 +1,7 @@
-package com.lukk.sky.user.service;
+package com.lukk.sky.common.service;
 
-import com.lukk.sky.user.dto.UserDTO;
-import com.lukk.sky.user.entity.User;
+import com.lukk.sky.common.dto.UserDTO;
+import com.lukk.sky.common.entity.User;
 
 import java.util.List;
 

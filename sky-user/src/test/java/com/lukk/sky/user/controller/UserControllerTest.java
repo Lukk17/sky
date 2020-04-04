@@ -1,8 +1,8 @@
 package com.lukk.sky.user.controller;
 
-import com.lukk.sky.user.dto.UserDTO;
-import com.lukk.sky.user.entity.User;
-import com.lukk.sky.user.service.UserService;
+import com.lukk.sky.common.dto.UserDTO;
+import com.lukk.sky.common.entity.User;
+import com.lukk.sky.common.service.UserService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 
-import static com.lukk.sky.user.Assemblers.UserAssembler.*;
+import static com.lukk.sky.common.Assemblers.UserAssembler.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

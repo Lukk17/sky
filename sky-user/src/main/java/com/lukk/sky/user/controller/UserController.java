@@ -1,7 +1,7 @@
 package com.lukk.sky.user.controller;
 
-import com.lukk.sky.user.dto.UserDTO;
-import com.lukk.sky.user.service.UserService;
+import com.lukk.sky.common.dto.UserDTO;
+import com.lukk.sky.common.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

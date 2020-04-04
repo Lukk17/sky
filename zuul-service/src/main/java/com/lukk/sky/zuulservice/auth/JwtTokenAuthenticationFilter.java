@@ -1,5 +1,6 @@
 package com.lukk.sky.zuulservice.auth;
 
+import com.lukk.sky.common.auth.JwtConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

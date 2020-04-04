@@ -1,5 +1,6 @@
 package com.lukk.sky.authservice.auth;
 
+import com.lukk.sky.common.auth.JwtConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

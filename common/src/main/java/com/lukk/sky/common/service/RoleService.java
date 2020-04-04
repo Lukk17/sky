@@ -1,6 +1,6 @@
-package com.lukk.sky.user.service;
+package com.lukk.sky.common.service;
 
-import com.lukk.sky.user.entity.Role;
+import com.lukk.sky.common.entity.Role;
 
 import java.util.List;
 

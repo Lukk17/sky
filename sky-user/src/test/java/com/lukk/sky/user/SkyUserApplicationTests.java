@@ -1,5 +1,6 @@
 package com.lukk.sky.user;
 
+import com.lukk.sky.common.H2TestProfileJPAConfig;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;

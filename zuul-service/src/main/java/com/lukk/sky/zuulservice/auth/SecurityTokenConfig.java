@@ -1,6 +1,7 @@
 package com.lukk.sky.zuulservice.auth;
 
 
+import com.lukk.sky.common.auth.JwtConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;

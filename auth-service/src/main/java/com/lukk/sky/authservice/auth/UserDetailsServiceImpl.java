@@ -22,7 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private BCryptPasswordEncoder encoder;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
         // hard coding the users. All passwords must be encoded.
         //TODO connect with DB
@@ -33,7 +33,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 
         for (AppUser appUser : users) {
-            if (appUser.getUsername().equals(username)) {
+            if (appUser.getUsername().equals(email)) {
 
                 // Remember that Spring needs roles to be in this format: "ROLE_" + userRole (i.e. "ROLE_ADMIN")
                 // So, we need to set it to that format, so we can verify and compare roles (i.e. hasRole("ADMIN")).
@@ -47,7 +47,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         // If user not found. Throw this exception.
-        throw new UsernameNotFoundException("Username: " + username + " not found");
+        throw new UsernameNotFoundException("Username: " + email + " not found");
     }
 
     // A (temporary) class represent the user saved in the database.

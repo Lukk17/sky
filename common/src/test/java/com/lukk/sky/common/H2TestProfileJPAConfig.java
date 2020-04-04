@@ -1,4 +1,4 @@
-package com.lukk.sky.user;
+package com.lukk.sky.common;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

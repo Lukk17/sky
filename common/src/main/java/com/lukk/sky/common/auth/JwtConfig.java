@@ -1,4 +1,4 @@
-package com.lukk.sky.authservice.auth;
+package com.lukk.sky.common.auth;
 
 
 import lombok.Getter;

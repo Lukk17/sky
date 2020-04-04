@@ -1,4 +1,4 @@
-package com.lukk.sky.user.entity;
+package com.lukk.sky.common.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;

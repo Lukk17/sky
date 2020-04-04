@@ -1,6 +1,6 @@
-package com.lukk.sky.user.repository;
+package com.lukk.sky.common.repository;
 
-import com.lukk.sky.user.entity.User;
+import com.lukk.sky.common.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

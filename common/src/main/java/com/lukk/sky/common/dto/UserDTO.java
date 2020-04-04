@@ -1,6 +1,6 @@
-package com.lukk.sky.user.dto;
+package com.lukk.sky.common.dto;
 
-import com.lukk.sky.user.entity.Role;
+import com.lukk.sky.common.entity.Role;
 import lombok.Builder;
 import lombok.Data;
 
