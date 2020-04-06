@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 
-//CrossOrigin allow CORS from Angular App running at the specified URL.
-@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
 @RestController
 @RequiredArgsConstructor
 public class UserController {

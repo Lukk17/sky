@@ -2,6 +2,7 @@ package com.lukk.sky.authservice.auth;
 
 import com.lukk.sky.common.auth.JwtConfig;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,7 +18,9 @@ import javax.servlet.http.HttpServletResponse;
 @RequiredArgsConstructor
 public class SecurityCredentialsConfig extends WebSecurityConfigurerAdapter {
 
+    @Qualifier("userDetailsServiceImpl")
     private final UserDetailsService userDetailsService;
+
     private final JwtConfig jwtConfig;
     private final BCryptPasswordEncoder passwordEncoder;
 
