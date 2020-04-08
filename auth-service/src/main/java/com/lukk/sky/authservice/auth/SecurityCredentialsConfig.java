@@ -1,6 +1,5 @@
 package com.lukk.sky.authservice.auth;
 
-import com.lukk.sky.common.auth.JwtConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
@@ -41,8 +40,11 @@ public class SecurityCredentialsConfig extends WebSecurityConfigurerAdapter {
                 // The filter needs this auth manager to authenticate the user.
                 .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager(), jwtConfig))
                 .authorizeRequests()
-                // allow all POST requests
+
                 .antMatchers(HttpMethod.POST, jwtConfig.getUri()).permitAll()
+                .antMatchers(HttpMethod.POST, "/register").permitAll()
+                .antMatchers(HttpMethod.GET, "/").permitAll()
+                .antMatchers(HttpMethod.GET, "/home").permitAll()
                 // any other requests must be authenticated
                 .anyRequest().authenticated();
     }

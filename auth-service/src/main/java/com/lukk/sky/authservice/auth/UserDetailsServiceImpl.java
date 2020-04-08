@@ -1,8 +1,8 @@
 package com.lukk.sky.authservice.auth;
 
-import com.lukk.sky.common.entity.Role;
-import com.lukk.sky.common.entity.User;
-import com.lukk.sky.common.service.UserService;
+import com.lukk.sky.authservice.entity.Role;
+import com.lukk.sky.authservice.entity.User;
+import com.lukk.sky.authservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.GrantedAuthority;

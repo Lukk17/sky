@@ -10,10 +10,10 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-    #      expose to other containers
+    #  expose to other containers
     expose:
       - 8761
-    #    port HOST:CONTAINER (exposing to host)
+    #  port HOST:CONTAINER (exposing to host)
     ports:
       - 8761:8761
 
@@ -22,10 +22,8 @@ services:
       dockerfile: Dockerfile
       context: zuul-service
     image: zuul-service
-    #      expose to other containers
     expose:
       - 8762
-    #    port HOST:CONTAINER (exposing to host)
     ports:
       - 8762:8762
     depends_on:
@@ -34,16 +32,34 @@ services:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
+  auth-service:
+    build:
+      dockerfile: Dockerfile
+      context: auth-service
+    image: auth-service
+    expose:
+      - 9100
+    ports:
+      - 9100:9100
+    depends_on:
+      - eureka-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?${SQL_PARAMS}
+      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+
   sky-offer:
     build:
       dockerfile: Dockerfile
       context: sky-offer
     image: sky-offer
     restart: always
-    #      expose to other containers
     expose:
       - 5552
-    #    port HOST:CONTAINER (exposing to host)
     ports:
       - 5552:5552
     environment:
@@ -62,10 +78,8 @@ services:
       context: sky-message
     image: sky-message
     restart: always
-    #      expose to other containers
     expose:
       - 5553
-    #    port HOST:CONTAINER (exposing to host)
     ports:
       - 5553:5553
     environment:
@@ -78,71 +92,3 @@ services:
       - MYSQL_PASS=${MYSQL_PASS}
     depends_on:
       - eureka-service
-
-
-#  common-service:
-#    build:
-#      dockerfile: Dockerfile
-#      context: common
-#    image: common-service
-#    depends_on:
-#      - eureka-service
-#    expose:
-#      - 9200
-#    ports:
-#      - 9200:9200
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=docker
-#      - SERVICE_URL_DEFAULT_ZONE=http://eureka-service:8761/eureka
-#      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?${SQL_PARAMS}
-#      - MYSQL_PORT=3306
-#      - MYSQL_HOST=localhost
-#      - MYSQL_USER=root
-#      - MYSQL_PASS=Lukk1234
-
-
-#  auth-service:
-#    build:
-#      dockerfile: Dockerfile
-#      context: auth-service
-#    image: auth-service
-#    #      expose to other containers
-#    expose:
-#      - 9100
-#    #    port HOST:CONTAINER (exposing to host)
-#    ports:
-#      - 9100:9100
-#    depends_on:
-#      - common-service
-#      - eureka-service
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=docker
-#      - SERVICE_URL_DEFAULT_ZONE=http://eureka-service:8761/eureka
-#      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
-#      - MYSQL_HOST=localhost
-#      - MYSQL_PORT=3306
-#      - MYSQL_USER=root
-#      - MYSQL_PASS=Lukk1234
-
-#  sky-user:
-#    build:
-#      dockerfile: Dockerfile
-#      context: sky-user
-#    image: sky-user
-#    #      expose to other containers
-#    expose:
-#      - 5551
-#    #    port HOST:CONTAINER (exposing to host)
-#    ports:
-#      - 5551:5551
-#    depends_on:
-#      - common-service
-#      - eureka-service
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=docker
-#      - SERVICE_URL_DEFAULT_ZONE=http://eureka-service:8761/eureka
-#      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
-#      - MYSQL_HOST=localhost
-#      - MYSQL_PORT=3306
-#      - MYSQL_USER=root
-#      - MYSQL_PASS=Lukk1234

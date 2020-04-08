@@ -1,7 +1,6 @@
 package com.lukk.sky.authservice.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lukk.sky.common.auth.JwtConfig;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.Getter;
