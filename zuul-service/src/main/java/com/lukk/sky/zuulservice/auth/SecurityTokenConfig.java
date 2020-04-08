@@ -1,7 +1,5 @@
 package com.lukk.sky.zuulservice.auth;
 
-
-import com.lukk.sky.common.auth.JwtConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
