@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SkyOfferApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false">
+    <module name="sky-offer" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.lukk.sky.offer.SkyOfferApplication" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -1,30 +1,94 @@
 version: "3"
-services:
-  sky:
-    build:
-      dockerfile: ./Dockerfile
-      context: .
-    image: sky
-    #    depends_on:
-    #      - "mysql"
-    logging:
-      driver: json-file
-    #      expose to other containers
-    expose:
-      - 5555
-    #    port HOST:CONTAINER (exposing to host)
-    ports:
-      - 8080:5555
-    environment:
-      - MYSQL_HOST=sky.ccrunaygib3u.eu-west-2.rds.amazonaws.com
-      - MYSQL_PORT=3306
-      - MYSQL_USER=rooty
-      - MYSQL_PASS=Lukk1234
 
-      #     ONLY FOR LOCAL TEST WITH LOCAL MYSQL INSTANCE:
-#  mysql:
-#    image: 'mysql:latest'
-#    environment:
-#      - MYSQL_ROOT_PASSWORD=Lukk1234
-#      - MYSQL_DATABASE=sky
-#      - MYSQL_PASSWORD=Lukk1234
+services:
+  eureka-service:
+    build:
+      dockerfile: Dockerfile
+      context: eureka-service
+    image: eureka-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+    #  expose to other containers
+    expose:
+      - 8761
+    #  port HOST:CONTAINER (exposing to host)
+    ports:
+      - 8761:8761
+
+  zuul-service:
+    build:
+      dockerfile: Dockerfile
+      context: zuul-service
+    image: zuul-service
+    expose:
+      - 8762
+    ports:
+      - 8762:8762
+    depends_on:
+      - eureka-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+
+  auth-service:
+    build:
+      dockerfile: Dockerfile
+      context: auth-service
+    image: auth-service
+    expose:
+      - 9100
+    ports:
+      - 9100:9100
+    depends_on:
+      - eureka-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?${SQL_PARAMS}
+      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+
+  sky-offer:
+    build:
+      dockerfile: Dockerfile
+      context: sky-offer
+    image: sky-offer
+    restart: always
+    expose:
+      - 5552
+    ports:
+      - 5552:5552
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_offer?${SQL_PARAMS}
+      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+
+
+  sky-message:
+    build:
+      dockerfile: Dockerfile
+      context: sky-message
+    image: sky-message
+    restart: always
+    expose:
+      - 5553
+    ports:
+      - 5553:5553
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_message?${SQL_PARAMS}
+      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+    depends_on:
+      - eureka-service
