@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Set;
 
 
-@Data                     // lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
+@Data
+// lombok's  @Getter @Setter @HashCodeAndEquals @RequiredArgsConstructor (final args) @ToString
 @Entity(name = "User")    // Spring's entity name
 @Table(name = "user")     // DB table name (without it will be same as entity name)
 @NoArgsConstructor

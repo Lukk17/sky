@@ -27,6 +27,21 @@ public class OfferServiceImpl implements OfferService {
     private final UserService userService;
     private final BookedService bookedService;
 
+    private static void checkIfAlreadyBooked(List<Booked> bookedList, LocalDate dateToBook) throws OfferException {
+        for (Booked booked : bookedList) {
+            if (booked.getBookedDate().compareTo(dateToBook) == 0) {
+                throw new OfferException("Offer you try to book was already booked on that date.");
+            }
+        }
+    }
+
+    private static void checkIfBookingDateIsInFuture(LocalDate dateToBook) throws OfferException {
+        LocalDate now = LocalDate.now();
+        if (now.compareTo(dateToBook) > 0) {
+            throw new OfferException("You try to book offer with date in the past.");
+        }
+    }
+
     @Override
     public List<OfferDTO> getAllOffers() {
         log.info("Pulling all offers");
@@ -118,21 +133,6 @@ public class OfferServiceImpl implements OfferService {
         offer.setBooked(bookedList);
 
         offerRepository.save(offer);
-    }
-
-    private static void checkIfAlreadyBooked(List<Booked> bookedList, LocalDate dateToBook) throws OfferException {
-        for (Booked booked : bookedList) {
-            if (booked.getBookedDate().compareTo(dateToBook) == 0) {
-                throw new OfferException("Offer you try to book was already booked on that date.");
-            }
-        }
-    }
-
-    private static void checkIfBookingDateIsInFuture(LocalDate dateToBook) throws OfferException {
-        LocalDate now = LocalDate.now();
-        if (now.compareTo(dateToBook) > 0) {
-            throw new OfferException("You try to book offer with date in the past.");
-        }
     }
 
     private Booked createNewBooked(Offer offer, User bookingUser, LocalDate dateToBook) {

@@ -52,7 +52,7 @@ public class UserController {
     }
 
     @GetMapping("/userDetails")
-    public ResponseEntity<UserDTO> userDetails(Authentication auth){
+    public ResponseEntity<UserDTO> userDetails(Authentication auth) {
         return ResponseEntity.ok(userService.findUserDetails(auth.getName()));
     }
 }
