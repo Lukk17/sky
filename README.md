@@ -1,9 +1,11 @@
-#Sky 
-[![Build Status](https://travis-ci.org/Lukk17/sky.svg?branch=master)](https://travis-ci.org/Lukk17/sky)
+#Sky  
+
+ [![Build Status](https://travis-ci.org/Lukk17/sky.svg?branch=master)](https://travis-ci.org/Lukk17/sky)
 
 
 Backend application for handling offers and booking them by users.  
 Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk17/sky-view) application.
+
 ---------------------------------
 
 | Microservice  | Description | Port |
@@ -15,6 +17,7 @@ Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk1
 | sky-offer  | Service handling operation connected with offers.  | 5552 |
 | sky-message | Service handling sending and receiving messages between users  | 5553 |
 | zuul-service | Gateway service. Authenticate users and forward request to right microservices.  | 8872 |
+
 ---------------------------------
 
 How it works
@@ -31,6 +34,7 @@ where `localhost:8762` is gateway (Zuul) address.
 
 Do NOT send request directly to microservice like:  
 `http://localhost:5552/getAll`
+
 ---------------------------------
 
 Launch order:
