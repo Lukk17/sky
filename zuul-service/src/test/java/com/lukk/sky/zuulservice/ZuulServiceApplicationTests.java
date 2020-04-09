@@ -8,6 +8,7 @@ class ZuulServiceApplicationTests {
 
     @Test
     void contextLoads() {
+        ZuulServiceApplication.main(new String[0]);
     }
 
 }
