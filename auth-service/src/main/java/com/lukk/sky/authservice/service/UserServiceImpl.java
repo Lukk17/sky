@@ -1,17 +1,15 @@
 package com.lukk.sky.authservice.service;
 
+import com.lukk.sky.authservice.dto.EntityDTOConverter;
 import com.lukk.sky.authservice.dto.UserDTO;
-import com.lukk.sky.authservice.entity.Role;
 import com.lukk.sky.authservice.entity.User;
-import com.lukk.sky.authservice.repository.RoleRepository;
 import com.lukk.sky.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -22,19 +20,19 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final EntityDTOConverter entityDTOConverter;
 
     @Override
-    public User findByUserEmail(String email) {
+    public User findByUserEmail(String email) throws UsernameNotFoundException {
         log.info("finding user by email");
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     @Override
-    public User findById(Long id) {
+    public User findById(Long id) throws UsernameNotFoundException {
         log.info("Finding user by id");
-        return userRepository.findById(id).orElse(null);
+        return userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     @Override
@@ -46,29 +44,33 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDTO> findAllAndConvertToDTO() {
         List<User> users = findAll();
-
         return users.stream()
-                .map(this::convertUserEntity_toDTO)
+                .map(entityDTOConverter::convertUserEntity_toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public User saveUser(UserDTO userDTO) {
-        User user = convertUserDTO_toEntity(userDTO);
+    public User registerUser(UserDTO userDTO) throws IllegalArgumentException {
+        User user = entityDTOConverter.convertUserDTO_toEntity(userDTO);
+
+        if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("User already Exist!");
+        }
+        ;
 
         log.info("Saving user: " + user.getEmail() + " " + user.getId() + " " + user.getRoles());
         return userRepository.save(user);
     }
 
     @Override
-    public void deleteUser(Long id) {
+    public void deleteUser(Long id) throws UsernameNotFoundException {
         User user = userRepository.findById(id).orElse(null);
         try {
             log.info("Removing user: " + Objects.requireNonNull(user).getEmail() + " " + user.getId() + " " + user.getRoles());
             userRepository.delete(user);
 
         } catch (NullPointerException e) {
-            log.error("User not found - cannot be removed");
+            throw new UsernameNotFoundException("User not found - cannot be removed");
         }
     }
 
@@ -79,30 +81,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO findUserDetails(String email) {
-        return convertUserEntity_toDTO(findByUserEmail(email));
+    public UserDTO findUserDetails(String email) throws UsernameNotFoundException {
+        return entityDTOConverter.convertUserEntity_toDTO(findByUserEmail(email));
     }
-
-
-    private UserDTO convertUserEntity_toDTO(User user) {
-
-        return UserDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .roles(user.getRoles())
-                .build();
-
-    }
-
-    private User convertUserDTO_toEntity(UserDTO userDTO) {
-        Role userRole = roleRepository.findByName("USER");
-
-        return User.builder()
-                .email(userDTO.getEmail())
-                .password(passwordEncoder.encode(userDTO.getPassword()))
-                .roles(new HashSet<>(Collections.singletonList(userRole)))
-                .build();
-
-    }
-
 }

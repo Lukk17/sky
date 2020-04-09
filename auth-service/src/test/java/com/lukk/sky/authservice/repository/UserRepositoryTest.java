@@ -8,6 +8,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.context.junit4.SpringRunner;
 
 
@@ -24,12 +25,12 @@ public class UserRepositoryTest {
     @Test
     public void whenFindByEmail_thenReturnUser() {
         //Given
-        User user = UserAssembler.createTestUser(UserAssembler.TEST_USER_EMAIL);
+        User user = UserAssembler.createSimpleTestUser(UserAssembler.TEST_USER_EMAIL);
         entityManager.persist(user);
         entityManager.flush();
 
         //When
-        User found = userRepository.findByEmail(UserAssembler.TEST_USER_EMAIL);
+        User found = userRepository.findByEmail(UserAssembler.TEST_USER_EMAIL).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         //Then
         Assert.assertEquals(user.getEmail(), found.getEmail());

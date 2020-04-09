@@ -15,6 +15,7 @@ public class AuthServiceApplicationTests {
 
     @Test
     public void contextLoads() {
+        AuthServiceApplication.main(new String[0]);
     }
 
 }

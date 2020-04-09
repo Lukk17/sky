@@ -2,6 +2,7 @@ package com.lukk.sky.authservice.service;
 
 import com.lukk.sky.authservice.dto.UserDTO;
 import com.lukk.sky.authservice.entity.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public interface UserService {
      * @param email User's email.
      * @return Return only one user with given unique email.
      */
-    User findByUserEmail(String email);
+    User findByUserEmail(String email) throws UsernameNotFoundException;
 
     /**
      * Give user with ID same as given.
@@ -22,7 +23,7 @@ public interface UserService {
      * @param id ID of user.
      * @return Return one User.
      */
-    User findById(Long id);
+    User findById(Long id) throws UsernameNotFoundException;
 
 
     /**
@@ -41,7 +42,7 @@ public interface UserService {
      * @param user User which will be saved.
      * @return User that was saved to DB
      */
-    User saveUser(UserDTO user);
+    User registerUser(UserDTO user) throws IllegalArgumentException;
 
 
     /**
@@ -49,7 +50,7 @@ public interface UserService {
      *
      * @param id ID of user to delete.
      */
-    void deleteUser(Long id);
+    void deleteUser(Long id) throws UsernameNotFoundException;
 
     /**
      * Check if given newPassword is same as saved in database.
@@ -61,5 +62,5 @@ public interface UserService {
      */
     boolean checkPassword(String newPassword, String password);
 
-    UserDTO findUserDetails(String email);
+    UserDTO findUserDetails(String email) throws UsernameNotFoundException;
 }
