@@ -15,6 +15,7 @@ public class SkyOfferApplicationTests {
 
     @Test
     public void contextLoads() {
+        SkyOfferApplication.main(new String[0]);
     }
 
 }

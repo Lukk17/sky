@@ -9,7 +9,7 @@ public interface OfferService {
 
     List<OfferDTO> getAllOffers();
 
-    OfferDTO addOffer(OfferDTO offer);
+    OfferDTO addOffer(OfferDTO offer) throws OfferException;
 
     void deleteOffer(Long id, String userEmail);
 
@@ -17,9 +17,9 @@ public interface OfferService {
 
     List<OfferDTO> getBookedOffers(String userEmail);
 
-    List<OfferDTO> searchOffer(String searched);
+    List<OfferDTO> searchOffers(String searched);
 
     OfferDTO editOffer(OfferDTO offer);
 
-    void bookOffer(String offerID, String dateToBook, String name) throws OfferException;
+    OfferDTO bookOffer(String offerID, String dateToBook, String bookingUserEmail) throws OfferException;
 }

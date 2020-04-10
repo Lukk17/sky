@@ -30,18 +30,25 @@ public class OfferController {
     }
 
     @PostMapping(value = "/add")
-    public ResponseEntity<OfferDTO> addOffer(@RequestBody OfferDTO offer, @RequestHeader("username") String username) {
-        offer.setOwnerEmail(username);
-        OfferDTO addedOffer = offerService.addOffer(offer);
+    public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader("username") String username) {
+        try {
+            offer.setOwnerEmail(username);
+            OfferDTO addedOffer = offerService.addOffer(offer);
+            return ResponseEntity.ok(addedOffer);
 
-        return ResponseEntity.ok(addedOffer);
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/delete")
     public ResponseEntity<?> deleteOffer(@RequestBody String offerID, @RequestHeader("username") String username) {
-        offerService.deleteOffer(Long.parseLong(offerID), username);
-
-        return ResponseEntity.accepted().build();
+        try {
+            offerService.deleteOffer(Long.parseLong(offerID), username);
+            return ResponseEntity.accepted().build();
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/getOwned")
@@ -60,7 +67,7 @@ public class OfferController {
 
     @PostMapping("/search")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
-        return ResponseEntity.ok(offerService.searchOffer(searched));
+        return ResponseEntity.ok(offerService.searchOffers(searched));
 
     }
 
@@ -76,12 +83,11 @@ public class OfferController {
         String dateToBook = json.get("dateToBook");
 
         try {
-            offerService.bookOffer(offerID, dateToBook, username);
+            OfferDTO offer = offerService.bookOffer(offerID, dateToBook, username);
+            return ResponseEntity.ok(offer);
 
         } catch (OfferException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        return ResponseEntity.accepted().build();
     }
 }

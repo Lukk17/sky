@@ -170,7 +170,7 @@ public class UserServiceImplTest {
     }
 
     @Test(expected = UsernameNotFoundException.class)
-    public void deleteNotExistingUser_thenThrowException() throws UsernameNotFoundException {
+    public void whenDeleteNotExistingUser_thenThrowException() throws UsernameNotFoundException {
         //Given
         User expected = UserAssembler.createSimpleTestUser(TEST_USER_EMAIL);
         expected.setId(99L);
