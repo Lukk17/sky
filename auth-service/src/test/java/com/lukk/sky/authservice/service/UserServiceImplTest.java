@@ -1,8 +1,10 @@
 package com.lukk.sky.authservice.service;
 
+import com.lukk.sky.authservice.Assemblers.RoleAssembler;
 import com.lukk.sky.authservice.Assemblers.UserAssembler;
 import com.lukk.sky.authservice.AuthServiceApplication;
 import com.lukk.sky.authservice.H2TestProfileJPAConfig;
+import com.lukk.sky.authservice.dto.EntityDTOConverter;
 import com.lukk.sky.authservice.dto.UserDTO;
 import com.lukk.sky.authservice.entity.Role;
 import com.lukk.sky.authservice.entity.User;
@@ -12,18 +14,24 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 
+import static com.lukk.sky.authservice.Assemblers.RoleAssembler.USER_ROLE_NAME;
+import static com.lukk.sky.authservice.Assemblers.UserAssembler.TEST_USER_EMAIL;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
@@ -44,15 +52,18 @@ public class UserServiceImplTest {
     @MockBean
     private RoleRepository roleRepository;
 
+    @MockBean
+    private EntityDTOConverter entityDTOConverter;
+
 
     @Test
-    public void whenFindByUserEmail_thenReturnUser() {
+    public void whenFindByUserEmail_thenReturnUser() throws UsernameNotFoundException {
         //Given
-        User expectedUser = UserAssembler.createTestUser(UserAssembler.TEST_USER_EMAIL);
-        Mockito.when(userRepository.findByEmail(UserAssembler.TEST_USER_EMAIL)).thenReturn(expectedUser);
+        User expectedUser = UserAssembler.createSimpleTestUser(TEST_USER_EMAIL);
+        when(userRepository.findByEmail(TEST_USER_EMAIL)).thenReturn(Optional.of(expectedUser));
 
         //When
-        User found = userService.findByUserEmail(UserAssembler.TEST_USER_EMAIL);
+        User found = userService.findByUserEmail(TEST_USER_EMAIL);
 
         //Then
         Assert.assertEquals(expectedUser.getEmail(), found.getEmail());
@@ -60,10 +71,10 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void whenFindById_thenReturnUser() {
+    public void whenFindById_thenReturnUser() throws UsernameNotFoundException {
         //Given
-        User expectedUser = UserAssembler.createTestUser(UserAssembler.TEST_USER_EMAIL);
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(expectedUser));
+        User expectedUser = UserAssembler.createSimpleTestUser(TEST_USER_EMAIL);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(expectedUser));
 
         //When
         User found = userService.findById(1L);
@@ -72,74 +83,160 @@ public class UserServiceImplTest {
         Assert.assertEquals(expectedUser.getEmail(), found.getEmail());
     }
 
+    @Test(expected = UsernameNotFoundException.class)
+    public void whenFindById_thenThrowException() throws UsernameNotFoundException {
+        //Given
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        //When
+        userService.findById(1L);
+
+        //Then -exception should be thrown
+    }
+
     @Test
     public void whenFindAll_thenReturnAllUsers() {
         //Given
-        List<User> expectedList = Arrays.asList(
-                UserAssembler.createTestUser(UserAssembler.TEST_USER_EMAIL),
-                UserAssembler.createTestUser("User2@mail")
-        );
-        Mockito.when(userRepository.findAll()).thenReturn(expectedList);
+        List<User> expectedList = UserAssembler.createUserList();
+
+        when(userRepository.findAll()).thenReturn(expectedList);
 
         //When
         List<User> found = userService.findAll();
 
         //Then
-        Assert.assertEquals(expectedList.get(0).getEmail(), found.get(0).getEmail());
-        Assert.assertEquals(expectedList.get(1).getEmail(), found.get(1).getEmail());
-
+        assertEquals(expectedList.get(0).getEmail(), found.get(0).getEmail());
+        assertEquals(expectedList.get(1).getEmail(), found.get(1).getEmail());
     }
 
     @Test
-    public void whenSaveUser_thenReturnUserWithEncodedPassAndRoles() {
+    public void findAllAndConvertToDTO() {
         //Given
-        User expected = UserAssembler.createTestUser(UserAssembler.TEST_USER_EMAIL);
-        // another instance required to not make changes in expected user when saving
-        UserDTO processedDTO = UserAssembler.createTestUserDTO(UserAssembler.TEST_USER_EMAIL);
-        User processedUser = UserAssembler.convertUserDTO_toEntity(processedDTO);
+        List<User> users = UserAssembler.createUserList();
+        List<UserDTO> expected = UserAssembler.createUserDTOList();
 
-        Role expectedRole = new Role(1L, "USER", new ArrayList<>());
-
-        System.out.println(processedUser);
-        Mockito.when(userRepository.save(any())).thenReturn(processedUser);
-        Mockito.when(roleRepository.findByName("USER")).thenReturn(expectedRole);
+        when(userRepository.findAll()).thenReturn(users);
+        for (int i = 0; i < users.size(); i++) {
+            when(entityDTOConverter.convertUserEntity_toDTO(users.get(i))).thenReturn(expected.get(i));
+        }
 
         //When
-        User found = userService.saveUser(processedDTO);
+        List<UserDTO> actual = userService.findAllAndConvertToDTO();
 
         //Then
-        Assert.assertEquals(expected.getEmail(), found.getEmail());
-        Assert.assertEquals(new HashSet<>(Collections.singletonList(expectedRole)), found.getRoles());
-//        assertTrue(bCryptPasswordEncoder.matches(expected.getPassword(), found.getPassword()));
+        assertEquals(expected, actual);
+
     }
 
     @Test
-    public void deleteUserTest() {
+    public void whenSaveUser_thenReturnUserWithPassAndRoles() {
         //Given
-        User expected = UserAssembler.createTestUser(UserAssembler.TEST_USER_EMAIL);
+        Role expectedRole = RoleAssembler.getUserRole();
+
+        User expected = UserAssembler.createSimpleTestUser(TEST_USER_EMAIL);
+        expected.setRoles(new HashSet<>(Collections.singletonList(expectedRole)));
+
+        UserDTO processedDTO = UserAssembler.createTestUserDTO_withPassword(TEST_USER_EMAIL);
+
+        when(userRepository.save(any())).thenReturn(expected);
+        when(roleRepository.findByName(USER_ROLE_NAME)).thenReturn(expectedRole);
+        when(entityDTOConverter.convertUserDTO_toEntity(processedDTO)).thenReturn(expected);
+
+        //When
+        User actual = userService.registerUser(processedDTO);
+
+        //Then
+        assertEquals(expected.getEmail(), actual.getEmail());
+        assertEquals(expected.getPassword(), actual.getPassword());
+        assertEquals(new HashSet<>(Collections.singletonList(expectedRole)), actual.getRoles());
+    }
+
+    @Test
+    public void whenDeleteUser_thenDeleteUser() throws UsernameNotFoundException {
+        //Given
+        User expected = UserAssembler.createSimpleTestUser(TEST_USER_EMAIL);
         expected.setId(99L);
 
         ArgumentCaptor<User> valueCapture = ArgumentCaptor.forClass(User.class);
-        doNothing().when(userRepository).delete(valueCapture.capture());
 
-        Mockito.when(userRepository.findById(expected.getId())).thenReturn(Optional.of(expected));
+        doReturn(Optional.of(expected)).when(userRepository).findById(expected.getId());
+        doNothing().when(userRepository).delete(valueCapture.capture());
 
         //When
         userService.deleteUser(expected.getId());
 
         //Then
-        Assert.assertEquals(expected, valueCapture.getValue());
+        assertEquals(expected, valueCapture.getValue());
+    }
+
+    @Test(expected = UsernameNotFoundException.class)
+    public void whenDeleteNotExistingUser_thenThrowException() throws UsernameNotFoundException {
+        //Given
+        User expected = UserAssembler.createSimpleTestUser(TEST_USER_EMAIL);
+        expected.setId(99L);
+
+        doReturn(Optional.of(expected)).when(userRepository).findById(expected.getId());
+        doThrow(NullPointerException.class).when(userRepository).delete(expected);
+
+        //When
+        userService.deleteUser(expected.getId());
+
+        //Then - exception should be thrown
     }
 
     @Test
-    public void checkPasswordTest() {
+    public void whenFindUserDetails_thenReturnUserDTO() throws UsernameNotFoundException {
         //Given
-        User expected = UserAssembler.createTestUser(UserAssembler.TEST_USER_EMAIL);
+        User expected = UserAssembler.createSimpleTestUser(TEST_USER_EMAIL);
+        UserDTO processedDTO = UserAssembler.createTestUserDTO_withoutPassword(TEST_USER_EMAIL);
+
+        when(userRepository.findByEmail(TEST_USER_EMAIL)).thenReturn(Optional.of(expected));
+        when(entityDTOConverter.convertUserEntity_toDTO(expected)).thenReturn(processedDTO);
 
         //When
-        String encoded = bCryptPasswordEncoder.encode(expected.getPassword());
+        UserDTO found = userService.findUserDetails(TEST_USER_EMAIL);
 
         //Then
-        bCryptPasswordEncoder.matches(expected.getPassword(), encoded);
+        assertEquals(processedDTO, found);
     }
+
+    @Test(expected = UsernameNotFoundException.class)
+    public void whenFindNotExistingUserDetails_thenThrowException() throws UsernameNotFoundException {
+        //Given
+        when(userRepository.findByEmail(TEST_USER_EMAIL)).thenReturn(Optional.empty());
+
+        //When
+        userService.findUserDetails(TEST_USER_EMAIL);
+
+        //Then - exception should be thrown
+    }
+
+
+    @Test
+    public void whenCheckGoodPassword_thenReturnTrue() {
+        //Given
+        String password = "test";
+        String encoded = bCryptPasswordEncoder.encode(password);
+
+        //When
+        boolean actual = userService.checkPassword(password, encoded);
+
+        //Then
+        assertTrue(actual);
+    }
+
+    @Test
+    public void whenCheckWrongPassword_thenReturnFalse() {
+        //Given
+        String encodedPassword = bCryptPasswordEncoder.encode("test");
+        String wrongPassword = "test1";
+
+        //When
+        boolean actual = userService.checkPassword(wrongPassword, encodedPassword);
+
+        //Then
+        assertFalse(actual);
+    }
+
+
 }

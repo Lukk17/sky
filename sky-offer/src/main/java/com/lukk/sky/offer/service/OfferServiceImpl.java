@@ -1,5 +1,6 @@
 package com.lukk.sky.offer.service;
 
+import com.lukk.sky.offer.dto.EntityDTOConverter;
 import com.lukk.sky.offer.dto.OfferDTO;
 import com.lukk.sky.offer.entity.Booked;
 import com.lukk.sky.offer.entity.Offer;
@@ -9,12 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import javax.validation.ValidationException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,10 +21,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OfferServiceImpl implements OfferService {
 
-    public final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
+    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private final OfferRepository offerRepository;
     private final BookedService bookedService;
+    private final EntityDTOConverter entityDTOConverter;
 
     private static void checkIfAlreadyBooked(List<Booked> bookedList, LocalDate dateToBook) throws OfferException {
         for (Booked booked : bookedList) {
@@ -47,29 +47,33 @@ public class OfferServiceImpl implements OfferService {
         log.info("Pulling all offers");
         List<Offer> offers = offerRepository.findAll();
         return offers.stream()
-                .map(this::convertOfferEntity_toDTO)
+                .map(entityDTOConverter::convertOfferEntity_toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public OfferDTO addOffer(OfferDTO offer) {
-        log.info("Saving offer from user: " + offer.getOwnerEmail());
-        log.info("Saving offer: " + offer.toString());
-        Offer savedOffer = offerRepository.save(convertNewOfferDTO_toEntity(offer));
-        return convertOfferEntity_toDTO(savedOffer);
+    public OfferDTO addOffer(OfferDTO offer) throws OfferException {
+        if (offer.getId() != null && offerRepository.findById(offer.getId()).isPresent()) {
+            throw new OfferException("Offer with given ID already exist!");
+        }
+
+        log.info("Saving offer: " + offer.toString() + "\n  from user: " + offer.getOwnerEmail());
+
+        Offer savedOffer = offerRepository.save(entityDTOConverter.convertNewOfferDTO_toEntity(offer));
+        return entityDTOConverter.convertOfferEntity_toDTO(savedOffer);
     }
 
     @Override
-    public void deleteOffer(Long offerID, String userEmail) {
+    public void deleteOffer(Long offerID, String userEmail) throws OfferException {
 
-        offerRepository.findById(offerID).ifPresent(offer -> {
-                    // delete offer only if its owner want to delete it
-                    if (offer.getOwnerEmail().equals(userEmail)) {
-                        log.info("Deleting offer of ID: " + offer.getId());
-                        offerRepository.delete(offer);
-                    }
-                }
-        );
+        Offer offer = offerRepository.findById(offerID).orElseThrow(() -> new OfferException("Can't remove non-existing offer!"));
+        if (offer.getOwnerEmail().equals(userEmail)) {
+            log.info("Deleting offer of ID: " + offer.getId());
+            offerRepository.delete(offer);
+
+        } else {
+            throw new OfferException("You can't remove offer of which owner is someone else!");
+        }
     }
 
     @Override
@@ -77,7 +81,7 @@ public class OfferServiceImpl implements OfferService {
         List<Offer> offers = offerRepository.findAllByOwnerEmail(ownerEmail);
 
         return offers.stream()
-                .map(this::convertOfferEntity_toDTO)
+                .map(entityDTOConverter::convertOfferEntity_toDTO)
                 .collect(Collectors.toList());
     }
 
@@ -86,13 +90,13 @@ public class OfferServiceImpl implements OfferService {
         List<OfferDTO> offers = new ArrayList<>();
         List<Booked> booked = bookedService.findAllByUser(userEmail);
 
-        booked.forEach(b -> offers.add(convertOfferEntity_toDTO(offerRepository.findOfferByBooked(b))));
+        booked.forEach(b -> offers.add(entityDTOConverter.convertOfferEntity_toDTO(offerRepository.findOfferByBooked(b))));
 
         return offers;
     }
 
     @Override
-    public List<OfferDTO> searchOffer(String searched) {
+    public List<OfferDTO> searchOffers(String searched) {
         List<OfferDTO> offers = getAllOffers();
         return offers.stream()
                 .filter(offer -> offer.getHotelName().contains(searched)
@@ -105,16 +109,15 @@ public class OfferServiceImpl implements OfferService {
 
     @Override
     public OfferDTO editOffer(OfferDTO offerDTO) {
-
-        Offer offer = convertEditedOfferDTO_ToEntity(offerDTO);
+        Offer offer = entityDTOConverter.convertEditedOfferDTO_ToEntity(offerDTO);
         offer.setId(offerDTO.getId());
 
         offerRepository.save(offer);
-        return convertOfferEntity_toDTO(offer);
+        return entityDTOConverter.convertOfferEntity_toDTO(offer);
     }
 
     @Override
-    public void bookOffer(String offerID, String dateToBookUnparsed, String bookingUserEmail) throws OfferException {
+    public OfferDTO bookOffer(String offerID, String dateToBookUnparsed, String bookingUserEmail) throws OfferException {
 
         Offer offer = offerRepository.findById(Long.parseLong(offerID))
                 .orElseThrow(() -> new OfferException("Offer could not be found in repository."));
@@ -122,14 +125,12 @@ public class OfferServiceImpl implements OfferService {
         LocalDate dateToBook = LocalDate.parse(dateToBookUnparsed, DATE_FORMAT);
         List<Booked> bookedList = offer.getBooked();
 
-
         checkIfAlreadyBooked(bookedList, dateToBook);
         checkIfBookingDateIsInFuture(dateToBook);
 
         bookedList.add(createNewBooked(offer, bookingUserEmail, dateToBook));
         offer.setBooked(bookedList);
-
-        offerRepository.save(offer);
+        return entityDTOConverter.convertOfferEntity_toDTO(offerRepository.save(offer));
     }
 
     private Booked createNewBooked(Offer offer, String bookingUser, LocalDate dateToBook) {
@@ -137,65 +138,8 @@ public class OfferServiceImpl implements OfferService {
                 .offer(offer)
                 .userEmail(bookingUser)
                 .bookedDate(dateToBook).build();
-        bookedService.addBooked(newBook);
-        return newBook;
+        Booked res = bookedService.addBooked(newBook);
+        return res;
     }
 
-
-    private OfferDTO convertOfferEntity_toDTO(Offer offer) {
-        return OfferDTO.builder()
-                .hotelName(offer.getHotelName())
-                .id(offer.getId())
-                .city(offer.getCity())
-                .country(offer.getCountry())
-                .ownerEmail(offer.getOwnerEmail())
-                .description(offer.getDescription())
-                .comment(offer.getComment())
-                .price(offer.getPrice())
-                .roomCapacity(offer.getRoomCapacity())
-                .booked(offer.getBooked())
-                .photoPath(offer.getPhotoPath())
-                .build();
-    }
-
-    private Offer convertNewOfferDTO_toEntity(OfferDTO offerDTO) {
-
-        return Offer.builder()
-                .hotelName(offerDTO.getHotelName())
-                .city(offerDTO.getCity())
-                .country(offerDTO.getCountry())
-                .ownerEmail(offerDTO.getOwnerEmail())
-                .description(offerDTO.getDescription())
-                .comment(offerDTO.getComment())
-                .price(offerDTO.getPrice())
-                .roomCapacity(offerDTO.getRoomCapacity())
-                .booked(offerDTO.getBooked())
-                .photoPath(offerDTO.getPhotoPath())
-                .build();
-    }
-
-    private Offer convertEditedOfferDTO_ToEntity(OfferDTO offerDTO) {
-        Offer dbOffer = offerRepository
-                .findById(offerDTO.getId())
-                .orElseThrow(() -> new ValidationException("Can't edit offer without its ID."));
-
-        return createOffer_FromOnlyNotNull_OfferDTOProperties(offerDTO, dbOffer);
-    }
-
-    private Offer createOffer_FromOnlyNotNull_OfferDTOProperties(OfferDTO offerDTO, Offer dbOffer) {
-        Offer.OfferBuilder builder = Offer.builder();
-
-        builder.hotelName(Optional.ofNullable(offerDTO.getHotelName()).orElse(dbOffer.getHotelName()));
-        builder.city(Optional.ofNullable(offerDTO.getCity()).orElse(dbOffer.getCity()));
-        builder.country(Optional.ofNullable(offerDTO.getCountry()).orElse(dbOffer.getCountry()));
-        builder.ownerEmail(Optional.ofNullable(offerDTO.getOwnerEmail()).orElse(dbOffer.getOwnerEmail()));
-        builder.description(Optional.ofNullable(offerDTO.getDescription()).orElse(dbOffer.getDescription()));
-        builder.comment(Optional.ofNullable(offerDTO.getComment()).orElse(dbOffer.getComment()));
-        builder.price(Optional.ofNullable(offerDTO.getPrice()).orElse(dbOffer.getPrice()));
-        builder.roomCapacity(Optional.ofNullable(offerDTO.getRoomCapacity()).orElse(dbOffer.getRoomCapacity()));
-        builder.booked(Optional.ofNullable(offerDTO.getBooked()).orElse(dbOffer.getBooked()));
-        builder.photoPath(Optional.ofNullable(offerDTO.getPhotoPath()).orElse(dbOffer.getPhotoPath()));
-
-        return builder.build();
-    }
 }

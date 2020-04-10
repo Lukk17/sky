@@ -24,11 +24,11 @@
       </option>
     </MavenSettings>
     <method v="2">
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="clean all" run_configuration_type="MavenRunConfiguration" />
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="auth-service [clean install]" run_configuration_type="MavenRunConfiguration" />
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="sky-message [clean install]" run_configuration_type="MavenRunConfiguration" />
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="sky-offer [clean install]" run_configuration_type="MavenRunConfiguration" />
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="zuul-service [clean install]" run_configuration_type="MavenRunConfiguration" />
+      <option name="RunConfigurationTask" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" />
     </method>
   </configuration>
 </component>

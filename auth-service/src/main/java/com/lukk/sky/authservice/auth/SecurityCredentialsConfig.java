@@ -45,6 +45,7 @@ public class SecurityCredentialsConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/register").permitAll()
                 .antMatchers(HttpMethod.GET, "/").permitAll()
                 .antMatchers(HttpMethod.GET, "/home").permitAll()
+                .antMatchers(HttpMethod.GET, "/userList").hasRole("ADMIN")
                 // any other requests must be authenticated
                 .anyRequest().authenticated();
     }

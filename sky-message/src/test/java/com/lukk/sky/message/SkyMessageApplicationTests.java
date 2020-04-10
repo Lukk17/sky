@@ -15,6 +15,7 @@ public class SkyMessageApplicationTests {
 
     @Test
     public void contextLoads() {
+        SkyMessageApplication.main(new String[0]);
     }
 
 }

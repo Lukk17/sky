@@ -15,5 +15,5 @@ public class MessageDTO {
     private String receiverEmail;
     private String senderEmail;
     private LocalDateTime createdTime;
-    private boolean isRead;
+    private boolean read;
 }

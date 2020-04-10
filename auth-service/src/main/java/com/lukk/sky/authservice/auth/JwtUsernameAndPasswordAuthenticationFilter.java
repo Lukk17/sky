@@ -14,7 +14,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -42,7 +41,6 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
             throws AuthenticationException {
 
         try {
-
             // 1. Get credentials from request
             UserCredentials creds = new ObjectMapper().readValue(request.getInputStream(), UserCredentials.class);
 
@@ -50,7 +48,9 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     creds.getUsername(), creds.getPassword(), Collections.emptyList());
 
-            // 3. Authentication manager authenticate the user, and use UserDetialsServiceImpl::loadUserByUsername() method to load the user.
+            // 3. Authentication manager authenticate the user, and use UserDetailsServiceImpl::loadUserByUsername() method to load the user.
+            // WebSecurityConfigurerAdapter implementation is responsible for it.
+            // Authentication is token and authManager return it.
             return authManager.authenticate(authToken);
 
         } catch (IOException e) {
@@ -59,12 +59,12 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
     }
 
     // Upon successful authentication, generate a token.
-    // The 'auth' passed to successfulAuthentication() is the current authenticated user.
+    // The 'auth' passed to successfulAuthentication() is the current authenticated user (token).
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-                                            Authentication auth) throws IOException, ServletException {
+                                            Authentication auth) throws IOException {
 
-        Long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
 
         String token = Jwts.builder()
@@ -79,7 +79,7 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
                 .compact();
 
         // Add token to header
-        response.addHeader("Access-Control-Expose-Headers", jwtConfig.getHeader() + ", X-Custom-header");
+        response.addHeader("Access-Control-Expose-Headers", jwtConfig.getHeader());
         response.addHeader(jwtConfig.getHeader(), jwtConfig.getPrefix() + token);
         response.getWriter().write(jwtConfig.getPrefix() + token);
     }
