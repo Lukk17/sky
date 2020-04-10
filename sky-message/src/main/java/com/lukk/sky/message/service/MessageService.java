@@ -7,18 +7,18 @@ import java.util.List;
 public interface MessageService {
     /**
      * Send message of given text to given receiver.
-     *
-     * @param message     Text of message.
+     *  @param message     Text of message.
      * @param senderEmail Email of message sender
+     * @return
      */
-    void send(MessageDTO messageDTO);
+    MessageDTO send(MessageDTO messageDTO);
 
     /**
      * Remove message with given ID.
      *
      * @param messageId ID of message to delete.
      */
-    void remove(Long messageId);
+    void remove(Long messageId, String username);
 
 
     /**

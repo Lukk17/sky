@@ -54,7 +54,6 @@ public class OfferControllerTest {
 
     @Test
     public void whenGoOnlyDash_thenReturnWelcomingMessage() throws Exception {
-//Given
 
 //When
         MvcResult result = mvc.perform(
@@ -66,12 +65,10 @@ public class OfferControllerTest {
                 .andReturn();
 
         assertEquals("Offer service for Sky", result.getResponse().getContentAsString());
-
     }
 
     @Test
     public void whenGoHomePage_thenReturnWelcomingMessage() throws Exception {
-//Given
 
 //When
         MvcResult result = mvc.perform(
@@ -83,7 +80,6 @@ public class OfferControllerTest {
                 .andReturn();
 
         assertEquals("Offer service for Sky", result.getResponse().getContentAsString());
-
     }
 
     @Test
@@ -110,8 +106,9 @@ public class OfferControllerTest {
     @Test
     public void whenAddOffer_thenAddAndReturnOffer() throws Exception {
 
-        //Given
+//Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+
         when(offerService.addOffer(offerDTO)).thenReturn(offerDTO);
 
         String expectedJson = gson.toJson(offerDTO);
@@ -133,7 +130,7 @@ public class OfferControllerTest {
     @Test
     public void whenAddAlreadyExistingOffer_thenReturnBadRequest() throws Exception {
 
-        //Given
+//Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         doThrow(new OfferException("Offer with given ID already exist!"))
                 .when(offerService).addOffer(offerDTO);
@@ -171,8 +168,6 @@ public class OfferControllerTest {
 
 //Then
                 .andExpect(status().is2xxSuccessful());
-
-
     }
 
     @Test
@@ -201,6 +196,7 @@ public class OfferControllerTest {
 
     @Test
     public void whenGetOwnedOffers_thenReturnOwnedOffers() throws Exception {
+
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         when(offerService.getOwnedOffers(TEST_USER_EMAIL)).thenReturn(offersDTO);
@@ -246,6 +242,7 @@ public class OfferControllerTest {
 
     @Test
     public void whenSearchOffer_thenReturnOffersWithinSearchedCriteria() throws Exception {
+
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         when(offerService.searchOffers(TEST_HOTEL_NAME)).thenReturn(offersDTO);
@@ -268,6 +265,7 @@ public class OfferControllerTest {
 
     @Test
     public void whenEditOffer_thenEditAndReturnOffer() throws Exception {
+
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         when(offerService.editOffer(offerDTO)).thenReturn(offerDTO);
@@ -291,6 +289,7 @@ public class OfferControllerTest {
 
     @Test
     public void whenBookOffer_thenBookAndReturnOffer() throws Exception {
+
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         String dateToBook = LocalDate.now().format(DATE_FORMAT);
@@ -321,6 +320,7 @@ public class OfferControllerTest {
 
     @Test
     public void whenBookNotExistingOffer_thenReturnBadRequest() throws Exception {
+
 //Given
         String dateToBook = LocalDate.now().format(DATE_FORMAT);
 
