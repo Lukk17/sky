@@ -42,12 +42,8 @@ public class SecurityCredentialsConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
 
                 .antMatchers(HttpMethod.POST, jwtConfig.getUri()).permitAll()
-                .antMatchers(HttpMethod.POST, "/register").permitAll()
-                .antMatchers(HttpMethod.GET, "/").permitAll()
-                .antMatchers(HttpMethod.GET, "/home").permitAll()
-                .antMatchers(HttpMethod.GET, "/userList").hasRole("ADMIN")
-                // any other requests must be authenticated
-                .anyRequest().authenticated();
+                // request are already authenticated by Zuul gate
+                .anyRequest().permitAll();
     }
 
     // Spring has UserDetailsService interface, which can be overridden to provide our implementation for fetching user from database (or any other source).
