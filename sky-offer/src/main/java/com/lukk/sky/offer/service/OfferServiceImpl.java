@@ -90,7 +90,24 @@ public class OfferServiceImpl implements OfferService {
         List<OfferDTO> offers = new ArrayList<>();
         List<Booked> booked = bookedService.findAllByUser(userEmail);
 
-        booked.forEach(b -> offers.add(entityDTOConverter.convertOfferEntity_toDTO(offerRepository.findOfferByBooked(b))));
+        booked.forEach(b -> {
+            Offer offer = offerRepository.findOfferByBooked(b);
+            OfferDTO offerDTO = entityDTOConverter.convertOfferEntity_toDTO(offer);
+
+            // remove other users booking info
+            List<Booked> onlyUserBooked = new ArrayList<>();
+            offerDTO.getBooked().forEach(bookedByAll -> {
+                if (bookedByAll.getUserEmail().equals(userEmail)) {
+                    onlyUserBooked.add(bookedByAll);
+                }
+            });
+            offerDTO.setBooked(onlyUserBooked);
+
+            // remove duplicate offers
+            if (!offers.contains(offerDTO)) {
+                offers.add(offerDTO);
+            }
+        });
 
         return offers;
     }
