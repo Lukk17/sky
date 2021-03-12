@@ -64,7 +64,7 @@ public class EntityDTOConverterTest {
 
         UserDTO testUserDTO = UserAssembler.createTestUserDTO_withPassword(TEST_USER_EMAIL);
 
-        when(roleRepository.findByName(USER_ROLE_NAME)).thenReturn(userRole);
+        when(roleRepository.findByName("ROLE_" + USER_ROLE_NAME)).thenReturn(userRole);
 
         //When
         User actual = entityDTOConverter.convertUserDTO_toEntity(testUserDTO);
@@ -72,7 +72,6 @@ public class EntityDTOConverterTest {
         //Then
         assertEquals(expected.getEmail(), actual.getEmail());
         assertEquals(expected.getRoles(), actual.getRoles());
-        assertEquals(expected.getId(), actual.getId());
         assertTrue(passwordEncoder.matches(expected.getPassword(), actual.getPassword()));
     }
 }

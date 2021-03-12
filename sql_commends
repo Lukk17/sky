@@ -1,0 +1,5 @@
+INSERT INTO sky_offer.offer VALUES (1,'Sopot','no-comment','Poland','Sopot Hotel','Sherrr','admin@admin','https://images.pexels.com/photos/1134176/pexels-photo-1134176.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500',100,2);
+INSERT INTO sky_offer.offer VALUES (2,'Sopot','no-comment','Poland','Sopot Hotel','KApo','admin@admin','https://images.pexels.com/photos/2869215/pexels-photo-2869215.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',200,1);
+INSERT INTO sky_offer.offer VALUES (3,'Sopot','no-comment','USA','USA Sopot Hotel','SherUS','test@test','https://images.pexels.com/photos/2506988/pexels-photo-2506988.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',100,2);
+INSERT INTO sky_offer.offer VALUES (4,'Miami','no-comment','USA','Miami Hotel','Tuss','test@test','https://images.pexels.com/photos/1179156/pexels-photo-1179156.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260',400,4);
+INSERT INTO sky_offer.offer VALUES (5,'Warszawa','no-comment','Poland','Warszawa Hotel','WarSpi','test@test','https://images.pexels.com/photos/2373201/pexels-photo-2373201.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260',1000,3);

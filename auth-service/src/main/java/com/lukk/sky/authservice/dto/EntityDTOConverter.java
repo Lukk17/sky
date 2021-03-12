@@ -27,7 +27,7 @@ public class EntityDTOConverter {
     }
 
     public User convertUserDTO_toEntity(UserDTO userDTO) {
-        Role userRole = roleRepository.findByName("USER");
+        Role userRole = roleRepository.findByName("ROLE_USER");
 
         return User.builder()
                 .email(userDTO.getEmail())
