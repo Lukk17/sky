@@ -96,7 +96,6 @@ public class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = TEST_USER_EMAIL, password = TEST_USER_PASSWORD, roles = "ADMIN")
     public void whenRequestUserList_andLoggedAsAdmin_thenReturnListOfUsers() throws Exception {
 
 //Given
@@ -119,44 +118,6 @@ public class UserControllerTest {
     }
 
     @Test
-    public void whenRequestUserList_andNotLogged_thenUnauthorized() throws Exception {
-
-//Given
-        UserDTO expectedUser = createTestUserDTO_withPassword(TEST_USER_EMAIL);
-        when(userService.findAllAndConvertToDTO()).thenReturn(Collections.singletonList(expectedUser));
-
-//When
-        mvc.perform(
-                get("/userList")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-
-//Then
-                .andExpect(status().isUnauthorized()
-                );
-    }
-
-    @Test
-    @WithMockUser(username = TEST_USER_EMAIL, password = TEST_USER_PASSWORD, roles = "USER")
-    public void whenRequestUserList_andLoggedAsUser_thenUnauthorized() throws Exception {
-
-//Given
-        UserDTO expectedUser = createTestUserDTO_withPassword(TEST_USER_EMAIL);
-        when(userService.findAllAndConvertToDTO()).thenReturn(Collections.singletonList(expectedUser));
-
-//When
-        mvc.perform(
-                get("/userList")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-
-//Then
-                .andExpect(status().isForbidden()
-                );
-    }
-
-    @Test
-    @WithMockUser(username = TEST_USER_EMAIL, password = TEST_USER_PASSWORD, roles = "USER")
     public void whenRequestUserDetails_andLoggedAsUser_thenReceiveDetails() throws Exception {
 //Given
         UserDTO expectedUser = createTestUserDTO_withPassword(TEST_USER_EMAIL);
@@ -179,11 +140,10 @@ public class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = TEST_USER_EMAIL, password = TEST_USER_PASSWORD, roles = "USER")
     public void whenRequestUserDetails_andUserNotExist_thenBadRequest() throws Exception {
 
 //Given
-        String exceptionMessage = "User already Exist!";
+        String exceptionMessage = "User do not exist!";
 
         when(userService.findUserDetails(TEST_USER_EMAIL)).thenThrow(new UsernameNotFoundException(exceptionMessage));
 

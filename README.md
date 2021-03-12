@@ -40,12 +40,11 @@ Do NOT send request directly to microservice like:
 Launch order:
 ---------------------------------
 1. eureka-service
-2. common
-3. auth-service
-4. sky-user
-5. sky-offer
-6. sky-message
-7. zuul-service
+2. auth-service
+3. sky-user
+4. sky-offer
+5. sky-message
+6. zuul-service
 ---------------------------------
 
 Required MySQL databases:
@@ -57,7 +56,58 @@ Required MySQL databases:
 ```
 
 _Admin and roles must be added to DB_  
-mysl_dumb can be used.
+
+
+### What needs to be done within DB
+
+Admin role should be named "ROLE_ADMIN"
+Admin role should have id 0
+
+User role should be named "ROLE_USER"
+User role should have id 1
+
+put it into SQL DB:
+``` 
+INSERT INTO sky_user.role VALUES (0, 'ROLE_ADMIN');
+INSERT INTO sky_user.role VALUES (1, 'ROLE_USER');
+``` 
+
+Create admin and test users through API endpoint:
+localhost:8762/register
+with json payload:
+``` 
+{
+"email": "admin@admin",
+"password": "admin"
+}
+```
+and
+``` 
+{
+"email": "test@test",
+"password": "test"
+}
+``` 
+
+Then change admin user role to ROLE_ADMIN (role_id=0):
+``` 
+UPDATE sky_user.user_role SET role_id = 0 WHERE user_id = {id};
+``` 
+where {id} is ID of admin user. You can check it with:
+``` 
+SELECT id FROM sky_user.user WHERE email='admin@admin';
+``` 
+
+If something gone wrong you can delete admin user and re-register it:
+``` 
+DELETE FROM sky_user.user_role WHERE user_id = {id};
+DELETE FROM sky_user.user WHERE id = {id};
+``` 
+where {id} is ID of admin user. It needs to be deleted from user_role table first.
+
+### After all this now you can put into the DB some offers.
+
+
 
 ---------------------------------
 Connecting with localhost MySQL
