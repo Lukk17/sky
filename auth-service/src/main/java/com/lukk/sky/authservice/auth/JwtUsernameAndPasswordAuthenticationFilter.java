@@ -79,7 +79,7 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
                 .compact();
 
         // Add token to header
-        response.addHeader("Access-Control-Expose-Headers", jwtConfig.getHeader());
+        response.addHeader("Access-Control-Expose-Headers", jwtConfig.getHeader() +" " + token);
         response.addHeader(jwtConfig.getHeader(), jwtConfig.getPrefix() + token);
         response.getWriter().write(jwtConfig.getPrefix() + token);
     }
