@@ -48,16 +48,28 @@ Launch order:
 7. zuul-service
 ---------------------------------
 
-Required MySQL databases:
+Required MySQL database:
 ---------------------------------
 ``` 
-"sky_user"
-"sky_offer"
-"sky_message" 
+"sky"
 ```
 
+This db needs to be created before running db dump file.
+
 _Admin and roles must be added to DB_  
-mysl_dumb can be used.
+mysl_dumb can be used. (basicDump do not have offer, message and booked table - which skyFullDump have)
+
+##### When using sql-dump admin password will not be correctly encrypted.
+To repair it register new user with same password as admins (below) and copy it as admin password directly in user DB.
+
+admin user credentials from mysql_dumb:
+```
+{
+	"username": "admin@admin",
+	"password": "admin"
+}
+```
+
 
 ---------------------------------
 Connecting with localhost MySQL

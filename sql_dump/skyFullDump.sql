@@ -1,15 +1,13 @@
-CREATE DATABASE  IF NOT EXISTS `sky` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */;
-USE `sky`;
--- MySQL dump 10.13  Distrib 8.0.13, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.26, for Win64 (x86_64)
 --
--- Host: localhost    Database: basic
+-- Host: 127.0.0.1    Database: sky
 -- ------------------------------------------------------
--- Server version	8.0.13
+-- Server version	8.0.26
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
- SET NAMES utf8 ;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -18,14 +16,41 @@ USE `sky`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `booked`
+--
+
+DROP TABLE IF EXISTS `booked`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `booked` (
+  `id` bigint NOT NULL,
+  `booked_date` date NOT NULL,
+  `user_email` varchar(255) DEFAULT NULL,
+  `offer` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK9gxo5p30h35yjsq9arn2yjsaf` (`offer`),
+  CONSTRAINT `FK9gxo5p30h35yjsq9arn2yjsaf` FOREIGN KEY (`offer`) REFERENCES `offer` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `booked`
+--
+
+LOCK TABLES `booked` WRITE;
+/*!40000 ALTER TABLE `booked` DISABLE KEYS */;
+/*!40000 ALTER TABLE `booked` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `hibernate_sequence`
 --
 
 DROP TABLE IF EXISTS `hibernate_sequence`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
- SET character_set_client = utf8mb4 ;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `hibernate_sequence` (
-  `next_val` bigint(20) DEFAULT NULL
+  `next_val` bigint DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -35,7 +60,7 @@ CREATE TABLE `hibernate_sequence` (
 
 LOCK TABLES `hibernate_sequence` WRITE;
 /*!40000 ALTER TABLE `hibernate_sequence` DISABLE KEYS */;
-INSERT INTO `hibernate_sequence` VALUES (3),(3),(3);
+INSERT INTO `hibernate_sequence` (`next_val`) VALUES (9),(9),(9);
 /*!40000 ALTER TABLE `hibernate_sequence` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -45,16 +70,19 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `message`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
- SET character_set_client = utf8mb4 ;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `message` (
-  `id` bigint(20) NOT NULL,
+  `id` bigint NOT NULL,
   `created` datetime DEFAULT NULL,
   `is_read` bit(1) NOT NULL,
   `text` varchar(255) DEFAULT NULL,
-  `perma_receiver` bigint(20) DEFAULT NULL,
-  `perma_sender` bigint(20) DEFAULT NULL,
-  `receiver` bigint(20) DEFAULT NULL,
-  `sender` bigint(20) DEFAULT NULL,
+  `perma_receiver` bigint DEFAULT NULL,
+  `perma_sender` bigint DEFAULT NULL,
+  `receiver` bigint DEFAULT NULL,
+  `sender` bigint DEFAULT NULL,
+  `created_time` datetime DEFAULT NULL,
+  `receiver_email` varchar(255) DEFAULT NULL,
+  `sender_email` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FKpigmybcskb82w18mcs74vvjki` (`perma_receiver`),
   KEY `FK8ojretjem5bpb87wwnr3c1np8` (`perma_sender`),
@@ -73,7 +101,40 @@ CREATE TABLE `message` (
 
 LOCK TABLES `message` WRITE;
 /*!40000 ALTER TABLE `message` DISABLE KEYS */;
+INSERT INTO `message` (`id`, `created`, `is_read`, `text`, `perma_receiver`, `perma_sender`, `receiver`, `sender`, `created_time`, `receiver_email`, `sender_email`) VALUES (7,NULL,_binary '\0','testowo',NULL,NULL,NULL,NULL,'2022-05-02 21:34:51','test@test','admin@admin'),(8,NULL,_binary '\0','adminowo',NULL,NULL,NULL,NULL,'2022-05-02 21:36:08','admin@admin','test@test');
 /*!40000 ALTER TABLE `message` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `offer`
+--
+
+DROP TABLE IF EXISTS `offer`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `offer` (
+  `id` bigint NOT NULL,
+  `city` varchar(255) DEFAULT NULL,
+  `comment` varchar(255) DEFAULT NULL,
+  `country` varchar(255) DEFAULT NULL,
+  `description` varchar(3000) DEFAULT NULL,
+  `hotel_name` varchar(255) DEFAULT NULL,
+  `owner_email` varchar(100) NOT NULL,
+  `photo_path` varchar(255) DEFAULT NULL,
+  `price` decimal(19,2) NOT NULL,
+  `room_capacity` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `offer`
+--
+
+LOCK TABLES `offer` WRITE;
+/*!40000 ALTER TABLE `offer` DISABLE KEYS */;
+INSERT INTO `offer` (`id`, `city`, `comment`, `country`, `description`, `hotel_name`, `owner_email`, `photo_path`, `price`, `room_capacity`) VALUES (5,'Gdansk','suparaste fale','Poland','nad morzem','Sheraton','admin@admin','https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcS6o46GoemfaQuUj2482kPKuoAkajx3qIQ7xHujIGB2IMMWziE3',100.00,5);
+/*!40000 ALTER TABLE `offer` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -82,9 +143,9 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `role`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
- SET character_set_client = utf8mb4 ;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `role` (
-  `id` bigint(20) NOT NULL,
+  `id` bigint NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -96,7 +157,7 @@ CREATE TABLE `role` (
 
 LOCK TABLES `role` WRITE;
 /*!40000 ALTER TABLE `role` DISABLE KEYS */;
-INSERT INTO `role` VALUES (0,'ADMIN'),(1,'USER');
+INSERT INTO `role` (`id`, `name`) VALUES (0,'ADMIN'),(1,'USER');
 /*!40000 ALTER TABLE `role` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -106,9 +167,9 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
- SET character_set_client = utf8mb4 ;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user` (
-  `id` bigint(20) NOT NULL,
+  `id` bigint NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -122,7 +183,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'admin@admin','$2a$10$.HimDNoY0XhHSCrHsH/1X.3kWBFDO4oiLUeLvgQ96tjPv6M2I3DmK');
+INSERT INTO `user` (`id`, `email`, `password`) VALUES (1,'admin@admin','$2a$10$DMKDJSTFuKXrwYWNqgDlnu95Bf8/sC9h5fBUDX4fpJL2anU7RPuT.'),(6,'test@test','$2a$10$/qPXO5Gax6oNp69cS4d0o.JnZGaXZB2Odj0NsYI176A48/WViDhlm');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -132,10 +193,10 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `user_role`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
- SET character_set_client = utf8mb4 ;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_role` (
-  `user_id` bigint(20) NOT NULL,
-  `role_id` bigint(20) NOT NULL,
+  `user_id` bigint NOT NULL,
+  `role_id` bigint NOT NULL,
   PRIMARY KEY (`user_id`,`role_id`),
   KEY `FKa68196081fvovjhkek5m97n3y` (`role_id`),
   CONSTRAINT `FK859n2jvi8ivhui0rl0esws6o` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
@@ -149,7 +210,7 @@ CREATE TABLE `user_role` (
 
 LOCK TABLES `user_role` WRITE;
 /*!40000 ALTER TABLE `user_role` DISABLE KEYS */;
-INSERT INTO `user_role` VALUES (1,0),(2,1);
+INSERT INTO `user_role` (`user_id`, `role_id`) VALUES (1,0),(6,1);
 /*!40000 ALTER TABLE `user_role` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -162,4 +223,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-01-16 22:42:28
+-- Dump completed on 2022-05-02 21:43:18
