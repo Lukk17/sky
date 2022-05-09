@@ -29,7 +29,7 @@ Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk1
 
 
 ---------------------------------
-#How it works
+# How it works
 
 Zuul service, which is gateway catches all request, check if user is authenticated - by checking [token](#token-example-in-header) send in request header.
 If user is not authenticated then it can access only few not secured endpoints.  
@@ -46,7 +46,7 @@ Do NOT send request directly to microservice like:
 
 ---------------------------------
 
-#Launch order:
+# Launch order:
 
 1. eureka-service
 2. auth-service
@@ -56,13 +56,13 @@ Do NOT send request directly to microservice like:
 6. zuul-service
 ---------------------------------
 
-#Required 
+# Required 
 MySQL database:  
 `sky` which should be configured before lunching services.
 
 ---------------------------------
 
-#Build and Run
+# Build and Run
 
 
 To run build project with commend:
@@ -71,7 +71,7 @@ To run build project with commend:
 
 ---------------------------------
 
-#Running app in Docker
+# Running app in Docker
 
 It can be run by docker-compose file or individually via Dockerfiles.
 
@@ -166,18 +166,18 @@ docker network connect sky-net zuul-service
 Useful
 ---------------------------------
 
-####Token example in a header:  
+#### Token example in a header:  
 `Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiI...<restOfToken>`
 
 ---------------------------------
-####Environment external config
+#### Environment external config
 
 External file with environmental config are in ```.env``` file
 which is in same directory as ```docker-compose.yml```
 
 
 ---------------------------------
-####DB configuration
+#### DB configuration
 
 This db needs to be created before running db dump file.
 
