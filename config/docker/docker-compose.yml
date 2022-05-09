@@ -2,9 +2,10 @@ version: "3.9"
 
 services:
   eureka-service:
+    container_name: eureka-service
     build:
-      dockerfile: Dockerfile
-      context: eureka-service
+      dockerfile: ../../eureka-service/Dockerfile
+      context: ../../eureka-service
     image: eureka-service:latest
     networks:
       - sky-network
@@ -18,9 +19,10 @@ services:
 #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
   zuul-service:
+    container_name: zuul-service
     build:
-      dockerfile: Dockerfile
-      context: zuul-service
+      dockerfile: ../../zuul-service/Dockerfile
+      context: ../../zuul-service
     image: zuul-service:latest
     networks:
       - sky-network
@@ -38,9 +40,10 @@ services:
   #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
   auth-service:
+    container_name: auth-service
     build:
-      dockerfile: Dockerfile
-      context: auth-service
+      dockerfile: ../../auth-service/Dockerfile
+      context: ../../auth-service
     image: auth-service:latest
     networks:
       - sky-network
@@ -58,9 +61,10 @@ services:
   #      - MYSQL_PASS=${MYSQL_PASS}
 
   sky-offer:
+    container_name: sky-offer
     build:
-      dockerfile: Dockerfile
-      context: sky-offer
+      dockerfile: ../../sky-offer/Dockerfile
+      context: ../../sky-offer
     image: sky-offer:latest
     networks:
       - sky-network
@@ -79,9 +83,10 @@ services:
   #      - MYSQL_PASS=${MYSQL_PASS}
 
   sky-message:
+    container_name: sky-message
     build:
-      dockerfile: Dockerfile
-      context: sky-message
+      dockerfile: ../../sky-message/Dockerfile
+      context: ../../sky-message
     image: sky-message:latest
     networks:
       - sky-network
@@ -102,4 +107,5 @@ services:
 #      - MYSQL_PASS=${MYSQL_PASS}
 
 networks:
-  sky-network: { }
+  sky-network:
+    name: sky-network

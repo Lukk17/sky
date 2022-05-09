@@ -6,22 +6,31 @@
 Backend application for handling offers and booking them by users.  
 Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk17/sky-view) application.
 
----------------------------------
 
 | Microservice  | Description | Port |
 | ------------- | ------------- | ------------- |
 | eureka-service  | Naming server  | 8871 |
-| common  | Service with common code  | 9200 |
 | auth-service | Authorization service. Generate access tokens.  | 9100 |
-| sky-user  | Service managing users. Like registering new ones.  | 5551 |
 | sky-offer  | Service handling operation connected with offers.  | 5552 |
 | sky-message | Service handling sending and receiving messages between users  | 5553 |
 | zuul-service | Gateway service. Authenticate users and forward request to right microservices.  | 8872 |
 
----------------------------------
 
-How it works
+#Table of content
+- [How it works](#How-it-works)
+- [Launch order](#Launch-order)
+- [Required](#required)
+- [Build and Run](#Build-and-Run)
+- [Running app in Docker](#Running-app-in-Docker)
+- [Token example in a header](#Token-example-in-a-header)
+- [Environment external config](#Environment-external-config)
+- [DB configuration](#DB-configuration)
+- [Adding MySQL server to docker](#Adding-MySQL-server-to-docker)
+
+
 ---------------------------------
+#How it works
+
 Zuul service, which is gateway catches all request, check if user is authenticated - by checking [token](#token-example-in-header) send in request header.
 If user is not authenticated then it can access only few not secured endpoints.  
 Next Zuul ask naming server (eureka-server) for microservice address and then forward request to it.
@@ -37,8 +46,8 @@ Do NOT send request directly to microservice like:
 
 ---------------------------------
 
-Launch order:
----------------------------------
+#Launch order:
+
 1. eureka-service
 2. auth-service
 3. sky-user
@@ -47,11 +56,128 @@ Launch order:
 6. zuul-service
 ---------------------------------
 
-Required MySQL database:
+#Required 
+MySQL database:  
+`sky` which should be configured before lunching services.
+
 ---------------------------------
-``` 
-"sky"
+
+#Build and Run
+
+
+To run build project with commend:
+
+` mvn clean install -DskipTests`
+
+---------------------------------
+
+#Running app in Docker
+
+It can be run by docker-compose file or individually via Dockerfiles.
+
+### A) Using docker-compose.yml
+
+After starting give containers minute or so to fully start and connect with each others.  
+Before that, there could be 500 errors.  
+This log need to appear in all containers:  
+`Getting all instance registry info from the eureka server`
+
+
+In main project folder (before any modules) run:  
+`docker-compose -f config/docker/docker-compose.yml up`  
+
+or in "config/docker/" folder:  
+`docker-compose up`  
+
+or if you want to rebuild all:  
+`docker-compose -f config/docker/docker-compose.yml up --build`
+
+or with clean build:  
+`docker-compose -f config/docker/docker-compose.yml build --no-cache`
+
+### B) Using Dockerfiles, creates and start/run methods  
+
+#### Prerequisite
+Create a network for microservices:  
+`docker network create sky-net`
+
+#### 1. eureka-service
+This one need to have port published.  
+Build:  
+`docker build . -t eureka-service:latest`   
+Docker container creation:  
+`docker create --name eureka-service --network sky-net --publish 8761:8761 eureka-service:latest`  
+Starting a container:  
+`docker start eureka-service`  
+
+
+#### 2. auth-service
+Build:  
+`docker build . -t auth-service:latest`  
+Docker container creation:  
+`docker create --name auth-service --network sky-net auth-service:latest`  
+Starting a container:  
+`docker start auth-service`
+
+#### 3. sky-offer
+Build:  
+`docker build . -t sky-offer:latest`  
+Docker container creation:  
+`docker create --name sky-offer --network sky-net sky-offer:latest`  
+Starting a container:  
+`docker start sky-offer`
+
+#### 4. sky-message
+Build:  
+`docker build . -t sky-message:latest`  
+Docker container creation:  
+`docker create --name sky-message --network sky-net sky-message:latest`  
+Starting a container:  
+`docker start sky-message`  
+
+#### 5. zuul-service
+Build:  
+`docker build . -t zuul-service:latest`  
+Docker container creation:  
+`docker create --name zuul-service --network sky-net --publish 8762:8762 zuul-service:latest`  
+Starting a container:  
+`docker start zuul-service`  
+
+
+#### Running instead creating containers:
 ```
+docker run -p 8761:8761 eureka-service:latest 
+docker run auth-service:latest 
+docker run sky-offer:latest 
+docker run sky-message:latest  
+docker run -p 8762:8762 zuul-service:latest
+```  
+
+Now you need to add them into same network:  
+``` docker network connect sky-net eureka-service  
+docker network connect sky-net auth-service  
+docker network connect sky-net sky-offer  
+docker network connect sky-net sky-message 
+docker network connect sky-net zuul-service 
+```
+
+
+---------------------------------
+Useful
+---------------------------------
+
+####Token example in a header:  
+`Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiI...<restOfToken>`
+
+---------------------------------
+####Environment external config
+
+External file with environmental config are in ```.env``` file
+which is in same directory as ```docker-compose.yml```
+
+
+---------------------------------
+####DB configuration
 
 This db needs to be created before running db dump file.
 
@@ -68,8 +194,6 @@ admin user credentials from mysql_dumb:
 	"password": "admin"
 }
 ```
-
-
 
 ### What needs to be done within DB (when no using mysql dump file)
 
@@ -118,141 +242,7 @@ DELETE FROM sky_user.user WHERE id = {id};
 ``` 
 where {id} is ID of admin user. It needs to be deleted from user_role table first.
 
-### After all this now you can put into the DB some offers.
-
-
-
----------------------------------
-Connecting with localhost MySQL
----------------------------------
-MySQL can be run on localhost with port forwarding using e.g. [ngrok](https://ngrok.com/) 
-
-`ngrok tcp 3306`
-
-in output there is line about forwarding like that:  
-`Forwarding                    tcp://0.tcp.ngrok.io:11236 -> localhost:3306 `
-
-where  
-`0.tcp.ngrok.io:11236` is address which should be used instead `localhost`
-
-then in docker-compose.yml you need to change SPRING_DATASOURCE_URL to ngrok one: 
- 
-- by updating [.env file](#environment-external-config)
- 
-
-or  
-- changing it in EVERY microservice if not using .env file
-
-For example from:  
-`SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/sky_offer?<restOfParametersHere>`  
-To  
-`SPRING_DATASOURCE_URL=jdbc:mysql://0.tcp.ngrok.io:11236/sky_offer?<restOfParametersHere>`
-  
-<br>
-  
-For alternative way to lunch DB see [this](#adding-mysql-server-to-docker) section.
-
----------------------------------
-
-Build and Run
----------------------------------
-
-To run build project with commend:
-
-` mvn clean install -DskipTests`
-
----------------------------------
-Run docker composer:
-
-` sudo docker-compose up --build`
-
-with clean build:
-
-`sudo docker-compose build --no-cache `
-
----------------------------------
-
-Running app in Docker
----------------------------------
-It can be run by docker-compose file or individually via Dockerfiles.
-
-### A) Using docker-compose.yml
-
-in main project folder (before any modules) run:  
-`docker-compose up`  
-or if you want to rebuild all:  
-`docker-compose up --build`
-
-
-### B) Using Dockerfiles, creates and start/run methods  
-
-#### Prerequisite
-Create a network for microservices:  
-`docker network create sky-net`
-
-#### 1. eureka-service
-This one need to have port published.  
-Build:  
-`docker build . -t eureka-service:latest`   
-Docker container creation:  
-`docker create --name eureka-service --network sky-net --publish 8761:8761 eureka-service:latest`  
-Starting a container:  
-`docker start eureka-service`  
-
-
-#### 2. auth-service
-Build:  
-`docker build . -t auth-service:latest`  
-Docker container creation:  
-`docker create --name auth-service --network sky-net auth-service:latest`  
-Starting a container:  
-`docker start auth-service`
-
-#### 3. sky-offer
-Build:  
-`docker build . -t sky-offer:latest`  
-Docker container creation:  
-`docker create --name sky-offer --network sky-net sky-offer:latest`  
-Starting a container:  
-`docker start sky-offer`
-
-#### 4. sky-message
-Build:  
-`docker build . -t sky-message:latest`  
-Docker container creation:  
-`docker create --name sky-message --network sky-net sky-message:latest`  
-Starting a container:  
-`docker start sky-message`
-
-#### 5. zuul-service
-Build:  
-`docker build . -t zuul-service:latest`  
-Docker container creation:  
-`docker create --name zuul-service --network sky-net --publish 8762:8762 zuul-service:latest`  
-Starting a container:  
-`docker start zuul-service`
-
-#### Running instead creating containers:
-`docker run -p 8761:8761 eureka-service:latest`  
-`docker run auth-service:latest`  
-`docker run sky-offer:latest`  
-`docker run sky-message:latest`  
-`docker run -p 8762:8762 zuul-service:latest`  
-
-Now you need to add them into same network:  
-`docker network connect sky-net eureka-service`  
-`docker network connect sky-net auth-service`  
-`docker network connect sky-net sky-offer`  
-`docker network connect sky-net sky-message`  
-`docker network connect sky-net zuul-service`  
-
-
----------------------------------
-Useful
----------------------------------
-
-#### Token example in header:  
-`Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiI...<restOfToken>`
+##### After all this now you can put into the DB some offers.
 
 ---------------------------------
 
@@ -279,16 +269,3 @@ In microservice docker-compose.yml description dependency to right MySQL image n
       - mysql-sky_offer
 ```
 
-#### Environment external config
-
-External file with environmental config must be named ```.env``` 
-and be in same directory as ```docker-compose.yml```
-
-Stored values should represent key-value structure:
-
-```yaml
-NAMING_SERVICE_URL=http://eureka-service:8761/eureka
-SPRING_PROFILES_ACTIVE=docker
-MYSQL_PORT=3306
-MYSQL_HOST=localhost
-```
