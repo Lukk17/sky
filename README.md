@@ -19,7 +19,7 @@ Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk1
 #Table of content
 - [How it works](#How-it-works)
 - [Launch order](#Launch-order)
-- [Required](#required)
+- [Required](#Required)
 - [Build and Run](#Build-and-Run)
 - [Running app in Docker](#Running-app-in-Docker)
 - [Token example in a header](#Token-example-in-a-header)
