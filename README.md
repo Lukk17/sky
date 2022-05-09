@@ -172,6 +172,82 @@ with clean build:
 
 ---------------------------------
 
+Running app in Docker
+---------------------------------
+It can be run by docker-compose file or individually via Dockerfiles.
+
+### A) Using docker-compose.yml
+
+in main project folder (before any modules) run:  
+`docker-compose up`  
+or if you want to rebuild all:  
+`docker-compose up --build`
+
+
+### B) Using Dockerfiles, creates and start/run methods  
+
+#### Prerequisite
+Create a network for microservices:  
+`docker network create sky-net`
+
+#### 1. eureka-service
+This one need to have port published.  
+Build:  
+`docker build . -t eureka-service:latest`   
+Docker container creation:  
+`docker create --name eureka-service --network sky-net --publish 8761:8761 eureka-service:latest`  
+Starting a container:  
+`docker start eureka-service`  
+
+
+#### 2. auth-service
+Build:  
+`docker build . -t auth-service:latest`  
+Docker container creation:  
+`docker create --name auth-service --network sky-net auth-service:latest`  
+Starting a container:  
+`docker start auth-service`
+
+#### 3. sky-offer
+Build:  
+`docker build . -t sky-offer:latest`  
+Docker container creation:  
+`docker create --name sky-offer --network sky-net sky-offer:latest`  
+Starting a container:  
+`docker start sky-offer`
+
+#### 4. sky-message
+Build:  
+`docker build . -t sky-message:latest`  
+Docker container creation:  
+`docker create --name sky-message --network sky-net sky-message:latest`  
+Starting a container:  
+`docker start sky-message`
+
+#### 5. zuul-service
+Build:  
+`docker build . -t zuul-service:latest`  
+Docker container creation:  
+`docker create --name zuul-service --network sky-net --publish 8762:8762 zuul-service:latest`  
+Starting a container:  
+`docker start zuul-service`
+
+#### Running instead creating containers:
+`docker run -p 8761:8761 eureka-service:latest`  
+`docker run auth-service:latest`  
+`docker run sky-offer:latest`  
+`docker run sky-message:latest`  
+`docker run -p 8762:8762 zuul-service:latest`  
+
+Now you need to add them into same network:  
+`docker network connect sky-net eureka-service`  
+`docker network connect sky-net auth-service`  
+`docker network connect sky-net sky-offer`  
+`docker network connect sky-net sky-message`  
+`docker network connect sky-net zuul-service`  
+
+
+---------------------------------
 Useful
 ---------------------------------
 

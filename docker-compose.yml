@@ -1,94 +1,105 @@
-version: "3"
+version: "3.9"
 
 services:
   eureka-service:
     build:
       dockerfile: Dockerfile
       context: eureka-service
-    image: eureka-service
+    image: eureka-service:latest
+    networks:
+      - sky-network
     restart: always
-    environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-    #  expose to other containers
     expose:
       - 8761
-    #  port HOST:CONTAINER (exposing to host)
     ports:
       - 8761:8761
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+#      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
   zuul-service:
     build:
       dockerfile: Dockerfile
       context: zuul-service
-    image: zuul-service
+    image: zuul-service:latest
+    networks:
+      - sky-network
     expose:
       - 8762
     ports:
       - 8762:8762
     depends_on:
       - eureka-service
-    environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+      - auth-service
+      - sky-offer
+      - sky-message
+  #    environment:
+  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
   auth-service:
     build:
       dockerfile: Dockerfile
       context: auth-service
-    image: auth-service
+    image: auth-service:latest
+    networks:
+      - sky-network
     expose:
       - 9100
-    ports:
-      - 9100:9100
     depends_on:
       - eureka-service
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?${SQL_PARAMS}
-      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
+  #    environment:
+  #      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?${SQL_PARAMS}
+  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+  #      - MYSQL_PORT=${MYSQL_PORT}
+  #      - MYSQL_HOST=${MYSQL_HOST}
+  #      - MYSQL_USER=${MYSQL_USER}
+  #      - MYSQL_PASS=${MYSQL_PASS}
 
   sky-offer:
     build:
       dockerfile: Dockerfile
       context: sky-offer
-    image: sky-offer
+    image: sky-offer:latest
+    networks:
+      - sky-network
     restart: always
     expose:
       - 5552
-    ports:
-      - 5552:5552
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_offer?${SQL_PARAMS}
-      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
-
+    depends_on:
+      - eureka-service
+  #    environment:
+  #      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_offer?${SQL_PARAMS}
+  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+  #      - MYSQL_PORT=${MYSQL_PORT}
+  #      - MYSQL_HOST=${MYSQL_HOST}
+  #      - MYSQL_USER=${MYSQL_USER}
+  #      - MYSQL_PASS=${MYSQL_PASS}
 
   sky-message:
     build:
       dockerfile: Dockerfile
       context: sky-message
-    image: sky-message
+    image: sky-message:latest
+    networks:
+      - sky-network
     restart: always
     expose:
       - 5553
     ports:
       - 5553:5553
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_message?${SQL_PARAMS}
-      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
     depends_on:
       - eureka-service
+#    environment:
+#      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_message?${SQL_PARAMS}
+#      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+#      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+#      - MYSQL_PORT=${MYSQL_PORT}
+#      - MYSQL_HOST=${MYSQL_HOST}
+#      - MYSQL_USER=${MYSQL_USER}
+#      - MYSQL_PASS=${MYSQL_PASS}
+
+networks:
+  sky-network: { }
