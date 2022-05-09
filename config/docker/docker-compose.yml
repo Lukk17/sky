@@ -4,7 +4,7 @@ services:
   eureka-service:
     container_name: eureka-service
     build:
-      dockerfile: ../../eureka-service/Dockerfile
+      dockerfile: Dockerfile
       context: ../../eureka-service
     image: eureka-service:latest
     networks:
@@ -21,7 +21,7 @@ services:
   zuul-service:
     container_name: zuul-service
     build:
-      dockerfile: ../../zuul-service/Dockerfile
+      dockerfile: Dockerfile
       context: ../../zuul-service
     image: zuul-service:latest
     networks:
@@ -42,7 +42,7 @@ services:
   auth-service:
     container_name: auth-service
     build:
-      dockerfile: ../../auth-service/Dockerfile
+      dockerfile: Dockerfile
       context: ../../auth-service
     image: auth-service:latest
     networks:
@@ -63,7 +63,7 @@ services:
   sky-offer:
     container_name: sky-offer
     build:
-      dockerfile: ../../sky-offer/Dockerfile
+      dockerfile: Dockerfile
       context: ../../sky-offer
     image: sky-offer:latest
     networks:
@@ -85,7 +85,7 @@ services:
   sky-message:
     container_name: sky-message
     build:
-      dockerfile: ../../sky-message/Dockerfile
+      dockerfile: Dockerfile
       context: ../../sky-message
     image: sky-message:latest
     networks:

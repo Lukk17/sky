@@ -1,0 +1,2 @@
+INSERT INTO sky.message VALUES (1, '2022-05-09 22:24:45', false, 'admin@admin', 'test@test', 'testowo');
+INSERT INTO sky.message VALUES (2, '2022-05-09 22:25:45', false, 'test@test', 'admin@admin', 'adminowo');

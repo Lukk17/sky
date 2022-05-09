@@ -20,11 +20,11 @@ Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk1
 - [How it works](#How-it-works)
 - [Launch order](#Launch-order)
 - [Required](#Required)
-- [Build and Run](#Build-and-Run)
+- [Build and Run with Maven](#Build-and-Run-with-Maven)
 - [Running app in Docker](#Running-app-in-Docker)
+- [DB configuration](#DB-configuration)
 - [Token example in a header](#Token-example-in-a-header)
 - [Environment external config](#Environment-external-config)
-- [DB configuration](#DB-configuration)
 - [Adding MySQL server to docker](#Adding-MySQL-server-to-docker)
 
 
@@ -58,16 +58,15 @@ Do NOT send request directly to microservice like:
 
 # Required 
 MySQL database:  
-`sky` which should be configured before lunching services.
-
+`sky` which should be configured before lunching services.  
+See [DB configuration](#DB-configuration)
 ---------------------------------
 
-# Build and Run
+# Build and Run with Maven
 
 
-To run build project with commend:
-
-` mvn clean install -DskipTests`
+To run build project with commend:  
+`mvn spring-boot:run -DskipTests`
 
 ---------------------------------
 
@@ -161,9 +160,27 @@ docker network connect sky-net sky-message
 docker network connect sky-net zuul-service 
 ```
 
+---------------------------------
+
+# DB configuration
+
+The Fastest way to configure the DB is:
+1. create a schema named "sky".
+2. start all sky services
+3. run script in terminal ./config/script/createUsers.sh
+4. run in sky DB: ./config/script/sql_commands/sql_offers_insert.sql
+5. run in sky DB: ./config/script/sql_commands/sql_messages_insert.sql
+
+You can do it manually as described here:
+[Manual DB configuration](#Manual-DB-configuration)
 
 ---------------------------------
 Useful
+---------------------------------
+---------------------------------
+#### Run configurations 
+Are stored in .idea/runConfigurations
+
 ---------------------------------
 
 #### Token example in a header:  
@@ -175,27 +192,11 @@ Useful
 External file with environmental config are in ```.env``` file
 which is in same directory as ```docker-compose.yml```
 
+---------------------------------
+# Other
 
 ---------------------------------
-#### DB configuration
-
-This db needs to be created before running db dump file.
-
-_Admin and roles must be added to DB_  
-mysl_dumb can be used. (basicDump do not have offer, message and booked table - which skyFullDump have)
-
-##### When using sql-dump admin password will not be correctly encrypted.
-To repair it register new user with same password as admins (below) and copy it as admin password directly in user DB.
-
-admin user credentials from mysql_dumb:
-```
-{
-	"username": "admin@admin",
-	"password": "admin"
-}
-```
-
-### What needs to be done within DB (when no using mysql dump file)
+#### Manual DB configuration
 
 Admin role should be named "ROLE_ADMIN"
 Admin role should have id 0
