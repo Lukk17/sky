@@ -1,0 +1,21 @@
+buildscript {
+    apply from: '../config/configBuild.gradle'
+}
+
+plugins {
+    id "org.springframework.boot" version "$springVersion"
+}
+
+version = '0.0.1-SNAPSHOT'
+description = 'eureka-service'
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-actuator:${springVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-web:${springVersion}"
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server:3.1.2'
+    implementation 'com.google.code.gson:gson:2.9.0'
+
+    runtimeOnly "org.springframework.boot:spring-boot-devtools:${springVersion}"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test:$springVersion"
+}

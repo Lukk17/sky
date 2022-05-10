@@ -2,6 +2,8 @@
 
 .mvn
 
+.gradle/
+
 ### IntelliJ IDEA ###
 .idea
 *.iws

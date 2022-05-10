@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SkyOfferApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false">
-    <module name="sky-offer" />
+  <configuration default="false" name="SkyOfferApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="sky-offer.main" />
     <extension name="net.ashald.envfile">
       <option name="IS_ENABLED" value="false" />
       <option name="IS_SUBST" value="false" />

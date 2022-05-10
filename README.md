@@ -66,7 +66,13 @@ See [DB configuration](#DB-configuration)
 
 
 To run build project with commend:  
-`mvn spring-boot:run -DskipTests`
+```
+mvn spring-boot:run -DskipTests
+```
+or  
+```
+gradle clean bootRun --args='--spring.profiles.active=local'
+```
 
 ---------------------------------
 
@@ -83,64 +89,109 @@ This log need to appear in all containers:
 
 
 In main project folder (before any modules) run:  
-`docker-compose -f config/docker/docker-compose.yml up`  
+```
+docker-compose -f config/docker/docker-compose.yml up
+```  
 
 or in "config/docker/" folder:  
-`docker-compose up`  
+```
+docker-compose up
+```  
 
 or if you want to rebuild all:  
-`docker-compose -f config/docker/docker-compose.yml up --build`
+```
+docker-compose -f config/docker/docker-compose.yml up --build
+```
 
 or with clean build:  
-`docker-compose -f config/docker/docker-compose.yml build --no-cache`
+```
+docker-compose -f config/docker/docker-compose.yml build --no-cache
+```
 
 ### B) Using Dockerfiles, creates and start/run methods  
 
 #### Prerequisite
 Create a network for microservices:  
-`docker network create sky-net`
+```
+docker network create sky-net
+```
+
+ALL DOCKER BUILD COMMANDS NEEDS TO BE STARTED FROM MAIN (SKY) FOLDER,   
+NOT FROM EACH MODULE FOLDER  
+due to gradle build dependency on config module gradle file
+
 
 #### 1. eureka-service
 This one need to have port published.  
 Build:  
-`docker build . -t eureka-service:latest`   
+```
+docker build . -f eureka-service/docker/Dockerfile -t eureka-service:latest
+```   
 Docker container creation:  
-`docker create --name eureka-service --network sky-net --publish 8761:8761 eureka-service:latest`  
+```
+docker create --name eureka-service --network sky-net --publish 8761:8761 eureka-service:latest
+```  
 Starting a container:  
-`docker start eureka-service`  
+```
+docker start eureka-service
+```  
 
 
 #### 2. auth-service
 Build:  
-`docker build . -t auth-service:latest`  
+```
+docker build . -f auth-service/docker/Dockerfile -t auth-service:latest
+```  
 Docker container creation:  
-`docker create --name auth-service --network sky-net auth-service:latest`  
+```
+docker create --name auth-service --network sky-net auth-service:latest
+```  
 Starting a container:  
-`docker start auth-service`
+```
+docker start auth-service
+```
 
 #### 3. sky-offer
 Build:  
-`docker build . -t sky-offer:latest`  
+```
+docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest
+```  
 Docker container creation:  
-`docker create --name sky-offer --network sky-net sky-offer:latest`  
+```
+docker create --name sky-offer --network sky-net sky-offer:latest
+```  
 Starting a container:  
-`docker start sky-offer`
+```
+docker start sky-offer
+```
 
 #### 4. sky-message
 Build:  
-`docker build . -t sky-message:latest`  
+```
+docker build . -f sky-message/docker/Dockerfile -t sky-message:latest
+```  
 Docker container creation:  
-`docker create --name sky-message --network sky-net sky-message:latest`  
+```
+docker create --name sky-message --network sky-net sky-message:latest
+```  
 Starting a container:  
-`docker start sky-message`  
+```
+docker start sky-message
+```  
 
 #### 5. zuul-service
 Build:  
-`docker build . -t zuul-service:latest`  
+```
+docker build . -f zuul-service/docker/Dockerfile -t zuul-service:latest
+```  
 Docker container creation:  
-`docker create --name zuul-service --network sky-net --publish 8762:8762 zuul-service:latest`  
+```
+docker create --name zuul-service --network sky-net --publish 8762:8762 zuul-service:latest
+```  
 Starting a container:  
-`docker start zuul-service`  
+```
+docker start zuul-service
+```  
 
 
 #### Running instead creating containers:
@@ -153,7 +204,8 @@ docker run -p 8762:8762 zuul-service:latest
 ```  
 
 Now you need to add them into same network:  
-``` docker network connect sky-net eureka-service  
+``` 
+docker network connect sky-net eureka-service  
 docker network connect sky-net auth-service  
 docker network connect sky-net sky-offer  
 docker network connect sky-net sky-message 
@@ -184,7 +236,9 @@ Are stored in .idea/runConfigurations
 ---------------------------------
 
 #### Token example in a header:  
-`Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiI...<restOfToken>`
+```
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiI...<restOfToken>
+```
 
 ---------------------------------
 #### Environment external config

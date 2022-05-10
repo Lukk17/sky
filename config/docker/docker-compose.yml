@@ -4,9 +4,8 @@ services:
   eureka-service:
     container_name: eureka-service
     build:
-      dockerfile: Dockerfile
-      context: ../../eureka-service
-    image: eureka-service:latest
+      dockerfile: ./eureka-service/docker/Dockerfile
+      context: ../../
     networks:
       - sky-network
     restart: always
@@ -18,33 +17,11 @@ services:
 #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
 #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
-  zuul-service:
-    container_name: zuul-service
-    build:
-      dockerfile: Dockerfile
-      context: ../../zuul-service
-    image: zuul-service:latest
-    networks:
-      - sky-network
-    expose:
-      - 8762
-    ports:
-      - 8762:8762
-    depends_on:
-      - eureka-service
-      - auth-service
-      - sky-offer
-      - sky-message
-  #    environment:
-  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-
   auth-service:
     container_name: auth-service
     build:
-      dockerfile: Dockerfile
-      context: ../../auth-service
-    image: auth-service:latest
+      dockerfile: ./auth-service/docker/Dockerfile
+      context: ../../
     networks:
       - sky-network
     expose:
@@ -63,9 +40,8 @@ services:
   sky-offer:
     container_name: sky-offer
     build:
-      dockerfile: Dockerfile
-      context: ../../sky-offer
-    image: sky-offer:latest
+      dockerfile: ./sky-offer/docker/Dockerfile
+      context: ../../
     networks:
       - sky-network
     restart: always
@@ -85,9 +61,8 @@ services:
   sky-message:
     container_name: sky-message
     build:
-      dockerfile: Dockerfile
-      context: ../../sky-message
-    image: sky-message:latest
+      dockerfile: ./sky-message/docker/Dockerfile
+      context: ../../
     networks:
       - sky-network
     restart: always
@@ -105,6 +80,26 @@ services:
 #      - MYSQL_HOST=${MYSQL_HOST}
 #      - MYSQL_USER=${MYSQL_USER}
 #      - MYSQL_PASS=${MYSQL_PASS}
+
+  zuul-service:
+    container_name: zuul-service
+    build:
+      dockerfile: ./zuul-service/docker/Dockerfile
+      context: ../../
+    networks:
+      - sky-network
+    expose:
+      - 8762
+    ports:
+      - 8762:8762
+    depends_on:
+      - eureka-service
+      - auth-service
+      - sky-offer
+      - sky-message
+  #    environment:
+  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
 networks:
   sky-network:

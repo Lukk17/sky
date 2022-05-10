@@ -1,0 +1,35 @@
+buildscript {
+    apply from: '../config/configBuild.gradle'
+}
+
+plugins {
+    id "org.springframework.boot" version "${springVersion}"
+}
+
+version = '0.0.1-SNAPSHOT'
+description = 'auth-service'
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-actuator:${springVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-data-rest:${springVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-validation:${springVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-web:${springVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-security:${springVersion}"
+
+    implementation 'org.springframework.security:spring-security-crypto:5.6.3'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.2'
+    implementation 'mysql:mysql-connector-java:8.0.29'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+    runtimeOnly "org.springframework.boot:spring-boot-devtools:${springVersion}"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springVersion}"
+    testImplementation 'org.springframework.security:spring-security-test:5.6.3'
+    testImplementation 'com.h2database:h2:2.1.212'
+
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+}
