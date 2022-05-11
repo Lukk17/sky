@@ -8,7 +8,7 @@ ARG APP_NAME
 ARG HOME
 LABEL stage=build
 COPY ./$APP_NAME/ $HOME
-COPY ./config/*.gradle /home/config/
+COPY ./config/*.gradle.kts /home/config/
 RUN gradle -p $HOME bootJar
 
 

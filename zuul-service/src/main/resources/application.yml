@@ -16,6 +16,23 @@ spring:
     locale-resolver: accept_header
     # for option request handling
     dispatch-options-request: true
+  main:
+    # without it zuul service fail to boot up - dependencies issue
+    allow-circular-references: true
+
+# expose actuator endpoints (* for all)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
 
 # ==================================================================================================================
 # EUREKA setup
@@ -80,12 +97,3 @@ zuul:
       strip-prefix: false
     # Exclude authorization from sensitive headers
     sensitive-headers: Cookie,Set-Cookie
-
-
-# ==================================================================================================================
-
-lukk:
-  helloWorld: Gateway service for Sky
-
-
-

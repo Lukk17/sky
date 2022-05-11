@@ -35,6 +35,13 @@ management:
       exposure:
         include: "*"
 
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
+
 # ==================================================================================================================
 #  EUREKA setup
 
@@ -47,8 +54,3 @@ eureka:
 # in docker sometimes there is problem with DNS resolving - that why ip addresses are better as names
   instance:
     preferIpAddress: true
-
-# ==================================================================================================================
-
-lukk:
-  helloWorld: Message service for Sky

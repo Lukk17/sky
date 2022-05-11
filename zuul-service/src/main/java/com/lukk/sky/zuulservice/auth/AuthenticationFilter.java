@@ -5,6 +5,7 @@ import com.netflix.zuul.context.RequestContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +14,7 @@ import static org.springframework.cloud.netflix.zuul.filters.support.FilterConst
 
 
 @Component
-@Log4j2
+@Slf4j
 public class AuthenticationFilter extends ZuulFilter {
 
     @Value("${security.jwt.header:Authorization}")

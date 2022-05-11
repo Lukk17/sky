@@ -64,6 +64,10 @@ See [DB configuration](#DB-configuration)
 
 # Build and Run with Maven
 
+### All run configuration are saved in folder 
+```
+.idea\runConfigurations
+```
 
 To run build project with commend:  
 ```

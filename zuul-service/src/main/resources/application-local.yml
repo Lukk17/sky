@@ -24,6 +24,13 @@ management:
       exposure:
         include: "*"
 
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
+
 # ==================================================================================================================
 # EUREKA setup
 
@@ -87,9 +94,3 @@ zuul:
       strip-prefix: false
     # Exclude authorization from sensitive headers
     sensitive-headers: Cookie,Set-Cookie
-
-
-# ==================================================================================================================
-
-lukk:
-  helloWorld: Gateway service for Sky

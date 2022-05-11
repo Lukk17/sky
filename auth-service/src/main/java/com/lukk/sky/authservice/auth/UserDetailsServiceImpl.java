@@ -5,6 +5,7 @@ import com.lukk.sky.authservice.entity.User;
 import com.lukk.sky.authservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +18,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-@Log4j2
+@Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserService userService;

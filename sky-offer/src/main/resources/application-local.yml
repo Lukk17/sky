@@ -34,6 +34,13 @@ management:
       exposure:
         include: "*"
 
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
+
 # ==================================================================================================================
 # EUREKA setup
 

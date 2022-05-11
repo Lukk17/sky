@@ -6,14 +6,15 @@ import com.lukk.sky.message.entity.Message;
 import com.lukk.sky.message.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Log4j2
 @RequiredArgsConstructor
+@Slf4j
 public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepo;

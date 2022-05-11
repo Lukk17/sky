@@ -38,9 +38,14 @@ spring:
       # timeout for connection - useful for docker as it can take longer to connect
       connection-timeout: 60000
       validation-timeout: 60000
+#      minimum-idle: 0
+#      initialization-fail-timeout: 1
     username: root
     password: Lukk1234
     driver-class-name: com.mysql.cj.jdbc.Driver
+#  sql:
+#    init:
+#      continue-on-error: true
 
 # expose actuator endpoints (* for all)
 management:
@@ -51,6 +56,13 @@ management:
 
 # for amazon (look above at important#1)
 #spring.datasource.url=jdbc:mysql://sky.ccrunaygib3u.eu-west-2.rds.amazonaws.com/sky?useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
 
 # ==================================================================================================================
 #  EUREKA setup
@@ -64,9 +76,3 @@ eureka:
   instance:
     # change default link to service in eureka dashboard
     statusPageUrlPath: http://localhost:${server.port}/actuator
-
-
-# ==================================================================================================================
-# custom property
-lukk:
-  helloWorld: Auth service for Sky

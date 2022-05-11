@@ -28,6 +28,19 @@ spring:
     password: Lukk1234
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+# expose actuator endpoints (* for all)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
 
 # ==================================================================================================================
 # EUREKA setup
@@ -43,9 +56,3 @@ eureka:
 # in docker sometimes there is problem with DNS resolving - that why ip addresses are better as names
   instance:
     preferIpAddress: true
-
-
-# ==================================================================================================================
-
-lukk:
-  helloWorld: Offer service for Sky
