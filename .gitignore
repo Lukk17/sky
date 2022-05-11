@@ -1,5 +1,6 @@
 /target/
 
+
 .mvn
 
 .gradle/
@@ -66,3 +67,8 @@ local.properties
 
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+!.idea/
+
+.idea/*
+!.idea/runConfigurations/
