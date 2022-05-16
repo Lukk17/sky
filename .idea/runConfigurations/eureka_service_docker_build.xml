@@ -8,10 +8,12 @@
         <option name="containerName" value="" />
         <option name="contextFolderPath" value="." />
         <option name="entrypoint" value="" />
-        <option name="commandLineOptions" value="" />
+        <option name="commandLineOptions" value="--publish 8761:8761 --network sky-net" />
         <option name="sourceFilePath" value="eureka-service/docker/Dockerfile" />
       </settings>
     </deployment>
-    <method v="2" />
+    <method v="2">
+      <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_Docker network" />
+    </method>
   </configuration>
 </component>

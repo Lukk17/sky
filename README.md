@@ -59,7 +59,7 @@ Do NOT send request directly to microservice like:
 # Required 
 MySQL database:  
 `sky` which should be configured before lunching services.  
-See [DB configuration](#DB-configuration)
+See [DB configuration](#DB-configuration) for manual how to configure.
 ---------------------------------
 
 # Build and Run with Maven
@@ -129,7 +129,7 @@ due to gradle build dependency on config module gradle file
 This one need to have port published.  
 Build:  
 ```
-docker build . -f eureka-service/docker/Dockerfile -t eureka-service:latest
+docker build . -f eureka-service/docker/Dockerfile -t eureka-service:latest --no-cache
 ```   
 Docker container creation:  
 ```
@@ -144,7 +144,7 @@ docker start eureka-service
 #### 2. auth-service
 Build:  
 ```
-docker build . -f auth-service/docker/Dockerfile -t auth-service:latest
+docker build . -f auth-service/docker/Dockerfile -t auth-service:latest --no-cache
 ```  
 Docker container creation:  
 ```
@@ -158,7 +158,7 @@ docker start auth-service
 #### 3. sky-offer
 Build:  
 ```
-docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest
+docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest --no-cache
 ```  
 Docker container creation:  
 ```
@@ -172,7 +172,7 @@ docker start sky-offer
 #### 4. sky-message
 Build:  
 ```
-docker build . -f sky-message/docker/Dockerfile -t sky-message:latest
+docker build . -f sky-message/docker/Dockerfile -t sky-message:latest --no-cache
 ```  
 Docker container creation:  
 ```
@@ -186,7 +186,7 @@ docker start sky-message
 #### 5. zuul-service
 Build:  
 ```
-docker build . -f zuul-service/docker/Dockerfile -t zuul-service:latest
+docker build . -f zuul-service/docker/Dockerfile -t zuul-service:latest --no-cache
 ```  
 Docker container creation:  
 ```
@@ -195,8 +195,7 @@ docker create --name zuul-service --network sky-net --publish 8762:8762 zuul-ser
 Starting a container:  
 ```
 docker start zuul-service
-```  
-
+```
 
 #### Running instead creating containers:
 ```
@@ -216,6 +215,10 @@ docker network connect sky-net sky-message
 docker network connect sky-net zuul-service 
 ```
 
+If network not needed can be removed with:
+```
+docker network rm sky-net
+```
 ---------------------------------
 
 # DB configuration
@@ -226,6 +229,9 @@ The Fastest way to configure the DB is:
 3. run script in terminal ./config/script/createUsers.sh
 4. run in sky DB: ./config/script/sql_commands/sql_offers_insert.sql
 5. run in sky DB: ./config/script/sql_commands/sql_messages_insert.sql
+6. run in sky DB: ./config/script/sql_commands/sql_roles_insert.sql
+To make add to user with ID 1 admin privileges:
+7. run in sky DB: ./config/script/sql_commands/sql_user_role_admin.sql
 
 You can do it manually as described here:
 [Manual DB configuration](#Manual-DB-configuration)

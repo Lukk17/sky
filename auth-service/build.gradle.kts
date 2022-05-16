@@ -14,6 +14,10 @@ version = "0.0.1-SNAPSHOT"
 description = "auth-service"
 java.sourceCompatibility = JavaVersion.valueOf("${project.extra["javaVersion"]}")
 
+tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
+}
+
 dependencies {
     val springVersion = "${project.extra["springVersion"]}"
     implementation("org.springframework.boot:spring-boot-starter-actuator:${springVersion}")

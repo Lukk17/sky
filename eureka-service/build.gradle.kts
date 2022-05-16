@@ -14,6 +14,9 @@ version = "0.0.1-SNAPSHOT"
 description = "eureka-service"
 java.sourceCompatibility = JavaVersion.valueOf("${project.extra["javaVersion"]}")
 
+tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
+}
 
 dependencies {
     val springVersion = "${project.extra["springVersion"]}"

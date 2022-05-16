@@ -14,6 +14,10 @@ version = "0.0.1-SNAPSHOT"
 description = "zuul-service"
 java.sourceCompatibility = JavaVersion.valueOf("${project.extra["javaVersion"]}")
 
+tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
+}
+
 dependencies {
 //    DO NOT UPDATE THIS DEPENDENCIES DUE TO ZUUL NO LONGER SUPPORTED BY SPRING
     implementation("org.springframework.boot:spring-boot-starter-web:2.2.6.RELEASE")

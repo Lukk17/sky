@@ -8,7 +8,7 @@
         <option name="containerName" value="" />
         <option name="contextFolderPath" value="." />
         <option name="entrypoint" value="" />
-        <option name="commandLineOptions" value="" />
+        <option name="commandLineOptions" value="--publish 8762:8762 --network sky-net" />
         <option name="sourceFilePath" value="zuul-service/docker/Dockerfile" />
       </settings>
     </deployment>
