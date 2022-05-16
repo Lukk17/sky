@@ -263,15 +263,15 @@ which is in same directory as ```docker-compose.yml```
 #### Manual DB configuration
 
 Admin role should be named "ROLE_ADMIN"
-Admin role should have id 0
+Admin role should have id 1
 
 User role should be named "ROLE_USER"
-User role should have id 1
+User role should have id 2
 
 put it into SQL DB:
 ``` 
-INSERT INTO sky_user.role VALUES (0, 'ROLE_ADMIN');
-INSERT INTO sky_user.role VALUES (1, 'ROLE_USER');
+INSERT INTO sky_user.role VALUES (1, 'ROLE_ADMIN');
+INSERT INTO sky_user.role VALUES (2, 'ROLE_USER');
 ``` 
 
 Create admin and test users through API endpoint:
@@ -291,9 +291,9 @@ and
 }
 ``` 
 
-Then change admin user role to ROLE_ADMIN (role_id=0):
+Then change admin user role to ROLE_ADMIN (role_id=1):
 ``` 
-UPDATE sky_user.user_role SET role_id = 0 WHERE user_id = {id};
+UPDATE sky_user.user_role SET role_id = 1 WHERE user_id = {id};
 ``` 
 where {id} is ID of admin user. You can check it with:
 ``` 
