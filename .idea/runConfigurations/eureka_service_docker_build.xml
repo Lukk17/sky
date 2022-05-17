@@ -12,8 +12,6 @@
         <option name="sourceFilePath" value="eureka-service/docker/Dockerfile" />
       </settings>
     </deployment>
-    <method v="2">
-      <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_Docker network" />
-    </method>
+    <method v="2" />
   </configuration>
 </component>
