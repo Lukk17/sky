@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="zuul-service docker build" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+    <deployment type="dockerfile">
+      <settings>
+        <option name="imageTag" value="zuul-service:latest" />
+        <option name="buildCliOptions" value="" />
+        <option name="command" value="" />
+        <option name="containerName" value="" />
+        <option name="contextFolderPath" value="." />
+        <option name="entrypoint" value="" />
+        <option name="commandLineOptions" value="--publish 8762:8762 --network sky-net" />
+        <option name="sourceFilePath" value="zuul-service/docker/Dockerfile" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

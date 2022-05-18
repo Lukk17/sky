@@ -1,12 +1,18 @@
 /target/
 
+
 .mvn
 
+.gradle/
+
 ### IntelliJ IDEA ###
-.idea
 *.iws
 *.iml
 *.ipr
+
+!.idea/
+.idea/**
+!.idea/runConfigurations
 
 .metadata
 bin/
@@ -64,3 +70,4 @@ local.properties
 
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+

@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="eureka-service docker build" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+    <deployment type="dockerfile">
+      <settings>
+        <option name="imageTag" value="eureka-service:latest" />
+        <option name="buildCliOptions" value="" />
+        <option name="command" value="" />
+        <option name="containerName" value="" />
+        <option name="contextFolderPath" value="." />
+        <option name="entrypoint" value="" />
+        <option name="commandLineOptions" value="--publish 8761:8761 --network sky-net" />
+        <option name="sourceFilePath" value="eureka-service/docker/Dockerfile" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

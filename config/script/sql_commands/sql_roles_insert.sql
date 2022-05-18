@@ -1,0 +1,2 @@
+INSERT INTO sky.role VALUES (1, 'ROLE_ADMIN');
+INSERT INTO sky.role VALUES (2, 'ROLE_USER');
