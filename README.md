@@ -62,7 +62,7 @@ MySQL database:
 See [DB configuration](#DB-configuration) for manual how to configure.
 ---------------------------------
 
-# Build and Run with Maven
+# Build and Run with Gradle
 
 ### All run configuration are saved in folder 
 ```
@@ -70,19 +70,65 @@ See [DB configuration](#DB-configuration) for manual how to configure.
 ```
 
 To run build project with commend:  
-```
-mvn spring-boot:run -DskipTests
-```
-or  
+ 
 ```
 gradle clean bootRun --args='--spring.profiles.active=local'
 ```
+It will be using default environment variables.
+To change them add all variables to operating system.
+
+---------------------------------
+
+# Environment variable
+ List all used variables with default values (in docker):
+```
+NAMING_SERVICE_URL = http://host.docker.internal:8761/eureka;
+SPRING_PROFILES_ACTIVE = default;
+MYSQL_HOST = host.docker.internal;
+MYSQL_PORT = 3306;
+DB_PARAMS = useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw;
+MYSQL_USER = root;
+MYSQL_PASS = Lukk1234;
+MYSQL_DATABASE_NAME = sky;
+SPRING_DEBUG = INFO;
+HIBERNATE_DEBUG = INFO;
+MYSQL_DATABASE_NAME = sky;
+SHOW_SQL_QUERIES = false;
+SPRING_SECURITY_USER = XYZ;
+SPRING_SECURITY_PASS = XYZ;
+```
+in one easy to copy line:
+```
+NAMING_SERVICE_URL=http://host.docker.internal:8761/eureka;SPRING_PROFILES_ACTIVE=default;MYSQL_HOST=host.docker.internal;MYSQL_PORT=3306;MYSQL_USER=root;MYSQL_PASS=Lukk1234;MYSQL_DATABASE_NAME=sky;SPRING_DEBUG=INFO;HIBERNATE_DEBUG=DEBUG;SHOW_SQL_QUERIES=false;SPRING_SECURITY_USER=XYZ;SPRING_SECURITY_PASS=XYZ;DB_PARAMS=useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+```
+
+#### Local run
+When running locally with RunConfiguration via Gradle no env variable are needed.
+It is using application-local.yml properties with hardcoded variable for local run.
+
+If running locally with RunConfiguration via SpringBoot app,
+then you will need additional variable:
+```
+SPRING_DATASOURCE_URL = jdbc:mysql://localhost:3306/sky?useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+```
+instead of : `MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE_NAME, DB_PARAMS`
+
+in one easy to copy line:
+```
+NAMING_SERVICE_URL=http://localhost:8761/eureka;MYSQL_USER=root;MYSQL_PASS=Lukk1234;SPRING_DEBUG=INFO;HIBERNATE_DEBUG=INFO;SHOW_SQL_QUERIES=false;SPRING_SECURITY_USER =XYZ;SPRING_SECURITY_PASS=XYZ;SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/sky?useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+```
+
+Auth, Offer and Message services required all of this env variable.  
+Eureka require only : `NAMING_SERVICE_URL, SPRING_DEBUG, HIBERNATE_DEBUG`  
+Zuul require only: `NAMING_SERVICE_URL, SPRING_DEBUG, HIBERNATE_DEBUG, SPRING_SECURITY_USER, SPRING_SECURITY_PASS`
 
 ---------------------------------
 
 # Running app in Docker
 
 It can be run by docker-compose file or individually via Dockerfiles.
+
+#### Remember of adding env variable to your system or use Intellij RunConfiguration which has those variables.
 
 ### A) Using docker-compose.yml
 
@@ -92,7 +138,7 @@ This log need to appear in all containers:
 `Getting all instance registry info from the eureka server`
 
 
-In main project folder (before any modules) run:  
+In main project folder (before any modules) run:
 ```
 docker-compose -f config/docker/docker-compose.yml up
 ```  

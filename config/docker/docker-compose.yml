@@ -13,9 +13,11 @@ services:
       - 8761
     ports:
       - 8761:8761
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-#      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
+      - SPRING_DEBUG=${SPRING_DEBUG}
+      - HIBERNATE_DEBUG=${HIBERNATE_DEBUG}
 
   auth-service:
     container_name: auth-service
@@ -28,14 +30,18 @@ services:
       - 9100
     depends_on:
       - eureka-service
-  #    environment:
-  #      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_user?${SQL_PARAMS}
-  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-  #      - MYSQL_PORT=${MYSQL_PORT}
-  #      - MYSQL_HOST=${MYSQL_HOST}
-  #      - MYSQL_USER=${MYSQL_USER}
-  #      - MYSQL_PASS=${MYSQL_PASS}
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}?${DB_PARAMS}
+      - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+      - MYSQL_DATABASE_NAME=${MYSQL_DATABASE_NAME}
+      - SHOW_SQL_QUERIES=${SHOW_SQL_QUERIES}
+      - SPRING_DEBUG=${SPRING_DEBUG}
+      - HIBERNATE_DEBUG=${HIBERNATE_DEBUG}
+      - SPRING_SECURITY_USER=${SPRING_SECURITY_USER}
+      - SPRING_SECURITY_PASS=${SPRING_SECURITY_PASS}
 
   sky-offer:
     container_name: sky-offer
@@ -49,14 +55,19 @@ services:
       - 5552
     depends_on:
       - eureka-service
-  #    environment:
-  #      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_offer?${SQL_PARAMS}
-  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-  #      - MYSQL_PORT=${MYSQL_PORT}
-  #      - MYSQL_HOST=${MYSQL_HOST}
-  #      - MYSQL_USER=${MYSQL_USER}
-  #      - MYSQL_PASS=${MYSQL_PASS}
+      - auth-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}?${DB_PARAMS}
+      - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+      - MYSQL_DATABASE_NAME=${MYSQL_DATABASE_NAME}
+      - SHOW_SQL_QUERIES=${SHOW_SQL_QUERIES}
+      - SPRING_DEBUG=${SPRING_DEBUG}
+      - HIBERNATE_DEBUG=${HIBERNATE_DEBUG}
+      - SPRING_SECURITY_USER=${SPRING_SECURITY_USER}
+      - SPRING_SECURITY_PASS=${SPRING_SECURITY_PASS}
 
   sky-message:
     container_name: sky-message
@@ -72,14 +83,18 @@ services:
       - 5553:5553
     depends_on:
       - eureka-service
-#    environment:
-#      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_ADDRESS}/sky_message?${SQL_PARAMS}
-#      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
-#      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-#      - MYSQL_PORT=${MYSQL_PORT}
-#      - MYSQL_HOST=${MYSQL_HOST}
-#      - MYSQL_USER=${MYSQL_USER}
-#      - MYSQL_PASS=${MYSQL_PASS}
+      - auth-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}?${DB_PARAMS}
+      - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+      - SHOW_SQL_QUERIES=${SHOW_SQL_QUERIES}
+      - SPRING_DEBUG=${SPRING_DEBUG}
+      - HIBERNATE_DEBUG=${HIBERNATE_DEBUG}
+      - SPRING_SECURITY_USER=${SPRING_SECURITY_USER}
+      - SPRING_SECURITY_PASS=${SPRING_SECURITY_PASS}
 
   zuul-service:
     container_name: zuul-service

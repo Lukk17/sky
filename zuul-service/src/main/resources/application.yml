@@ -9,8 +9,8 @@ spring:
     name: zuul-service
   security:
     user:
-      name: XYZ
-      password: XYZ
+      name: ${SPRING_SECURITY_USER:XYZ}
+      password: ${SPRING_SECURITY_PASS:XYZ}
   mvc:
     # location from http header
     locale-resolver: accept_header
@@ -31,8 +31,8 @@ logging:
   level:
     org:
       springframework:
-        web: INFO
-      hibernate: INFO
+        web: ${SPRING_DEBUG:INFO}
+      hibernate: ${HIBERNATE_DEBUG:INFO}
 
 # ==================================================================================================================
 # EUREKA setup
@@ -40,7 +40,7 @@ logging:
 eureka:
   client:
     service-url:
-      defaultZone: ${SERVICE_URL_DEFAULT_ZONE:http://host.docker.internal:8761/eureka}
+      defaultZone: ${NAMING_SERVICE_URL:http://host.docker.internal:8761/eureka}
     register-with-eureka: true
     fetch-registry: true
   # in docker sometimes there is problem with DNS resolving - that why ip addresses are better as names

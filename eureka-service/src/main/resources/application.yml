@@ -19,8 +19,8 @@ logging:
   level:
     org:
       springframework:
-        web: INFO
-      hibernate: INFO
+        web: ${SPRING_DEBUG:INFO}
+      hibernate: ${HIBERNATE_DEBUG:INFO}
 # ==================================================================================================================
 # EUREKA setup
 
@@ -28,7 +28,7 @@ logging:
 eureka:
   client:
     service-url:
-      defaultZone: ${SERVICE_URL_DEFAULT_ZONE:http://host.docker.internal:8761/eureka}
+      defaultZone: ${NAMING_SERVICE_URL:http://host.docker.internal:8761/eureka}
     register-with-eureka: false
     fetch-registry: false
 
