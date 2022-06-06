@@ -42,6 +42,15 @@ public class AuthServiceApplication {
         log.info("Naming service address: {}", configProperties.getEureka().getClient().getServiceUrl().getDefaultZone());
         String dbUrlSimplified = configProperties.getSpring().getDatasource().getUrl().split("\\?")[0];
         log.info("Database URL: {}", dbUrlSimplified);
+
+        try {
+            String dbParams = configProperties.getSpring().getDatasource().getUrl().split("\\?")[1];
+            log.info("Database connections parameters: {}", dbParams);
+
+        } catch (ArrayIndexOutOfBoundsException e) {
+            log.info("Database has no connections parameters");
+        }
+
         log.info("-------------------- CONFIGURATION END ----------------------");
         log.info("");
     }

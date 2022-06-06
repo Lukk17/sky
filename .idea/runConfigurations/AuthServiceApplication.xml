@@ -13,6 +13,17 @@
     </extension>
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.lukk.sky.authservice.AuthServiceApplication" />
     <option name="ALTERNATIVE_JRE_PATH" />
+    <envs>
+      <env name="NAMING_SERVICE_URL" value="http://localhost:8761/eureka" />
+      <env name="MYSQL_USER" value="root" />
+      <env name="MYSQL_PASS" value="Lukk1234" />
+      <env name="SPRING_DEBUG" value="INFO" />
+      <env name="HIBERNATE_DEBUG" value="INFO" />
+      <env name="SHOW_SQL_QUERIES" value="false" />
+      <env name="SPRING_SECURITY_USER " value="XYZ" />
+      <env name="SPRING_SECURITY_PASS" value="XYZ" />
+      <env name="SPRING_DATASOURCE_URL" value="jdbc:mysql://localhost:3306/sky?useSSL=false&amp;useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=Europe/Warsaw" />
+    </envs>
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

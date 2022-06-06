@@ -13,6 +13,13 @@
     </extension>
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.lukk.sky.zuulservice.ZuulServiceApplication" />
     <option name="ALTERNATIVE_JRE_PATH" />
+    <envs>
+      <env name="NAMING_SERVICE_URL" value="http://localhost:8761/eureka" />
+      <env name="SPRING_DEBUG" value="INFO" />
+      <env name="HIBERNATE_DEBUG" value="INFO" />
+      <env name="SPRING_SECURITY_USER " value="XYZ" />
+      <env name="SPRING_SECURITY_PASS" value="XYZ" />
+    </envs>
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

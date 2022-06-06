@@ -8,6 +8,26 @@
         <option name="containerName" value="" />
         <option name="contextFolderPath" value="." />
         <option name="entrypoint" value="" />
+        <option name="envVars">
+          <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="NAMING_SERVICE_URL" />
+              <option name="value" value="http://host.docker.internal:8761/eureka" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="SPRING_PROFILES_ACTIVE" />
+              <option name="value" value="default" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="SPRING_DEBUG" />
+              <option name="value" value="INFO" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="HIBERNATE_DEBUG" />
+              <option name="value" value="INFO" />
+            </DockerEnvVarImpl>
+          </list>
+        </option>
         <option name="commandLineOptions" value="--publish 8761:8761 --network sky-net" />
         <option name="sourceFilePath" value="eureka-service/docker/Dockerfile" />
       </settings>
