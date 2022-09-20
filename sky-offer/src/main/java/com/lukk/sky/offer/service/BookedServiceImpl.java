@@ -5,11 +5,13 @@ import com.lukk.sky.offer.entity.Booked;
 import com.lukk.sky.offer.repository.BookedRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BookedServiceImpl implements BookedService {
 
     private final BookedRepository bookedRepository;

@@ -9,10 +9,12 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.event.EventListener;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
 @EnableEurekaClient
 @EnableConfigurationProperties(ConfigProperties.class)
+@EnableTransactionManagement
 @Slf4j
 public class AuthServiceApplication {
 

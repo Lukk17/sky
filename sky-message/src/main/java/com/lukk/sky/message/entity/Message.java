@@ -38,6 +38,4 @@ public class Message {
 
     @NotBlank
     private String senderEmail;
-
-
 }
