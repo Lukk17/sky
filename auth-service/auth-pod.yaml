@@ -1,0 +1,16 @@
+# useful in dev, but deployments are better
+apiVersion: v1
+kind: Pod
+metadata:
+  name: auth-pod
+#  label need to be same as selector in service pod
+  labels:
+    #    "component" is just a name, can be any name as long as in service is named same, for example could be:
+    #    workingLabel: web
+    component: web
+spec:
+  containers:
+    - name: auth
+      image: lukk17/sky-auth
+      ports:
+        - containerPort: 9100
