@@ -38,7 +38,7 @@
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="HIBERNATE_DEBUG" />
-              <option name="value" value="DEBUG" />
+              <option name="value" value="INFO" />
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="SHOW_SQL_QUERIES" />
