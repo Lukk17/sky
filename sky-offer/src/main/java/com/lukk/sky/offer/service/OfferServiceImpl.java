@@ -9,7 +9,9 @@ import com.lukk.sky.offer.repository.OfferRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class OfferServiceImpl implements OfferService {
 
     public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
@@ -146,18 +149,19 @@ public class OfferServiceImpl implements OfferService {
         checkIfAlreadyBooked(bookedList, dateToBook);
         checkIfBookingDateIsInFuture(dateToBook);
 
-        bookedList.add(createNewBooked(offer, bookingUserEmail, dateToBook));
+        Booked newBook = bookedService.addBooked(createNewBooked(offer, bookingUserEmail, dateToBook));
+
+        bookedList.add(newBook);
         offer.setBooked(bookedList);
+
         return entityDTOConverter.convertOfferEntity_toDTO(offerRepository.save(offer));
     }
 
     private Booked createNewBooked(Offer offer, String bookingUser, LocalDate dateToBook) {
-        Booked newBook = Booked.builder()
+        return Booked.builder()
                 .offer(offer)
                 .userEmail(bookingUser)
                 .bookedDate(dateToBook).build();
-        Booked res = bookedService.addBooked(newBook);
-        return res;
     }
 
 }
