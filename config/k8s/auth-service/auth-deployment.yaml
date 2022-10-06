@@ -12,9 +12,12 @@ spec:
       #    workingLabel: web
       component: web
   template:
-    - spec:
-        containers:
-          - name: auth
-            image: lukk17/sky-auth
-            ports:
-              - containerPort: 9100
+    metadata:
+      labels:
+        component: web
+    spec:
+      containers:
+        - name: auth
+          image: lukk17/sky-auth
+          ports:
+            - containerPort: 9100

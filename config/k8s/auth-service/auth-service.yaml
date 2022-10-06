@@ -2,16 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-pod
+  name: auth-pod-service
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
 #    port of this service
     - port: 9101
 #      target have to be same as container port in pod
       targetPort: 9100
-#      port accessible in browser
-      nodePort: 30910
+
 #      selector need to be same as label in target pod (have to be between 30000-32767)
   selector:
 #    "component" is just a name, can be any name as long as in target pod is named same, for example could be:
