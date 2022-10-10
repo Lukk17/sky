@@ -10,10 +10,67 @@ kubectl apply -f auth-deployments.yaml
 ```
 Simpler, you can run all scripts in a folder (in terminal being in parent folder):
 ```
-kubectl apply -f auth-service
+kubectl apply -f config/k8s --recursive
+```
+
+-------------
+### Ingress installation:
+
+https://kubernetes.github.io/ingress-nginx/deploy/#quick-start
+```
+kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8080:80
+```
+```
+minikube addons enable ingress
+```
+
+-------------
+### Minikube config and dashboard
+
+minikube visibility under localhost (127.0.0.1") - terminal need to remain open
+```
+minikube tunnel
+```
+or else get its address:
+```
+minikube ip
+```
+
+minikube dashboard - terminal need to remain open
+```
+minikube dashboard
+```
+or just url address :
+```
+minikube dashboard --url
 ```
 -------------
-Secrets  
+### MYSQL configuration
+exec into mysql container (easy via minikube dashboard)
+or use command:
+```
+kubectl exec --stdin --tty <podFullName> -- /bin/bash
+```
+where podFullName can be obtained from `kubectl get pod`
+
+inside pod log into mysql:
+```
+mysql -u root -p
+```
+then create sky db:
+```
+CREATE DATABASE IF NOT EXISTS sky;
+```
+now restart services
+
+after that insert example values stored in script/sql_commands:
+`sql_roles_insert.sql`
+then register admin and use:
+`sql_user_role_admin.sql`
+and then use rest of them.
+
+-------------
+### Secrets  
 
 Two ways of creating:
 1. By secret file
@@ -37,7 +94,7 @@ kubectl create secret generic mysqlRootPass --from-literal mysqlRootPass=elastic
 ```
 
 -------------
-Get status:
+### Status:
 ```
 kubectl get pods
 ```
@@ -61,7 +118,7 @@ kubectl get pv
 kubectl get pvc
 ```
 -------------
-Get details of pod:
+###  Details of pod:
 ```
 kubectl describe <object type> <name>
 ```
@@ -78,14 +135,8 @@ example:
 kubectl set image deployment/auth-deployment auth=lukk17/sky-auth:1.0.0
 ```
 -------------
-Get logs of pod:
+###  Logs of pod:
 ```
 kubectl logs <kubeName>
 ```
 kubeName can be obtained from `kubectl get pods`
-
--------------
-To be able to access pod in browser IP address of minikube is needed:
-```
-minikube ip
-```

@@ -1,18 +1,15 @@
 package com.lukk.sky.message;
 
 import com.lukk.sky.message.config.ConfigProperties;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.event.EventListener;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
-@EnableEurekaClient
 @EnableConfigurationProperties(ConfigProperties.class)
 @EnableTransactionManagement
 @Slf4j
@@ -41,7 +38,6 @@ public class SkyMessageApplication {
         log.info("Hibernate operation type:\t\t {}", configProperties.getSpring().getJpa().getHibernate().getDdlAuto());
         String actuatorOpenEndpoints = configProperties.getManagement().getEndpoints().getWeb().getExposure().getInclude();
         log.info("Actuator open endpoints:\t\t {}", actuatorOpenEndpoints.equals("*") ? "ALL" : actuatorOpenEndpoints);
-        log.info("Naming service address: {}", configProperties.getEureka().getClient().getServiceUrl().getDefaultZone());
         String dbUrlSimplified = configProperties.getSpring().getDatasource().getUrl().split("\\?")[0];
         log.info("Database URL: {}", dbUrlSimplified);
 

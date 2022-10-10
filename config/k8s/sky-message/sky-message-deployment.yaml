@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-deployment
+  name: sky-message-deployment
 spec:
   replicas: 1
   selector:
@@ -13,13 +13,13 @@ spec:
         component: web
     spec:
       containers:
-        - name: auth
-          image: lukk17/sky-auth
+        - name: message
+          image: lukk17/sky-message
           ports:
-            - containerPort: 9100
+            - containerPort: 5553
           env:
-            - name: AUTH_PORT
-              value: "9100"
+            - name: MESSAGE_PORT
+              value: '5553'
             - name: SPRING_DATASOURCE_URL
               value: jdbc:mysql://mysql-pod-service:3306/sky
             - name: MYSQL_USER
@@ -30,11 +30,11 @@ spec:
                   key: mysqlrootPass
                   name: skysecrets
             - name: SPRING_DEBUG
-              value: "INFO"
+              value: 'INFO'
             - name: HIBERNATE_DEBUG
-              value: "INFO"
+              value: 'INFO'
             - name: SHOW_SQL_QUERIES
-              value: "false"
+              value: 'false'
             - name: SPRING_SECURITY_USER
               valueFrom:
                 secretKeyRef:

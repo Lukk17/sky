@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zuul-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: web
+  template:
+    metadata:
+      labels:
+        component: web
+    spec:
+      containers:
+        - name: zull
+          image: lukk17/sky-zuul
+          ports:
+            - containerPort: 8762
+          env:
+            - name: ZUUL_PORT
+              value: '8762'
+            - name: SPRING_DEBUG
+              value: 'INFO'
+            - name: SPRING_SECURITY_USER
+              valueFrom:
+                secretKeyRef:
+                  key: springsecurityuser
+                  name: skysecrets
+            - name: SPRING_SECURITY_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: springsecuritypass
+                  name: skysecrets

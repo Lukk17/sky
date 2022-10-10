@@ -7,8 +7,9 @@ server:
 spring:
   application:
     name: sky-offer
-  mvc:
+  web:
     locale-resolver: accept_header
+  mvc:
     dispatch-options-request: true
   security:
     user:

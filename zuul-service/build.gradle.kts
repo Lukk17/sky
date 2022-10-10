@@ -23,7 +23,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web:2.2.6.RELEASE")
     implementation("org.springframework.boot:spring-boot-starter-security:2.2.6.RELEASE")
 
-    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:2.2.2.RELEASE")
+//    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:2.2.2.RELEASE")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-zuul:2.2.2.RELEASE")
 
     implementation("io.jsonwebtoken:jjwt:0.9.0")

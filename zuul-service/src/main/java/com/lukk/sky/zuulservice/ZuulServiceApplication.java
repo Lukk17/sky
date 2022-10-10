@@ -7,13 +7,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
 
 @SpringBootApplication
-@EnableEurekaClient
 @EnableZuulProxy
 @EnableConfigurationProperties(ConfigProperties.class)
 @Slf4j
@@ -43,7 +41,6 @@ public class ZuulServiceApplication {
         log.info("Spring logging level:\t\t\t {}", configProperties.getLogging().getLevel().getOrg().getSpringframework().getWeb());
         String actuatorOpenEndpoints = configProperties.getManagement().getEndpoints().getWeb().getExposure().getInclude();
         log.info("Actuator open endpoints:\t\t {}", actuatorOpenEndpoints.equals("*") ? "ALL" : actuatorOpenEndpoints);
-        log.info("Naming service address: {}", configProperties.getEureka().getClient().getServiceUrl().getDefaultZone());
         log.info("-------------------- CONFIGURATION END ----------------------");
         log.info("");
     }

@@ -4,6 +4,7 @@
       <settings>
         <option name="imageTag" value="auth-service:latest" />
         <option name="buildCliOptions" value="" />
+        <option name="buildOnly" value="true" />
         <option name="command" value="" />
         <option name="containerName" value="" />
         <option name="contextFolderPath" value="." />

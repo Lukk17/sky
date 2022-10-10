@@ -1,11 +1,15 @@
+# maintain set of working pods - their number and config
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-deployment
+  name: sky-offer-deployment
 spec:
   replicas: 1
   selector:
+    #  label need to be same as selector in service pod
     matchLabels:
+      #    "component" is just a name, can be any name as long as in service is named same, for example could be:
+      #    workingLabel: web
       component: web
   template:
     metadata:
@@ -13,13 +17,13 @@ spec:
         component: web
     spec:
       containers:
-        - name: auth
-          image: lukk17/sky-auth
+        - name: offer
+          image: lukk17/sky-offer
           ports:
-            - containerPort: 9100
+            - containerPort: 5552
           env:
-            - name: AUTH_PORT
-              value: "9100"
+            - name: OFFER_PORT
+              value: '5552'
             - name: SPRING_DATASOURCE_URL
               value: jdbc:mysql://mysql-pod-service:3306/sky
             - name: MYSQL_USER
@@ -30,11 +34,11 @@ spec:
                   key: mysqlrootPass
                   name: skysecrets
             - name: SPRING_DEBUG
-              value: "INFO"
+              value: 'INFO'
             - name: HIBERNATE_DEBUG
-              value: "INFO"
+              value: 'INFO'
             - name: SHOW_SQL_QUERIES
-              value: "false"
+              value: 'false'
             - name: SPRING_SECURITY_USER
               valueFrom:
                 secretKeyRef:

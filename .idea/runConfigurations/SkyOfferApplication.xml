@@ -22,7 +22,7 @@
       <env name="SHOW_SQL_QUERIES" value="false" />
       <env name="SPRING_SECURITY_USER " value="XYZ" />
       <env name="SPRING_SECURITY_PASS" value="XYZ" />
-      <env name="SPRING_DATASOURCE_URL" value="jdbc:mysql://localhost:3306/sky?useSSL=false&amp;useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=Europe/Warsaw" />
+      <env name="SPRING_DATASOURCE_URL" value="jdbc:mysql://localhost:3306/sky" />
     </envs>
     <method v="2">
       <option name="Make" enabled="true" />

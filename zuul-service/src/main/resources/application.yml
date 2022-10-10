@@ -2,7 +2,7 @@
 # SPRING setup
 
 server:
-  port: 8762
+  port: ${ZUUL_PORT:8762}
 
 spring:
   application:
@@ -32,21 +32,6 @@ logging:
     org:
       springframework:
         web: ${SPRING_DEBUG:INFO}
-      hibernate: ${HIBERNATE_DEBUG:INFO}
-
-# ==================================================================================================================
-# EUREKA setup
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${NAMING_SERVICE_URL:http://host.docker.internal:8761/eureka}
-    register-with-eureka: true
-    fetch-registry: true
-  # in docker sometimes there is problem with DNS resolving - that why ip addresses are better as names
-  instance:
-    preferIpAddress: true
-
 
 # ==================================================================================================================
 #   Timeout settings

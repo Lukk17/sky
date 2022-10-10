@@ -2,7 +2,7 @@
 # SPRING setup
 
 server:
-  port: 5553
+  port: ${MESSAGE_PORT:5553}
 
 spring:
   application:
@@ -21,10 +21,13 @@ spring:
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     show-sql: ${SHOW_SQL_QUERIES:false}
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky?useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky}
     hikari:
       connection-timeout: 60000
       validation-timeout: 60000
+      data-source-properties:
+        useUnicode: true
+        characterEncoding: UTF-8
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASS:Lukk1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -42,16 +45,3 @@ logging:
       springframework:
         web: ${SPRING_DEBUG:INFO}
       hibernate: ${HIBERNATE_DEBUG:INFO}
-
-# ==================================================================================================================
-#  EUREKA setup
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${NAMING_SERVICE_URL:http://host.docker.internal:8761/eureka}
-    register-with-eureka: true
-    fetch-registry: true
-# in docker sometimes there is problem with DNS resolving - that why ip addresses are better as names
-  instance:
-    preferIpAddress: true

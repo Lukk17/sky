@@ -28,7 +28,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security:${springVersion}")
 
     implementation("org.springframework.security:spring-security-crypto:5.6.3")
-    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.2")
+//    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.2")
     implementation("mysql:mysql-connector-java:8.0.29")
     implementation("com.google.code.gson:gson:2.9.0")
     implementation("io.jsonwebtoken:jjwt:0.9.1")
