@@ -35,6 +35,10 @@ or else get its address:
 ```
 minikube ip
 ```
+update minikube context:
+```
+minikube update-context
+```
 
 minikube dashboard - terminal need to remain open
 ```
