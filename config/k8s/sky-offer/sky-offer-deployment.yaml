@@ -1,8 +1,10 @@
+---
 # maintain set of working pods - their number and config
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sky-offer-deployment
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -17,7 +19,7 @@ spec:
         component: web
     spec:
       containers:
-        - name: offer
+        - name: sky-offer
           image: lukk17/sky-offer
           ports:
             - containerPort: 5552
@@ -25,7 +27,7 @@ spec:
             - name: OFFER_PORT
               value: '5552'
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql-pod-service:3306/sky
+              value: jdbc:mysql://mysql-service:3306/sky
             - name: MYSQL_USER
               value: root
             - name: MYSQL_PASSWORD

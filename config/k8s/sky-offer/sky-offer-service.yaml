@@ -1,8 +1,9 @@
+---
 # setup networking in cluster
 apiVersion: v1
 kind: Service
 metadata:
-  name: sky-offer-pod-service
+  name: sky-offer-service
 spec:
   type: ClusterIP
   ports:

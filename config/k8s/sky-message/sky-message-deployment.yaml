@@ -1,7 +1,9 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sky-message-deployment
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -13,7 +15,7 @@ spec:
         component: web
     spec:
       containers:
-        - name: message
+        - name: sky-message
           image: lukk17/sky-message
           ports:
             - containerPort: 5553
@@ -21,7 +23,7 @@ spec:
             - name: MESSAGE_PORT
               value: '5553'
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql-pod-service:3306/sky
+              value: jdbc:mysql://mysql-service:3306/sky
             - name: MYSQL_USER
               value: root
             - name: MYSQL_PASSWORD

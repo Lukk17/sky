@@ -12,20 +12,28 @@ Simpler, you can run all scripts in a folder (in terminal being in parent folder
 ```
 kubectl apply -f config/k8s --recursive
 ```
+port forwarding
+```
+kubectl port-forward <podName> <localPort>:<podPort>
+```
+where podName is from `kubectl get pod`
 
--------------
-### Ingress installation:
-
-https://kubernetes.github.io/ingress-nginx/deploy/#quick-start
+example:
 ```
-kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8080:80
+kubectl port-forward sky-offer-deployment-5796d4f74d-98bs5 5553:5552
 ```
+will be available on the browser:
 ```
-minikube addons enable ingress
+localhost:5553
 ```
 
 -------------
 ### Minikube config and dashboard
+
+start minikube with more resources
+```
+minikube start --cpus 4 --memory 15000
+```
 
 minikube visibility under localhost (127.0.0.1") - terminal need to remain open
 ```
@@ -35,6 +43,15 @@ or else get its address:
 ```
 minikube ip
 ```
+
+create a tunnel for service:
+```
+minikube service -n default <serviceName> --url
+```
+where `serviceName` is from `kubectl get service`
+and `default` is namespace
+
+
 update minikube context:
 ```
 minikube update-context
@@ -67,10 +84,10 @@ CREATE DATABASE IF NOT EXISTS sky;
 ```
 now restart services
 
-after that insert example values stored in script/sql_commands:
-`sql_roles_insert.sql`
-then register admin and use:
-`sql_user_role_admin.sql`
+after that insert example values stored in script/sql_commands:  
+`sql_roles_insert.sql`  
+then register admin and use:  
+`sql_user_role_admin.sql`  
 and then use rest of them.
 
 -------------
@@ -98,6 +115,38 @@ kubectl create secret generic mysqlRootPass --from-literal mysqlRootPass=elastic
 ```
 
 -------------
+### Kong Install
+
+`kong-cluster-plugins-configuration.yaml` needs to be applied before `kong-custom-resource-definitions.yaml`
+
+kubectl port-forward deployment/ingress-kong -n kong 8444:8444
+
+-------------
+### Accessing cluster on local the machine (no Load balancer configured)
+
+There are two ways
+1. `minikube tunnel`  
+   it will forward traffic to ingresses
+
+
+2. MetalLB install  - problem with configuring it  
+   Use yaml files or install via url (can be found in `installingMetalLB.sh`)
+   At beginning, it can fail due to lack of "memberlist" secret, but it will start working in minute
+
+
+-------------
+### Ingress installation: - not required for kong
+
+https://kubernetes.github.io/ingress-nginx/deploy/#quick-start
+```
+kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8080:80
+```
+```
+minikube addons enable ingress
+```
+
+-------------
+
 ### Status:
 ```
 kubectl get pods

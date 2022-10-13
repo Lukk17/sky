@@ -18,7 +18,7 @@ public class MessageController {
     private final MessageService messageService;
 
     @GetMapping(value = {"/", "/home"})
-    public ResponseEntity<String> hello(@Value("${lukk.helloWorld}") String message) {
+    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message) {
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 

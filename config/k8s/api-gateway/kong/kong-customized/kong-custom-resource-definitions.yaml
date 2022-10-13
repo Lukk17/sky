@@ -1,5 +1,3 @@
-
-
 ---
 apiVersion: configuration.konghq.com/v1
 kind: KongClusterPlugin
@@ -13,7 +11,7 @@ disabled: false # optionally disable the plugin in Kong
 plugin: oidc
 config: # configuration for the plugin
   client_id: kong-oidc
-  client_secret: xxxxxxxx  # Generated on keyCloak
+  client_secret: 73fEfR147E5vH35UKpkUx059OoQWwEDP  # Generated on keyCloak
   realm: kong
   discovery: https://keycloak.localhost/auth/realms/kong-oidc/.well-known/openid-configuration
   scope: openid

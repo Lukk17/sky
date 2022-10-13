@@ -1,6 +1,8 @@
 # ==================================================================================================================
-# SPRING setup
+sky:
+  helloWorld: <center><h1>Welcome to Auth app.</h1></center>
 
+# SPRING setup
 server:
   port: ${AUTH_PORT:9100}
 

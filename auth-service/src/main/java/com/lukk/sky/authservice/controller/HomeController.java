@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HomeController {
     @GetMapping(value = {"/", "/home"})
-    public ResponseEntity<String> hello(@Value("${lukk.helloWorld}") String message) {
-        // message is defined and obtained from application.properties file
+    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message) {
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 }

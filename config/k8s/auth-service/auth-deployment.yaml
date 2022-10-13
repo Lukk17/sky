@@ -1,7 +1,9 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-deployment
+  name: auth
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -21,7 +23,7 @@ spec:
             - name: AUTH_PORT
               value: "9100"
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql-pod-service:3306/sky
+              value: jdbc:mysql://mysql-service:3306/sky
             - name: MYSQL_USER
               value: root
             - name: MYSQL_PASSWORD

@@ -14,3 +14,8 @@ docker push lukk17/sky-auth:latest
 docker push lukk17/sky-offer:latest
 docker push lukk17/sky-message:latest
 docker push lukk17/sky-zuul:latest
+
+docker scan lukk17/sky-auth
+docker scan lukk17/sky-offer
+docker scan lukk17/sky-message
+docker scan lukk17/sky-zuul
