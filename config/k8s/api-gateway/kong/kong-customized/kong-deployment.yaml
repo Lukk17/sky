@@ -55,9 +55,6 @@ spec:
             - containerPort: 8100
               name: metrics
               protocol: TCP
-            - containerPort: 8444
-              name: admin-ssl
-              protocol: TCP
           env:
             - name: KONG_LOG_LEVEL
               value: info

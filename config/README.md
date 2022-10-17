@@ -32,7 +32,13 @@ localhost:5553
 
 start minikube with more resources
 ```
-minikube start --cpus 4 --memory 15000
+minikube start --cpus 4 --memory 16384
+```
+it need setup in wsl - by creating `.wslconfig` file in home directory:
+```
+[wsl2]
+memory=20GB   # Limits VM memory in WSL 2 up to 3GB
+processors=4 # Makes the WSL 2 VM use two virtual processors
 ```
 
 minikube visibility under localhost (127.0.0.1") - terminal need to remain open
