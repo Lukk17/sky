@@ -1,0 +1,14 @@
+config: {}
+  port: 1337
+  node_env: development
+  db_adapter: postgres
+  db_host: postgres
+  db_port: 5432
+  db_user: postgres
+  db_password:
+    valueFrom:
+      secretKeyRef:
+        key: postgresPass
+        name: skysecrets
+  db_database: konga
+runMigrations: true

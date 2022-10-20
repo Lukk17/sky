@@ -6,12 +6,12 @@ metadata:
   annotations:
     konghq.com/strip-path: "true"
 spec:
-  ingressClassName: kong
+  ingressClassName: default
   rules:
-    - host: keycloak.localhost
-      http:
+#    - host: keycloak.localhost
+     - http:
         paths:
-          - path: /
+          - path: /keycloak
             pathType: Prefix
             backend:
               service:

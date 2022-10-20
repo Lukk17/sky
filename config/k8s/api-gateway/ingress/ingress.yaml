@@ -8,10 +8,11 @@ metadata:
     konghq.com/plugins: request-transformer,oidc    #keycloak authentication
 #    nginx.ingress.kubernetes.io/use-regex: 'true'
 spec:
-  ingressClassName: kong
+  ingressClassName: default
   rules:
-    - host: sky.localhost
-      http:
+#    when adding host - then in headers you need add it in every request
+#    - host: sky.localhost
+     - http:
         paths:
           - path: /offer
             pathType: Prefix

@@ -17,7 +17,7 @@ spec:
       volumes:
         - name: mysql-storage
           persistentVolumeClaim:
-            #            name from metadata section of database-persistent-volume-claim.yaml
+            #            name from metadata section of postgres-persistent-volume-claim.yaml
             claimName: database-persistent-volume-claim
         - name: mysql-initdb
           configMap:
@@ -25,6 +25,7 @@ spec:
       containers:
         - name: mysql
           image: mysql
+#          imagePullPolicy: Never
           ports:
             - containerPort: 3306
           volumeMounts:

@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: postgres
+  template:
+    metadata:
+      labels:
+        component: postgres
+    spec:
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            #            name from metadata section of postgres-persistent-volume-claim.yaml
+            claimName: postgres-persistent-volume-claim
+        - name: postgres-initdb
+          configMap:
+            name: postgres-initdb-config
+      containers:
+        - name: postgres
+          image: postgres
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            # default place where postgres is saving data
+            - mountPath: /var/lib/postgresql/data
+              # name of volume specified in spec.volumes section
+              name: postgres-storage
+              # some db like postgres need additional parameter of subPath
+              subPath: postgres
+            # initial DB sql command:
+            - name: postgres-initdb
+              mountPath: /docker-entrypoint-initdb.d
+          env:
+            - name: POSTGRES_DB
+              value: postgresdb
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  key: postgresUser
+                  name: skysecrets
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresPass
+                  name: skysecrets
