@@ -1,17 +1,22 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: keycloak-ingress
   namespace: default
   annotations:
-    konghq.com/strip-path: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+#    konghq.com/strip-path: "true"
 spec:
-  ingressClassName: default
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - skyhost
   rules:
-#    - host: keycloak.localhost
-     - http:
+    - host: skyhost
+      http:
         paths:
-          - path: /keycloak
+          - path: /keycloak(/|$)(.*)
             pathType: Prefix
             backend:
               service:

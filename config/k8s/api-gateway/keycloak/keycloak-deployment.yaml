@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak
+  namespace: default
   labels:
     app: keycloak
 spec:
@@ -19,13 +20,17 @@ spec:
         - name: keycloak
           image: quay.io/keycloak/keycloak:19.0.3
           args: ["start"]
+          imagePullPolicy: Always
           env:
             - name: KEYCLOAK_ADMIN
+#             first null value because of kubernetes bug
+              value: null
               valueFrom:
                 secretKeyRef:
                   key: keycloakuser
                   name: skysecrets
             - name: KEYCLOAK_ADMIN_PASSWORD
+              value: null
               valueFrom:
                 secretKeyRef:
                   key: keycloakpass

@@ -168,8 +168,8 @@ extraLabels:
 
 
 image:
-  repository: kong/kong-gateway
-  tag: "3.0"
+  repository: lukk17/kong-oidc
+  tag: "latest"
 
 
 ingressController:
