@@ -101,6 +101,15 @@ echo keycloak.$(minikube ip).nip.io
 
 <br>
 
+#### Default admin and account url
+Admin:  
+https://keycloak.192.168.59.103.nip.io/admin  
+
+Account:  
+https://keycloak.192.168.59.103.nip.io//realms/skyrealm/account  
+
+<br>
+
 Other installation options:  
 https://bitnami.com/stack/keycloak/helm
 https://www.keycloak.org/keycloak-benchmark/kubernetes-guide/latest/installation
