@@ -25,9 +25,9 @@ spec:
             - --oidc-issuer-url=https://lukk17.eu.auth0.com/
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
-              value: 9H4ckShWBYzA5gigTK0VnR1I1Hh7MHz0
+              value: <clientid>
             - name: OAUTH2_PROXY_CLIENT_SECRET
-              value: g6B2jR-MXS_jWppT0MYg3GsyCZf7Zlgl6zhC1b3K7qAbc6p92uBQJYXaLRyv2b3c
+              value: <secret>
             - name: OAUTH2_PROXY_COOKIE_SECRET
               value: SEEECRETXXXXXXXX
 
