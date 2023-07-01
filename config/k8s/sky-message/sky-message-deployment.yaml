@@ -15,7 +15,7 @@ spec:
         component: web
     spec:
       containers:
-        - name: sky-message
+        - name: sky-message-container
           image: lukk17/sky-message
           ports:
             - containerPort: 5553

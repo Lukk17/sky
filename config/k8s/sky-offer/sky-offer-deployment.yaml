@@ -19,7 +19,7 @@ spec:
         component: web
     spec:
       containers:
-        - name: sky-offer
+        - name: sky-offer-container
           image: lukk17/sky-offer
           ports:
             - containerPort: 5552

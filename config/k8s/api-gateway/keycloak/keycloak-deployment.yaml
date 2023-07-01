@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:19.0.3
+          image: quay.io/keycloak/keycloak:21.1
           args: ["start"]
           imagePullPolicy: Always
           env:
@@ -39,6 +39,14 @@ spec:
               value: "edge"
             - name: KC_HOSTNAME_STRICT
               value: "false"
+#              required for correct redirection of ingress path - it will add its path to existing one instead overwrite
+#            example: if ingress endpoint for keycloak is /auth then it will create path like /auth/admin instead of solo /admin
+            - name: PROXY_ADDRESS_FORWARDING
+              value: "true"
+            - name: KEYCLOAK_FRONTEND_URL
+              value: http://34.118.116.39/auth/
+            - name: KEYCLOAK_ADMIN_URL
+              value: http://34.118.116.39/auth/realms/master/admin/
           ports:
             - name: http
               containerPort: 8080

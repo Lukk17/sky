@@ -38,8 +38,16 @@ minikube addons enable ingress-dns
 <br>
 
 ### Update minikube context:
+After that kubernetes know on what it is working and know its config.
 ```shell
 minikube update-context
+```
+
+<br> 
+
+### Get minikube IP
+```shell
+minikube ip
 ```
 
 <br>
@@ -71,50 +79,29 @@ it will prompt for password
 ### Run deployment script:
 `services-deploy.sh`
 
+mysql, sky-offer and sky-message services may require restarting due to creation of storage etc.
+
 <br>
 
 -------------
+## Accessing app
 
-## Keycloak deployment
+App should be accessible from URL:
+`http://<minikubeIP>/offer`
 
-<br>
-
-#### Run deployment script:
-`keycloak-deploy.sh`  
-which base on:  
-
-service and deployment:  
-https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes-examples/keycloak.yaml
-
-ingress:  
-https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes-examples/keycloak-ingress.yaml
-
-<br>
-
-#### Replace both hosts (tls.hosts and rules.host)   
-in:  
-`keycloak-ingress.yaml`  
-with:
+if type loadBalancer after minikube tunnel 
+`http://<minikubeIP>:<external port>/`
+to get external port run:
 ```shell
-echo keycloak.$(minikube ip).nip.io
+kubectl get service sky-offer-service        
+
 ```
-
-<br>
-
-#### Default admin and account url
-Admin:  
-https://keycloak.192.168.59.103.nip.io/admin  
-
-Account:  
-https://keycloak.192.168.59.103.nip.io//realms/skyrealm/account  
-
-<br>
-
-Other installation options:  
-https://bitnami.com/stack/keycloak/helm
-https://www.keycloak.org/keycloak-benchmark/kubernetes-guide/latest/installation
-
-<br>
+you will get something like that
+```shell
+NAME                TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)          AGE
+sky-offer-service   LoadBalancer   10.106.230.5   10.106.230.5   5552:31182/TCP   5h43m
+```
+under ports there is `5552:31182/TCP` - you need to use `31182` port.
 
 -------------
 
@@ -381,4 +368,14 @@ and `default` is namespace
 
 <br>
 
+
 -------------
+
+
+<br>
+
+### Clearing
+
+```shell
+minikube delete
+```

@@ -56,13 +56,13 @@ EOF"
 
 
 # helm install quickstart kong/kong --namespace kong --values https://bit.ly/KongGatewayHelmValuesAIO
-helm install quickstart kong/kong -n kong -f ../api-gateway/kong/kong-classic/kong-values.yaml
-helm upgrade quickstart -n kong kong/kong -f ../api-gateway/kong/kong-classic/custom-values.yaml
+helm install quickstart kong/kong -n kong -f ./kong-classic/kong-values.yaml
+helm upgrade quickstart -n kong kong/kong -f ./kong-classic/custom-values.yaml
 
 # --------------------------------------------------------------------------------------------------------
 # CUSTOM RESOURCE DEFINITIONS:
 
-#kubectl apply -f ../api-gateway/kong/kong-customized/kong-custom-resource-definitions.yaml
+#kubectl apply -f ./kong-customized/kong-custom-resource-definitions.yaml
 
 # --------------------------------------------------------------------------------------------------------
 

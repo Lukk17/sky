@@ -4,79 +4,34 @@ metadata:
   name: sky-ingress
   namespace: default
   annotations:
-    nginx.ingress.kubernetes.io/auth-type: basic
-    nginx.ingress.kubernetes.io/auth-secret: basic-auth
-    nginx.ingress.kubernetes.io/auth-realm: "Enter your credentials"
-    nginx.ingress.kubernetes.io/auth-response-headers: "authorization, UserID, x-auth-request-user, x-auth-request-email"
+    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-#    konghq.com/strip-path: "true"
-#    konghq.com/plugins: request-transformer,oidc    #keycloak authentication
-#    nginx.ingress.kubernetes.io/use-regex: 'true'
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/auth-url: "https://$host/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start"
 spec:
-  ingressClassName: nginx
   rules:
-    #    when adding host - then in headers you need add it in every request
-#    - host: sky.192.168.59.103.nip.io
-     - http:
+    - http:
         paths:
+          - pathType: ImplementationSpecific
+            path: "/oauth2(/|$)(.*)"
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180
           - path: /offer(/|$)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: sky-offer-service
                 port:
                   number: 5552
           - path: /message(/|$)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: sky-message-service
                 port:
                   number: 5553
-          - path: /auth(/|$)(.*)
-            pathType: Prefix
-            backend:
-              service:
-                name: auth-service
-                port:
-                  number: 9100
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sky-oauth-ingress
-  namespace: default
-  annotations:
-
-    nginx.ingress.kubernetes.io/auth-url: "https://$host/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$escaped_request_uri"
-
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-
-spec:
-  ingressClassName: nginx
-  rules:
-    - http:
-        paths:
-          - path: /oauth/offer(/|$)(.*)
-            pathType: Prefix
-            backend:
-              service:
-                name: sky-offer-service
-                port:
-                  number: 5552
-          - path: /oauth/message(/|$)(.*)
-            pathType: Prefix
-            backend:
-              service:
-                name: sky-message-service
-                port:
-                  number: 5553
-          - path: /oauth/auth(/|$)(.*)
-            pathType: Prefix
-            backend:
-              service:
-                name: auth-service
-                port:
-                  number: 9100

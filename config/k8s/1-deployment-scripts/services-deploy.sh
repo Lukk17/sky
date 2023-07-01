@@ -10,6 +10,7 @@ kubectl apply -f ../api-gateway/ingress/ingress.yaml
 # generate auth file with secrets (must be generated in same folder):
 # htpasswd -c auth <username>
 kubectl create secret generic basic-auth --from-file=../api-gateway/ingress/auth
-kubectl apply -f ../api-gateway/oauth2-proxy/oauth2-proxy-deployment.yaml
-kubectl apply -f ../api-gateway/oauth2-proxy/oauth2-proxy-service.yaml
+
+#kubectl apply -f ../api-gateway/oauth2-proxy/oauth2-proxy-deployment.yaml
+#kubectl apply -f ../api-gateway/oauth2-proxy/oauth2-proxy-service.yaml
 
