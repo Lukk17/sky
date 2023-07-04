@@ -8,19 +8,14 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/auth-url: "https://$host/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-url: "https://sky.luksarna.com/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://sky.luksarna.com/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
 spec:
   rules:
-    - http:
+    - host: sky.luksarna.com
+      http:
         paths:
-          - pathType: ImplementationSpecific
-            path: "/oauth2(/|$)(.*)"
-            backend:
-              service:
-                name: oauth2-proxy
-                port:
-                  number: 4180
           - path: /offer(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -35,3 +30,28 @@ spec:
                 name: sky-message-service
                 port:
                   number: 5553
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+#    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - host: sky.luksarna.com
+      http:
+        paths:
+          - path: "/oauth2(/|$)(.*)"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180

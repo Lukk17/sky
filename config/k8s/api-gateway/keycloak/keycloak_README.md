@@ -26,6 +26,8 @@ https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernete
 
 ## Config
 
+https://github.com/oauth2-proxy/oauth2-proxy/issues/1124
+
 #### Replace ingress keycloak IP address with current minikube
 in:
 `ingress.yaml`

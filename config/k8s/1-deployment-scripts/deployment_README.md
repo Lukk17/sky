@@ -11,22 +11,28 @@ and plugin:
     sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin
     ```
 
-2. Set project
+2. login into gcloud account
+   ```shell
+   gcloud auth login
+   ```
+   
+3. Set project
     ```shell
     gcloud config set project sky-app-17
     ```
 
-3. Create cluster
+4. Create cluster (if not existing)
     ```shell
     gcloud container clusters create-auto sky-cluster --location=europe-central2
     ```
 
-4. Get authentication credentials for the cluster - required to interact with cluster
+5. Get authentication credentials for the cluster - required to interact with cluster
+   After this it will be visible in lens
    ```shell
    gcloud container clusters get-credentials sky-cluster --location=europe-central2
    ```
 
-5. Install nginx ingress
+6. Install nginx ingress
    ```shell
    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
    helm repo update
@@ -38,10 +44,27 @@ and plugin:
 ## Auth service
 1. Creating project in auth0 for authentication  
    https://manage.auth0.com/dashboard
-
-
-2. Changing clientId, clientSecret and domain in oauth2 deployment config  
+<br>  
+   redirect_uri have to be in "Allowed callback URLs" in application settings - in form of:  
+   `https://<website address>/oauth2/callback`, example:
+   ```
+   https://sky.luksarna.com/oauth2/callback
+   ```
+   test user (to register):  
+   email: `lukk@test.com`  
+   pass: `Test1234!`  
+<br>
+2. Create GCP oauth credential under "APIs & Services"
+   https://console.cloud.google.com/apis/credentials  
+<br>
+3. Changing clientId, clientSecret and domain in oauth2 deployment config  
    https://kubernetes.github.io/ingress-nginx/examples/auth/oauth-external-auth/
+
+Adding GitHub login:  
+https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app
+
+Adding Google login:
+https://developers.google.com/identity/sign-in/web/sign-in
 
 ----------------------
 
@@ -57,22 +80,29 @@ kubectl create secret generic basic-auth --from-file=./api-gateway/ingress/auth
 kubectl apply -f ./api-gateway/oauth2-proxy/
 
 ```
+Simpler, you can run all scripts in a folder (in terminal being in parent folder):
+```shell
+kubectl apply -f config/k8s --recursive
+```
 
 ----------------------
 
-## After deployment on GCP:
-https://console.cloud.google.com/kubernetes/discovery?
+## After deployment on GCP
 
-in "Services & Ingress" you can find link to external endpoint <cluster ip>:<port>
+
+
+----------------------
+
+
+## Logs
+https://console.cloud.google.com/logs
+
+parameters:
 ```shell
-kubectl get svc
+resource.type="k8s_container"
+resource.labels.project_id="sky-app-17"
+resource.labels.location="europe-central2"
+resource.labels.cluster_name="sky-cluster"
+resource.labels.namespace_name="default"
+severity>=DEFAULT
 ```
-you will get:
-```shell
-NAME                                 TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                      AGE
-ingress-nginx-controller             LoadBalancer   10.121.2.200   34.118.116.39   80:31460/TCP,443:31806/TCP   16m
-ingress-nginx-controller-admission   ClusterIP      10.121.1.245   <none>          443/TCP                      16m             124m
-
-```
-nginx: 34.118.116.39:80
-
