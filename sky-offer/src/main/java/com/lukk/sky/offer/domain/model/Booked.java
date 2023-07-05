@@ -1,4 +1,4 @@
-package com.lukk.sky.offer.entity;
+package com.lukk.sky.offer.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;

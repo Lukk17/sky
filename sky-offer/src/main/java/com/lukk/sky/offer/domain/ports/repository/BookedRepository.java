@@ -1,6 +1,6 @@
-package com.lukk.sky.offer.repository;
+package com.lukk.sky.offer.domain.ports.repository;
 
-import com.lukk.sky.offer.entity.Booked;
+import com.lukk.sky.offer.domain.model.Booked;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

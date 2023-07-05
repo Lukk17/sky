@@ -1,7 +1,7 @@
 package com.lukk.sky.offer.Assemblers;
 
-import com.lukk.sky.offer.entity.Booked;
-import com.lukk.sky.offer.entity.Offer;
+import com.lukk.sky.offer.domain.model.Booked;
+import com.lukk.sky.offer.domain.model.Offer;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.lukk.sky.offer.exception;
+package com.lukk.sky.offer.domain.exception;
 
 public class OfferException extends RuntimeException {
 

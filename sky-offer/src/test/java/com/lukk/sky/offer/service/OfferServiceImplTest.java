@@ -1,14 +1,14 @@
 package com.lukk.sky.offer.service;
 
-import com.lukk.sky.offer.Assemblers.BookingAssembler;
 import com.lukk.sky.offer.Assemblers.OfferAssembler;
 import com.lukk.sky.offer.H2TestProfileJPAConfig;
 import com.lukk.sky.offer.SkyOfferApplication;
-import com.lukk.sky.offer.dto.OfferDTO;
-import com.lukk.sky.offer.entity.Booked;
-import com.lukk.sky.offer.entity.Offer;
-import com.lukk.sky.offer.exception.OfferException;
-import com.lukk.sky.offer.repository.OfferRepository;
+import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.model.Offer;
+import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
+import com.lukk.sky.offer.domain.ports.service.BookingService;
+import com.lukk.sky.offer.domain.ports.service.OfferService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -19,15 +19,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.validation.ValidationException;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-import static com.lukk.sky.offer.Assemblers.BookingAssembler.TEST_DEFAULT_BOOKED_ID;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.*;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.SECOND_TEST_USER_EMAIL;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
-import static com.lukk.sky.offer.service.OfferServiceImpl.DATE_FORMAT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -46,7 +42,7 @@ public class OfferServiceImplTest {
     OfferRepository offerRepository;
 
     @MockBean
-    BookedService bookedService;
+    BookingService bookingService;
 
     @Test
     public void whenGetAllOffers_thenReturnOffers() {
@@ -181,39 +177,6 @@ public class OfferServiceImplTest {
         assertEquals(expected, actual);
     }
 
-    @Test
-    public void whenGetBookedOffers_thenReturnList() {
-        //Given
-        List<OfferDTO> expected = getPopulatedOffersDTO();
-        List<Offer> offers = getPopulatedOffers();
-        List<Booked> bookedList = BookingAssembler.getPopulatedBookedList_withPopulatedOffers();
-
-        when(bookedService.findAllByUser(TEST_USER_EMAIL)).thenReturn(bookedList);
-        for (int i = 0; i < bookedList.size(); i++) {
-            when(offerRepository.findOfferByBooked(bookedList.get(i))).thenReturn(offers.get(i));
-        }
-
-        //When
-        List<OfferDTO> actual = offerService.getBookedOffers(TEST_USER_EMAIL);
-
-        //Then
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void whenGetBookedOffersNotExist_thenReturnEmptyList() {
-        //Given
-        List<OfferDTO> expected = new ArrayList<>();
-
-        when(bookedService.findAllByUser(TEST_USER_EMAIL)).thenReturn(new ArrayList<>());
-
-        //When
-        List<OfferDTO> actual = offerService.getBookedOffers(TEST_USER_EMAIL);
-
-        //Then
-        assertEquals(expected, actual);
-    }
-
     // problem with JUnit Vintage - not seeing other test when run parametrized...
 //    @ParameterizedTest
 //    @CsvSource({"testHotelName,2", "testUser@user,2", "testCity,2", "testCountry,2", "99,1"})
@@ -283,91 +246,5 @@ public class OfferServiceImplTest {
         //Then - throw exception
     }
 
-    @Test
-    public void whenBookOffer_thenSaveBooked() {
-        //Given
-        // Date format: 2011-12-03 (as declared in OfferServiceImpl.DATE_FORMAT
-        LocalDate dateToBook = LocalDate.now();
-        String dateToBookSTR = dateToBook.format(DATE_FORMAT);
 
-        Booked booked = BookingAssembler.getPopulatedBooked(TEST_USER_EMAIL, TEST_DEFAULT_BOOKED_ID);
-        booked.setBookedDate(dateToBook);
-
-        OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        //list have to be mutable ! easiest way to do it with one element:
-        expected.setBooked(new ArrayList<>(List.of(booked)));
-
-        prepareBookingTest(booked);
-
-        //When
-        OfferDTO actual = offerService.bookOffer(TEST_DEFAULT_OFFER_ID.toString(), dateToBookSTR, TEST_USER_EMAIL);
-
-        //Then
-        assertEquals(expected, actual);
-
-    }
-
-    @Test(expected = OfferException.class)
-    public void whenBookOfferAlreadyBooked_thenThrowException() {
-        //Given
-        // Date format: 2011-12-03 (as declared in OfferServiceImpl.DATE_FORMAT
-        LocalDate dateToBook = LocalDate.now();
-        String dateToBookSTR = dateToBook.format(DATE_FORMAT);
-
-        Booked booked = BookingAssembler.getPopulatedBooked(TEST_USER_EMAIL, TEST_DEFAULT_BOOKED_ID);
-        booked.setBookedDate(dateToBook);
-
-        OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        //list have to be mutable ! easiest way to do it with one element:
-        expected.setBooked(new ArrayList<>(List.of(booked)));
-
-        Offer offerBeforeBooking = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-        offerBeforeBooking.setBooked(new ArrayList<>(List.of(booked)));
-
-        when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.of(offerBeforeBooking));
-
-        //When
-        OfferDTO actual = offerService.bookOffer(TEST_DEFAULT_OFFER_ID.toString(), dateToBookSTR, TEST_USER_EMAIL);
-
-        //Then
-        assertEquals(expected, actual);
-    }
-
-    @Test(expected = OfferException.class)
-    public void whenBookOfferInPast_thenThrowException() {
-        //Given
-        // Date format: 2011-12-03 (as declared in OfferServiceImpl.DATE_FORMAT
-        LocalDate dateToBook = LocalDate.now().minus(1, ChronoUnit.DAYS);
-        String dateToBookSTR = dateToBook.format(DATE_FORMAT);
-
-        Booked booked = BookingAssembler.getPopulatedBooked(TEST_USER_EMAIL, TEST_DEFAULT_BOOKED_ID);
-        booked.setBookedDate(dateToBook);
-
-        OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        //list have to be mutable ! easiest way to do it with one element:
-        expected.setBooked(new ArrayList<>(List.of(booked)));
-
-        Offer offerBeforeBooking = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-        offerBeforeBooking.setBooked(new ArrayList<>(List.of(booked)));
-
-        when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.of(offerBeforeBooking));
-
-        //When
-        OfferDTO actual = offerService.bookOffer(TEST_DEFAULT_OFFER_ID.toString(), dateToBookSTR, TEST_USER_EMAIL);
-
-        //Then
-        assertEquals(expected, actual);
-    }
-
-    private void prepareBookingTest(Booked booked) {
-        Offer offerBeforeBooking = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-        offerBeforeBooking.setBooked(new ArrayList<>());
-
-        Offer offerAfterBooking = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-        offerAfterBooking.setBooked(new ArrayList<>(List.of(booked)));
-
-        when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.of(offerBeforeBooking));
-        when(bookedService.addBooked(any())).thenReturn(booked);
-        when(offerRepository.save(offerAfterBooking)).thenReturn(offerAfterBooking);
-    }
 }

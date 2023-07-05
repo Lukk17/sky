@@ -1,8 +1,8 @@
-package com.lukk.sky.offer.controller;
+package com.lukk.sky.offer.adapters.api;
 
-import com.lukk.sky.offer.dto.OfferDTO;
-import com.lukk.sky.offer.exception.OfferException;
-import com.lukk.sky.offer.service.OfferService;
+import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.ports.service.OfferService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +36,7 @@ public class OfferController {
     }
 
     @PostMapping(value = "/add")
-    public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader("username") String username) {
+    public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader("x-auth-request-email") String username) {
         try {
             offer.setOwnerEmail(username);
             OfferDTO addedOffer = offerService.addOffer(offer);
@@ -48,7 +48,7 @@ public class OfferController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteOffer(@RequestBody String offerID, @RequestHeader("username") String username) {
+    public ResponseEntity<?> deleteOffer(@RequestBody String offerID, @RequestHeader("x-auth-request-email") String username) {
         try {
             offerService.deleteOffer(Long.parseLong(offerID), username);
             return ResponseEntity.accepted().build();
@@ -58,18 +58,12 @@ public class OfferController {
     }
 
     @GetMapping("/getOwned")
-    public ResponseEntity<List<OfferDTO>> getOwnedOffers(@RequestHeader("username") String username) {
+    public ResponseEntity<List<OfferDTO>> getOwnedOffers(@RequestHeader("x-auth-request-email") String username) {
         List<OfferDTO> offers = offerService.getOwnedOffers(username);
 
         return ResponseEntity.ok(offers);
     }
 
-    @GetMapping("/getBooked")
-    public ResponseEntity<List<OfferDTO>> getBookedOffers(@RequestHeader("username") String username) {
-        List<OfferDTO> offers = offerService.getBookedOffers(username);
-
-        return ResponseEntity.ok(offers);
-    }
 
     @PostMapping("/search")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
@@ -78,23 +72,9 @@ public class OfferController {
     }
 
     @PutMapping("/edit")
-    public ResponseEntity<OfferDTO> edit(@RequestBody OfferDTO offer, @RequestHeader("username") String username) {
+    public ResponseEntity<OfferDTO> edit(@RequestBody OfferDTO offer, @RequestHeader("x-auth-request-email") String username) {
         offer.setOwnerEmail(username);
         return ResponseEntity.ok(offerService.editOffer(offer));
-    }
-
-    @PostMapping("/book")
-    public ResponseEntity<?> bookOffer(@RequestBody Map<String, String> json, @RequestHeader("username") String username) {
-        String offerID = json.get("offerID");
-        String dateToBook = json.get("dateToBook");
-
-        try {
-            OfferDTO offer = offerService.bookOffer(offerID, dateToBook, username);
-            return ResponseEntity.ok(offer);
-
-        } catch (OfferException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
     }
 
     private static void printHeaders(Map<String, String> headers) {

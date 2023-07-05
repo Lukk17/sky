@@ -1,7 +1,6 @@
-package com.lukk.sky.offer.repository;
+package com.lukk.sky.offer.domain.ports.repository;
 
-import com.lukk.sky.offer.entity.Booked;
-import com.lukk.sky.offer.entity.Offer;
+import com.lukk.sky.offer.domain.model.Offer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,7 +10,5 @@ import java.util.List;
 public interface OfferRepository extends JpaRepository<Offer, Long> {
 
     List<Offer> findAllByOwnerEmail(String ownerEmail);
-
-    Offer findOfferByBooked(Booked booked);
 
 }

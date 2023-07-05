@@ -19,6 +19,7 @@ tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.1")
     val springVersion = "${project.extra["springVersion"]}"
     implementation("org.springframework.boot:spring-boot-starter-actuator:${springVersion}")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:${springVersion}")

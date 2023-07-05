@@ -1,7 +1,7 @@
 package com.lukk.sky.offer.Assemblers;
 
-import com.lukk.sky.offer.dto.OfferDTO;
-import com.lukk.sky.offer.entity.Offer;
+import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.domain.model.Offer;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

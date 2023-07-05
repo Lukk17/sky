@@ -1,11 +1,15 @@
-package com.lukk.sky.offer.service;
+package com.lukk.sky.offer.domain.ports.service;
 
-import com.lukk.sky.offer.dto.OfferDTO;
-import com.lukk.sky.offer.exception.OfferException;
+import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.model.Offer;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OfferService {
+
+    Optional<Offer> getOffer(Long offerId);
 
     List<OfferDTO> getAllOffers();
 
@@ -15,11 +19,9 @@ public interface OfferService {
 
     List<OfferDTO> getOwnedOffers(String ownerEmail);
 
-    List<OfferDTO> getBookedOffers(String userEmail);
 
     List<OfferDTO> searchOffers(String searched);
 
     OfferDTO editOffer(OfferDTO offer);
 
-    OfferDTO bookOffer(String offerID, String dateToBook, String bookingUserEmail) throws OfferException;
 }
