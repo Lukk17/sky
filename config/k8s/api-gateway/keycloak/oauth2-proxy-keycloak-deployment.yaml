@@ -36,10 +36,11 @@ spec:
             - --email-domain=*
             - --cookie-secure=false
             - --cookie-secret=SEEECRETXXXXXXXX
+            - --set-xauthrequest=true
             - --pass-authorization-header=true
             - --set-authorization-header=true
             - --pass-access-token=true
-            - --set-xauthrequest=true
+            - --pass_host_header=true
 #            - --login-url=http://34.116.235.60/realms/skyrealm/protocol/openid-connect/auth
 #            - --redeem-url=http://34.116.235.60/realms/skyrealm/protocol/openid-connect/token
 #            - --profile-url=http://34.116.235.60/realms/skyrealm/protocol/openid-connect/userinfo

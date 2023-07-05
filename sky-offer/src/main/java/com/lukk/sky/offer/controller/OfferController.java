@@ -4,6 +4,7 @@ import com.lukk.sky.offer.dto.OfferDTO;
 import com.lukk.sky.offer.exception.OfferException;
 import com.lukk.sky.offer.service.OfferService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,18 +15,23 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class OfferController {
 
     private final OfferService offerService;
 
     @GetMapping(value = {"/", "/home"})
-    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message) {
+    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
+                                        @RequestHeader Map<String, String> headers) {
+        printHeaders(headers);
 
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<OfferDTO>> getAllOffers() {
+    public ResponseEntity<List<OfferDTO>> getAllOffers(@RequestHeader Map<String, String> headers) {
+        printHeaders(headers);
+
         return ResponseEntity.ok(offerService.getAllOffers());
     }
 
@@ -89,5 +95,11 @@ public class OfferController {
         } catch (OfferException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    private static void printHeaders(Map<String, String> headers) {
+        StringBuilder str = new StringBuilder("Headers:");
+        headers.forEach((key, value) -> str.append("\n").append(key).append(" : ").append(value));
+        log.info(str.toString());
     }
 }

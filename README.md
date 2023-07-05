@@ -235,6 +235,12 @@ Build:
 docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest --no-cache
 ```  
 
+Push into repository:
+```shell
+docker tag sky-offer:latest lukk17/sky-offer:latest
+docker push lukk17/sky-offer:latest
+```
+
 Docker container creation:  
 ```
 docker create --name sky-offer --network sky-net sky-offer:latest

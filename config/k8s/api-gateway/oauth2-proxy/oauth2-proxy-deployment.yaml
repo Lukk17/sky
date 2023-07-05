@@ -27,6 +27,13 @@ spec:
             - --redirect-url=http://sky.luksarna.com/oauth2/callback
             - --set-authorization-header=true
             - --scope=openid email
+            - --set-xauthrequest=true
+            - --pass-authorization-header=true
+            - --set-authorization-header=true
+            - --pass-access-token=true
+            - --pass-host-header=true
+            - --pass-user-headers=true
+            - --pass-basic-auth=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               value: 9H4ckShWBYzA5gigTK0VnR1I1Hh7MHz0

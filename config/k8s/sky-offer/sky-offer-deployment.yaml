@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: sky-offer-container
-          image: lukk17/sky-offer
+          image: lukk17/sky-offer:latest
           ports:
             - containerPort: 5552
           env:
