@@ -3,10 +3,8 @@ package com.lukk.sky.offer.config;
 import lombok.Getter;
 import lombok.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
-@ConstructorBinding
 @ConfigurationProperties
 @Getter
 public class ConfigProperties {

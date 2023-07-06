@@ -1,0 +1,20 @@
+# ==================================================================================================================
+# SPRING setup
+
+server:
+  port: ${NOTIFY_PORT:55545}
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    admin:
+      auto-create: true
+    consumer:
+      group-id: skyGroup
+
+logging:
+  level:
+    org:
+      springframework:
+        web: ${SPRING_DEBUG:INFO}
+

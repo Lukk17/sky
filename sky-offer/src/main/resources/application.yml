@@ -24,7 +24,7 @@ spring:
   jpa:
     #   type of database operations on app start
     hibernate.ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: ${SHOW_SQL_QUERIES:false}
     properties:
       hibernate:
@@ -46,6 +46,15 @@ spring:
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASS:Lukk1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      client-id: offerService
+    admin:
+      auto-create: true
+
+
 
 # expose actuator endpoints (* for all)
 management:
@@ -69,3 +78,4 @@ logging:
       springframework:
         web: ${SPRING_DEBUG:INFO}
       hibernate: ${HIBERNATE_DEBUG:INFO}
+
