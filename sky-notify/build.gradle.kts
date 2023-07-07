@@ -45,8 +45,12 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}")
+    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}"){
+        exclude("junit", "junit")
+    }
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
     testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
+
 }
 

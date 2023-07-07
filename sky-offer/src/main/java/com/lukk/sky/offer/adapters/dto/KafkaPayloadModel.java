@@ -1,8 +1,5 @@
 package com.lukk.sky.offer.adapters.dto;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-public record KafkaPayloadModel(String message, String accessedAt, List<String> userInfo) {
+public record KafkaPayloadModel(String payload, String accessedAt, String userInfo) {
 
 }

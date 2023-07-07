@@ -2,16 +2,15 @@ package com.lukk.sky.offer.domain.ports.service;
 
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,16 +20,13 @@ import java.util.stream.Collectors;
 public class OfferServicePrimary implements OfferService {
 
     private final OfferRepository offerRepository;
-
-    @Override
-    public Optional<Offer> getOffer(Long offerId) {
-        return offerRepository.findById(offerId);
-    }
+    private final EventSourceService eventSourceService;
 
     @Override
     public List<OfferDTO> getAllOffers() {
         log.info("Pulling all offers");
         List<Offer> offers = offerRepository.findAll();
+
         return offers.stream()
                 .map(OfferDTO::of)
                 .collect(Collectors.toList());
@@ -38,23 +34,30 @@ public class OfferServicePrimary implements OfferService {
 
     @Override
     public OfferDTO addOffer(OfferDTO offerDTO) throws OfferException {
+
         if (offerDTO.getId() != null && offerRepository.findById(offerDTO.getId()).isPresent()) {
             throw new OfferException("Offer with given ID already exist!");
         }
 
-        log.info("Saving offer: " + offerDTO + "\n  from user: " + offerDTO.getOwnerEmail());
-
         Offer savedOffer = offerRepository.save(offerDTO.toDomain());
+
+        log.info("Saved offer with ID: {} from user: {}", savedOffer.getId(), savedOffer.getOwnerEmail());
+        eventSourceService.saveEvent(savedOffer, EventType.OFFER_CREATED);
+
         return OfferDTO.of(savedOffer);
     }
 
     @Override
     public void deleteOffer(Long offerID, String userEmail) throws OfferException {
 
-        Offer offer = offerRepository.findById(offerID).orElseThrow(() -> new OfferException("Can't remove non-existing offer!"));
-        if (offer.getOwnerEmail().equals(userEmail)) {
-            log.info("Deleting offer of ID: " + offer.getId());
-            offerRepository.delete(offer);
+        Offer offerToDelete = offerRepository.findById(offerID)
+                .orElseThrow(() -> new OfferException("Can't remove non-existing offer!"));
+
+        if (offerToDelete.getOwnerEmail().equals(userEmail)) {
+            log.info("Deleting offer with ID: {}", offerToDelete.getId());
+
+            offerRepository.delete(offerToDelete);
+            eventSourceService.saveEvent(offerToDelete, EventType.OFFER_DELETED);
 
         } else {
             throw new OfferException("You can't remove offer of which owner is someone else!");
@@ -65,6 +68,8 @@ public class OfferServicePrimary implements OfferService {
     public List<OfferDTO> getOwnedOffers(String ownerEmail) {
         List<Offer> offers = offerRepository.findAllByOwnerEmail(ownerEmail);
 
+        log.info("Pulling offers which owner is user: {}", ownerEmail);
+
         return offers.stream()
                 .map(OfferDTO::of)
                 .collect(Collectors.toList());
@@ -73,6 +78,9 @@ public class OfferServicePrimary implements OfferService {
     @Override
     public List<OfferDTO> searchOffers(String searched) {
         List<OfferDTO> offers = getAllOffers();
+
+        log.info("Searching offers for: {}", searched);
+
         return offers.stream()
                 .filter(offer -> offer.getHotelName().contains(searched)
                         || offer.getOwnerEmail().contains(searched)
@@ -86,11 +94,15 @@ public class OfferServicePrimary implements OfferService {
     public OfferDTO editOffer(OfferDTO offerDTO) {
         Offer dbOffer = offerRepository
                 .findById(offerDTO.getId())
-                .orElseThrow(() -> new ValidationException("Can't edit offer without its ID."));
+                .orElseThrow(() -> new OfferException("Can't edit offer without its ID."));
 
-        offerDTO = offerDTO.mergeWithDomain(dbOffer);
-        offerRepository.save(offerDTO.toDomain());
+        dbOffer = offerRepository.save(offerDTO.mergeWithDomain(dbOffer).toDomain());
 
-        return offerDTO;
+        log.info("Offer with ID: {} edited.", dbOffer.getId());
+
+        offerDTO.setId(dbOffer.getId());
+        eventSourceService.saveEvent(offerDTO.toDomain(), EventType.OFFER_UPDATED);
+
+        return OfferDTO.of(dbOffer);
     }
 }

@@ -18,6 +18,10 @@ tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar
     this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 dependencies {
     val springVersion = "${project.extra["springVersion"]}"
 
@@ -28,22 +32,25 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web:${springVersion}")
     implementation("org.springframework.boot:spring-boot-devtools:${springVersion}")
 
-//    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.2")
-    implementation("mysql:mysql-connector-java:8.0.29")
-    implementation("com.google.code.gson:gson:2.9.0")
+    implementation("mysql:mysql-connector-java:${project.extra["mysqlVersion"]}")
+    implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}")
-    testImplementation("com.h2database:h2:2.1.212")
+    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}"){
+        exclude("junit", "junit")
+    }
+    testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
+    testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
 
-    compileOnly("org.projectlombok:lombok:1.18.24")
+    compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
     compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")
 
-    annotationProcessor("org.projectlombok:lombok:1.18.24")
+    annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")
 
     //  JAX-B dependencies for JDK 9+ (without hibernate/hikari error)
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:2.3.2")
-    implementation("org.glassfish.jaxb:jaxb-runtime:2.3.2")
+    implementation("jakarta.xml.bind:jakarta.xml.bind-api:${project.extra["jakartaBindApiVersion"]}")
+    implementation("org.glassfish.jaxb:jaxb-runtime:${project.extra["jaxbRuntimeVersion"]}")
 }
 
 

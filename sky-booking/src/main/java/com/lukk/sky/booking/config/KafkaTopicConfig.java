@@ -11,9 +11,8 @@ import static com.lukk.sky.booking.config.Constants.KAFKA_TOPIC;
 @Configuration
 public class KafkaTopicConfig {
 
-
     @Bean
-    public NewTopic topic1() {
+    public NewTopic bookingTopic() {
         return TopicBuilder.name(KAFKA_TOPIC).build();
     }
 }

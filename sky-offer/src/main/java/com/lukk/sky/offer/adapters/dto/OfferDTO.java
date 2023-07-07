@@ -1,6 +1,5 @@
 package com.lukk.sky.offer.adapters.dto;
 
-import com.lukk.sky.offer.domain.model.Booked;
 import com.lukk.sky.offer.domain.model.Offer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +23,6 @@ public class OfferDTO {
     private Long roomCapacity;
     private String city;
     private String country;
-    private List<Booked> booked;
     private String photoPath;
 
     public static OfferDTO of(Offer offer) {
@@ -38,7 +36,6 @@ public class OfferDTO {
                 .comment(offer.getComment())
                 .price(offer.getPrice())
                 .roomCapacity(offer.getRoomCapacity())
-                .booked(offer.getBooked())
                 .photoPath(offer.getPhotoPath())
                 .build();
     }
@@ -46,6 +43,7 @@ public class OfferDTO {
     public Offer toDomain() {
 
         return Offer.builder()
+                .id(this.getId())
                 .hotelName(this.getHotelName())
                 .city(this.getCity())
                 .country(this.getCountry())
@@ -54,7 +52,6 @@ public class OfferDTO {
                 .comment(this.getComment())
                 .price(this.getPrice())
                 .roomCapacity(this.getRoomCapacity())
-                .booked(this.getBooked())
                 .photoPath(this.getPhotoPath())
                 .build();
     }
@@ -78,8 +75,6 @@ public class OfferDTO {
                 .orElse(dbOffer.getPrice()));
         builder.roomCapacity(Optional.ofNullable(this.getRoomCapacity())
                 .orElse(dbOffer.getRoomCapacity()));
-        builder.booked(Optional.ofNullable(this.getBooked())
-                .orElse(dbOffer.getBooked()));
         builder.photoPath(Optional.ofNullable(this.getPhotoPath())
                 .orElse(dbOffer.getPhotoPath()));
 

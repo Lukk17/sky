@@ -8,13 +8,20 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     admin:
-      auto-create: true
-    consumer:
-      group-id: skyGroup
+      auto-create: false
 
 logging:
   level:
     org:
       springframework:
         web: ${SPRING_DEBUG:INFO}
+        messaging:
+          simp:
+            broker:
+              SimpleBrokerMessageHandler: WARN
+      apache:
+        kafka:
+          clients:
+            consumer:
+              ConsumerConfig: WARN
 

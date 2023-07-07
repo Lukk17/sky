@@ -21,7 +21,7 @@ import java.util.List;
 public class Offer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank
@@ -51,8 +51,4 @@ public class Offer {
 
     @NotBlank
     private String country;
-
-    @OneToMany(mappedBy = "offer", cascade = CascadeType.REMOVE)
-    private List<Booked> booked;
-
 }

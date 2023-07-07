@@ -1,5 +1,6 @@
 package com.lukk.sky.offer.adapters.api;
 
+import com.google.gson.Gson;
 import com.lukk.sky.offer.adapters.dto.KafkaPayloadModel;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -13,18 +14,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Optional;
 
-import static com.lukk.sky.offer.config.Constants.*;
+import static com.lukk.sky.offer.config.Constants.DATE_TIME_FORMAT;
+import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
 
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping(path = "${sky.apiPrefix}")
 public class OfferController {
 
     private final OfferService offerService;
@@ -34,40 +34,34 @@ public class OfferController {
     public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
                                         @RequestHeader Map<String, String> headers) {
         printHeaders(headers);
+        try {
 
-        String notification = String.format("Hello World page accessed at: %s by: %s",
-                LocalDateTime.now().format(DATE_TIME_FORMAT),
-                getUserInfoFromHeaders(headers));
-        KafkaPayloadModel model = new KafkaPayloadModel(
-                "Hello World page",
-                LocalDateTime.now().format(DATE_TIME_FORMAT),
-                getUserInfoFromHeaders(headers)
-        );
-        offerNotificationService.sendMessage(model);
+            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
 
-        return new ResponseEntity<>(message, HttpStatus.OK);
-    }
+            sendNotification("Offer Hello World page", ownerEmail);
+            return new ResponseEntity<>(message, HttpStatus.OK);
 
-    private static List<String> getUserInfoFromHeaders(Map<String, String> headers) {
-        return headers.entrySet()
-                .stream()
-                .filter(entry -> USER_INFO_HEADERS.contains(entry.getKey().toLowerCase()))
-                .map(Map.Entry::getValue)
-                .toList();
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<OfferDTO>> getAllOffers(@RequestHeader Map<String, String> headers) {
-        printHeaders(headers);
-
+    public ResponseEntity<List<OfferDTO>> getAllOffers() {
         return ResponseEntity.ok(offerService.getAllOffers());
     }
 
     @PostMapping(value = "/add")
-    public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader("x-auth-request-email") String username) {
+    public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
+        Gson gson = new Gson();
+
         try {
-            offer.setOwnerEmail(username);
+            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
+
+            offer.setOwnerEmail(ownerEmail);
             OfferDTO addedOffer = offerService.addOffer(offer);
+
+            sendNotification(gson.toJson(addedOffer), ownerEmail);
             return ResponseEntity.ok(addedOffer);
 
         } catch (OfferException e) {
@@ -76,22 +70,33 @@ public class OfferController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteOffer(@RequestBody String offerID, @RequestHeader("x-auth-request-email") String username) {
+    public ResponseEntity<?> deleteOffer(@RequestBody String offerID, @RequestHeader Map<String, String> headers) {
+
         try {
-            offerService.deleteOffer(Long.parseLong(offerID), username);
-            return ResponseEntity.accepted().build();
+            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
+
+            offerService.deleteOffer(Long.parseLong(offerID), ownerEmail);
+
+            sendNotification(String.format("Offer with ID: %s was deleted.", offerID), ownerEmail);
+            return ResponseEntity.ok("Offer deleted.");
+
         } catch (OfferException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @GetMapping("/getOwned")
-    public ResponseEntity<List<OfferDTO>> getOwnedOffers(@RequestHeader("x-auth-request-email") String username) {
-        List<OfferDTO> offers = offerService.getOwnedOffers(username);
+    public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
+        try {
+            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No user info"));
+            List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
 
-        return ResponseEntity.ok(offers);
+            return ResponseEntity.ok(offers);
+
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
-
 
     @PostMapping("/search")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
@@ -100,14 +105,43 @@ public class OfferController {
     }
 
     @PutMapping("/edit")
-    public ResponseEntity<OfferDTO> edit(@RequestBody OfferDTO offer, @RequestHeader("x-auth-request-email") String username) {
-        offer.setOwnerEmail(username);
-        return ResponseEntity.ok(offerService.editOffer(offer));
+    public ResponseEntity<?> edit(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
+        Gson gson = new Gson();
+        try {
+            String ownerEmail = getUserInfoFromHeaders(headers)
+                    .orElseThrow(() -> new OfferException("No offer owner"));
+
+            offer.setOwnerEmail(ownerEmail);
+            OfferDTO edited = offerService.editOffer(offer);
+
+            sendNotification(gson.toJson(edited), ownerEmail);
+            return ResponseEntity.ok(edited);
+
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     private static void printHeaders(Map<String, String> headers) {
         StringBuilder str = new StringBuilder("Headers:");
-        headers.forEach((key, value) -> str.append("\n").append(key).append(" : ").append(value));
+        headers.forEach((key, value) -> str.append("\t").append(key).append("=").append(value));
         log.info(str.toString());
+    }
+
+    private static Optional<String> getUserInfoFromHeaders(Map<String, String> headers) {
+        return headers.entrySet()
+                .stream()
+                .filter(entry -> USER_INFO_HEADERS.contains(entry.getKey().toLowerCase()))
+                .map(Map.Entry::getValue)
+                .findFirst();
+    }
+
+    private void sendNotification(String payload, String owner) {
+        KafkaPayloadModel model = new KafkaPayloadModel(
+                payload,
+                LocalDateTime.now().format(DATE_TIME_FORMAT),
+                owner
+        );
+        offerNotificationService.sendMessage(model);
     }
 }

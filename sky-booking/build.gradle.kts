@@ -1,3 +1,5 @@
+import org.gradle.internal.impldep.org.fusesource.jansi.AnsiRenderer.test
+
 buildscript {
     apply(from = File("../config/microservicesConfig.gradle.kts"))
 
@@ -21,8 +23,11 @@ tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar
     this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 dependencies {
-    testImplementation("junit:junit:4.13.1")
     val springVersion = "${project.extra["springVersion"]}"
     implementation("org.springframework.boot:spring-boot-starter-actuator:${springVersion}")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:${springVersion}")
@@ -35,9 +40,12 @@ dependencies {
     implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
     implementation("org.springframework.kafka:spring-kafka:${project.extra["kafkaVersion"]}")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}")
+    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}") {
+        exclude("junit", "junit")
+    }
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
     testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
 
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")

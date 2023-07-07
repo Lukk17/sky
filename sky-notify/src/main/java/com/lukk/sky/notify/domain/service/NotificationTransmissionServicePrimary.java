@@ -24,7 +24,7 @@ public class NotificationTransmissionServicePrimary implements NotificationTrans
         String websocketPayloadJson = gson.toJson(new WebsocketPayloadModel(
                 payloadModel, partition, topic, groupId, timestamp, offset));
 
-        log.info(websocketPayloadJson);
         notificationPublisherPrimary.publish(websocketPayloadJson);
+        log.info("Notification sent to websocket with payload: {}", websocketPayloadJson);
     }
 }

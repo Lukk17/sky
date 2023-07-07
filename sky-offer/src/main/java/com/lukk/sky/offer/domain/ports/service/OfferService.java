@@ -9,8 +9,6 @@ import java.util.Optional;
 
 public interface OfferService {
 
-    Optional<Offer> getOffer(Long offerId);
-
     List<OfferDTO> getAllOffers();
 
     OfferDTO addOffer(OfferDTO offer) throws OfferException;

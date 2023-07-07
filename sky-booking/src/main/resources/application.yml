@@ -1,6 +1,7 @@
 # ==================================================================================================================
 sky:
   helloWorld: <center><h1>Welcome to Booking app.</h1></center>
+  apiPrefix: api
 
 # SPRING setup
 
@@ -77,5 +78,12 @@ logging:
     org:
       springframework:
         web: ${SPRING_DEBUG:INFO}
-      hibernate: ${HIBERNATE_DEBUG:INFO}
+      hibernate: ${HIBERNATE_DEBUG:WARN}
+      apache:
+        kafka:
+          clients:
+            admin:
+              AdminClientConfig: WARN
+            producer:
+              ProducerConfig: WARN
 

@@ -25,11 +25,7 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     admin:
-      auto-create: true
-    consumer:
-      group-id: skyGroup
-
-
+      auto-create: false
 
 # expose actuator endpoints (* for all)
 management:
@@ -52,5 +48,13 @@ logging:
     org:
       springframework:
         web: ${SPRING_DEBUG:INFO}
-      hibernate: ${HIBERNATE_DEBUG:INFO}
+        messaging:
+          simp:
+            broker:
+              SimpleBrokerMessageHandler: WARN
+      apache:
+        kafka:
+          clients:
+            consumer:
+              ConsumerConfig: WARN
 

@@ -10,6 +10,7 @@ buildscript {
         set("jakartaBindApiVersion", "4.0.0")
         set("jaxbRuntimeVersion", "4.0.3")
         set("kafkaVersion", "3.0.8")
+        set("jUnit5Version", "5.10.0-M1")
     }
 }
 

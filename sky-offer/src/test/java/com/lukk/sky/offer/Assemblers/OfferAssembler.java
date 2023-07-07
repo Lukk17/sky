@@ -4,7 +4,6 @@ import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.model.Offer;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
@@ -40,7 +39,6 @@ public class OfferAssembler {
                 .photoPath(TEST_PHOTO_PATH)
                 .id(id)
                 .roomCapacity(TEST_ROOM_CAPACITY)
-                .booked(new ArrayList<>())
                 .price(TEST_PRICE)
                 .build();
     }
@@ -56,7 +54,6 @@ public class OfferAssembler {
                 .photoPath("")
                 .id(id)
                 .roomCapacity(1L)
-                .booked(new ArrayList<>())
                 .price(BigDecimal.valueOf(1))
                 .build();
     }
@@ -75,7 +72,6 @@ public class OfferAssembler {
                 .hotelName(TEST_HOTEL_NAME)
                 .city(TEST_CITY)
                 .country(TEST_COUNTRY)
-                .booked(new ArrayList<>())
                 .comment(TEST_COMMENT)
                 .description(TEST_DESCRIPTION)
                 .id(id)

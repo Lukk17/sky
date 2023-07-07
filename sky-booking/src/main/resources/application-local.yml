@@ -50,4 +50,11 @@ logging:
       springframework:
         web: INFO
       hibernate: INFO
+      apache:
+        kafka:
+          clients:
+            admin:
+              AdminClientConfig: WARN
+            producer:
+              ProducerConfig: WARN
 

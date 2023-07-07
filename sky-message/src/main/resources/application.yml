@@ -1,6 +1,7 @@
 # ==================================================================================================================
 sky:
   helloWorld: <center><h1>Welcome to Message app.</h1></center>
+  apiPrefix: api
 
 # SPRING setup
 server:
@@ -20,7 +21,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: ${SHOW_SQL_QUERIES:false}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky}
@@ -55,4 +56,4 @@ logging:
     org:
       springframework:
         web: ${SPRING_DEBUG:INFO}
-      hibernate: ${HIBERNATE_DEBUG:INFO}
+      hibernate: ${HIBERNATE_DEBUG:WARN}
