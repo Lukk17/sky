@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth
+  name: sky-booking-deployment
   namespace: default
 spec:
   replicas: 1
@@ -15,35 +15,38 @@ spec:
         component: web
     spec:
       containers:
-        - name: auth
-          image: lukk17/sky-auth
+        - name: sky-booking-container
+          image: lukk17/sky-booking:latest
           ports:
-            - containerPort: 9100
+            - containerPort: 5555
           env:
-            - name: AUTH_PORT
-              value: "9100"
+            - name: BOOKING_PORT
+              value: '5555'
             - name: SPRING_DATASOURCE_URL
               value: jdbc:mysql://mysql-service:3306/sky
             - name: MYSQL_USER
-              value: root
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-user
+                  name: sky-secrets
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: mysqlrootPass
-                  name: skysecrets
+                  key: mysql-root-pass
+                  name: sky-secrets
             - name: SPRING_DEBUG
-              value: "INFO"
+              value: 'INFO'
             - name: HIBERNATE_DEBUG
-              value: "INFO"
+              value: 'INFO'
             - name: SHOW_SQL_QUERIES
-              value: "false"
+              value: 'false'
             - name: SPRING_SECURITY_USER
               valueFrom:
                 secretKeyRef:
-                  key: springsecurityuser
-                  name: skysecrets
+                  key: spring-security-user
+                  name: sky-secrets
             - name: SPRING_SECURITY_PASS
               valueFrom:
                 secretKeyRef:
-                  key: springsecuritypass
-                  name: skysecrets
+                  key: spring-security-pass
+                  name: sky-secrets

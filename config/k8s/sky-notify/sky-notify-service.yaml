@@ -2,11 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-service
+  name: sky-notify-service
+  namespace: default
 spec:
   type: ClusterIP
   ports:
-    - port: 9101
-      targetPort: 9100
+    - port: 5554
+      targetPort: 5554
+
   selector:
     component: web

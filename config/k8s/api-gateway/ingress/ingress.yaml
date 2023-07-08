@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -16,14 +17,21 @@ spec:
     - host: sky.luksarna.com
       http:
         paths:
-          - path: /offer(/|$)(.*)
+          - path: /offer/api(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
                 name: sky-offer-service
                 port:
                   number: 5552
-          - path: /message(/|$)(.*)
+          - path: /booking/api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: sky-booking-service
+                port:
+                  number: 5555
+          - path: /msg/api(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
@@ -40,7 +48,6 @@ metadata:
   namespace: default
   annotations:
     kubernetes.io/ingress.class: "nginx"
-#    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:

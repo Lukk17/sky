@@ -43,10 +43,10 @@ spec:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  key: postgresUser
-                  name: skysecrets
+                  key: postgres-user
+                  name: sky-secrets
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: postgresPass
-                  name: skysecrets
+                  key: postgres-pass
+                  name: sky-secrets

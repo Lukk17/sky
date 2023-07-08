@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: zuul-deployment
+  name: sky-notify-deployment
   namespace: default
 spec:
   replicas: 1
@@ -15,22 +15,22 @@ spec:
         component: web
     spec:
       containers:
-        - name: zull
-          image: lukk17/sky-zuul
+        - name: sky-notify-container
+          image: lukk17/sky-notify:latest
           ports:
-            - containerPort: 8762
+            - containerPort: 5554
           env:
-            - name: ZUUL_PORT
-              value: '8762'
+            - name: NOTIFY_PORT
+              value: '5554'
             - name: SPRING_DEBUG
               value: 'INFO'
             - name: SPRING_SECURITY_USER
               valueFrom:
                 secretKeyRef:
-                  key: springsecurityuser
-                  name: skysecrets
+                  key: spring-security-user
+                  name: sky-secrets
             - name: SPRING_SECURITY_PASS
               valueFrom:
                 secretKeyRef:
-                  key: springsecuritypass
-                  name: skysecrets
+                  key: spring-security-pass
+                  name: sky-secrets

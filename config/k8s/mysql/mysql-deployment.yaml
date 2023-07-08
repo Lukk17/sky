@@ -43,16 +43,16 @@ spec:
               valueFrom:
                 secretKeyRef:
                   # from secret.yaml data section
-                  key: mysqlrootPass
+                  key: mysql-root-pass
                   # from secret.yaml metadata.name section
-                  name: skysecrets
+                  name: sky-secrets
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
-                  key: mysqlusername
-                  name: skysecrets
+                  key: mysql-username
+                  name: sky-secrets
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: mysqlpassword
-                  name: skysecrets
+                  key: mysql-password
+                  name: sky-secrets

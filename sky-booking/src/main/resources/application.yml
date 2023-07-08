@@ -2,12 +2,14 @@
 sky:
   helloWorld: <center><h1>Welcome to Booking app.</h1></center>
   apiPrefix: api
-  offerServiceAddress: offer-service
+  offerServiceAddress: ${OFFER_SERVICE_ADDRESS:offer-service}
+  offerOwnerEndpoint: owners
+  offerServicePort: 5552
 
 # SPRING setup
 
 server:
-  port: ${OFFER_PORT:5555}
+  port: ${BOOKING_PORT:5555}
 
 spring:
   application:

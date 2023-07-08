@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: sky-message-container
-          image: lukk17/sky-message
+          image: lukk17/sky-message:latest
           ports:
             - containerPort: 5553
           env:
@@ -29,8 +29,8 @@ spec:
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: mysqlrootPass
-                  name: skysecrets
+                  key: mysql-root-pass
+                  name: sky-secrets
             - name: SPRING_DEBUG
               value: 'INFO'
             - name: HIBERNATE_DEBUG
@@ -40,10 +40,10 @@ spec:
             - name: SPRING_SECURITY_USER
               valueFrom:
                 secretKeyRef:
-                  key: springsecurityuser
-                  name: skysecrets
+                  key: spring-security-user
+                  name: sky-secrets
             - name: SPRING_SECURITY_PASS
               valueFrom:
                 secretKeyRef:
-                  key: springsecuritypass
-                  name: skysecrets
+                  key: spring-security-pass
+                  name: sky-secrets

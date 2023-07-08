@@ -27,14 +27,14 @@ spec:
               value: null
               valueFrom:
                 secretKeyRef:
-                  key: keycloakuser
-                  name: skysecrets
+                  key: keycloak-user
+                  name: sky-secrets
             - name: KEYCLOAK_ADMIN_PASSWORD
               value: null
               valueFrom:
                 secretKeyRef:
-                  key: keycloakpass
-                  name: skysecrets
+                  key: keycloak-pass
+                  name: sky-secrets
             - name: KC_PROXY
               value: "edge"
             - name: KC_HOSTNAME_STRICT

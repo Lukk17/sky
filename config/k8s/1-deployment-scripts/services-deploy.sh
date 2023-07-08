@@ -2,6 +2,8 @@ kubectl apply -f ../secret.yaml
 
 kubectl apply -f ../mysql/
 
+kubectl apply -f ../sky-booking/
+kubectl apply -f ../sky-notify/
 kubectl apply -f ../sky-offer/
 kubectl apply -f ../sky-message/
 

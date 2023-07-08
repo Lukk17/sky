@@ -36,11 +36,20 @@ spec:
             - --pass-basic-auth=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
-              value: 9H4ckShWBYzA5gigTK0VnR1I1Hh7MHz0
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-id
+                  name: sky-secrets
             - name: OAUTH2_PROXY_CLIENT_SECRET
-              value: g6B2jR-MXS_jWppT0MYg3GsyCZf7Zlgl6zhC1b3K7qAbc6p92uBQJYXaLRyv2b3c
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-secret
+                  name: sky-secrets
             - name: OAUTH2_PROXY_COOKIE_SECRET
-              value: SEEECRETXXXXXXXX
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-cookie-secret
+                  name: sky-secrets
 
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.4.0
           imagePullPolicy: Always
