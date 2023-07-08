@@ -1,5 +1,4 @@
 ---
-# setup networking in cluster
 apiVersion: v1
 kind: Service
 metadata:

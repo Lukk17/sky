@@ -1,5 +1,4 @@
 ---
-# maintain set of working pods - their number and config
 apiVersion: apps/v1
 kind: Deployment
 metadata:
