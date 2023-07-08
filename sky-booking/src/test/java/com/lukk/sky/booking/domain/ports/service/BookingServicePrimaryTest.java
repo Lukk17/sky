@@ -3,25 +3,26 @@ package com.lukk.sky.booking.domain.ports.service;
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.model.Booking;
+import com.lukk.sky.booking.domain.ports.api.RestClient;
 import com.lukk.sky.booking.domain.ports.repository.BookingRepository;
-import com.lukk.sky.booking.domain.ports.service.BookingServicePrimary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.*;
-import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
@@ -30,6 +31,12 @@ public class BookingServicePrimaryTest {
 
     @Mock
     BookingRepository bookingRepository;
+
+    @Mock
+    EventSourceService eventSourceService;
+
+    @Mock
+    RestClient restClient;
 
     @InjectMocks
     BookingServicePrimary bookingService;
@@ -57,10 +64,12 @@ public class BookingServicePrimaryTest {
 
         // any() because booking id is removed when saving to DB (DB normally autogenerate it)
         when(bookingRepository.save(any())).thenReturn(booking);
+        when(restClient.requestOfferOwner(booking.getOfferId())).thenReturn(Mono.just(booking.getOfferId()));
+        doNothing().when(eventSourceService).saveEvent(any(), any());
 
         //When
         BookingDTO actual = bookingService.bookOffer(booking.getOfferId(), TEST_DATE.toString(),
-                booking.getBookingUser(), booking.getOwner());
+                booking.getBookingUser()).block();
 
         //Then
         assertEquals(bookingDTO, actual);
@@ -92,7 +101,7 @@ public class BookingServicePrimaryTest {
 
             //When
             bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE.toString(),
-                    TEST_USER_EMAIL, TEST_OWNER_EMAIL);
+                    TEST_USER_EMAIL);
         });
     }
 
@@ -106,7 +115,7 @@ public class BookingServicePrimaryTest {
 
             //When
             bookingService.bookOffer(booking.getOfferId(), LocalDate.of(1201, 6, 20).toString(),
-                    booking.getBookingUser(), booking.getOwner());
+                    booking.getBookingUser());
         });
     }
 }

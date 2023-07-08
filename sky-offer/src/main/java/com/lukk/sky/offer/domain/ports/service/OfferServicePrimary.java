@@ -94,7 +94,7 @@ public class OfferServicePrimary implements OfferService {
     public OfferDTO editOffer(OfferDTO offerDTO) {
         Offer dbOffer = offerRepository
                 .findById(offerDTO.getId())
-                .orElseThrow(() -> new OfferException("Can't edit offer without its ID."));
+                .orElseThrow(() -> new OfferException("Offer not found."));
 
         dbOffer = offerRepository.save(offerDTO.mergeWithDomain(dbOffer).toDomain());
 
@@ -104,5 +104,14 @@ public class OfferServicePrimary implements OfferService {
         eventSourceService.saveEvent(offerDTO.toDomain(), EventType.OFFER_UPDATED);
 
         return OfferDTO.of(dbOffer);
+    }
+
+    @Override
+    public String findOfferOwner(String offerId){
+
+        return offerRepository
+                .findById(Long.parseLong(offerId))
+                .map(Offer::getOwnerEmail)
+                .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
     }
 }

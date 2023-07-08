@@ -1,6 +1,11 @@
 # ==================================================================================================================
 # SPRING setup
 
+sky:
+  offerServiceAddress: http://localhost
+  offerServicePort: 5552
+  offerOwnerEndpoint: owners
+
 server:
   port: 5555
 
@@ -18,7 +23,7 @@ spring:
 
   jpa:
     hibernate.ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
 
   datasource:

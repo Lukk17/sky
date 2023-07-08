@@ -2,10 +2,8 @@ package com.lukk.sky.offer.domain.ports.service;
 
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
-import com.lukk.sky.offer.domain.model.Offer;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface OfferService {
 
@@ -22,4 +20,5 @@ public interface OfferService {
 
     OfferDTO editOffer(OfferDTO offer);
 
+    String findOfferOwner(String offerId);
 }

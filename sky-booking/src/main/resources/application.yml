@@ -2,6 +2,7 @@
 sky:
   helloWorld: <center><h1>Welcome to Booking app.</h1></center>
   apiPrefix: api
+  offerServiceAddress: offer-service
 
 # SPRING setup
 
@@ -25,7 +26,7 @@ spring:
   jpa:
     #   type of database operations on app start
     hibernate.ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: ${SHOW_SQL_QUERIES:false}
     properties:
       hibernate:

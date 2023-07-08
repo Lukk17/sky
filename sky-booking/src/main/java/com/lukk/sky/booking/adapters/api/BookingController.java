@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,7 +44,7 @@ public class BookingController {
         }
     }
 
-    @GetMapping("/getBooked")
+    @GetMapping("/user/bookings")
     public ResponseEntity<?> getBookedOffers(@RequestHeader Map<String, String> headers) {
         try {
             String bookingUser = getUserInfoFromHeaders(headers);
@@ -56,26 +57,25 @@ public class BookingController {
         }
     }
 
-    @PostMapping("/book")
-    public ResponseEntity<?> bookOffer(@RequestBody Map<String, String> json,
-                                       @RequestHeader Map<String, String> headers) {
+    @PostMapping("/bookings")
+    public Mono<ResponseEntity> bookOffer(@RequestBody Map<String, String> json,
+                                          @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
 
         String offerId = json.get("offerId");
         String dateToBook = json.get("dateToBook");
-        String ownerId = json.get("ownerId");
 
-        try {
-            String bookingUser = getUserInfoFromHeaders(headers);
-
-            BookingDTO bookingDTO = bookingService.bookOffer(offerId, dateToBook, bookingUser, ownerId);
-
-            sendNotification(gson.toJson(bookingDTO), bookingUser);
-            return ResponseEntity.ok(bookingDTO);
-
-        } catch (BookingException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return Mono.fromCallable(() -> getUserInfoFromHeaders(headers))
+                .flatMap(bookingUser ->
+                        bookingService.bookOffer(offerId, dateToBook, bookingUser)
+                                .doOnSuccess(bookingDTO -> sendNotification(gson.toJson(bookingDTO), bookingUser))
+                                .map(ResponseEntity::ok)
+                                .cast(ResponseEntity.class)
+                )
+                .doOnError(throwable -> log.info(throwable.getMessage()))
+                .onErrorResume(throwable ->
+                        Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(throwable.getMessage()))
+                );
     }
 
     private static String getUserInfoFromHeaders(Map<String, String> headers) {
@@ -84,7 +84,7 @@ public class BookingController {
                 .filter(entry -> USER_INFO_HEADERS.contains(entry.getKey().toLowerCase()))
                 .map(Map.Entry::getValue)
                 .findFirst()
-                .orElseThrow(() -> new BookingException("No bookingUser for booking"));
+                .orElseThrow(() -> new BookingException("No user info found."));
     }
 
     private void sendNotification(String payload, String bookingUser) {

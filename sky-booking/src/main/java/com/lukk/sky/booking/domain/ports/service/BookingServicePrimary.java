@@ -5,11 +5,13 @@ import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.model.EventType;
+import com.lukk.sky.booking.domain.ports.api.RestClient;
 import com.lukk.sky.booking.domain.ports.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +26,7 @@ public class BookingServicePrimary implements BookingService {
 
     private final BookingRepository bookingRepository;
     private final EventSourceService eventSourceService;
+    private final RestClient restClient;
 
     @Override
     public List<BookingDTO> getBookedOffersForUser(String userEmail) {
@@ -35,8 +38,10 @@ public class BookingServicePrimary implements BookingService {
     }
 
     @Override
-    public BookingDTO bookOffer(String offerId, String dateToBookUnparsed, String bookingUserEmail, String ownerId)
+    public Mono<BookingDTO> bookOffer(String offerId, String dateToBookUnparsed, String bookingUserEmail)
             throws BookingException {
+
+        Mono<String> owner = restClient.requestOfferOwner(offerId);
 
         LocalDate dateToBook = LocalDate.parse(dateToBookUnparsed, DATE_FORMAT);
         List<Booking> bookedList = getBookingsForOffer(offerId);
@@ -44,16 +49,16 @@ public class BookingServicePrimary implements BookingService {
         checkIfAlreadyBooked(bookedList, dateToBook);
         checkIfBookingDateIsInFuture(dateToBook);
 
-        Booking newBook = bookingRepository.save(
-                addBooking(
-                        createNewBooked(offerId, bookingUserEmail, dateToBook, ownerId))
-        );
-
-        log.info("Offer with ID: {} booked for date: {} by user: {}",
-                offerId, dateToBook.format(DATE_FORMAT), bookingUserEmail);
-
-        eventSourceService.saveEvent(newBook, EventType.BOOKED);
-        return BookingDTO.of(newBook);
+        return owner
+                .flatMap(retrievedOwnerId -> Mono.just(
+                        BookingDTO.of(bookingRepository.save(
+                                addBooking(createNewBooked(offerId, bookingUserEmail, dateToBook, retrievedOwnerId))
+        )))
+            ).doOnNext(bookingDto -> {
+            log.info("Offer with ID: {} booked for date: {} by user: {}",
+                    offerId, dateToBook.format(DATE_FORMAT), bookingUserEmail);
+            eventSourceService.saveEvent(bookingDto.toDomain(), EventType.BOOKED);
+        });
     }
 
     private List<Booking> getBookingsForOffer(String offerId) {

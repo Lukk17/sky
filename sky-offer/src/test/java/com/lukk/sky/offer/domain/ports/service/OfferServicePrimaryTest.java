@@ -5,7 +5,6 @@ import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
-import com.lukk.sky.offer.domain.ports.service.OfferServicePrimary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,6 +29,9 @@ public class OfferServicePrimaryTest {
 
     @Mock
     OfferRepository offerRepository;
+
+    @Mock
+    EventSourceService eventSourceService;
 
     @InjectMocks
     OfferServicePrimary offerService;
@@ -74,6 +76,7 @@ public class OfferServicePrimaryTest {
         // any() because offer ID is skipped in DTO converter (as repository will assign it when saving to DB)
         // due to that offer sent to repo by service don't have ID field and is not same as this offer
         when(offerRepository.save(any())).thenReturn(offer);
+        doNothing().when(eventSourceService).saveEvent(any(), any());
 
         //When
         OfferDTO actual = offerService.addOffer(expected);
@@ -106,6 +109,7 @@ public class OfferServicePrimaryTest {
 
         doReturn(Optional.of(expected)).when(offerRepository).findById(expected.getId());
         doNothing().when(offerRepository).delete(valueCapture.capture());
+        doNothing().when(eventSourceService).saveEvent(any(), any());
 
         //When
         offerService.deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
@@ -207,7 +211,6 @@ public class OfferServicePrimaryTest {
 //Then
             assertEquals(expected, actual.size());
         });
-
     }
 
     @Test
@@ -217,6 +220,8 @@ public class OfferServicePrimaryTest {
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
 
         when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
+        when(offerRepository.save(any())).thenReturn(offer);
+        doNothing().when(eventSourceService).saveEvent(any(), any());
 
         //When
         OfferDTO actual = offerService.editOffer(expected);

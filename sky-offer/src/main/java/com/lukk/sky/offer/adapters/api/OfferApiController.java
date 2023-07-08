@@ -25,7 +25,7 @@ import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping(path = "${sky.apiPrefix}")
-public class OfferController {
+public class OfferApiController {
 
     private final OfferService offerService;
     private final OfferNotificationService offerNotificationService;
@@ -46,12 +46,25 @@ public class OfferController {
         }
     }
 
-    @GetMapping("/getAll")
+    @GetMapping("/offers")
     public ResponseEntity<List<OfferDTO>> getAllOffers() {
         return ResponseEntity.ok(offerService.getAllOffers());
     }
 
-    @PostMapping(value = "/add")
+    @GetMapping("/owner/offers")
+    public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
+        try {
+            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No user info"));
+            List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
+
+            return ResponseEntity.ok(offers);
+
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/owner/offers")
     public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
 
@@ -69,42 +82,7 @@ public class OfferController {
         }
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteOffer(@RequestBody String offerID, @RequestHeader Map<String, String> headers) {
-
-        try {
-            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
-
-            offerService.deleteOffer(Long.parseLong(offerID), ownerEmail);
-
-            sendNotification(String.format("Offer with ID: %s was deleted.", offerID), ownerEmail);
-            return ResponseEntity.ok("Offer deleted.");
-
-        } catch (OfferException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/getOwned")
-    public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
-        try {
-            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No user info"));
-            List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
-
-            return ResponseEntity.ok(offers);
-
-        } catch (OfferException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/search")
-    public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
-        return ResponseEntity.ok(offerService.searchOffers(searched));
-
-    }
-
-    @PutMapping("/edit")
+    @PutMapping("/owner/offers")
     public ResponseEntity<?> edit(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
         try {
@@ -120,6 +98,28 @@ public class OfferController {
         } catch (OfferException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @DeleteMapping("/owner/offers/{offerId}")
+    public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers, @PathVariable String offerId) {
+
+        try {
+            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
+
+            offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
+
+            sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
+            return ResponseEntity.ok("Offer deleted.");
+
+        } catch (OfferException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
+        return ResponseEntity.ok(offerService.searchOffers(searched));
+
     }
 
     private static void printHeaders(Map<String, String> headers) {

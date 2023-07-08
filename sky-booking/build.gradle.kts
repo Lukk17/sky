@@ -1,5 +1,3 @@
-import org.gradle.internal.impldep.org.fusesource.jansi.AnsiRenderer.test
-
 buildscript {
     apply(from = File("../config/microservicesConfig.gradle.kts"))
 
@@ -35,6 +33,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation:${springVersion}")
     implementation("org.springframework.boot:spring-boot-starter-web:${springVersion}")
     implementation("org.springframework.boot:spring-boot-devtools:${springVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-webflux:${springVersion}")
 
     implementation("mysql:mysql-connector-java:${project.extra["mysqlVersion"]}")
     implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
@@ -46,7 +45,6 @@ dependencies {
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
     testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
-
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
     compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")

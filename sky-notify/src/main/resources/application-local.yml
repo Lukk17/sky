@@ -2,7 +2,7 @@
 # SPRING setup
 
 server:
-  port: ${NOTIFY_PORT:55545}
+  port: ${NOTIFY_PORT:5554}
 
 spring:
   kafka:

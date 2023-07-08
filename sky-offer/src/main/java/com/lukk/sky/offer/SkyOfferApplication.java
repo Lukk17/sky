@@ -1,6 +1,9 @@
 package com.lukk.sky.offer;
 
-import com.lukk.sky.offer.config.propertyBind.*;
+import com.lukk.sky.offer.config.propertyBind.LoggingLvlConfigProperties;
+import com.lukk.sky.offer.config.propertyBind.ManagementConfigProperties;
+import com.lukk.sky.offer.config.propertyBind.ServerConfigProperties;
+import com.lukk.sky.offer.config.propertyBind.SpringConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;

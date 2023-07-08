@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -18,6 +19,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.List;
 
@@ -27,14 +30,13 @@ import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-public class OfferControllerTest {
+public class OfferApiControllerTest {
 
     private Gson gson;
 
@@ -43,6 +45,28 @@ public class OfferControllerTest {
 
     @MockBean
     private OfferService offerService;
+
+    private final String API_PREFIX;
+
+    public OfferApiControllerTest(@Value("${sky.apiPrefix}") String apiPrefix) {
+        this.API_PREFIX = apiPrefix;
+    }
+
+    private MockHttpServletRequestBuilder get(String uri) {
+        return MockMvcRequestBuilders.get("/" + API_PREFIX + uri);
+    }
+
+    private MockHttpServletRequestBuilder post(String uri) {
+        return MockMvcRequestBuilders.post("/" + API_PREFIX + uri);
+    }
+
+    private MockHttpServletRequestBuilder put(String uri) {
+        return MockMvcRequestBuilders.put("/" + API_PREFIX + uri);
+    }
+
+    private MockHttpServletRequestBuilder delete(String uri) {
+        return MockMvcRequestBuilders.delete("/" + API_PREFIX + uri);
+    }
 
     @BeforeEach
     public void beforeAll() {
@@ -54,13 +78,11 @@ public class OfferControllerTest {
 
     @Test
     public void whenGoOnlyDash_thenReturnWelcomingMessage() throws Exception {
-
 //When
         MvcResult result = mvc.perform(
                         get("/")
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON))
-
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
@@ -70,13 +92,11 @@ public class OfferControllerTest {
 
     @Test
     public void whenGoHomePage_thenReturnWelcomingMessage() throws Exception {
-
 //When
         MvcResult result = mvc.perform(
                         get("/home")
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON))
-
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
@@ -86,19 +106,36 @@ public class OfferControllerTest {
 
     @Test
     public void whenGetAllOffers_thenReturnOffers() throws Exception {
-
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         when(offerService.getAllOffers()).thenReturn(offersDTO);
 
         String expectedJson = gson.toJson(offersDTO);
-
 //When
         MvcResult result = mvc.perform(
-                        get("/getAll")
+                        get("/offers")
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON))
+//Then
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
 
+        assertEquals(expectedJson, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    public void whenGetOwnedOffers_thenReturnOwnedOffers() throws Exception {
+//Given
+        List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
+        when(offerService.getOwnedOffers(TEST_USER_EMAIL)).thenReturn(offersDTO);
+
+        String expectedJson = gson.toJson(offersDTO);
+//When
+        MvcResult result = mvc.perform(
+                        get("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                )
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
@@ -108,21 +145,18 @@ public class OfferControllerTest {
 
     @Test
     public void whenAddOffer_thenAddAndReturnOffer() throws Exception {
-
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
 
         when(offerService.addOffer(offerDTO)).thenReturn(offerDTO);
 
         String expectedJson = gson.toJson(offerDTO);
-
 //When
         MvcResult result = mvc.perform(
-                        post("/add")
+                        post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .content(expectedJson))
-
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
@@ -132,21 +166,18 @@ public class OfferControllerTest {
 
     @Test
     public void whenAddAlreadyExistingOffer_thenReturnBadRequest() throws Exception {
-
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         doThrow(new OfferException("Offer with given ID already exist!"))
                 .when(offerService).addOffer(offerDTO);
 
         String expectedJson = gson.toJson(offerDTO);
-
 //When
         MvcResult result = mvc.perform(
-                        post("/add")
+                        post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .content(expectedJson))
-
 //Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -155,40 +186,51 @@ public class OfferControllerTest {
     }
 
     @Test
-    public void whenDeleteOffer_thenStatusOk() throws Exception {
-
+    public void whenEditOffer_thenEditAndReturnOffer() throws Exception {
 //Given
-        doNothing().when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        when(offerService.editOffer(offerDTO)).thenReturn(offerDTO);
 
-        String expectedJson = gson.toJson(TEST_DEFAULT_OFFER_ID);
-
+        String expectedJson = gson.toJson(offerDTO);
 //When
-        mvc.perform(
-                        delete("/delete")
+        MvcResult result = mvc.perform(
+                        put("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
-                                .content(expectedJson))
+                                .content(expectedJson)
+                )
+//Then
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
 
+        assertEquals(expectedJson, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    public void whenDeleteOffer_thenStatusOk() throws Exception {
+//Given
+        doNothing().when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
+//When
+        mvc.perform(
+                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                )
 //Then
                 .andExpect(status().is2xxSuccessful());
     }
 
     @Test
     public void whenDeleteNonExistingOffer_thenReturnBadRequest() throws Exception {
-
 //Given
         doThrow(new OfferException("Can't remove non-existing offer!"))
                 .when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
-
-        String expectedJson = gson.toJson(TEST_DEFAULT_OFFER_ID);
-
 //When
         MvcResult result = mvc.perform(
-                        delete("/delete")
+                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
-                                .content(expectedJson))
-
+                )
 //Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -196,40 +238,13 @@ public class OfferControllerTest {
         assertEquals("Can't remove non-existing offer!", result.getResponse().getContentAsString());
     }
 
-
-    @Test
-    public void whenGetOwnedOffers_thenReturnOwnedOffers() throws Exception {
-
-//Given
-        List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
-        when(offerService.getOwnedOffers(TEST_USER_EMAIL)).thenReturn(offersDTO);
-
-        String expectedJson = gson.toJson(offersDTO);
-
-//When
-        MvcResult result = mvc.perform(
-                        get("/getOwned")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
-                )
-
-//Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals(expectedJson, result.getResponse().getContentAsString());
-    }
-
-
     @Test
     public void whenSearchOffer_thenReturnOffersWithinSearchedCriteria() throws Exception {
-
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         when(offerService.searchOffers(TEST_HOTEL_NAME)).thenReturn(offersDTO);
 
         String expectedJson = gson.toJson(offersDTO);
-
 //When
         MvcResult result = mvc.perform(
                         post("/search")
@@ -237,31 +252,6 @@ public class OfferControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(TEST_HOTEL_NAME)
                 )
-
-//Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals(expectedJson, result.getResponse().getContentAsString());
-    }
-
-    @Test
-    public void whenEditOffer_thenEditAndReturnOffer() throws Exception {
-
-//Given
-        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.editOffer(offerDTO)).thenReturn(offerDTO);
-
-        String expectedJson = gson.toJson(offerDTO);
-
-//When
-        MvcResult result = mvc.perform(
-                        put("/edit")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
-                                .content(expectedJson)
-                )
-
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
