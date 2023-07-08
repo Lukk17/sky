@@ -1,8 +1,22 @@
-# Offer booking service for Sky 
+# Offer booking service for Sky
 
-<br>
+port: 5555  
+name: sky-offer-booking  
+api prefix: `/api`  
+header user: `X-Forwarded-User`
 
-port: 5555
-<br>
-name: sky-offer-booking
+| Endpoint        | HTTP method | Description  | Body           | 
+|-----------------|-------------|--------------|----------------|
+| `/`             | GET         | Home page    |                | 
+| `/home`         | GET         | Home page    |                | 
+| `user/bookings` | GET         | Get bookings |                | 
+| `bookings`      | POST        | Book offer   | Booking object | 
 
+Booking object:
+```json
+{
+	"offerId": "",
+	"dateToBook": ""
+}
+```
+date in format: `YYYY-MM-DD` example: `2023-09-09`

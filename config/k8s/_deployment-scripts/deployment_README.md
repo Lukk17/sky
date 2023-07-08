@@ -2,6 +2,54 @@
 
 ----------------------
 
+## Docker build and publish
+
+Build:
+```
+docker build . -f sky-booking/docker/Dockerfile -t sky-booking:latest --no-cache
+docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest --no-cache
+docker build . -f sky-notify/docker/Dockerfile -t sky-notify:latest --no-cache
+docker build . -f sky-message/docker/Dockerfile -t sky-message:latest --no-cache
+```  
+
+Push into repository:
+```shell
+docker tag sky-booking:latest lukk17/sky-booking:latest
+docker push lukk17/sky-booking:latest
+
+docker tag sky-offer:latest lukk17/sky-offer:latest
+docker push lukk17/sky-offer:latest
+
+docker tag sky-notify:latest lukk17/sky-notify:latest
+docker push lukk17/sky-notify:latest
+
+docker tag sky-message:latest lukk17/sky-message:latest
+docker push lukk17/sky-message:latest
+```
+
+----------------------
+
+## App deployment
+```shell
+kubectl apply -f ./secret.yaml
+kubectl apply -f ./mysql/
+kubectl apply -f ./sky-offer/
+kubectl apply -f ./sky-message/
+kubectl apply -f ./api-gateway/ingress/ingress.yaml
+kubectl create secret generic basic-auth --from-file=./api-gateway/ingress/auth
+
+kubectl apply -f ./api-gateway/oauth2-proxy/
+
+```
+Simpler, you can run all scripts in a folder (in terminal being in parent folder):
+```shell
+kubectl apply -f config/k8s/api-gateway --recursive
+kubectl apply -f config/k8s/service --recursive
+kubectl apply -f config/k8s/db --recursive
+```
+
+----------------------
+
 ## GCP
 
 1. Install gcloud CLI  
@@ -67,32 +115,6 @@ Adding Google login:
 https://developers.google.com/identity/sign-in/web/sign-in
 
 ----------------------
-
-## App deployment
-```shell
-kubectl apply -f ./secret.yaml
-kubectl apply -f ./mysql/
-kubectl apply -f ./sky-offer/
-kubectl apply -f ./sky-message/
-kubectl apply -f ./api-gateway/ingress/ingress.yaml
-kubectl create secret generic basic-auth --from-file=./api-gateway/ingress/auth
-
-kubectl apply -f ./api-gateway/oauth2-proxy/
-
-```
-Simpler, you can run all scripts in a folder (in terminal being in parent folder):
-```shell
-kubectl apply -f config/k8s --recursive
-```
-
-----------------------
-
-## After deployment on GCP
-
-
-
-----------------------
-
 
 ## Logs
 https://console.cloud.google.com/logs

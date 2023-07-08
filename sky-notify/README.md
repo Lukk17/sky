@@ -1,8 +1,6 @@
 # Notify service for Sky 
 
-<br>
 
-port: 5554
-<br>
+port: 5554  
 name: sky-notify
 
