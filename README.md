@@ -94,7 +94,7 @@ See  [Deployment](./config/k8s/k8s_README.md) for more info.
 
 ---------------------------------
 
-# DB configuration
+## DB configuration
 
 The Fastest way to configure the DB is:
 
@@ -104,15 +104,3 @@ The Fastest way to configure the DB is:
 4. run in sky DB: ./config/script/sql_commands/sql_messages_insert.sql
 
 ---------------------------------
-
-## Token example in a header
-
-```
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiI...<restOfToken>
-```
-
-## Environment external config
-
-An external file with an environmental config are in ```.env``` file
-which is in same directory as ```docker-compose.yml```
-

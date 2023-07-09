@@ -11,9 +11,18 @@
    ```shell
       .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
    ```
+   or use full path like:
+   ```shell
+   D:\Development\kafka\bin\windows\zookeeper-server-start.bat D:\Development\kafka\config\zookeeper.properties
+   ```
+   <br>
 6. In another terminal in kafka directory use command:
    ```shell
       .\bin\windows\kafka-server-start.bat .\config\server.properties
+   ```
+   or use full path like:
+   ```shell
+   D:\Development\kafka\bin\windows\kafka-server-start.bat D:\Development\kafka\config\server.properties
    ```
 ---------------------------------
 
