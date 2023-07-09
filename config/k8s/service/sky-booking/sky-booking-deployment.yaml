@@ -8,15 +8,16 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      component: web
+      component: booking
   template:
     metadata:
       labels:
-        component: web
+        component: booking
     spec:
       containers:
         - name: sky-booking-container
           image: lukk17/sky-booking:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5555
           env:

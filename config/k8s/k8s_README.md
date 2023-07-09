@@ -77,9 +77,6 @@ pass: `Test1234!`
 ## Kubernetes
 
 
-
-<br>
-
 ### Port forwarding
 ```shell
 kubectl port-forward <podName> <localPort>:<podPort>
@@ -96,13 +93,9 @@ will be available on the browser:
 localhost:5553
 ```
 
-<br>
-
 -------------
 
 ## Secrets
-
-<br>
 
 #### Two ways of creating:
 1. By secret file
@@ -125,14 +118,11 @@ localhost:5553
     kubectl create secret generic mysqlRootPass --from-literal mysqlRootPass=elasticPass!
     ```
 
-
 -------------
 
 ## Kubernetes commands
 
 ### Status:
-
-<br>
 
 ```shell
 kubectl get pods
@@ -149,7 +139,6 @@ kubectl get services
 kubectl get deployments
 ```
 
-<br>
 
 Persistent volume info:
 ```shell
@@ -161,7 +150,6 @@ kubectl get pvc
 -------------
 ###  Details of pod:
 
-<br>
 
 ```shell
 kubectl describe <object type> <name>
@@ -170,7 +158,6 @@ where object type can be:
 * pod (or pods)
   name - name of object (pod)
 
-<br>
 
 Update deployment with a new image:
 ```shell
@@ -184,7 +171,6 @@ kubectl set image deployment/auth-deployment auth=lukk17/sky-auth:1.0.0
 -------------
 ###  Logs of pod:
 
-<br>
 
 ```shell
 kubectl logs <kubeName>
@@ -192,14 +178,28 @@ kubectl logs <kubeName>
 kubeName can be obtained from `kubectl get pods`
 
 -------------
+### Scaling
+
+```shell
+kubectl scale --replicas=<number> <name>
+kubectl scale --replicas=<number> -f <deployment file>
+```
+
+
+-------------
+### Deleting resource
+
+```shell
+kubectl delete pod,service <name>
+kubectl delete -f <file or folder>
+kubectl -n <namespace> delete pod,svc --all
+```
+
+-------------
 
 ## Troubleshooting
 
-<br>
-
 ### MYSQL configuration
-
-<br>
 
 #### Exec into mysql container (easy via minikube dashboard)
 or use command:
@@ -208,14 +208,8 @@ kubectl exec --stdin --tty <podFullName> -- /bin/bash
 ```
 where podFullName can be obtained from `kubectl get pod`
 
-<br>
-
 #### Making root for all host, not only localhost:
 ```mysql
 USE mysql;
 UPDATE user SET host='%' WHERE host='localhost'
 ```
-
-<br>
-
-

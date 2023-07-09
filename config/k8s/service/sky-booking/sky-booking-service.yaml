@@ -11,4 +11,4 @@ spec:
       targetPort: 5555
 
   selector:
-    component: web
+    component: booking

@@ -6,3 +6,5 @@ metadata:
 data:
   initdb.sql: |
     CREATE DATABASE IF NOT EXISTS sky;
+    GRANT ALL PRIVILEGES ON * . * TO '${MYSQL_USER}'@'%';
+    FLUSH PRIVILEGES;

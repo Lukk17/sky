@@ -8,15 +8,16 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      component: web
+      component: notify
   template:
     metadata:
       labels:
-        component: web
+        component: notify
     spec:
       containers:
         - name: sky-notify-container
           image: lukk17/sky-notify:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5554
           env:

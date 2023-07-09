@@ -1,7 +1,7 @@
 # ==================================================================================================================
 sky:
   helloWorld: <center><h1>Welcome to Booking app.</h1></center>
-  apiPrefix: api
+  apiPrefix: /api
   offerServiceAddress: ${OFFER_SERVICE_ADDRESS:offer-service}
   offerOwnerEndpoint: owners
   offerServicePort: 5552
@@ -52,7 +52,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka-service:9092
     producer:
       client-id: bookingService
     admin:

@@ -35,6 +35,9 @@ Each microservice will have its API endpoints exposed.
 
 More info about [Ingres](./config/k8s/api-gateway/ingress/ingress_README.md).
 
+In [postman-collection](./config/postman-collection). 
+folder you can find exported sky collection and envs.
+
 For development services can be run as Spring Boot app or via Gradle.  
 See more:
 [Local development](./config/local-dev/local_README.md)
@@ -51,7 +54,8 @@ See [DB configuration](#DB-configuration) for manual how to configure.
 
 ### Kafka
 
-For installation see [Local development](./config/local-dev/local_README.md).
+* Kubernetes deployment: [Kafka kubernetes](./config/k8s/kafka/kafka_README.md).  
+* Local installation: [Local development](./config/local-dev/local_README.md).
 
 ---------------------------------
 

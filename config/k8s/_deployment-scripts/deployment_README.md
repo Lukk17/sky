@@ -10,6 +10,7 @@ docker build . -f sky-booking/docker/Dockerfile -t sky-booking:latest --no-cache
 docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest --no-cache
 docker build . -f sky-notify/docker/Dockerfile -t sky-notify:latest --no-cache
 docker build . -f sky-message/docker/Dockerfile -t sky-message:latest --no-cache
+
 ```  
 
 Push into repository:
@@ -31,21 +32,27 @@ docker push lukk17/sky-message:latest
 
 ## App deployment
 ```shell
-kubectl apply -f ./secret.yaml
-kubectl apply -f ./mysql/
-kubectl apply -f ./sky-offer/
-kubectl apply -f ./sky-message/
-kubectl apply -f ./api-gateway/ingress/ingress.yaml
+kubectl apply -f config/k8s/secret.yaml
 kubectl create secret generic basic-auth --from-file=./api-gateway/ingress/auth
+kubectl apply -f config/k8s/api-gateway/ingress/ingress.yaml
+kubectl apply -f config/k8s/api-gateway/oauth2-proxy/
 
-kubectl apply -f ./api-gateway/oauth2-proxy/
+kubectl apply -f config/k8s/db/mysql/
+kubectl apply -f config/k8s/kafka/
 
+kubectl apply -f config/k8s/service/sky-offer/
+kubectl apply -f config/k8s/service/sky-booking/
+kubectl apply -f config/k8s/service/sky-notify/
+kubectl apply -f config/k8s/service/sky-message/
 ```
+
 Simpler, you can run all scripts in a folder (in terminal being in parent folder):
 ```shell
+kubectl apply -f config/k8s/secret.yaml
 kubectl apply -f config/k8s/api-gateway --recursive
-kubectl apply -f config/k8s/service --recursive
 kubectl apply -f config/k8s/db --recursive
+kubectl apply -f config/k8s/kafka --recursive
+kubectl apply -f config/k8s/service --recursive
 ```
 
 ----------------------
@@ -127,4 +134,32 @@ resource.labels.location="europe-central2"
 resource.labels.cluster_name="sky-cluster"
 resource.labels.namespace_name="default"
 severity>=DEFAULT
+```
+
+----------------------
+
+## Clearing
+
+```shell
+kubectl delete -f config/k8s/secret.yaml
+kubectl delete --from-file=./api-gateway/ingress/auth
+kubectl delete -f config/k8s/api-gateway/ingress/ingress.yaml
+kubectl delete -f config/k8s/api-gateway/oauth2-proxy/
+
+kubectl delete -f config/k8s/db/mysql/
+kubectl delete -f config/k8s/kafka/
+
+kubectl delete -f config/k8s/service/sky-offer/
+kubectl delete -f config/k8s/service/sky-booking/
+kubectl delete -f config/k8s/service/sky-notify/
+kubectl delete -f config/k8s/service/sky-message/
+```
+
+Simpler, you can run all scripts in a folder (in terminal being in parent folder):
+```shell
+kubectl delete -f config/k8s/secret.yaml
+kubectl delete -f config/k8s/api-gateway --recursive
+kubectl delete -f config/k8s/db --recursive
+kubectl delete -f config/k8s/kafka --recursive
+kubectl delete -f config/k8s/service --recursive
 ```

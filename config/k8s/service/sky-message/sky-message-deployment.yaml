@@ -8,15 +8,16 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      component: web
+      component: message
   template:
     metadata:
       labels:
-        component: web
+        component: message
     spec:
       containers:
         - name: sky-message-container
           image: lukk17/sky-message:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5553
           env:

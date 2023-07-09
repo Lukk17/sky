@@ -1,0 +1,1291 @@
+{
+	"info": {
+		"_postman_id": "760f3b12-41b1-47fb-a310-30c0a09f999f",
+		"name": "sky",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6370134"
+	},
+	"item": [
+		{
+			"name": "offer",
+			"item": [
+				{
+					"name": "Home",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-auth-request-email",
+								"value": "offer@user.com",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getAllOffers",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-auth-request-email",
+								"value": "offer@user.com",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/offers",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								"offers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getOwnedOffers",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								"owner",
+								"offers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "addOffer",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"hotelName\": \"Sheraton\",\r\n\t\"description\": \"nad morzem\",\r\n\t\"comment\": \"suparaste fale\",\r\n\t\"price\": \"100\",\r\n\t\"roomCapacity\": \"5\",\r\n\t\"city\": \"Gdansk\",\r\n\t\"country\": \"Poland\",\r\n\t\"photoPath\": \"https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcS6o46GoemfaQuUj2482kPKuoAkajx3qIQ7xHujIGB2IMMWziE3\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								"owner",
+								"offers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "editOffer",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"id\": \"1\",\r\n\t\"price\": \"456\",\r\n\t\"roomCapacity\": \"52\"\r\n}"
+						},
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								"owner",
+								"offers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "deleteOffer",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers/1",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								"owner",
+								"offers",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "searchForOffers",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "Gdansk"
+						},
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/search",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "booking",
+			"item": [
+				{
+					"name": "Home",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/booking\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5555",
+							"path": [
+								"booking",
+								"api",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getBookedOffers",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/booking\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/user/bookings",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5555",
+							"path": [
+								"booking",
+								"api",
+								"user",
+								"bookings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "bookOffer",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/booking\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"offerId\": \"6\",\n\t\"dateToBook\": \"2023-09-09\"\n}"
+						},
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5555",
+							"path": [
+								"booking",
+								"api",
+								"bookings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "message",
+			"item": [
+				{
+					"name": "Home",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/msg\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "message@user.com",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5553",
+							"path": [
+								"msg",
+								"api",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getSentMessages",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/msg\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/sent",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5553",
+							"path": [
+								"msg",
+								"api",
+								"sent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getReceivedMessages",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/msg\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/received",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5553",
+							"path": [
+								"msg",
+								"api",
+								"received"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "sendMessage",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/msg\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"testowo\",\n    \"receiverEmail\": \"offer@owner.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/send",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5553",
+							"path": [
+								"msg",
+								"api",
+								"send"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "deleteMessage",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/msg\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "1",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/delete",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5553",
+							"path": [
+								"msg",
+								"api",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "cloud",
+			"item": [
+				{
+					"name": "auth0",
+					"item": [
+						{
+							"name": "POST auth0 get token",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "content-type",
+										"value": "application/x-www-form-urlencoded"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "grant_type",
+											"value": "password",
+											"type": "text"
+										},
+										{
+											"key": "username",
+											"value": "lukk@test.com",
+											"type": "text"
+										},
+										{
+											"key": "password",
+											"value": "Test1234!",
+											"type": "text"
+										},
+										{
+											"key": "audience",
+											"value": "https://lukk17.eu.auth0.com/api/v2/",
+											"type": "text"
+										},
+										{
+											"key": "scope",
+											"value": "openid",
+											"type": "text"
+										},
+										{
+											"key": "client_id",
+											"value": "9H4ckShWBYzA5gigTK0VnR1I1Hh7MHz0",
+											"type": "text"
+										},
+										{
+											"key": "client_secret",
+											"value": "g6B2jR-MXS_jWppT0MYg3GsyCZf7Zlgl6zhC1b3K7qAbc6p92uBQJYXaLRyv2b3c",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "https://lukk17.eu.auth0.com/oauth/token",
+									"protocol": "https",
+									"host": [
+										"lukk17",
+										"eu",
+										"auth0",
+										"com"
+									],
+									"path": [
+										"oauth",
+										"token"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "OLD",
+			"item": [
+				{
+					"name": "user",
+					"item": [
+						{
+							"name": "registerAdmin",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"admin@admin\",\n    \"password\": \"admin\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:8762/register",
+									"host": [
+										"localhost"
+									],
+									"port": "8762",
+									"path": [
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "registerUser",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test@test\",\n    \"password\": \"test\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:8762/register",
+									"host": [
+										"localhost"
+									],
+									"port": "8762",
+									"path": [
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getUserList",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg2ODUwMTE4LCJleHAiOjE1ODY5MzY1MTh9.HNsaIll1H7GU3Qmbq3u8ZT1PQYJsgIvuyh2ufSCN5pL7A2BOm9TiYvqanBnyhEPHgOpjlKcxmvde_SToeSL0SA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8762/auth/userList",
+									"host": [
+										"localhost"
+									],
+									"port": "8762",
+									"path": [
+										"auth",
+										"userList"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "userDetails",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg2ODQ5NzU0LCJleHAiOjE1ODY5MzYxNTR9.kZxOxTvNP0lm1c-_p1medaH_5PwgkEmEy6Yu3X-EEPXSjZ7dQFt5Uc8IUGfbFVdbZJFB5lQMvOzTV_zDQFiGCA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8762/auth/userDetails",
+									"host": [
+										"localhost"
+									],
+									"port": "8762",
+									"path": [
+										"auth",
+										"userDetails"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "login",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"username\": \"admin@admin\",\n\t\"password\": \"admin\"\n}"
+								},
+								"url": {
+									"raw": "localhost:8762/login",
+									"host": [
+										"localhost"
+									],
+									"port": "8762",
+									"path": [
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "loginUser",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"username\": \"admin@admin\",\n\t\"password\": \"admin\"\n}"
+								},
+								"url": {
+									"raw": "localhost:8762/login",
+									"host": [
+										"localhost"
+									],
+									"port": "8762",
+									"path": [
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "auth home",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8762/auth/",
+									"host": [
+										"localhost"
+									],
+									"port": "8762",
+									"path": [
+										"auth",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Eureka namig service",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8761",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8761"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Zull Gateway",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8762/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8762",
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

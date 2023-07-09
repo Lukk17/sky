@@ -1,7 +1,7 @@
 # ==================================================================================================================
 sky:
   helloWorld: <center><h1>Welcome to Offer app.</h1></center>
-  apiPrefix: api
+  apiPrefix: /api
 
 # SPRING setup
 
@@ -49,13 +49,11 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka-service:9092
     producer:
       client-id: offerService
     admin:
       auto-create: true
-
-
 
 # expose actuator endpoints (* for all)
 management:

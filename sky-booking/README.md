@@ -3,7 +3,7 @@
 port: 5555  
 name: sky-offer-booking  
 api prefix: `/api`  
-header user: `X-Forwarded-User`
+header user: `x-auth-request-email`
 
 | Endpoint        | HTTP method | Description  | Body           | 
 |-----------------|-------------|--------------|----------------|

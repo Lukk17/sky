@@ -11,15 +11,17 @@ spec:
     matchLabels:
       #    "component" is just a name, can be any name as long as in service is named same, for example could be:
       #    workingLabel: web
-      component: web
+      #     every service need to have UNIQUE label - if not every service in its endpoint will have other services endpoints
+      component: offer
   template:
     metadata:
       labels:
-        component: web
+        component: offer
     spec:
       containers:
         - name: sky-offer-container
           image: lukk17/sky-offer:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5552
           env:

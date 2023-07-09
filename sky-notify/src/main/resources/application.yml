@@ -23,7 +23,7 @@ spring:
       password: ${SPRING_SECURITY_PASS:XYZ}
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka-service:9092
     admin:
       auto-create: false
 

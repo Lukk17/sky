@@ -11,4 +11,4 @@ spec:
       targetPort: 5553
 
   selector:
-    component: web
+    component: message
