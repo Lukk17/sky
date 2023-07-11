@@ -1,5 +1,7 @@
 /target/
 
+./config/k8s/docker-cred.yaml
+./config/k8s/secret.yaml
 
 .mvn
 

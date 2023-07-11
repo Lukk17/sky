@@ -62,8 +62,6 @@ https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-yo
     * url - example: `https://lukk17.eu.auth0.com/oauth/token`
 
 
-
-
 Setting postman oauth2 token generation:  
 https://community.auth0.com/t/postman-scripts-for-login-using-the-authorization-code-flow-with-pkce/68709
 
@@ -76,6 +74,13 @@ pass: `Test1234!`
 
 ## Kubernetes
 
+### deploy
+
+waiting for deployment to be ready:
+```shell
+kubectl wait --namespace mynamespace --for=condition=ready --timeout=120s deployment/<deploymentName>
+
+```
 
 ### Port forwarding
 ```shell

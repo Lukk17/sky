@@ -33,12 +33,56 @@ docker push lukk17/sky-message:latest
 ## App deployment
 ```shell
 kubectl apply -f config/k8s/secret.yaml
+
+```
+where secrets should look like:
+```yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+#  needs to be lowercase !
+  name: sky-secrets
+  namespace: default
+type: Opaque
+data:
+  mysql-root-user: <root-user>
+  mysql-root-pass: <root-pass>
+  mysql-username: <username>
+  mysql-password: <password>
+  spring-security-user: <security-user>
+  spring-security-pass: <security-pass>
+  auth0-client-id: <client-id>
+  auth0-client-secret: <client-secret>
+  auth0-client-cookie-secret: <cookie-secret>
+```
+```shell
+kubectl apply -f config/k8s/docker-cred.yaml
+```
+where docker-cred should look like:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+   name: docker-cred
+type: kubernetes.io/dockerconfigjson
+stringData:
+   docker-server: "<your-registry-server>"
+   docker-username: "<your-name>"
+   docker-password: "<your-password>"
+
+```
+
+```shell
 kubectl create secret generic basic-auth --from-file=./api-gateway/ingress/auth
 kubectl apply -f config/k8s/api-gateway/ingress/ingress.yaml
 kubectl apply -f config/k8s/api-gateway/oauth2-proxy/
 
-kubectl apply -f config/k8s/db/mysql/
 kubectl apply -f config/k8s/kafka/
+
+kubectl apply -f config/k8s/db/mysql/
+kubectl wait --namespace default --for=condition=ready --timeout=120s deployment/mysql-deployment
 
 kubectl apply -f config/k8s/service/sky-offer/
 kubectl apply -f config/k8s/service/sky-booking/
