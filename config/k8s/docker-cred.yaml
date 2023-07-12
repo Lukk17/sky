@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: docker-cred
-type: kubernetes.io/dockerconfigjson
-stringData:
-  docker-server: <your-registry-server>
-  docker-username: <your-name>
-  docker-password: <your-password>

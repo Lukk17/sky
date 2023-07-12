@@ -29,58 +29,58 @@ nginx external IP - under this IP app is running
 Nginx's ingress should catch every unauthenticated request and redirect to login page.
 Login page is controlled by oauth2-proxy and will redirect to provider (for example auth0).  
 
-To login via postman with auth0:  
-* user/password
-https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-resource-owner-password-flow#ask-for-a-token
-* auth code flow
-https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-the-authorization-code-flow
+### Easiest
 
-1. need to add "Username-Password-Authentication" to auth0:
-    Dashboard -> setting ->  API Authorization Settings -> in "Default Directory"
-   https://stackoverflow.com/questions/69419470/auth0-error-authorization-server-not-configured-with-default-connection
+Login in browser and copy cookie:
+```
+_oauth2_proxy=<token>
+```
 
-2. Need to add checkbox "Password" under:
-   Dashboard -> Application -> <app name> > Scroll down to "Advance Settings" -> Grant types
-
-3. POST to `https://lukk17.eu.auth0.com/oauth/token` with required parameters:
-    ```
-   curl --request POST \
-        --url 'https://{yourDomain}/oauth/token' \
-        --header 'content-type: application/x-www-form-urlencoded' \
-        --data grant_type=password \
-        --data 'username={username}' \
-        --data 'password={password}' \
-        --data 'audience={yourApiIdentifier}' \
-        --data scope=read:sample \
-        --data 'client_id={yourClientId}' \
-        --data 'client_secret={yourClientSecret}'
-   ```
-   where:
-    * audience - is api identifier (API Audience) in:
-    `Dashboard -> Application -> APIs`
-    example: `https://lukk17.eu.auth0.com/api/v2/`
-    * url - example: `https://lukk17.eu.auth0.com/oauth/token`
-
-
-Setting postman oauth2 token generation:  
-https://community.auth0.com/t/postman-scripts-for-login-using-the-authorization-code-flow-with-pkce/68709
-
-
-test user (to register):  
-email: `lukk@test.com`  
-pass: `Test1234!`
+### Rest way: 
+[Postman rest](#auth0-login-rest-way)
 
 --------------
 
+## Secrets
+
+### Encrypted using Sealed Secrets
+
+Install instruction can be found [here](/k8s/_deployment-scripts/deployment_README.md)
+
+Save Public Key Locally:
+```shell
+kubeseal --fetch-cert --controller-name=sealed-secrets --controller-namespace=default > <sealed-secrets.-cert-name>.pem
+```
+Seal the Secret:
+```shell
+kubeseal --format=yaml --cert=<sealed-secrets.-cert-name>.pem < <kubernetes-secret-file>.yaml > <sealed-secret-file>.yaml
+```
+Apply the Sealed Secret:
+```shell
+kubectl apply -f <sealed-secret-file>.yaml
+```
+
+-------------
+
+### Pure kubernetes
+[Only base64 encoded](#pure-kubernetes-only-base64-encoded)
+
+
+-------------
 ## Kubernetes
 
-### deploy
+### Deploy
 
-waiting for deployment to be ready:
+[README](/k8s/_deployment-scripts/deployment_README.md)
+
+Waiting for deployment to be ready:
 ```shell
 kubectl wait --namespace mynamespace --for=condition=ready --timeout=120s deployment/<deploymentName>
 
 ```
+
+--------------
+
 
 ### Port forwarding
 ```shell
@@ -100,30 +100,6 @@ localhost:5553
 
 -------------
 
-## Secrets
-
-#### Two ways of creating:
-1. By secret file
-
-    ```shell
-    kubectl apply -f ./secret.yaml
-    ```
-    where secrets are coded by base64:
-    ```shell
-    echo -n '<dataToBeCoded>' | base64
-    ```
-
-2. Needs to be created manually on machine by terminal
-    
-    ```shell
-    kubectl create secret generic <secretName> --from-literal <secretName>=<secret>
-    ```
-    example:
-    ```shell
-    kubectl create secret generic mysqlRootPass --from-literal mysqlRootPass=elasticPass!
-    ```
-
--------------
 
 ## Kubernetes commands
 
@@ -190,7 +166,6 @@ kubectl scale --replicas=<number> <name>
 kubectl scale --replicas=<number> -f <deployment file>
 ```
 
-
 -------------
 ### Deleting resource
 
@@ -218,3 +193,86 @@ where podFullName can be obtained from `kubectl get pod`
 USE mysql;
 UPDATE user SET host='%' WHERE host='localhost'
 ```
+
+-------------
+
+### Pure kubernetes (only base64 encoded):
+1. By secret file
+
+    ```shell
+    kubectl apply -f ./secret.yaml
+    ```
+   where secrets are coded by base64:
+    ```shell
+    echo -n '<dataToBeCoded>' | base64
+    ```
+
+2. Needs to be created manually on machine by terminal
+
+    ```shell
+    kubectl create secret generic <secretName> --from-literal <secretName>=<secret>
+    ```
+   example:
+    ```shell
+    kubectl create secret generic mysqlRootPass --from-literal mysqlRootPass=elasticPass!
+    ```
+
+
+-------------
+
+
+### Auth0 login Rest way
+
+To login via postman with auth0:
+* user/password
+  https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-resource-owner-password-flow#ask-for-a-token
+* auth code flow
+  https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-the-authorization-code-flow
+
+1. need to add "Username-Password-Authentication" to auth0:
+   Dashboard -> setting ->  API Authorization Settings -> in "Default Directory"
+   https://stackoverflow.com/questions/69419470/auth0-error-authorization-server-not-configured-with-default-connection
+
+2. Need to add checkbox "Password" under:
+   Dashboard -> Application -> <app name> > Scroll down to "Advance Settings" -> Grant types
+
+3. POST to `https://lukk17.eu.auth0.com/oauth/token` with required parameters:
+    ```
+   curl --request POST \
+        --url 'https://{yourDomain}/oauth/token' \
+        --header 'content-type: application/x-www-form-urlencoded' \
+        --data grant_type=password \
+        --data 'username={username}' \
+        --data 'password={password}' \
+        --data 'audience={yourApiIdentifier}' \
+        --data scope=read:sample \
+        --data 'client_id={yourClientId}' \
+        --data 'client_secret={yourClientSecret}'
+   ```
+   where:
+    * audience - is api identifier (API Audience) in:
+      `Dashboard -> Application -> APIs`
+      example: `https://lukk17.eu.auth0.com/api/v2/`
+    * url - example: `https://lukk17.eu.auth0.com/oauth/token`
+
+
+Setting postman oauth2 token generation:  
+https://community.auth0.com/t/postman-scripts-for-login-using-the-authorization-code-flow-with-pkce/68709
+
+
+test user (to register):  
+email: `lukk@test.com`  
+pass: `Test1234!`
+
+--------------
+
+### Setting account role to "Kubernetes Engine Admin"
+
+To be able to set up service accounts (required by sealed secrets)
+
+1. Go to the IAM & Admin page in Google Cloud Console.
+2. Click on "IAM".
+3. Click "ADD" at the top of the page to add a new member.
+4. In the "New members" field, type the email address of the user.
+5. In the "Role" dropdown, select "Kubernetes Engine" -> "Kubernetes Engine Admin".
+6. Click "SAVE".

@@ -4,56 +4,34 @@
 
 ## Pre-requisitions
 
-### secrets
+### Secrets
 
-Secrets needs to be created before starting helm charts, because they are using them.
-It is not good practice to store secrets in helm itself.
-
-```shell
-kubectl apply -f config/k8s/secret.yaml
-```
-where secrets should look like:
-```yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-#  needs to be lowercase !
-  name: sky-secrets
-  namespace: default
-type: Opaque
-data:
-  mysql-root-user: <root-user>
-  mysql-root-pass: <root-pass>
-  mysql-username: <username>
-  mysql-password: <password>
-  spring-security-user: <security-user>
-  spring-security-pass: <security-pass>
-  auth0-client-id: <client-id>
-  auth0-client-secret: <client-secret>
-  auth0-client-cookie-secret: <cookie-secret>
-```
-
-
-```shell
-kubectl apply -f config/k8s/docker-cred.yaml
-```
-where docker-cred should look like:
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: docker-cred
-type: kubernetes.io/dockerconfigjson
-stringData:
-  docker-server: <your-registry-server>
-  docker-username: <your-name>
-  docker-password: <your-password>
-
-```
+#### Install Sealed Secrets
+1. Create namespace
+    ```shell
+    kubectl create namespace sealed-secrets
+    ```
+2. Install sealed secrets controller  
+   Without `fullnameOverride` controller will have name `sealed-secrets-controller-sealed-secrets`  
+   because namespace will be added as suffix (`-sealed-secrets`)
+    <br> <br>
+   1. Local version (pulled v0.22.0)
+      
+       ```shell
+       helm install sealed-secrets-controller ./config/k8s/helm/sealed-secrets/ -n sealed-secrets --set fullnameOverride=sealed-secrets-controller
+       ```
+      
+   2. Pull latest version
+       ```shell
+       helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
+       helm repo update
+       helm install sealed-secrets-controller sealed-secrets/sealed-secrets -n sealed-secrets --set fullnameOverride=sealed-secrets-controller
+       ```
+3. If installing first time or namespace was deleted or changes then new private and public cert will be generated when installing.
+    You will need to encrypt secrets.  
+   To create new credentials or update with new  see [this](../_deployment-scripts/deployment_README.md#create-new-sealed-secrets). 
 
 ---------
-
 
 ### Make sure you are using correct context (project)
 
@@ -68,20 +46,60 @@ kubectl config current-context
 
 ---------
 
-### Install chart
+## Install chart
 
 ```shell
 helm install <release name> ./<base chart name - folder name>
 ```
-
+example:
 ```shell
 helm install sky-offer ./sky-offer
 ```
 
+--------
+
+
+### Upgrade chart
+
+```shell
+helm upgrade <release name> ./<base chart name - folder name>
+```
+example:
+```shell
+helm upgrade sky-offer ./sky-offer
+```
+
+--------
+
+## List all installed charts
+
+```shell
+helm list
+```
+
+--------
+
+## Clearing
+
+```shell
+helm uninstall sky-offer
+helm uninstall sealed-secrets-controller -n sealed-secrets
+```
 
 --------
 
 ## Troubleshooter
+
+### Error creating container
+
+Probably secrets are not created 
+or sealed secrets controller where reinstalled and new cert needed to be fetched and all secrets re-encrypted.
+See [this](../_deployment-scripts/deployment_README.md#create-new-sealed-secrets).
+
+
+--------
+
+### Wrong env values
 
 ```
 INSTALLATION FAILED: 1 error occurred:
@@ -106,5 +124,7 @@ example:
 ```shell
 helm uninstall sky-offer
 ```
+
+or use `helm upgrade` instead.
 
 --------

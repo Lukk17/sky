@@ -4,7 +4,7 @@ name: sky-offer
 namespace: default
 
 label:
-  app: offer
+  app: sky-offer
 
 replicaCount: 1
 
