@@ -1,8 +1,11 @@
+
+./config/k8s/secret/docker-cred.yaml
+./config/k8s/secret/secrets.yaml
+./config/k8s/secret/sealed-private.key
+./config/k8s/secret/sealed-public.crt
+
+
 /target/
-
-./config/k8s/docker-cred.yaml
-./config/k8s/secret.yaml
-
 .mvn
 
 .gradle/
