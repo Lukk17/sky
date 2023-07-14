@@ -6,7 +6,6 @@
 ./k8s/secret/docker-cred.yaml
 ./k8s/secret/secrets.yaml
 ./k8s/secret/sealed-private.key
-./k8s/secret/sealed-public.crt
 
 
 # User-specific stuff
@@ -84,3 +83,7 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
+/k8s/secret/secrets.yaml
+/k8s/secret/sealed-public.crt
+/k8s/secret/sealed-private.key
+/k8s/secret/docker-cred.yaml
