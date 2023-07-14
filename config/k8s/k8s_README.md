@@ -1,5 +1,6 @@
+# K8S
 
-## Accessing app
+## 1. Accessing app
 
 App should be accessible under its domain:  
 `sky.luksarna.com`
@@ -24,7 +25,7 @@ nginx external IP - under this IP app is running
 
 --------------
 
-## Login
+## 2. Login
 
 Nginx's ingress should catch every unauthenticated request and redirect to login page.
 Login page is controlled by oauth2-proxy and will redirect to provider (for example auth0).  
@@ -36,12 +37,16 @@ Login in browser and copy cookie:
 _oauth2_proxy=<token>
 ```
 
+test user (to register):  
+email: `lukk@test.com`  
+pass: `Test1234!`
+
 ### Rest way: 
 [Postman rest](#auth0-login-rest-way)
 
 --------------
 
-## Secrets
+## 3. Secrets
 
 ### Encrypted using Sealed Secrets
 
@@ -65,9 +70,11 @@ kubectl apply -f <sealed-secret-file>.yaml
 ### Pure kubernetes
 [Only base64 encoded](#pure-kubernetes-only-base64-encoded)
 
+### Creating secret from generated auth file
+[See this](#secret-from-generated-auth-file)
 
 -------------
-## Kubernetes
+## 4. Kubernetes
 
 ### Deploy
 
@@ -101,7 +108,7 @@ localhost:5553
 -------------
 
 
-## Kubernetes commands
+## 5. Kubernetes commands
 
 ### Status:
 
@@ -177,7 +184,7 @@ kubectl -n <namespace> delete pod,svc --all
 
 -------------
 
-## Troubleshooting
+## 6. Troubleshooting
 
 ### MYSQL configuration
 
@@ -200,7 +207,7 @@ UPDATE user SET host='%' WHERE host='localhost'
 1. By secret file
 
     ```shell
-    kubectl apply -f ./secret.yaml
+    kubectl apply -f ./secrets.yaml
     ```
    where secrets are coded by base64:
     ```shell
@@ -217,6 +224,23 @@ UPDATE user SET host='%' WHERE host='localhost'
     kubectl create secret generic mysqlRootPass --from-literal mysqlRootPass=elasticPass!
     ```
 
+
+-------------
+### Secret from generated auth file
+
+Generate auth file with secrets (must be generated in same folder):
+```shell
+htpasswd -c auth <username>
+```
+Creating secret from generated file:
+```shell
+kubectl create secret generic basic-auth --from-file=.\config\k8s\api-gateway\ingress\auth
+```
+
+Deleting secret:
+```shell
+kubectl delete secret basic-auth
+```
 
 -------------
 
@@ -259,10 +283,6 @@ To login via postman with auth0:
 Setting postman oauth2 token generation:  
 https://community.auth0.com/t/postman-scripts-for-login-using-the-authorization-code-flow-with-pkce/68709
 
-
-test user (to register):  
-email: `lukk@test.com`  
-pass: `Test1234!`
 
 --------------
 

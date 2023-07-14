@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: mysql
+  template:
+    metadata:
+      labels:
+        component: mysql
+    spec:
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: {{  .Values.volume.claimName }}
+        - name: mysql-initdb
+          configMap:
+            name: {{  .Values.volume.configMap }}
+      containers:
+        - name: mysql
+          image: {{  .Values.image.name }}
+          imagePullPolicy: {{  .Values.image.imagePullPolicy }}
+          ports:
+            - containerPort: {{  .Values.service.port }}
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-storage
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-pass
+                  name: sky-secrets
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-username
+                  name: sky-secrets
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-password
+                  name: sky-secrets

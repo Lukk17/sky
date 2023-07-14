@@ -42,7 +42,7 @@ service:
   apiPrefix: /offer/api
 
 ingress:
-  name: sky-ingress
+  name: sky-offer-ingress
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/rewrite-target: /api/$2

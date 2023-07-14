@@ -2,7 +2,7 @@
 
 ----------------------
 
-## Docker build and publish
+## 1. Docker build and publish
 
 ### Build:
 ```
@@ -30,23 +30,44 @@ docker push lukk17/sky-message:latest
 
 ----------------------
 
-## App deployment
+## 2. App deployment
 
-
-----------------------
 
 ### Sealed secret
 
 To install `kubeseal` on system see [this](#install-sealed-secret-on-system).  
 To deploy standard Kubernetes base64 encoded secrets see [this](#kubernetes-basic-base64-encode-secrets-apply).
 
-To create new sealed secrets see [this](#create-new-sealed-secrets).
+To create new keys for sealed secret controller see [this](#create-private-and-public-keys-for-sealed-secrets)
 
+1. Create namespace
+    ```shell
+    kubectl create namespace sealed-secrets
+    ```
+2. Create a TLS secret from public.crt and private.key  
+   These keys are not stored in repo - should be stored in protected location like password manager.  
+   See [this](../_deployment-scripts/deployment_README.md#create-private-and-public-keys-for-sealed-secrets)
+   for creating new keys.
 
-```shell
-  kubectl apply -f config/k8s/secret/sealed/sealed-secret.yaml
-  kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
-```
+    ```shell
+   kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-public.crt --key=./config/k8s/secret/sealed-private.key -n sealed-secrets
+   ```
+3. Deploy sealed secrets controller  
+   See [this](#deploy-sealed-secrets-controller) for different or online version.
+   This one have namespace "sealed-secrets" changed in .yaml file.  
+   And is using previously generated TLS secret.
+   
+      ```shell
+      kubectl apply -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
+      ``` 
+   
+   To create new sealed secrets see [this](#create-new-sealed-secrets).
+
+4. Deploy sealed secrets (should be in already in repo)
+   ```shell
+     kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
+     kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
+   ```
 
 ----------------------
 
@@ -81,13 +102,9 @@ kubectl apply -f config/k8s/service --recursive
 
 ### Use 
 
-Save Public Key Locally:
-```shell
-kubeseal --fetch-cert --controller-name=sealed-secrets-controller --controller-namespace=default > <sealed-secrets.-cert-name>.pem
-```
 Seal the Secret:
 ```shell
-kubeseal --format=yaml --cert=<sealed-secrets.-cert-name>.pem < <kubernetes-secret-file>.yaml > <sealed-secret-file>.yaml
+kubeseal --format=yaml --cert=sealed-public.crt < <kubernetes-secret-file>.yaml > <sealed-secret-file>.yaml
 ```
 Apply the Sealed Secret:
 ```shell
@@ -96,7 +113,7 @@ kubectl apply -f <sealed-secret-file>.yaml
 
 ----------------------
 
-## GCP
+## 3. GCP
 
 1. Install gcloud CLI  
 https://cloud.google.com/sdk/gcloud?authuser=1  
@@ -135,7 +152,7 @@ and plugin:
 
 ----------------------
 
-## Auth service
+## 4. Auth service
 1. Creating project in auth0 for authentication  
    https://manage.auth0.com/dashboard
 <br>  
@@ -160,7 +177,13 @@ https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth
 Adding Google login:
 https://developers.google.com/identity/sign-in/web/sign-in
 
+test user (to register):  
+email: `lukk@test.com`  
+pass: `Test1234!`
+
 ----------------------
+
+## 4. Sealed secrets
 
 ### Install sealed secret on system
 
@@ -201,18 +224,26 @@ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/downloa
 ```
 ----------------------
 
+### Create private and public keys for sealed secrets
+
+On Linux or WSL:
+```shell
+sudo openssl req -x509 -days 3650 -nodes -newkey rsa:4096 -keyout "sealed-private.key" -out "sealed-public.crt" -subj "/CN=sealed-secret/O=sealed-secret"
+```
+
+Created private.key has permissions blocker added which prevent from copying it, to change that:
+```shell
+sudo chmod 777 ./sealed-private.key
+```
+
+----------------------
+
 ### Create new sealed secrets
 
-1. Deploy sealed secrets controller  
-   See [this](#deploy-sealed-secrets-controller) for different or online version.
-   This one have added namespace "sealed-secrets" and changed in .yaml file.
-   ```shell
-   kubectl apply -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
-   ``` 
-2. Create secrets.yaml (do not ad to git - should be in .gitignore)
+1. Create secret.yaml (do not ad to git - should be in .gitignore)
    Keep it only locally as it have base64 encoded password, easy to decode.
 
-   secrets.yaml should look like:
+   secret.yaml should look like:
    ```yaml
    ---
    apiVersion: v1
@@ -234,7 +265,7 @@ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/downloa
      auth0-client-cookie-secret: <cookie-secret>
    ```
 
-3. Create docker.cred.yml  (do not ad to git - should be in .gitignore)
+2. Create docker.cred.yml  (do not ad to git - should be in .gitignore)
    Keep it only locally as it have base64 encoded password, easy to decode.
 
    docker-cred.yaml should look like:
@@ -249,34 +280,24 @@ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/downloa
       docker-username: "<your-name>"
       docker-password: "<your-password>"
    ```
-4. Fetch cert:
-   ```shell
-   kubeseal --fetch-cert --controller-name=sealed-secrets-controller --controller-namespace=sealed-secrets > config/k8s/secret/sky-sealed-secrets.pem
-   ```
-5. Create sealed secrets form normal ones:
+3. Create sealed secrets form normal ones:
    Linux:
    ```shell
-   kubeseal --format=yaml --cert=config/k8s/secret/sky-sealed-secrets.pem < config/k8s/secret/secret.yaml > config/k8s/secret/sealed/sealed-secret.yaml
+   kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/secrets.yaml > config/k8s/secret/sealed/sealed-secrets.yaml
+   ```
+   ```shell
+   kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/docker-cred.yaml > config/k8s/secret/sealed/sealed-docker-cred.yaml
    ```
    Windows:
    ```powershell
-   Get-Content config/k8s/secret/secret.yaml | kubeseal --format=yaml --cert=config/k8s/secret/sky-sealed-secrets.pem > config/k8s/secret/sealed/sealed-secret.yaml
+   Get-Content config/k8s/secret/secret.yaml | kubeseal --format=yaml --cert=config/k8s/secret/public.crt > config/k8s/secret/sealed/sealed-secret.yaml
    ```
-6. Deploy sealed sky secrets:
    ```shell
-   kubectl apply -f config/k8s/secret/sealed/sealed-secret.yaml
+   Get-Content config/k8s/secret/docker-cred.yaml | kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt > config/k8s/secret/sealed/sealed-docker-cred.yaml
    ```
-7. Create docker sealed credential form normal ones:
-   Linux:
+4. Deploy sealed secrets:
    ```shell
-   kubeseal --format=yaml --cert=config/k8s/secret/sky-sealed-secrets.pem < config/k8s/secret/docker-cred.yaml > config/k8s/secret/sealed/sealed-docker-cred.yaml
-   ```
-   Windows:
-   ```powershell
-   Get-Content config/k8s/secret/docker-cred.yaml | kubeseal --format=yaml --cert=config/k8s/secret/sky-sealed-secrets.pem > config/k8s/secret/sealed/sealed-docker-cred.yaml
-   ```
-8. Deploy sealed docker repo credentials:
-   ```shell
+   kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
    kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
    ```
 
@@ -284,16 +305,14 @@ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/downloa
 
 ### Kubernetes basic base64 encode secrets apply
 ```shell
-kubectl apply -f config/k8s/secret.yaml
+kubectl apply -f config/k8s/secrets.yaml
 ```
 ```shell
 kubectl apply -f config/k8s/docker-cred.yaml
 ```
 ----------------------
 
-
-
-## Logs
+## 5. Logs
 https://console.cloud.google.com/logs
 
 parameters:
@@ -308,12 +327,12 @@ severity>=DEFAULT
 
 ----------------------
 
-## Clearing
+## 6. Clearing
 
 ```shell
-kubectl delete -f config/k8s/secret/secret.yaml
+kubectl delete -f config/k8s/secret/secrets.yaml
 kubectl delete -f config/k8s/secret/sealed/sealed-docker-cred.yaml
-kubectl delete -f config/k8s/secret/sealed/sealed-secret.yaml
+kubectl delete -f config/k8s/secret/sealed/sealed-secrets.yaml
 kubectl delete -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
 kubectl delete --from-file=./api-gateway/ingress/auth
 kubectl delete -f config/k8s/api-gateway/ingress/ingress.yaml
@@ -336,4 +355,15 @@ kubectl delete -f config/k8s/api-gateway --recursive
 kubectl delete -f config/k8s/db --recursive
 kubectl delete -f config/k8s/kafka --recursive
 kubectl delete -f config/k8s/service --recursive
+```
+
+---------------
+## 7. Troubleshooter
+
+### Fetching public cert from sealed secret
+
+It should not be required as you should use openssl generated `public.crt` to generate passwords in sealed secrets.  
+But if you need to fetch then use this:
+```shell
+kubeseal --fetch-cert --controller-name=sealed-secrets-controller --controller-namespace=sealed-secrets > config/k8s/secret/sky-sealed-secrets.pem
 ```

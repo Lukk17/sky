@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: mysql
+  template:
+    metadata:
+      labels:
+        component: mysql
+    spec:
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            #            name from metadata section of postgres-persistent-volume-claim.yaml
+            claimName: database-persistent-volume-claim
+        - name: mysql-initdb
+          configMap:
+            name: mysql-initdb-config
+      containers:
+        - name: mysql
+          image: mysql:8.0.33
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            # default place where mysql is saving data
+            - mountPath: /var/lib/mysql
+              # name of volume specified in spec.volumes section
+              name: mysql-storage
+            # initial DB sql command:
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
+          # some db like postgres need additional parameter of subPath
+          # subPath: postgres
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  # from secrets.yaml data section
+                  key: mysql-root-pass
+                  # from secrets.yaml metadata.name section
+                  name: sky-secrets
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-username
+                  name: sky-secrets
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-password
+                  name: sky-secrets

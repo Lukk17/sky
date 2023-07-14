@@ -1,0 +1,57 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sky-offer-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    #  label need to be same as selector in service pod
+    matchLabels:
+      #    "component" is just a name, can be any name as long as in service is named same, for example could be:
+      #    workingLabel: web
+      #     every service need to have UNIQUE label - if not every service in its endpoint will have other services endpoints
+      app: offer
+  template:
+    metadata:
+      labels:
+        app: offer
+    spec:
+      containers:
+        - name: sky-offer-container
+          image: lukk17/sky-offer:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5552
+          env:
+            - name: OFFER_PORT
+              value: '5552'
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql-service:3306/sky
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-user
+                  name: sky-secrets
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-pass
+                  name: sky-secrets
+            - name: SPRING_DEBUG
+              value: 'INFO'
+            - name: HIBERNATE_DEBUG
+              value: 'INFO'
+            - name: SHOW_SQL_QUERIES
+              value: 'false'
+            - name: SPRING_SECURITY_USER
+              valueFrom:
+                secretKeyRef:
+                  key: spring-security-user
+                  name: sky-secrets
+            - name: SPRING_SECURITY_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: spring-security-pass
+                  name: sky-secrets
