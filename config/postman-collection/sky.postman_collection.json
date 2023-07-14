@@ -949,75 +949,231 @@
 			"name": "cloud",
 			"item": [
 				{
-					"name": "auth0",
+					"name": "Auth0 Code Flow",
 					"item": [
 						{
-							"name": "POST auth0 get token",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "content-type",
-										"value": "application/x-www-form-urlencoded"
+							"name": "1. Get to /authorize Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"GetState\", function () {",
+											"    console.log(`Retrieving STATE...`)",
+											"    let state = pm.response.headers.get('Location');",
+											"    state = state.slice(state.lastIndexOf('=') + 1);",
+											"    pm.environment.set(\"state\", state);",
+											"    console.log(`Setting STATE (${state}) as environmental variable.`);",
+											"    postman.setNextRequest(\"2. Post to /u/login\");",
+											"});"
+										],
+										"type": "text/javascript"
 									}
-								],
+								}
+							],
+							"protocolProfileBehavior": {
+								"followRedirects": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{auth0_domain}}/authorize?response_type=code&client_id={{auth0_client_id}}&redirect_uri={{redirect_uri}}",
+									"protocol": "https",
+									"host": [
+										"{{auth0_domain}}"
+									],
+									"path": [
+										"authorize"
+									],
+									"query": [
+										{
+											"key": "response_type",
+											"value": "code"
+										},
+										{
+											"key": "client_id",
+											"value": "{{auth0_client_id}}"
+										},
+										{
+											"key": "redirect_uri",
+											"value": "{{redirect_uri}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Post to /u/login Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"GetResumeState\", function () {",
+											"    console.log(`Retrieving RESUME_STATE...`)",
+											"    let resume_state = pm.response.headers.get('Location');",
+											"    resume_state = resume_state.slice(resume_state.lastIndexOf('=') + 1);",
+											"    pm.environment.set(\"resume_state\", resume_state);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"followRedirects": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [],
 								"body": {
 									"mode": "urlencoded",
 									"urlencoded": [
 										{
-											"key": "grant_type",
-											"value": "password",
-											"type": "text"
-										},
-										{
 											"key": "username",
-											"value": "lukk@test.com",
+											"value": "{{auth0_username}}",
 											"type": "text"
 										},
 										{
 											"key": "password",
-											"value": "Test1234!",
+											"value": "{{auth0_password}}",
 											"type": "text"
 										},
 										{
-											"key": "audience",
-											"value": "https://lukk17.eu.auth0.com/api/v2/",
-											"type": "text"
-										},
-										{
-											"key": "scope",
-											"value": "openid",
-											"type": "text"
-										},
-										{
-											"key": "client_id",
-											"value": "9H4ckShWBYzA5gigTK0VnR1I1Hh7MHz0",
-											"type": "text"
-										},
-										{
-											"key": "client_secret",
-											"value": "g6B2jR-MXS_jWppT0MYg3GsyCZf7Zlgl6zhC1b3K7qAbc6p92uBQJYXaLRyv2b3c",
+											"key": "state",
+											"value": "{{state}}",
 											"type": "text"
 										}
 									]
 								},
 								"url": {
-									"raw": "https://lukk17.eu.auth0.com/oauth/token",
+									"raw": "https://{{auth0_domain}}/u/login?state={{state}}",
 									"protocol": "https",
 									"host": [
-										"lukk17",
-										"eu",
-										"auth0",
-										"com"
+										"{{auth0_domain}}"
+									],
+									"path": [
+										"u",
+										"login"
+									],
+									"query": [
+										{
+											"key": "state",
+											"value": "{{state}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3. Get to /resume Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"GetCode\", function () {",
+											"    console.log(`Retrieving CODE...`)",
+											"    let code = pm.response.headers.get('Location');",
+											"    code = code.slice(code.lastIndexOf('=') + 1);",
+											"    pm.environment.set(\"code\", code);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"followRedirects": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{auth0_domain}}/authorize/resume?state={{resume_state}}",
+									"protocol": "https",
+									"host": [
+										"{{auth0_domain}}"
+									],
+									"path": [
+										"authorize",
+										"resume"
+									],
+									"query": [
+										{
+											"key": "state",
+											"value": "{{resume_state}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4. Exchange CODE against a TOKEN Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"GetToken\", function () {",
+											"    console.log(`Retrieving TOKENS...`)",
+											"    let tokens = pm.response.json();",
+											"    console.log(tokens);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "grant_type",
+											"value": "authorization_code",
+											"type": "text"
+										},
+										{
+											"key": "client_id",
+											"value": "{{auth0_client_id}}",
+											"type": "text"
+										},
+										{
+											"key": "code",
+											"value": "{{code}}",
+											"type": "text"
+										},
+										{
+											"key": "redirect_uri",
+											"value": "{{redirect_uri}}",
+											"type": "text"
+										},
+										{
+											"key": "audience",
+											"value": "{{audience}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "https://{{auth0_domain}}/oauth/token",
+									"protocol": "https",
+									"host": [
+										"{{auth0_domain}}"
 									],
 									"path": [
 										"oauth",
 										"token"
 									]
-								}
+								},
+								"description": "This is the OAuth 2.0 grant that regular web apps utilize in order to access an API. Use this endpoint to exchange an Authorization Code for an Access Token."
 							},
 							"response": []
 						}

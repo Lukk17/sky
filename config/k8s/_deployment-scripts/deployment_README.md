@@ -157,11 +157,11 @@ and plugin:
    https://manage.auth0.com/dashboard
 <br>  
    redirect_uri have to be in "Allowed callback URLs" in application settings - in form of:  
-   `https://<website address>/oauth2/callback`, example:
+   `https://<auth0 app name>.<region>.auth0.com/login/callback`, example:
    ```
-   https://sky.luksarna.com/oauth2/callback
+   https://lukk17.eu.auth0.com/login/callback
    ```
-   test user (to register):  
+   test user (once registered is saved in auth0 provider):  
    email: `lukk@test.com`  
    pass: `Test1234!`  
 <br>
@@ -177,9 +177,6 @@ https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth
 Adding Google login:
 https://developers.google.com/identity/sign-in/web/sign-in
 
-test user (to register):  
-email: `lukk@test.com`  
-pass: `Test1234!`
 
 ----------------------
 

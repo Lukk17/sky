@@ -248,41 +248,18 @@ kubectl delete secret basic-auth
 ### Auth0 login Rest way
 
 To login via postman with auth0:
-* user/password
-  https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-resource-owner-password-flow#ask-for-a-token
-* auth code flow
-  https://auth0.com/docs/get-started/authentication-and-authorization-flow/call-your-api-using-the-authorization-code-flow
+https://community.auth0.com/t/full-auth-code-flow-using-postman/105024
 
-1. need to add "Username-Password-Authentication" to auth0:
-   Dashboard -> setting ->  API Authorization Settings -> in "Default Directory"
-   https://stackoverflow.com/questions/69419470/auth0-error-authorization-server-not-configured-with-default-connection
+Request are in postman collection config/postman-collection/sky.postman_collection.json  
+inside cloud/Auth0 Code Flow
 
-2. Need to add checkbox "Password" under:
-   Dashboard -> Application -> <app name> > Scroll down to "Advance Settings" -> Grant types
+IMPORTANT : clear cookies in postman (if not then Bad request error occurs)  
 
-3. POST to `https://lukk17.eu.auth0.com/oauth/token` with required parameters:
-    ```
-   curl --request POST \
-        --url 'https://{yourDomain}/oauth/token' \
-        --header 'content-type: application/x-www-form-urlencoded' \
-        --data grant_type=password \
-        --data 'username={username}' \
-        --data 'password={password}' \
-        --data 'audience={yourApiIdentifier}' \
-        --data scope=read:sample \
-        --data 'client_id={yourClientId}' \
-        --data 'client_secret={yourClientSecret}'
-   ```
-   where:
-    * audience - is api identifier (API Audience) in:
-      `Dashboard -> Application -> APIs`
-      example: `https://lukk17.eu.auth0.com/api/v2/`
-    * url - example: `https://lukk17.eu.auth0.com/oauth/token`
-
-
-Setting postman oauth2 token generation:  
-https://community.auth0.com/t/postman-scripts-for-login-using-the-authorization-code-flow-with-pkce/68709
-
+Go step by step:
+1. Get to /authorize
+2. Post to /u/login
+3. Get to /resume
+4. Exchange CODE against a TOKEN
 
 --------------
 
