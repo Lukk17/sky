@@ -13,9 +13,11 @@ kubectl delete -f .\config\k8s\secret\sealed\sealed-docker-cred.yaml
 helm uninstall oauth2-proxy
 
 :: independent services
-helm uninstall kafka
+helm uninstall kafka-service
+kubectl delete pvc data-kafka-service-0
 
 :: db
+helm uninstall database-persistent-volume-claim
 helm uninstall mysql
 
 :: services

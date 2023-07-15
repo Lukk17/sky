@@ -13,14 +13,15 @@ kubectl apply -f .\config\k8s\secret\sealed\sealed-docker-cred.yaml
 helm install oauth2-proxy .\config\k8s\helm\oauth2-proxy\
 
 :: independent services
-helm install kafka .\config\k8s\helm\kafka\
+helm install kafka-service .\config\k8s\helm\kafka\
 
 :: db
+helm install database-persistent-volume-claim .\config\k8s\helm\database-persistent-volume-claim\
 helm install mysql .\config\k8s\helm\mysql\
-kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=mysql
+kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=mysql
 
 :: services
-helm install sky-offer .\config\k8s\sky-offer
-helm install sky-booking .\config\k8s\sky-booking
-helm install sky-message .\config\k8s\sky-message
-helm install sky-notify .\config\k8s\sky-notify
+helm install sky-offer .\config\k8s\helm\sky-offer
+helm install sky-booking .\config\k8s\helm\sky-booking
+helm install sky-message .\config\k8s\helm\sky-message
+helm install sky-notify .\config\k8s\helm\sky-notify

@@ -23,12 +23,12 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Values.deployment.container.name }}
-          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-offer:latest" }}"
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-message:latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
           env:
-            - name: OFFER_PORT
+            - name: MESSAGE_PORT
               value: "{{ .Values.service.port }}"
             - name: SPRING_DATASOURCE_URL
               value: "{{ .Values.deployment.env.spring.datasourceUrl }}"

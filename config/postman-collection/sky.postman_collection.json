@@ -579,14 +579,7 @@
 					],
 					"request": {
 						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
-									"type": "string"
-								}
-							]
+							"type": "noauth"
 						},
 						"method": "POST",
 						"header": [

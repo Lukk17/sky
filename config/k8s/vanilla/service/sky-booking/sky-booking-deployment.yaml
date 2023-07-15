@@ -23,6 +23,10 @@ spec:
           env:
             - name: BOOKING_PORT
               value: '5555'
+            - name: KAFKA_ADDRESS
+              value: 'kafka-service'
+            - name: KAFKA_PORT
+              value: '9092'
             - name: SPRING_DATASOURCE_URL
               value: jdbc:mysql://mysql-service:3306/sky
             - name: MYSQL_USER

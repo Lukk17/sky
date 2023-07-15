@@ -30,6 +30,10 @@ spec:
           env:
             - name: OFFER_PORT
               value: "{{ .Values.service.port }}"
+            - name: KAFKA_ADDRESS
+              value: {{ .Values.kafka.address }}
+            - name: KAFKA_PORT
+              value: "{{ .Values.kafka.port }}"
             - name: SPRING_DATASOURCE_URL
               value: "{{ .Values.deployment.env.spring.datasourceUrl }}"
             - name: MYSQL_USER

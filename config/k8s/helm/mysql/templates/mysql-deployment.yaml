@@ -20,7 +20,7 @@ spec:
             claimName: {{  .Values.volume.claimName }}
         - name: mysql-initdb
           configMap:
-            name: {{  .Values.volume.configMap }}
+            name: {{ .Values.volume.configMap.name }}
       containers:
         - name: mysql
           image: {{  .Values.image.name }}

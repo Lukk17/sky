@@ -18,16 +18,9 @@ deployment:
     name: sky-notify-container
   env:
     spring:
-      datasourceUrl: "jdbc:mysql://mysql-service:3306/sky"
       debug: "INFO"
       securityUser: "spring-security-user"
       securityPass: "spring-security-pass"
-    hibernate:
-      showSqlQueries: "false"
-      debug: "INFO"
-    mysql:
-      user: "mysql-root-user"
-      pass: "mysql-root-pass"
 
 secret:
   name: sky-secrets
@@ -38,24 +31,9 @@ imagePullSecrets:
 service:
   name: sky-notify-service
   type: ClusterIP
-  port: 5554
-  apiPrefix: /notify/api
+  port: "5554"
 
-ingress:
-  name: sky-notify-ingress
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /api/$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
-    nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
-  hosts:
-    - host: skycloud.luksarna.com
-      paths:
-        - path: /notify/api(/|$)(.*)
-          pathType: ImplementationSpecific
+kafka:
+  address: "kafka-service"
+  port: "9092"
 

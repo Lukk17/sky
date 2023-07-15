@@ -1,0 +1,4 @@
+volume:
+  claimName: "database-persistent-volume-claim"
+  storage: 1Gi
+  accessMode: ReadWriteOnce

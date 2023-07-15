@@ -8,11 +8,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      component: notify
+      app: notify
   template:
     metadata:
       labels:
-        component: notify
+        app: notify
     spec:
       containers:
         - name: sky-notify-container
@@ -23,6 +23,10 @@ spec:
           env:
             - name: NOTIFY_PORT
               value: '5554'
+            - name: KAFKA_ADDRESS
+              value: 'kafka-service'
+            - name: KAFKA_PORT
+              value: '9092'
             - name: SPRING_DEBUG
               value: 'INFO'
             - name: SPRING_SECURITY_USER

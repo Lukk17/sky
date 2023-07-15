@@ -1,7 +1,6 @@
 apiVersion: v2
 name: sky-booking
 description: A Helm chart for Sky booking service
-
 type: application
 
 version: 0.0.1

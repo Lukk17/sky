@@ -20,7 +20,7 @@ helm install mysql ./config/k8s/helm/mysql/
 kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=mysql
 
 # services
-helm install sky-offer ./config/k8s/sky-offer
-helm install sky-booking ./config/k8s/sky-booking
-helm install sky-message ./config/k8s/sky-message
-helm install sky-notify ./config/k8s/sky-notify
+helm install sky-offer ./config/k8s/helm/sky-offer
+helm install sky-booking ./config/k8s/helm/sky-booking
+helm install sky-message ./config/k8s/helm/sky-message
+helm install sky-notify ./config/k8s/helm/sky-notify

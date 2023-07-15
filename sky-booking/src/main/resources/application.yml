@@ -52,7 +52,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   kafka:
-    bootstrap-servers: kafka-service:9092
+    bootstrap-servers: ${KAFKA_ADDRESS:kafka-service}:${KAFKA_PORT:9092}
     producer:
       client-id: bookingService
     admin:
