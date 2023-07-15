@@ -12,9 +12,9 @@ metadata:
 spec:
   tls:
     - hosts:
-        - keycloak.sky.luksarna.com
+        - keycloak.skycloud.luksarna.com
   rules:
-    - host: keycloak.sky.luksarna.com
+    - host: keycloak.skycloud.luksarna.com
       http:
         paths:
           - path: "/"

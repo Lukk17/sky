@@ -1,5 +1,17 @@
 # Helm
 
+## Table of content
+
+- [Pre-requisitions](#1-pre-requisitions)
+- [Api gateway](#2-api-gateway)
+- [Independent services](#3-independent-services)
+- [Database](#4-database)
+- [Install service charts](#5-install-service-charts)
+- [Changing application address](#6-changing-application-address)
+- [Clearing](#7-clearing)
+- [Troubleshooter](#8-troubleshooter)
+- [Commands](#9-commands)
+
 ---------
 
 ## 1. Pre-requisitions
@@ -97,7 +109,7 @@ helm install mysql ./config/k8s/helm/mysql/
 
 ---------
 
-## 2. Install service charts
+## 5. Install service charts
 
 ```shell
 helm install sky-offer ./sky-offer
@@ -106,17 +118,36 @@ helm install sky-message ./sky-message
 helm install sky-notify ./sky-notify
 ```
 
+----------------------
+
+## 6. Changing application address
+
+When changing app web address (host) for example from  
+`https://sky.luksarna.com` to `https://skycloud.luksarna.com`
+
+1. In app config you need to change:
+   * Every Ingress `spec.rules.host` in each service `values.yaml`
+   * Every Ingress `nginx.ingress.kubernetes.io/auth-url` and `nginx.ingress.kubernetes.io/auth-signin`
+   * `redirect-url` in `oauth2-proxy` `values.yaml`  
+     <br>
+2. Update oAuth2 providers:  
+   <br>
+   * Auth0: https://manage.auth0.com/dashboard  
+     under Application -> Application -> sky (app name)
+     put new address in field `Allowed Callback URLs`.
+     Addresses are separated by comma `,` and can be inserted in new line  
+     <br>
+   * Google: https://console.cloud.google.com/apis/credentials  
+     just add new address to selected oauth client `Authorized JavaScript origins` field.  
+     <br>
+   * Github: https://github.com/settings/developers  
+     need to create new oauth app with new address as `Homepage URL`  
+    <br>
+3. Update Postman envs
+
 --------
 
-## 3. List all installed charts
-
-```shell
-helm list
-```
-
---------
-
-## 4. Clearing
+## 7. Clearing
 
 ```shell
 helm uninstall sealed-secrets-controller -n sealed-secrets
@@ -131,7 +162,7 @@ helm uninstall sky-notify ./sky-notify
 
 --------
 
-## 5. Troubleshooter
+## 8. Troubleshooter
 
 ### Error creating container
 
@@ -176,7 +207,7 @@ or use `helm upgrade` instead.
 
 --------
 
-## Commands
+## 9. Commands
 
 ### Install charts
 
@@ -198,7 +229,6 @@ helm pull <chart name>
 
 --------
 
-
 ### Upgrade chart
 
 ```shell
@@ -207,4 +237,12 @@ helm upgrade <release name> ./<base chart name - folder name>
 example:
 ```shell
 helm upgrade sky-offer ./sky-offer
+```
+
+--------
+
+### List all installed charts
+
+```shell
+helm list
 ```

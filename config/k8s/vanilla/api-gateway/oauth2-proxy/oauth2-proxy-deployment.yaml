@@ -24,7 +24,7 @@ spec:
             - --cookie-secure=false
             - --oidc-issuer-url=https://lukk17.eu.auth0.com/
             - --insecure-oidc-allow-unverified-email=true
-            - --redirect-url=http://sky.luksarna.com/oauth2/callback
+            - --redirect-url=https://skycloud.luksarna.com/oauth2/callback
             - --set-authorization-header=true
             - --scope=openid email
             - --set-xauthrequest=true

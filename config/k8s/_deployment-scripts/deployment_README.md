@@ -1,5 +1,17 @@
 # DEPLOYMENT
 
+## Table of content
+
+- [Docker build and publish](#1-docker-build-and-publish)
+- [App deployment](#2-app-deployment)
+- [GCP](#3-gcp)
+- [Auth service](#4-auth-service)
+- [Sealed secrets](#5-sealed-secrets)
+- [Logs](#6-logs)
+- [Changing application address](#7-changing-application-address)
+- [Clearing](#8-clearing)
+- [Troubleshooter](#9-troubleshooter)
+
 ----------------------
 
 ## 1. Docker build and publish
@@ -74,19 +86,18 @@ To create new keys for sealed secret controller see [this](#create-private-and-p
 ### Deploy services
 
 ```shell
-kubectl create secret generic basic-auth --from-file=./api-gateway/ingress/auth
-kubectl apply -f config/k8s/api-gateway/ingress/ingress.yaml
-kubectl apply -f config/k8s/api-gateway/oauth2-proxy/
+kubectl apply -f config/k8s/vanilla/api-gateway/ingress/ingress.yaml
+kubectl apply -f config/k8s/vanilla/api-gateway/oauth2-proxy/
 
-kubectl apply -f config/k8s/kafka/
+kubectl apply -f config/k8s/vanilla/kafka/
 
-kubectl apply -f config/k8s/db/mysql/
-kubectl wait --namespace default --for=condition=ready --timeout=120s deployment/mysql-deployment
+kubectl apply -f config/k8s/vanilla/db/mysql/
+kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=mysql
 
-kubectl apply -f config/k8s/service/sky-offer/
-kubectl apply -f config/k8s/service/sky-booking/
-kubectl apply -f config/k8s/service/sky-notify/
-kubectl apply -f config/k8s/service/sky-message/
+kubectl apply -f config/k8s/vanilla/service/sky-offer/
+kubectl apply -f config/k8s/vanilla/service/sky-booking/
+kubectl apply -f config/k8s/vanilla/service/sky-notify/
+kubectl apply -f config/k8s/vanilla/service/sky-message/
 ```
 
 Simpler, you can run all scripts in a folder (in terminal being in parent folder):
@@ -180,7 +191,7 @@ https://developers.google.com/identity/sign-in/web/sign-in
 
 ----------------------
 
-## 4. Sealed secrets
+## 5. Sealed secrets
 
 ### Install sealed secret on system
 
@@ -309,7 +320,7 @@ kubectl apply -f config/k8s/docker-cred.yaml
 ```
 ----------------------
 
-## 5. Logs
+## 6. Logs
 https://console.cloud.google.com/logs
 
 parameters:
@@ -324,7 +335,34 @@ severity>=DEFAULT
 
 ----------------------
 
-## 6. Clearing
+## 7. Changing application address
+
+When changing app web address (host) for example from  
+`https://sky.luksarna.com`  
+to  
+`https://skycloud.luksarna.com`  
+1. In app config you need to change:
+   * Every Ingress `spec.rules.host`
+   * Every Ingress `nginx.ingress.kubernetes.io/auth-url` and `nginx.ingress.kubernetes.io/auth-signin`
+   * `redirect-url` in `oauth2-proxy-deployment.yaml`  
+     <br>
+2. Update oAuth2 providers:  
+   <br>
+   * Auth0: https://manage.auth0.com/dashboard
+     under Application -> Application -> sky (app name) 
+     put new address in field `Allowed Callback URLs`.
+     Addresses are separated by comma `,` and can be inserted in new line  
+   <br>
+   * Google: https://console.cloud.google.com/apis/credentials
+     just add new address to selected oauth client `Authorized JavaScript origins` field.  
+     <br>
+   * Github: https://github.com/settings/developers
+     need to create new oauth app with new address as `Homepage URL`  
+   <br>
+3. Update Postman envs
+----------------------
+
+## 8. Clearing
 
 ```shell
 kubectl delete -f config/k8s/secret/secrets.yaml
@@ -355,7 +393,7 @@ kubectl delete -f config/k8s/service --recursive
 ```
 
 ---------------
-## 7. Troubleshooter
+## 9. Troubleshooter
 
 ### Fetching public cert from sealed secret
 

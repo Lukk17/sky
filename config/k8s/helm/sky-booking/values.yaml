@@ -48,13 +48,13 @@ ingress:
     nginx.ingress.kubernetes.io/rewrite-target: /api/$2
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/auth-url: "https://sky.luksarna.com/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://sky.luksarna.com/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
     nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
   hosts:
-    - host: sky.luksarna.com
+    - host: skycloud.luksarna.com
       paths:
         - path: /booking/api(/|$)(.*)
           pathType: ImplementationSpecific

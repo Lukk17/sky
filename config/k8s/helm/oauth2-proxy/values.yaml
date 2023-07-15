@@ -11,7 +11,7 @@ args:
   cookieSecure: "false"
   oidcIssuerUrl: "https://lukk17.eu.auth0.com/"
   insecureOidcAllowUnverifiedEmail: "true"
-  redirectUrl: "http://sky.luksarna.com/oauth2/callback"
+  redirectUrl: "https://skycloud.luksarna.com/oauth2/callback"
   setAuthorizationHeader: "true"
   scope: "openid email"
   setXauthrequest: "true"

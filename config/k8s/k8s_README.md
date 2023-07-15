@@ -1,9 +1,20 @@
 # K8S
 
+## Table of content
+
+- [Accessing app](#1-accessing-app)
+- [Login](#2-login)
+- [Secrets](#3-secrets)
+- [Kubernetes](#4-kubernetes)
+- [Kubernetes config](#5-kubernetes-config)
+- [Troubleshooting](#6-troubleshooting)
+
+----------
+
 ## 1. Accessing app
 
 App should be accessible under its domain:  
-`sky.luksarna.com`
+`skycloud.luksarna.com`
 or you can find its ip on GKE:
 https://console.cloud.google.com/kubernetes/discovery
 
@@ -74,7 +85,9 @@ kubectl apply -f <sealed-secret-file>.yaml
 [See this](#secret-from-generated-auth-file)
 
 -------------
+
 ## 4. Kubernetes
+
 
 ### Deploy
 
@@ -83,32 +96,9 @@ kubectl apply -f <sealed-secret-file>.yaml
 Waiting for deployment to be ready:
 ```shell
 kubectl wait --namespace mynamespace --for=condition=ready --timeout=120s deployment/<deploymentName>
-
 ```
 
 --------------
-
-
-### Port forwarding
-```shell
-kubectl port-forward <podName> <localPort>:<podPort>
-```
-where podName is from `kubectl get pod`
-
-example:
-```shell
-kubectl port-forward sky-offer-deployment-5796d4f74d-98bs5 5553:5552
-```
-
-will be available on the browser:
-```
-localhost:5553
-```
-
--------------
-
-
-## 5. Kubernetes commands
 
 ### Status:
 
@@ -127,7 +117,6 @@ kubectl get services
 kubectl get deployments
 ```
 
-
 Persistent volume info:
 ```shell
 kubectl get pv
@@ -137,7 +126,6 @@ kubectl get pvc
 ```
 -------------
 ###  Details of pod:
-
 
 ```shell
 kubectl describe <object type> <name>
@@ -157,6 +145,7 @@ example:
 kubectl set image deployment/auth-deployment auth=lukk17/sky-auth:1.0.0
 ```
 -------------
+
 ###  Logs of pod:
 
 
@@ -166,6 +155,7 @@ kubectl logs <kubeName>
 kubeName can be obtained from `kubectl get pods`
 
 -------------
+
 ### Scaling
 
 ```shell
@@ -174,6 +164,7 @@ kubectl scale --replicas=<number> -f <deployment file>
 ```
 
 -------------
+
 ### Deleting resource
 
 ```shell
@@ -184,24 +175,25 @@ kubectl -n <namespace> delete pod,svc --all
 
 -------------
 
-## 6. Troubleshooting
-
-### MYSQL configuration
-
-#### Exec into mysql container (easy via minikube dashboard)
-or use command:
+### Port forwarding
 ```shell
-kubectl exec --stdin --tty <podFullName> -- /bin/bash
+kubectl port-forward <podName> <localPort>:<podPort>
 ```
-where podFullName can be obtained from `kubectl get pod`
+where podName is from `kubectl get pod`
 
-#### Making root for all host, not only localhost:
-```mysql
-USE mysql;
-UPDATE user SET host='%' WHERE host='localhost'
+example:
+```shell
+kubectl port-forward sky-offer-deployment-5796d4f74d-98bs5 5553:5552
+```
+
+will be available on the browser:
+```
+localhost:5553
 ```
 
 -------------
+## 5. Kubernetes config
+
 
 ### Pure kubernetes (only base64 encoded):
 1. By secret file
@@ -224,7 +216,6 @@ UPDATE user SET host='%' WHERE host='localhost'
     kubectl create secret generic mysqlRootPass --from-literal mysqlRootPass=elasticPass!
     ```
 
-
 -------------
 ### Secret from generated auth file
 
@@ -244,7 +235,6 @@ kubectl delete secret basic-auth
 
 -------------
 
-
 ### Auth0 login Rest way
 
 To login via postman with auth0:
@@ -253,7 +243,7 @@ https://community.auth0.com/t/full-auth-code-flow-using-postman/105024
 Request are in postman collection config/postman-collection/sky.postman_collection.json  
 inside cloud/Auth0 Code Flow
 
-IMPORTANT : clear cookies in postman (if not then Bad request error occurs)  
+IMPORTANT : clear cookies in postman (if not then Bad request error occurs)
 
 Go step by step:
 1. Get to /authorize
@@ -273,3 +263,22 @@ To be able to set up service accounts (required by sealed secrets)
 4. In the "New members" field, type the email address of the user.
 5. In the "Role" dropdown, select "Kubernetes Engine" -> "Kubernetes Engine Admin".
 6. Click "SAVE".
+
+--------------
+
+## 6. Troubleshooting
+
+### MYSQL configuration
+
+#### Exec into mysql container (easy via minikube dashboard)
+or use command:
+```shell
+kubectl exec --stdin --tty <podFullName> -- /bin/bash
+```
+where podFullName can be obtained from `kubectl get pod`
+
+#### Making root for all host, not only localhost:
+```mysql
+USE mysql;
+UPDATE user SET host='%' WHERE host='localhost'
+```

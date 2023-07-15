@@ -21,7 +21,7 @@ spec:
             - --provider=keycloak-oidc
             - --client-id=skyclient
 #            - --client-secret=
-            - --redirect-url=https://sky.luksarna.com
+            - --redirect-url=https://skycloud.luksarna.com
             - --oidc-issuer-url=http://34.116.235.60/realms/skyrealm
             #            - --allowed-role=<realm role name> // Optional, required realm role
             #            - --allowed-role=<client id>:<client role name> // Optional, required client role
