@@ -2,9 +2,9 @@
 sky:
   helloWorld: <center><h1>Welcome to Booking app.</h1></center>
   apiPrefix: /api
-  offerServiceAddress: ${OFFER_SERVICE_ADDRESS:offer-service}
+  offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
+  offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT}
   offerOwnerEndpoint: owners
-  offerServicePort: ${OFFER_SERVICE_PORT:5552}
 
 # SPRING setup
 

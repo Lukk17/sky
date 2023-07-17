@@ -18,6 +18,10 @@ public class BookingAssembler {
 
     public static LocalDate TEST_DATE = LocalDate.of(2201, 6, 20);
 
+    public static String TEST_APP_PORT = "5552";
+    public static String TEST_OFFER_ENDPOINT = "owners";
+
+
     public static List<Booking> getEmptyBookedList() {
         return List.of(new Booking(), new Booking());
     }
@@ -39,6 +43,11 @@ public class BookingAssembler {
                         TEST_USER_EMAIL, TEST_OWNER_EMAIL_2));
     }
 
+    public static Booking getPopulatedBooked() {
+        return getPopulatedBooked(TEST_DEFAULT_BOOKED_ID, TEST_DEFAULT_OFFER_ID,
+                TEST_USER_EMAIL, TEST_OWNER_EMAIL);
+    }
+
     public static Booking getPopulatedBooked(Long Id, String offerId, String bookingUser, String owner) {
         return Booking.builder()
                 .id(Id)
@@ -47,11 +56,6 @@ public class BookingAssembler {
                 .bookingUser(bookingUser)
                 .owner(owner)
                 .build();
-    }
-
-    public static Booking getPopulatedBooked() {
-        return getPopulatedBooked(TEST_DEFAULT_BOOKED_ID, TEST_DEFAULT_OFFER_ID,
-                TEST_USER_EMAIL, TEST_OWNER_EMAIL);
     }
 
     public static BookingDTO getPopulatedBookedDTO(Long Id, String offerId, String bookingUser, String owner) {

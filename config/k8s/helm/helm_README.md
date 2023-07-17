@@ -216,7 +216,7 @@ helm install <release name> ./<base chart name - folder name>
 ```
 example:
 ```shell
-helm install sky-offer ./sky-offer
+helm install sky-offer ./config/k8s/helm/sky-offer
 ```
 
 --------
@@ -236,7 +236,7 @@ helm upgrade <release name> ./<base chart name - folder name>
 ```
 example:
 ```shell
-helm upgrade sky-offer ./sky-offer
+helm upgrade sky-offer ./config/k8s/helm/sky-offer
 ```
 
 --------

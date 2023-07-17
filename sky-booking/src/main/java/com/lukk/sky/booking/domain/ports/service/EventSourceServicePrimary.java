@@ -7,12 +7,14 @@ import com.lukk.sky.booking.domain.model.Event;
 import com.lukk.sky.booking.domain.model.EventType;
 import com.lukk.sky.booking.domain.ports.repository.EventSourceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Primary
 public class EventSourceServicePrimary implements EventSourceService {
 
     private final EventSourceRepository eventSourceRepository;
@@ -21,7 +23,7 @@ public class EventSourceServicePrimary implements EventSourceService {
     public void saveEvent(Booking booking, EventType eventType) {
         Gson gson = new Gson();
 
-        int lastSequence = eventSourceRepository.findLastSequenceNumberByOfferId(String.valueOf(booking.getId()))
+        int lastSequence = eventSourceRepository.findLastSequenceNumberByBookingId(String.valueOf(booking.getId()))
                 .orElse(0);
 
         Event event = Event.builder()

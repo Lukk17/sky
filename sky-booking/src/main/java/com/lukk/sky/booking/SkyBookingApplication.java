@@ -1,9 +1,6 @@
 package com.lukk.sky.booking;
 
-import com.lukk.sky.booking.config.propertyBind.LoggingLvlConfigProperties;
-import com.lukk.sky.booking.config.propertyBind.ManagementConfigProperties;
-import com.lukk.sky.booking.config.propertyBind.ServerConfigProperties;
-import com.lukk.sky.booking.config.propertyBind.SpringConfigProperties;
+import com.lukk.sky.booking.config.propertyBind.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -24,9 +21,10 @@ public class SkyBookingApplication {
     private final ManagementConfigProperties managementConfigProperties;
     private final ServerConfigProperties serverConfigProperties;
     private final LoggingLvlConfigProperties loggingLvlConfigProperties;
+    private final SkyConfigProperties skyConfigProperties;
 
     public static void main(String[] args) {
-        log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Booking App start <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        log.info(">>>>>>>>>> Booking App start <<<<<<<<<<");
         SpringApplication.run(SkyBookingApplication.class, args);
     }
 
@@ -60,6 +58,9 @@ public class SkyBookingApplication {
         log.info("Kafka server address:\t\t {}", springConfigProperties.getKafka().bootstrapServers());
         log.info("Kafka producer ID:\t\t\t {}", springConfigProperties.getKafka().producer().clientId());
         log.info("Kafka topics auto create:\t {}", springConfigProperties.getKafka().admin().autoCreate());
+
+        log.info("Offer hostname is: {}", skyConfigProperties.getOfferServiceHostname());
+        log.info("Offer port is: {}", skyConfigProperties.getOfferServiceHostPort());
 
         log.info("-------------------- CONFIGURATION END ----------------------");
         log.info("");

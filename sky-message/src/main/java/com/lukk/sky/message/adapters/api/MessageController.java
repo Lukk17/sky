@@ -59,9 +59,9 @@ public class MessageController {
 
     @DeleteMapping("/delete/{messageId}")
     public ResponseEntity<?> deleteMessage(@RequestHeader Map<String, String> headers, @PathVariable String messageId) {
-        String userEmail = getUserInfoFromHeaders(headers);
-
         try {
+            String userEmail = getUserInfoFromHeaders(headers);
+
             log.info("Removing message with ID: {}", messageId);
             messageService.remove(Long.parseLong(messageId), userEmail);
 

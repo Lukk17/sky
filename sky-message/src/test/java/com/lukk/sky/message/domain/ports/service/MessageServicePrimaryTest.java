@@ -2,6 +2,7 @@ package com.lukk.sky.message.domain.ports.service;
 
 import com.lukk.sky.message.Assemblers.MessageAssembler;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
+import com.lukk.sky.message.domain.exception.MessageException;
 import com.lukk.sky.message.domain.model.Message;
 import com.lukk.sky.message.domain.ports.repository.MessageRepository;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import java.util.Optional;
 
 import static com.lukk.sky.message.Assemblers.MessageAssembler.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -48,7 +50,7 @@ public class MessageServicePrimaryTest {
     }
 
     @Test
-    public void whenRemoveMessage_thenRemoveMessage() {
+    public void whenRemoveMessageByReceiver_thenRemoveMessage() {
         //Given
         Message expected = MessageAssembler.getMessage(TEST_MESSAGE_ID);
         ArgumentCaptor<Message> valueCapture = ArgumentCaptor.forClass(Message.class);
@@ -58,6 +60,38 @@ public class MessageServicePrimaryTest {
 
         //When
         messageService.remove(TEST_MESSAGE_ID, RECEIVER_EMAIL);
+
+        //Then
+        assertEquals(expected, valueCapture.getValue());
+    }
+
+    @Test
+    // This scenario should not happen
+    public void whenRemoveMessageOfDifferentUser_thenThrowException() {
+        //Given
+        Message expected = MessageAssembler.getMessage(TEST_MESSAGE_ID);
+
+        when(messageRepository.findById(TEST_MESSAGE_ID)).thenReturn(Optional.of(expected));
+
+        //Then
+        assertThrows(MessageException.class, () -> {
+
+            //When
+            messageService.remove(TEST_MESSAGE_ID, "NOT_EXISTING");
+        });
+    }
+
+    @Test
+    public void whenRemoveMessageBySender_thenRemoveMessage() {
+        //Given
+        Message expected = MessageAssembler.getMessage(TEST_MESSAGE_ID);
+        ArgumentCaptor<Message> valueCapture = ArgumentCaptor.forClass(Message.class);
+
+        when(messageRepository.findById(TEST_MESSAGE_ID)).thenReturn(Optional.of(expected));
+        doNothing().when(messageRepository).delete(valueCapture.capture());
+
+        //When
+        messageService.remove(TEST_MESSAGE_ID, SENDER_EMAIL);
 
         //Then
         assertEquals(expected, valueCapture.getValue());

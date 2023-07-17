@@ -10,7 +10,7 @@ plugins {
     id("org.springframework.boot") version springVersion
 }
 
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 description = "sky-booking"
 
 java {
@@ -45,6 +45,7 @@ dependencies {
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
     testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
+
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
     compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")

@@ -27,7 +27,7 @@ public class SkyOfferApplication {
     private final LoggingLvlConfigProperties loggingLvlConfigProperties;
 
     public static void main(String[] args) {
-        log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Offer App start <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        log.info(">>>>>>>>>> Offer App start <<<<<<<<<<");
         SpringApplication.run(SkyOfferApplication.class, args);
     }
 

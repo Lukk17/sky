@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @RequiredArgsConstructor
 public class SkyConfigProperties {
 
-    private final String offerServiceAddress;
-    private final String offerServicePort;
+    private final String offerServiceHostname;
+    private final String offerServiceHostPort;
     private final String offerOwnerEndpoint;
 }

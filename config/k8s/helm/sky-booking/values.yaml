@@ -1,21 +1,21 @@
 # Default values for sky-offer.
 
-name: sky-booking
-namespace: default
+name: "sky-booking"
+namespace: "default"
 
 label:
-  app: sky-booking
+  app: "sky-booking"
 
-replicaCount: 1
+replicaCount: "1"
 
 deployment:
-  name: sky-booking-deployment
+  name: "sky-booking-deployment"
   image:
-    repository: lukk17/sky-booking
-    pullPolicy: Always
-    tag: "latest"
+    repository: "lukk17/sky-booking"
+    pullPolicy: "Always"
+    tag: "x03"
   container:
-    name: sky-booking-container
+    name: "sky-booking-container"
   env:
     spring:
       datasourceUrl: "jdbc:mysql://mysql-service:3306/sky"
@@ -30,22 +30,22 @@ deployment:
       pass: "mysql-root-pass"
 
 secret:
-  name: sky-secrets
+  name: "sky-secrets"
 
 imagePullSecrets:
-  - name: docker-cred
+  - name: "docker-cred"
 
 service:
-  name: sky-booking-service
-  type: ClusterIP
-  port: 5555
-  apiPrefix: /booking/api
+  name: "sky-booking-service"
+  type: "ClusterIP"
+  port: "5555"
+  apiPrefix: "/booking/api"
 
 ingress:
-  name: sky-booking-ingress
+  name: "sky-booking-ingress"
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /api/$2
+    nginx.ingress.kubernetes.io/rewrite-target: "/api/$2"
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
@@ -54,11 +54,15 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
   hosts:
-    - host: skycloud.luksarna.com
+    - host: "skycloud.luksarna.com"
       paths:
-        - path: /booking/api(/|$)(.*)
-          pathType: ImplementationSpecific
+        - path: "/booking/api(/|$)(.*)"
+          pathType: "ImplementationSpecific"
 
 kafka:
   address: "kafka-service"
   port: "9092"
+
+offerService:
+  hostname: "http://sky-offer-service.default.svc.cluster.local"
+  port: "5552"

@@ -27,7 +27,7 @@ public class SkyNotifyApplication {
 
 
     public static void main(String[] args) {
-        log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Notify App start <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        log.info(">>>>>>>>>> Notify App start <<<<<<<<<<");
         SpringApplication.run(SkyNotifyApplication.class, args);
     }
 

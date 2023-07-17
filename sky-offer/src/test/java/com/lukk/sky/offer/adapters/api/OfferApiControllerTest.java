@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.lukk.sky.offer.Assemblers.OfferAssembler;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import java.util.List;
 
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_HOTEL_NAME;
+import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,6 +47,9 @@ public class OfferApiControllerTest {
 
     @MockBean
     private OfferService offerService;
+
+    @MockBean
+    private OfferNotificationService offerNotificationService;
 
     private final String API_PREFIX;
 
@@ -105,6 +110,19 @@ public class OfferApiControllerTest {
     }
 
     @Test
+    public void whenHomeOfferError_thenReturnBadRequest() throws Exception {
+
+//When
+        mvc.perform(
+                get("/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                )
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    @Test
     public void whenGetAllOffers_thenReturnOffers() throws Exception {
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
@@ -144,6 +162,16 @@ public class OfferApiControllerTest {
     }
 
     @Test
+    public void whenOwnedOffersOfferError_thenReturnBadRequest() throws Exception {
+
+//When
+        mvc.perform(get("/owner/offers").contentType(MediaType.APPLICATION_JSON))
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    @Test
     public void whenAddOffer_thenAddAndReturnOffer() throws Exception {
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
@@ -155,7 +183,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
 //Then
                 .andExpect(status().is2xxSuccessful())
@@ -176,7 +204,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
 //Then
                 .andExpect(status().isBadRequest())
@@ -196,7 +224,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         put("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson)
                 )
 //Then
@@ -204,6 +232,17 @@ public class OfferApiControllerTest {
                 .andReturn();
 
         assertEquals(expectedJson, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    public void whenEditOffersOfferError_thenReturnBadRequest() throws Exception {
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        String expectedJson = gson.toJson(offerDTO);
+//When
+        mvc.perform(put("/owner/offers").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
     }
 
     @Test

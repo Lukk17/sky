@@ -29,8 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DATE;
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DEFAULT_OFFER_ID;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.*;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static com.lukk.sky.booking.config.Constants.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,12 +70,41 @@ public class BookingControllerTest {
         return MockMvcRequestBuilders.post("/" + API_PREFIX + uri);
     }
 
+    private MockHttpServletRequestBuilder delete(String uri) {
+        return MockMvcRequestBuilders.delete("/" + API_PREFIX + uri);
+    }
+
     @BeforeEach
     public void beforeAll() {
         gson = new GsonBuilder()
                 .enableComplexMapKeySerialization()
                 .serializeNulls()
                 .create();
+    }
+
+    @Test
+    public void whenGoOnlyDash_thenReturnWelcomingMessage() throws Exception {
+//When
+        MvcResult result = mvc.perform(
+                        get("/")
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .contentType(MediaType.APPLICATION_JSON))
+//Then
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
+
+        assertEquals("<center><h1>Welcome to Booking app.</h1></center>", result.getResponse().getContentAsString());
+    }
+
+    @Test
+    public void whenHomeBookingsError_thenReturnBadRequest() throws Exception {
+
+//When
+        mvc.perform(get("/")
+                        .contentType(MediaType.APPLICATION_JSON))
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
     }
 
     @Test
@@ -99,6 +127,17 @@ public class BookingControllerTest {
                 .andReturn();
 
         assertEquals(expectedJson, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    public void whenGetBookingsError_thenReturnBadRequest() throws Exception {
+
+//When
+        mvc.perform(get("/user/bookings")
+                        .contentType(MediaType.APPLICATION_JSON))
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
     }
 
     @Test
@@ -155,4 +194,33 @@ public class BookingControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, actual.getStatusCode());
         assertEquals("No user info found.", actual.getBody());
     }
+
+    @Test
+    public void whenDeleteBooking_thenStatusOk() throws Exception {
+//Given
+        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
+                .thenReturn("Booking removed by user");
+        doNothing().when(bookingNotificationService).sendMessage(any());
+//When
+        mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                )
+//Then
+                .andExpect(status().is2xxSuccessful());
+    }
+
+    @Test
+    public void whenDeleteBookingsError_thenReturnBadRequest() throws Exception {
+//Given
+        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
+                .thenReturn("Booking removed by user");
+//When
+        mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                )
+//Then
+                .andExpect(status().isBadRequest());
+    }
+
 }

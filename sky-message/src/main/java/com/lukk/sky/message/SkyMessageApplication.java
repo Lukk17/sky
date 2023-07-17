@@ -26,7 +26,7 @@ public class SkyMessageApplication {
     private final LoggingLvlConfigProperties loggingLvlConfigProperties;
 
     public static void main(String[] args) {
-        log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Message App start <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        log.info(">>>>>>>>>> Message App start <<<<<<<<<<");
         SpringApplication.run(SkyMessageApplication.class, args);
     }
 

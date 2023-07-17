@@ -6,6 +6,7 @@ import com.lukk.sky.offer.domain.model.Offer;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
 
 public class OfferAssembler {
@@ -31,7 +32,7 @@ public class OfferAssembler {
     public static Offer getPopulatedOffer(Long id) {
         return Offer.builder()
                 .hotelName(TEST_HOTEL_NAME)
-                .ownerEmail(TEST_USER_EMAIL)
+                .ownerEmail(TEST_OWNER_EMAIL)
                 .city(TEST_CITY)
                 .comment(TEST_COMMENT)
                 .country(TEST_COUNTRY)
@@ -75,7 +76,7 @@ public class OfferAssembler {
                 .comment(TEST_COMMENT)
                 .description(TEST_DESCRIPTION)
                 .id(id)
-                .ownerEmail(TEST_USER_EMAIL)
+                .ownerEmail(TEST_OWNER_EMAIL)
                 .photoPath(TEST_PHOTO_PATH)
                 .price(TEST_PRICE)
                 .roomCapacity(TEST_ROOM_CAPACITY)

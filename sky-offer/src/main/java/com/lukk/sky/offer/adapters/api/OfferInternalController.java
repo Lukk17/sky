@@ -20,9 +20,9 @@ public class OfferInternalController {
     public ResponseEntity<String> getOfferOwner(@PathVariable String offerId) {
         try {
             log.info("Trying to find owner of offer with ID: {}", offerId);
-            String owner = offerService.findOfferOwner(offerId);
+            String ownerEmail = offerService.findOfferOwner(offerId);
 
-            return ResponseEntity.ok(owner);
+            return ResponseEntity.ok(ownerEmail);
 
         } catch (OfferException e){
             return ResponseEntity.badRequest().body(e.getMessage());

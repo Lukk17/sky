@@ -3,8 +3,8 @@ name: sky-notify
 description: A Helm chart for Sky notify service
 type: application
 
-version: 0.0.1
-appVersion: "0.0.1"
+version: 1.0.0
+appVersion: "1.0.0"
 
 maintainers:
   - name: Lukk

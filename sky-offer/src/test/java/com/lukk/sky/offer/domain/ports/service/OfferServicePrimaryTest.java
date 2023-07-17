@@ -16,8 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.*;
 
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.*;
-import static com.lukk.sky.offer.Assemblers.UserAssembler.SECOND_TEST_USER_EMAIL;
-import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.offer.Assemblers.UserAssembler.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,7 +34,6 @@ public class OfferServicePrimaryTest {
 
     @InjectMocks
     OfferServicePrimary offerService;
-
 
     @Test
     public void whenGetAllOffers_thenReturnOffers() {
@@ -90,8 +88,9 @@ public class OfferServicePrimaryTest {
     public void whenAddExistingOffer_thenThrowException() throws OfferException {
         //Given
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
 
-        when(offerRepository.save(any())).thenThrow(new OfferException("Offer with given ID already exist!"));
+        when(offerRepository.findById(any())).thenReturn(Optional.of(offer));
 
         //Then
         assertThrows(OfferException.class, () -> {
@@ -112,7 +111,7 @@ public class OfferServicePrimaryTest {
         doNothing().when(eventSourceService).saveEvent(any(), any());
 
         //When
-        offerService.deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
+        offerService.deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL);
 
         //Then
         assertEquals(expected, valueCapture.getValue());
@@ -185,7 +184,7 @@ public class OfferServicePrimaryTest {
     public void searchOffer() {
         Map<String, Integer> map = new HashMap<>();
         map.put("testHotelName", 2);
-        map.put("testUser", 2);
+        map.put("test@owner.com", 2);
         map.put("testCity", 2);
         map.put("testCountry", 2);
         map.put("99", 1);
@@ -246,6 +245,34 @@ public class OfferServicePrimaryTest {
 
             //When
             offerService.editOffer(expected);
+        });
+    }
+
+    @Test
+    public void whenFindOfferOwner_thenReturnOwnerId() {
+        //Given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+
+        when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
+
+        //When
+        String actual = offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID.toString());
+
+        //Then
+        assertEquals(TEST_OWNER_EMAIL, actual);
+    }
+
+    @Test
+    public void whenFindOwner_ofNonExistingOffer_thenThrowError() {
+        //Given
+        when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.empty());
+
+        //Then
+        assertThrows(OfferException.class, () -> {
+
+            //When
+            offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID.toString());
         });
     }
 }

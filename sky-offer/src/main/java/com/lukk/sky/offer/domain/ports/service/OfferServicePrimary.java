@@ -7,6 +7,7 @@ import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
+@Primary
 public class OfferServicePrimary implements OfferService {
 
     private final OfferRepository offerRepository;
@@ -109,13 +111,13 @@ public class OfferServicePrimary implements OfferService {
     @Override
     public String findOfferOwner(String offerId){
 
-        String ownerId = offerRepository
+        String ownerEmail = offerRepository
                 .findById(Long.parseLong(offerId))
                 .map(Offer::getOwnerEmail)
                 .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
 
-        log.info("Found owner with ID:{} of offer with ID: {}", ownerId, offerId);
+        log.info("Found owner with ID:{} of offer with ID: {}", ownerEmail, offerId);
 
-        return ownerId;
+        return ownerEmail;
     }
 }

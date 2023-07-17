@@ -16,14 +16,14 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.*;
-import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.booking.Assemblers.UserAssembler.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
@@ -116,6 +116,63 @@ public class BookingServicePrimaryTest {
             //When
             bookingService.bookOffer(booking.getOfferId(), LocalDate.of(1201, 6, 20).toString(),
                     booking.getBookingUser());
+        });
+    }
+
+    @Test
+    public void whenRemoveBookingByUser_thenRemove(){
+        // Given
+        String expected = "Booking removed by user";
+        Booking booking = getPopulatedBooked();
+        when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
+
+        // When
+        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL);
+
+        // Then
+        verify(bookingRepository, times(1)).deleteById(TEST_DEFAULT_BOOKED_ID);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void whenRemoveBookingByOwner_thenRemove(){
+        // Given
+        String expected = "Booking removed by owner";
+        Booking booking = getPopulatedBooked();
+        when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
+
+        // When
+        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_OWNER_EMAIL);
+
+        // Then
+        verify(bookingRepository, times(1)).deleteById(TEST_DEFAULT_BOOKED_ID);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void whenRemoveBookingByOtherUser_thenThrowException(){
+        // Given
+        Booking booking = getPopulatedBooked();
+        when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
+
+        //Then
+        assertThrows(BookingException.class, () -> {
+
+            //When
+            bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), "other@user.com");
+        });
+    }
+
+    @Test
+    public void whenRemoveNonExistingBooking_thenThrowException(){
+        // Given
+        when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.empty());
+
+        //Then
+        assertThrows(BookingException.class, () -> {
+
+            //When
+            bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL);
         });
     }
 }

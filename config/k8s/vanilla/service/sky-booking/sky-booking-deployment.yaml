@@ -23,8 +23,10 @@ spec:
           env:
             - name: BOOKING_PORT
               value: '5555'
-            - name: OFFER_SERVICE_PORT
-              value: ""
+            - name: OFFER_SERVICE_HOSTNAME
+              value: "offer-service"
+            - name: OFFER_SERVICE_HOST_PORT
+              value: "5552"
             - name: KAFKA_ADDRESS
               value: 'kafka-service'
             - name: KAFKA_PORT

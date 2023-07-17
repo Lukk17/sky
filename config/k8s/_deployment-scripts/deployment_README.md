@@ -364,6 +364,26 @@ to
 
 ## 8. Clearing
 
+### Clearing docker images
+
+Show this project images:
+```shell
+docker images -a |  grep "sky"
+```
+```powershel
+docker images -a | Where-Object { $_ -match "sky" }
+```
+Delete this project images:
+```shell
+docker images -a | grep "sky" | awk '{print $3}' | xargs docker rmi -f
+```
+
+```powershell
+docker images -a | Where-Object { $_ -match "sky" } | ForEach-Object { ($_ -split '\s+', 5)[2] } | ForEach-Object { docker rmi -f $_ }
+```
+
+### Clearing kubernetes pods
+
 ```shell
 kubectl delete -f config/k8s/secret/secrets.yaml
 kubectl delete -f config/k8s/secret/sealed/sealed-docker-cred.yaml

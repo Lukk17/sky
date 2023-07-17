@@ -6,6 +6,7 @@ import com.lukk.sky.message.domain.model.Message;
 import com.lukk.sky.message.domain.ports.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
+@Primary
 public class MessageServicePrimary implements MessageService {
 
     private final MessageRepository messageRepo;

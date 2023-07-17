@@ -10,7 +10,7 @@ plugins {
     id("org.springframework.boot") version springVersion  //"2.6.7"
 }
 
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 description = "sky-message"
 java.sourceCompatibility = JavaVersion.valueOf("${project.extra["javaVersion"]}")
 

@@ -2,8 +2,8 @@
 # SPRING setup
 
 sky:
-  offerServiceAddress: http://localhost
-  offerServicePort: 5552
+  offerServiceHostname: http://localhost
+  offerServiceHostPort: 5552
   offerOwnerEndpoint: owners
 
 server:

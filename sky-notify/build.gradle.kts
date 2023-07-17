@@ -10,7 +10,7 @@ plugins {
     id("org.springframework.boot") version springVersion
 }
 
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 description = "sky-notify"
 
 
@@ -28,6 +28,9 @@ tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar
     this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
 
 dependencies {
     val springVersion = "${project.extra["springVersion"]}"
@@ -51,6 +54,7 @@ dependencies {
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
     testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
+    testImplementation("org.springframework.kafka:spring-kafka-test:${project.extra["kafkaVersion"]}")
 
 }
 
