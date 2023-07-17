@@ -13,8 +13,3 @@ docker push lukk17/sky-booking:latest
 docker push lukk17/sky-notify:latest
 docker push lukk17/sky-offer:latest
 docker push lukk17/sky-message:latest
-
-docker scan lukk17/sky-booking
-docker scan lukk17/sky-notify
-docker scan lukk17/sky-offer
-docker scan lukk17/sky-message
