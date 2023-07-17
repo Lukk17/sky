@@ -34,9 +34,9 @@ public class BookingController {
     public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
                                         @RequestHeader Map<String, String> headers) {
         try {
-            String bookingUser = getUserInfoFromHeaders(headers);
+            String userEmail = getUserInfoFromHeaders(headers);
 
-            sendNotification("Booking Hello World page", bookingUser);
+            sendNotification("Booking Hello World page", userEmail);
             return new ResponseEntity<>(message, HttpStatus.OK);
 
         } catch (BookingException e) {
@@ -47,9 +47,9 @@ public class BookingController {
     @GetMapping("/user/bookings")
     public ResponseEntity<?> getBookedOffers(@RequestHeader Map<String, String> headers) {
         try {
-            String bookingUser = getUserInfoFromHeaders(headers);
+            String userEmail = getUserInfoFromHeaders(headers);
 
-            List<BookingDTO> bookings = bookingService.getBookedOffersForUser(bookingUser);
+            List<BookingDTO> bookings = bookingService.getBookedOffersForUser(userEmail);
             return ResponseEntity.ok(bookings);
 
         } catch (BookingException e) {
@@ -78,6 +78,24 @@ public class BookingController {
                 );
     }
 
+    @DeleteMapping("/bookings/{bookingId}")
+    public ResponseEntity<?> removeBooking(@RequestHeader Map<String, String> headers,
+                                           @PathVariable String bookingId) {
+        try {
+            String userEmail = getUserInfoFromHeaders(headers);
+            log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
+
+            String removeMessage = bookingService.removeBooking(bookingId, userEmail);
+            sendNotification(removeMessage, userEmail);
+
+            return ResponseEntity.ok(removeMessage);
+
+        } catch (BookingException e) {
+            log.error(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     private static String getUserInfoFromHeaders(Map<String, String> headers) {
         return headers.entrySet()
                 .stream()
@@ -87,11 +105,11 @@ public class BookingController {
                 .orElseThrow(() -> new BookingException("No user info found."));
     }
 
-    private void sendNotification(String payload, String bookingUser) {
+    private void sendNotification(String payload, String userId) {
         KafkaPayloadModel model = new KafkaPayloadModel(
                 payload,
                 LocalDateTime.now().format(DATE_TIME_FORMAT),
-                bookingUser
+                userId
         );
         bookingNotificationService.sendMessage(model);
     }

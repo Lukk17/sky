@@ -19,10 +19,11 @@ public class OfferInternalController {
     @GetMapping("/owners/{offerId}")
     public ResponseEntity<String> getOfferOwner(@PathVariable String offerId) {
         try {
+            log.info("Trying to find owner of offer with ID: {}", offerId);
             String owner = offerService.findOfferOwner(offerId);
 
-            log.info("Found owner of offer with ID: {}", offerId);
             return ResponseEntity.ok(owner);
+
         } catch (OfferException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }

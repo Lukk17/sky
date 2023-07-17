@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.lukk.sky.offer.config.Constants.DATE_TIME_FORMAT;
 import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
@@ -36,12 +35,13 @@ public class OfferApiController {
         printHeaders(headers);
         try {
 
-            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
+            String ownerEmail = getUserInfoFromHeaders(headers);
 
             sendNotification("Offer Hello World page", ownerEmail);
             return new ResponseEntity<>(message, HttpStatus.OK);
 
         } catch (OfferException e) {
+            log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -54,12 +54,13 @@ public class OfferApiController {
     @GetMapping("/owner/offers")
     public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
         try {
-            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No user info"));
+            String ownerEmail = getUserInfoFromHeaders(headers);
             List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
 
             return ResponseEntity.ok(offers);
 
         } catch (OfferException e) {
+            log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -69,7 +70,8 @@ public class OfferApiController {
         Gson gson = new Gson();
 
         try {
-            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
+            String ownerEmail = getUserInfoFromHeaders(headers);
+            log.info("Adding new offer from owner:{}", ownerEmail);
 
             offer.setOwnerEmail(ownerEmail);
             OfferDTO addedOffer = offerService.addOffer(offer);
@@ -78,6 +80,7 @@ public class OfferApiController {
             return ResponseEntity.ok(addedOffer);
 
         } catch (OfferException e) {
+            log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -86,8 +89,8 @@ public class OfferApiController {
     public ResponseEntity<?> edit(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
         try {
-            String ownerEmail = getUserInfoFromHeaders(headers)
-                    .orElseThrow(() -> new OfferException("No offer owner"));
+            String ownerEmail = getUserInfoFromHeaders(headers);
+            log.info("Editing offer with ID: {} from owner:{}", offer.getId(), ownerEmail);
 
             offer.setOwnerEmail(ownerEmail);
             OfferDTO edited = offerService.editOffer(offer);
@@ -96,15 +99,16 @@ public class OfferApiController {
             return ResponseEntity.ok(edited);
 
         } catch (OfferException e) {
+            log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @DeleteMapping("/owner/offers/{offerId}")
     public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers, @PathVariable String offerId) {
-
         try {
-            String ownerEmail = getUserInfoFromHeaders(headers).orElseThrow(() -> new OfferException("No offer owner"));
+            String ownerEmail = getUserInfoFromHeaders(headers);
+            log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
             offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
 
@@ -112,6 +116,7 @@ public class OfferApiController {
             return ResponseEntity.ok("Offer deleted.");
 
         } catch (OfferException e) {
+            log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -128,12 +133,13 @@ public class OfferApiController {
         log.info(str.toString());
     }
 
-    private static Optional<String> getUserInfoFromHeaders(Map<String, String> headers) {
+    private static String getUserInfoFromHeaders(Map<String, String> headers) {
         return headers.entrySet()
                 .stream()
                 .filter(entry -> USER_INFO_HEADERS.contains(entry.getKey().toLowerCase()))
                 .map(Map.Entry::getValue)
-                .findFirst();
+                .findFirst()
+                .orElseThrow(() -> new OfferException("No offer owner"));
     }
 
     private void sendNotification(String payload, String owner) {

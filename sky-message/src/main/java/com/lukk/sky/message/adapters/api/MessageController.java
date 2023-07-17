@@ -32,36 +32,44 @@ public class MessageController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody MessageDTO message, @RequestHeader Map<String, String> headers) {
 
-        String user = getUserInfoFromHeaders(headers);
+        String userEmail = getUserInfoFromHeaders(headers);
 
-        message.setSenderEmail(user);
+        message.setSenderEmail(userEmail);
         message.setCreatedTime(LocalDateTime.now().format(DATE_TIME_FORMAT));
+        log.info("Sending message from {} to {}", userEmail, message.getReceiverEmail());
 
         return ResponseEntity.ok(messageService.send(message));
     }
 
     @GetMapping("/received")
     public ResponseEntity<?> getReceivedMessages(@RequestHeader Map<String, String> headers) {
-        String user = getUserInfoFromHeaders(headers);
-        log.info("Getting received messages for user: {}", user);
+        String userEmail = getUserInfoFromHeaders(headers);
+        log.info("Getting received messages for user: {}", userEmail);
 
-        return ResponseEntity.ok(messageService.getReceivedMessages(user));
+        return ResponseEntity.ok(messageService.getReceivedMessages(userEmail));
     }
 
     @GetMapping("/sent")
     public ResponseEntity<?> getSentMessages(@RequestHeader Map<String, String> headers) {
-        String user = getUserInfoFromHeaders(headers);
-        log.info("Getting sent messages for user: {}", user);
+        String userEmail = getUserInfoFromHeaders(headers);
+        log.info("Getting sent messages for user: {}", userEmail);
 
-        return ResponseEntity.ok(messageService.getSentMessages(user));
+        return ResponseEntity.ok(messageService.getSentMessages(userEmail));
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteMessage(@RequestBody Long id, @RequestHeader Map<String, String> headers) {
-        String user = getUserInfoFromHeaders(headers);
+    @DeleteMapping("/delete/{messageId}")
+    public ResponseEntity<?> deleteMessage(@RequestHeader Map<String, String> headers, @PathVariable String messageId) {
+        String userEmail = getUserInfoFromHeaders(headers);
 
-        messageService.remove(id, user);
-        return ResponseEntity.ok("Message removed.");
+        try {
+            log.info("Removing message with ID: {}", messageId);
+            messageService.remove(Long.parseLong(messageId), userEmail);
+
+            return ResponseEntity.ok("Message removed.");
+
+        } catch (MessageException exception){
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        }
     }
 
     private static String getUserInfoFromHeaders(Map<String, String> headers) {

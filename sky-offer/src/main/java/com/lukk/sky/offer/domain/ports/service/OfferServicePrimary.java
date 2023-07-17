@@ -54,9 +54,9 @@ public class OfferServicePrimary implements OfferService {
                 .orElseThrow(() -> new OfferException("Can't remove non-existing offer!"));
 
         if (offerToDelete.getOwnerEmail().equals(userEmail)) {
-            log.info("Deleting offer with ID: {}", offerToDelete.getId());
-
             offerRepository.delete(offerToDelete);
+
+            log.info("Deleted offer with ID: {}", offerToDelete.getId());
             eventSourceService.saveEvent(offerToDelete, EventType.OFFER_DELETED);
 
         } else {
@@ -66,9 +66,9 @@ public class OfferServicePrimary implements OfferService {
 
     @Override
     public List<OfferDTO> getOwnedOffers(String ownerEmail) {
-        List<Offer> offers = offerRepository.findAllByOwnerEmail(ownerEmail);
-
         log.info("Pulling offers which owner is user: {}", ownerEmail);
+
+        List<Offer> offers = offerRepository.findAllByOwnerEmail(ownerEmail);
 
         return offers.stream()
                 .map(OfferDTO::of)
@@ -77,9 +77,9 @@ public class OfferServicePrimary implements OfferService {
 
     @Override
     public List<OfferDTO> searchOffers(String searched) {
-        List<OfferDTO> offers = getAllOffers();
-
         log.info("Searching offers for: {}", searched);
+
+        List<OfferDTO> offers = getAllOffers();
 
         return offers.stream()
                 .filter(offer -> offer.getHotelName().contains(searched)
@@ -109,9 +109,13 @@ public class OfferServicePrimary implements OfferService {
     @Override
     public String findOfferOwner(String offerId){
 
-        return offerRepository
+        String ownerId = offerRepository
                 .findById(Long.parseLong(offerId))
                 .map(Offer::getOwnerEmail)
                 .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
+
+        log.info("Found owner with ID:{} of offer with ID: {}", ownerId, offerId);
+
+        return ownerId;
     }
 }

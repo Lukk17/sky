@@ -10,6 +10,7 @@ public interface BookingService {
 
     List<BookingDTO> getBookedOffersForUser(String userEmail);
 
-    Mono<BookingDTO> bookOffer(String offerID, String dateToBook, String bookingUserEmail) throws BookingException;
+    Mono<BookingDTO> bookOffer(String offerID, String dateToBook, String userEmail) throws BookingException;
 
+    String removeBooking(String bookingId, String userEmail);
 }

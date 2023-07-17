@@ -30,6 +30,8 @@ spec:
           env:
             - name: BOOKING_PORT
               value: "{{ .Values.service.port }}"
+            - name: OFFER_SERVICE_PORT
+              value: ""
             - name: KAFKA_ADDRESS
               value: {{ .Values.kafka.address }}
             - name: KAFKA_PORT

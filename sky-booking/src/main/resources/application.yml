@@ -4,7 +4,7 @@ sky:
   apiPrefix: /api
   offerServiceAddress: ${OFFER_SERVICE_ADDRESS:offer-service}
   offerOwnerEndpoint: owners
-  offerServicePort: 5552
+  offerServicePort: ${OFFER_SERVICE_PORT:5552}
 
 # SPRING setup
 

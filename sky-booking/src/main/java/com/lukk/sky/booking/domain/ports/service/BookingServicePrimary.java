@@ -38,10 +38,10 @@ public class BookingServicePrimary implements BookingService {
     }
 
     @Override
-    public Mono<BookingDTO> bookOffer(String offerId, String dateToBookUnparsed, String bookingUserEmail)
+    public Mono<BookingDTO> bookOffer(String offerId, String dateToBookUnparsed, String userEmail)
             throws BookingException {
-
-        Mono<String> owner = restClient.requestOfferOwner(offerId);
+        log.info("Booking offer with ID: {} by user: {}", offerId, userEmail);
+        Mono<String> ownerEmail = restClient.requestOfferOwner(offerId);
 
         LocalDate dateToBook = LocalDate.parse(dateToBookUnparsed, DATE_FORMAT);
         List<Booking> bookedList = getBookingsForOffer(offerId);
@@ -49,19 +49,44 @@ public class BookingServicePrimary implements BookingService {
         checkIfAlreadyBooked(bookedList, dateToBook);
         checkIfBookingDateIsInFuture(dateToBook);
 
-        return owner
-                .flatMap(retrievedOwnerId -> Mono.just(
+        return ownerEmail
+                .flatMap(retrievedOwnerEmail -> Mono.just(
                         BookingDTO.of(bookingRepository.save(
-                                addBooking(createNewBooked(offerId, bookingUserEmail, dateToBook, retrievedOwnerId))
-        )))
-            ).doOnNext(bookingDto -> {
-            log.info("Offer with ID: {} booked for date: {} by user: {}",
-                    offerId, dateToBook.format(DATE_FORMAT), bookingUserEmail);
-            eventSourceService.saveEvent(bookingDto.toDomain(), EventType.BOOKED);
-        });
+                                addBooking(createNewBooked(offerId, userEmail, dateToBook, retrievedOwnerEmail))
+                        )))
+                ).doOnNext(bookingDto -> {
+                    log.info("Offer with ID: {} booked for date: {} by user: {}",
+                            offerId, dateToBook.format(DATE_FORMAT), userEmail);
+                    eventSourceService.saveEvent(bookingDto.toDomain(), EventType.BOOKED);
+                });
+    }
+
+    @Override
+    public String removeBooking(String bookingId, String userEmail) {
+        Booking booking = bookingRepository.findById(Long.parseLong(bookingId))
+                .orElseThrow(() -> new BookingException(String.format("No booking with ID: %s found.", bookingId)));
+
+        if (booking.getBookingUser().equals(userEmail)) {
+            bookingRepository.deleteById(Long.parseLong(bookingId));
+            log.info("Booking removed by user");
+
+            return "Booking removed by user";
+
+        } else if (booking.getOwner().equals(userEmail)) {
+            bookingRepository.deleteById(Long.parseLong(bookingId));
+            log.info("Booking removed by owner");
+
+            return "Booking removed by owner";
+
+        } else {
+            throw new BookingException(String.format(
+                    "User: %s can't delete booking with ID: %s because it's not booked or owned by him.",
+                    userEmail, bookingId));
+        }
     }
 
     private List<Booking> getBookingsForOffer(String offerId) {
+        log.info("Getting bookings for offer with ID: {}", offerId);
 
         return bookingRepository.findAllByOfferId(offerId);
     }
@@ -85,12 +110,12 @@ public class BookingServicePrimary implements BookingService {
         return bookingRepository.save(booked);
     }
 
-    private Booking createNewBooked(String offerId, String bookingUser, LocalDate dateToBook, String ownerId) {
+    private Booking createNewBooked(String offerId, String bookingUser, LocalDate dateToBook, String ownerEmail) {
         return Booking.builder()
                 .offerId(offerId)
                 .bookedDate(dateToBook)
                 .bookingUser(bookingUser)
-                .owner(ownerId)
+                .owner(ownerEmail)
                 .build();
     }
 }
