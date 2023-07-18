@@ -2,6 +2,7 @@ package com.lukk.sky.offer.domain.ports.service;
 
 import com.lukk.sky.offer.Assemblers.OfferAssembler;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
@@ -216,6 +217,7 @@ public class OfferServicePrimaryTest {
     public void whenEditOffer_thenSaveAndReturnOffer() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        OfferEditDTO input = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
 
         when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
@@ -223,7 +225,7 @@ public class OfferServicePrimaryTest {
         doNothing().when(eventSourceService).saveEvent(any(), any());
 
         //When
-        OfferDTO actual = offerService.editOffer(expected);
+        OfferDTO actual = offerService.editOffer(input);
 
         //Then
         assertEquals(expected, actual);
@@ -235,7 +237,7 @@ public class OfferServicePrimaryTest {
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         offer.setId(null);
 
-        OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        OfferEditDTO expected = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         expected.setId(null);
 
         when(offerRepository.findById(offer.getId())).thenReturn(Optional.empty());

@@ -47,9 +47,11 @@ See more:
 
 ### Swagger
 Swagger is added and can be accessed under:  
-`<app address>/swagger-ui/index.html#/`  
+`<app address>/swagger-ui/index.html`  
 example:  
-`http://localhost:5552/swagger-ui/index.html#/`
+`http://localhost:5552/swagger-ui/index.html`
+
+For Kubernetes Swagger access see [this](./config/k8s/k8s_README.md#swagger-access)
 
 ---------------------------------
 

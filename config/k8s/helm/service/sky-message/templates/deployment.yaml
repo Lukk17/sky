@@ -23,17 +23,27 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Values.deployment.container.name }}
-          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-offer:latest" }}"
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-message:latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.actuator.livenessProbe.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.actuator.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.actuator.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.actuator.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.actuator.readinessProbe.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.actuator.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.actuator.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.actuator.readinessProbe.failureThreshold }}
           env:
-            - name: OFFER_PORT
+            - name: MESSAGE_PORT
               value: "{{ .Values.service.port }}"
-            - name: KAFKA_ADDRESS
-              value: {{ .Values.kafka.address }}
-            - name: KAFKA_PORT
-              value: "{{ .Values.kafka.port }}"
             - name: SPRING_DATASOURCE_URL
               value: "{{ .Values.deployment.env.spring.datasourceUrl }}"
             - name: MYSQL_USER

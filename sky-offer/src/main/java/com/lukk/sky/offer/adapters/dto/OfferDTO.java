@@ -1,6 +1,7 @@
 package com.lukk.sky.offer.adapters.dto;
 
 import com.lukk.sky.offer.domain.model.Offer;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,13 +15,31 @@ import java.util.Optional;
 public class OfferDTO {
 
     private Long id;
+
+    @NotBlank
     private String hotelName;
+
+    @Size(max = 3000)
     private String description;
+
+    @Size(max = 1000)
     private String comment;
+
+    @NotNull
+    @Min(value = 0)
     private BigDecimal price;
+
+    @Email
     private String ownerEmail;
+
+    @NotNull
+    @Min(value = 1)
     private Long roomCapacity;
+
+    @NotBlank
     private String city;
+
+    @NotBlank
     private String country;
     private String photoPath;
 

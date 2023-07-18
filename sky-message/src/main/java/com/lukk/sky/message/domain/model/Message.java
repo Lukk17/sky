@@ -1,6 +1,7 @@
 package com.lukk.sky.message.domain.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,8 +33,10 @@ public class Message {
     private boolean isRead;
 
     @NotBlank
+    @Email
     private String receiverEmail;
 
     @NotBlank
+    @Email
     private String senderEmail;
 }

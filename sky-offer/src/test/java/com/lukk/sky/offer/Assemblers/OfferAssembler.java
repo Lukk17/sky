@@ -1,6 +1,7 @@
 package com.lukk.sky.offer.Assemblers;
 
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.model.Offer;
 
 import java.math.BigDecimal;
@@ -69,6 +70,21 @@ public class OfferAssembler {
 
     public static OfferDTO getPopulatedOfferDTO(Long id) {
         return OfferDTO.builder()
+                .hotelName(TEST_HOTEL_NAME)
+                .city(TEST_CITY)
+                .country(TEST_COUNTRY)
+                .comment(TEST_COMMENT)
+                .description(TEST_DESCRIPTION)
+                .id(id)
+                .ownerEmail(TEST_OWNER_EMAIL)
+                .photoPath(TEST_PHOTO_PATH)
+                .price(TEST_PRICE)
+                .roomCapacity(TEST_ROOM_CAPACITY)
+                .build();
+    }
+
+    public static OfferEditDTO getPopulatedOfferEditDTO(Long id) {
+        return OfferEditDTO.builder()
                 .hotelName(TEST_HOTEL_NAME)
                 .city(TEST_CITY)
                 .country(TEST_COUNTRY)

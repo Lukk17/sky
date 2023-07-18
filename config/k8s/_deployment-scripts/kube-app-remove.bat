@@ -19,7 +19,8 @@ kubectl delete -f .\config\k8s\vanilla\kafka\
 kubectl delete -f .\config\k8s\vanilla\db\mysql\
 
 :: services
-kubectl delete -f .\config\k8s\vanilla\service\sky-offer\
 kubectl delete -f .\config\k8s\vanilla\service\sky-booking\
-kubectl delete -f .\config\k8s\vanilla\service\sky-notify\
 kubectl delete -f .\config\k8s\vanilla\service\sky-message\
+kubectl delete -f .\config\k8s\vanilla\service\sky-notify\
+kubectl delete -f .\config\k8s\vanilla\service\sky-offer\
+

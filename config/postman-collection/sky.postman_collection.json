@@ -195,6 +195,21 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetOfferId\", function () {\r",
+									"    console.log(`Retrieving createdOfferID...`)\r",
+									"    const body = pm.response.json()\r",
+									"    const id = body[\"id\"]\r",
+									"    pm.environment.set(\"createdOfferID\", id);\r",
+									"    console.log(`RetrivedId: ` + id)\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"protocolProfileBehavior": {
@@ -293,7 +308,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n\t\"id\": \"1\",\r\n\t\"price\": \"456\",\r\n\t\"roomCapacity\": \"52\"\r\n}"
+							"raw": "{\r\n\t\"id\": {{createdOfferID}},\r\n\t\"price\": \"456\",\r\n\t\"roomCapacity\": \"52\"\r\n}"
 						},
 						"url": {
 							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers",
@@ -359,7 +374,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers/1",
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers/{{createdOfferID}}",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -370,7 +385,7 @@
 								"api",
 								"owner",
 								"offers",
-								"1"
+								"{{createdOfferID}}"
 							]
 						}
 					},
@@ -575,6 +590,21 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetOfferId\", function () {\r",
+									"    console.log(`Retrieving Booking ID...`)\r",
+									"    const body = pm.response.json()\r",
+									"    const id = body[\"id\"]\r",
+									"    pm.environment.set(\"bookingID\", id);\r",
+									"    console.log(`RetrivedId: ` + id)\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -596,7 +626,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"offerId\": \"6\",\n\t\"dateToBook\": \"2023-09-09\"\n}"
+							"raw": "{\n\t\"offerId\": {{createdOfferID}},\n\t\"dateToBook\": \"2023-09-09\"\n}"
 						},
 						"url": {
 							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings",
@@ -659,7 +689,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings/1",
+							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings/{{bookingID}}",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -669,7 +699,7 @@
 								"booking",
 								"api",
 								"bookings",
-								"1"
+								"{{bookingID}}"
 							]
 						}
 					},
@@ -1226,268 +1256,28 @@
 					]
 				}
 			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
 		},
 		{
-			"name": "OLD",
-			"item": [
-				{
-					"name": "user",
-					"item": [
-						{
-							"name": "registerAdmin",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"email\": \"admin@admin\",\n    \"password\": \"admin\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "localhost:8762/register",
-									"host": [
-										"localhost"
-									],
-									"port": "8762",
-									"path": [
-										"register"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "registerUser",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"email\": \"test@test\",\n    \"password\": \"test\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "localhost:8762/register",
-									"host": [
-										"localhost"
-									],
-									"port": "8762",
-									"path": [
-										"register"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "getUserList",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg2ODUwMTE4LCJleHAiOjE1ODY5MzY1MTh9.HNsaIll1H7GU3Qmbq3u8ZT1PQYJsgIvuyh2ufSCN5pL7A2BOm9TiYvqanBnyhEPHgOpjlKcxmvde_SToeSL0SA",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8762/auth/userList",
-									"host": [
-										"localhost"
-									],
-									"port": "8762",
-									"path": [
-										"auth",
-										"userList"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "userDetails",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg2ODQ5NzU0LCJleHAiOjE1ODY5MzYxNTR9.kZxOxTvNP0lm1c-_p1medaH_5PwgkEmEy6Yu3X-EEPXSjZ7dQFt5Uc8IUGfbFVdbZJFB5lQMvOzTV_zDQFiGCA",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8762/auth/userDetails",
-									"host": [
-										"localhost"
-									],
-									"port": "8762",
-									"path": [
-										"auth",
-										"userDetails"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "login",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n\t\"username\": \"admin@admin\",\n\t\"password\": \"admin\"\n}"
-								},
-								"url": {
-									"raw": "localhost:8762/login",
-									"host": [
-										"localhost"
-									],
-									"port": "8762",
-									"path": [
-										"login"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "loginUser",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n\t\"username\": \"admin@admin\",\n\t\"password\": \"admin\"\n}"
-								},
-								"url": {
-									"raw": "localhost:8762/login",
-									"host": [
-										"localhost"
-									],
-									"port": "8762",
-									"path": [
-										"login"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "auth home",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8762/auth/",
-									"host": [
-										"localhost"
-									],
-									"port": "8762",
-									"path": [
-										"auth",
-										""
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Eureka namig service",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:8761",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8761"
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Zull Gateway",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:8762/",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8762",
-							"path": [
-								""
-							]
-						}
-					},
-					"response": []
-				}
-			]
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.test(\"Status code is 200\", function () {",
+					"    pm.response.to.have.status(200);",
+					"});"
+				]
+			}
 		}
 	]
 }

@@ -3,6 +3,7 @@ package com.lukk.sky.offer.adapters.api;
 import com.google.gson.Gson;
 import com.lukk.sky.offer.adapters.dto.KafkaPayloadModel;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,29 +42,24 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json")}),
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)})
-    @GetMapping(value = {"/", "/home"})
+    @GetMapping(value = {"/", "/home"
+    })
     public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
                                         @RequestHeader Map<String, String> headers) {
         printHeaders(headers);
-        try {
 
-            String ownerEmail = getUserInfoFromHeaders(headers);
+        String ownerEmail = getUserInfoFromHeaders(headers);
 
-            sendNotification("Offer Hello World page", ownerEmail);
-            return new ResponseEntity<>(message, HttpStatus.OK);
-
-        } catch (OfferException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        sendNotification("Offer Hello World page", ownerEmail);
+        return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
     @Operation(summary = "Get all offers")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found offers",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))})}
-    )
+                            schema = @Schema(implementation = OfferDTO.class))})
+    })
     @GetMapping("/offers")
     public ResponseEntity<List<OfferDTO>> getAllOffers() {
         return ResponseEntity.ok(offerService.getAllOffers());
@@ -74,19 +71,14 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @GetMapping("/owner/offers")
     public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
-        try {
-            String ownerEmail = getUserInfoFromHeaders(headers);
-            List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
+        String ownerEmail = getUserInfoFromHeaders(headers);
+        List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
 
-            return ResponseEntity.ok(offers);
-
-        } catch (OfferException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(offers);
     }
 
     @Operation(summary = "Create new offer")
@@ -95,25 +87,20 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @PostMapping(value = "/owner/offers")
-    public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
+    public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer,
+                                      @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
+        String ownerEmail = getUserInfoFromHeaders(headers);
+        log.info("Adding new offer from owner:{}", ownerEmail);
 
-        try {
-            String ownerEmail = getUserInfoFromHeaders(headers);
-            log.info("Adding new offer from owner:{}", ownerEmail);
+        offer.setOwnerEmail(ownerEmail);
+        OfferDTO addedOffer = offerService.addOffer(offer);
 
-            offer.setOwnerEmail(ownerEmail);
-            OfferDTO addedOffer = offerService.addOffer(offer);
-
-            sendNotification(gson.toJson(addedOffer), ownerEmail);
-            return ResponseEntity.ok(addedOffer);
-
-        } catch (OfferException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        sendNotification(gson.toJson(addedOffer), ownerEmail);
+        return ResponseEntity.ok(addedOffer);
     }
 
     @Operation(summary = "Edit offer")
@@ -122,24 +109,20 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @PutMapping("/owner/offers")
-    public ResponseEntity<?> edit(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
+    public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer,
+                                  @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
-        try {
-            String ownerEmail = getUserInfoFromHeaders(headers);
-            log.info("Editing offer with ID: {} from owner:{}", offer.getId(), ownerEmail);
+        String ownerEmail = getUserInfoFromHeaders(headers);
+        log.info("Editing offer with ID: {} from owner:{}", offer.getId(), ownerEmail);
 
-            offer.setOwnerEmail(ownerEmail);
-            OfferDTO edited = offerService.editOffer(offer);
+        offer.setOwnerEmail(ownerEmail);
+        OfferDTO edited = offerService.editOffer(offer);
 
-            sendNotification(gson.toJson(edited), ownerEmail);
-            return ResponseEntity.ok(edited);
-
-        } catch (OfferException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        sendNotification(gson.toJson(edited), ownerEmail);
+        return ResponseEntity.ok(edited);
     }
 
     @Operation(summary = "Delete offer")
@@ -148,22 +131,19 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @DeleteMapping("/owner/offers/{offerId}")
-    public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers, @PathVariable String offerId) {
-        try {
-            String ownerEmail = getUserInfoFromHeaders(headers);
-            log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
+    public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers,
+                                         @PathVariable String offerId) {
 
-            offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
+        String ownerEmail = getUserInfoFromHeaders(headers);
+        log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
-            sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
-            return ResponseEntity.ok("Offer deleted.");
+        offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
 
-        } catch (OfferException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
+        return ResponseEntity.ok("Offer deleted.");
     }
 
     @Operation(summary = "Search for offers")
@@ -172,11 +152,11 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = List.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @PostMapping("/search")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
         return ResponseEntity.ok(offerService.searchOffers(searched));
-
     }
 
     private static void printHeaders(Map<String, String> headers) {

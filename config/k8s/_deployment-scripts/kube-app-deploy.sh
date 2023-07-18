@@ -20,7 +20,7 @@ kubectl apply -f ./config/k8s/vanilla/db/mysql/
 kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=mysql
 
 # services
-kubectl apply -f ./config/k8s/vanilla/service/sky-offer/
 kubectl apply -f ./config/k8s/vanilla/service/sky-booking/
-kubectl apply -f ./config/k8s/vanilla/service/sky-notify/
 kubectl apply -f ./config/k8s/vanilla/service/sky-message/
+kubectl apply -f ./config/k8s/vanilla/service/sky-notify/
+kubectl apply -f ./config/k8s/vanilla/service/sky-offer/

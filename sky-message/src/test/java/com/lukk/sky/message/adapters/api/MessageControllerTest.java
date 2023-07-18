@@ -26,6 +26,7 @@ import java.util.List;
 import static com.lukk.sky.message.Assemblers.MessageAssembler.*;
 import static com.lukk.sky.message.config.Constants.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -137,6 +138,29 @@ public class MessageControllerTest {
 //Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
+    }
+
+    @Test
+    public void whenSendMessage_AndValidationError_thenReturnError() throws Exception {
+//Given
+        MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
+        messageDTO.setReceiverEmail(" ");
+
+        when(messageService.send(any())).thenReturn(messageDTO);
+
+        String expectedJson = gson.toJson(messageDTO);
+//When
+        MvcResult result = mvc.perform(
+                        post("/send")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(expectedJson)
+                )
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertTrue(result.getResponse().getContentAsString()
+                .contains("Field 'receiverEmail' must be a well-formed email address"));
     }
 
     @Test

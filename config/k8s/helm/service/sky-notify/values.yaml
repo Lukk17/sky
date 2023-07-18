@@ -13,7 +13,7 @@ deployment:
   image:
     repository: lukk17/sky-notify
     pullPolicy: Always
-    tag: "latest"
+    tag: "100-releaseCandidate-x10"
   container:
     name: sky-notify-container
   env:
@@ -37,3 +37,14 @@ kafka:
   address: "kafka-service"
   port: "9092"
 
+actuator:
+  livenessProbe:
+    path: "/actuator/health/liveness"
+    initialDelaySeconds: "30"
+    periodSeconds: "5"
+    failureThreshold: "35"
+  readinessProbe:
+    path: "/actuator/health/readiness"
+    initialDelaySeconds: "10"
+    periodSeconds: "5"
+    failureThreshold: "15"

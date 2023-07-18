@@ -21,7 +21,7 @@ helm uninstall database-persistent-volume-claim
 helm uninstall mysql
 
 :: services
-helm uninstall sky-offer
 helm uninstall sky-booking
 helm uninstall sky-message
 helm uninstall sky-notify
+helm uninstall sky-offer

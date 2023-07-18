@@ -2,15 +2,15 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.ingress.name }}
+  name: {{ .Values.ingress.swagger.name }}
   namespace: {{ .Values.namespace}}
   annotations:
-  {{- range $key, $value := .Values.ingress.annotations }}
+  {{- range $key, $value := .Values.ingress.swagger.annotations }}
     {{ $key }}: {{ $value | quote }}
   {{- end}}
 spec:
   rules:
-    {{- range .Values.ingress.hosts }}
+    {{- range .Values.ingress.swagger.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:

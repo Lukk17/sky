@@ -1,6 +1,7 @@
 package com.lukk.sky.offer.domain.ports.service;
 
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
@@ -140,17 +141,17 @@ public class OfferServicePrimary implements OfferService {
      * @throws OfferException if the offer to be edited does not exist in the database
      */
     @Override
-    public OfferDTO editOffer(OfferDTO offerDTO) {
+    public OfferDTO editOffer(OfferEditDTO offerEditDTO) {
         Offer dbOffer = offerRepository
-                .findById(offerDTO.getId())
+                .findById(offerEditDTO.getId())
                 .orElseThrow(() -> new OfferException("Offer not found."));
 
-        dbOffer = offerRepository.save(offerDTO.mergeWithDomain(dbOffer).toDomain());
+        dbOffer = offerRepository.save(offerEditDTO.mergeWithDomain(dbOffer).toDomain());
 
         log.info("Offer with ID: {} edited.", dbOffer.getId());
 
-        offerDTO.setId(dbOffer.getId());
-        eventSourceService.saveEvent(offerDTO.toDomain(), EventType.OFFER_UPDATED);
+        offerEditDTO.setId(dbOffer.getId());
+        eventSourceService.saveEvent(offerEditDTO.toDomain(), EventType.OFFER_UPDATED);
 
         return OfferDTO.of(dbOffer);
     }

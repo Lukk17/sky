@@ -1,0 +1,26 @@
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.ingress.swaggerResource.name }}
+  namespace: {{ .Values.namespace}}
+  annotations:
+  {{- range $key, $value := .Values.ingress.swaggerResource.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end}}
+spec:
+  rules:
+    {{- range .Values.ingress.swaggerResource.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $.Values.service.name }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}

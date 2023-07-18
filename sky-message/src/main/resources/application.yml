@@ -6,6 +6,16 @@ sky:
 # SPRING setup
 server:
   port: ${MESSAGE_PORT:5553}
+  forward-headers-strategy: framework
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: '/swagger-ui.html'
+    urls:
+      - url: ${SWAGGER_URL:/v3/api-docs/public}
+        name: Booking API doc
 
 spring:
   application:

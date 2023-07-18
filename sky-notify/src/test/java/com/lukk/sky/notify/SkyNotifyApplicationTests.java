@@ -13,12 +13,10 @@ import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
 @SpringBootTest(properties = {"spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}"})
 @DirtiesContext
 @EmbeddedKafka(partitions = 1, topics = {KAFKA_OFFER_TOPIC, KAFKA_BOOKING_TOPIC},
-        brokerProperties = {"listeners=PLAINTEXT://localhost:9092", "port=9092"})
+        brokerProperties = {"listeners=PLAINTEXT://localhost:9099", "port=9099"})
 class SkyNotifyApplicationTests {
-
 
     @Test
     void contextLoads() {
     }
-
 }

@@ -1,6 +1,7 @@
 package com.lukk.sky.offer.domain.ports.service;
 
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 
 import java.util.List;
@@ -54,11 +55,12 @@ public interface OfferService {
     /**
      * Edits an existing offer.
      *
-     * @param offer the offer to edit
+     * @param offerEditDTO the offer to edit
      * @return the edited offer
      * @throws OfferException if the offer doesn't exist
      */
-    OfferDTO editOffer(OfferDTO offer);
+
+    OfferDTO editOffer(OfferEditDTO offerEditDTO);
 
     /**
      * Finds the owner of an offer.

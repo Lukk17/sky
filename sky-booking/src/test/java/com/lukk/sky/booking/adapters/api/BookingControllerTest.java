@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -173,7 +172,7 @@ public class BookingControllerTest {
     public void whenNoBookingUserInHeader_thenReturnBadRequest() throws Exception {
 //Given
         Map<String, String> values = new HashMap<>();
-        values.put("offerId", TEST_DEFAULT_OFFER_ID);
+        values.put("offerId", " ");
         values.put("dateToBook", TEST_DATE.toString());
 
         String jsonValues = gson.toJson(values);
@@ -184,15 +183,10 @@ public class BookingControllerTest {
                                 .content(jsonValues)
                 )
 //Then
-//      200 OK because it is only status initiating request, not the final outcome of the asynchronous operation
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
-        ResponseEntity<BookingDTO> actual = (ResponseEntity<BookingDTO>) result.getAsyncResult();
-
-        assertTrue(actual.getStatusCode().is4xxClientError());
-        assertEquals(HttpStatus.BAD_REQUEST, actual.getStatusCode());
-        assertEquals("No user info found.", actual.getBody());
+        assertTrue(result.getResponse().getContentAsString().contains("Field 'offerId' must not be blank"));
     }
 
     @Test

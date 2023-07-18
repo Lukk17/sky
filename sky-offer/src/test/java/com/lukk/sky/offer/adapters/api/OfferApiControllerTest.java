@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lukk.sky.offer.Assemblers.OfferAssembler;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
@@ -31,6 +32,7 @@ import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -210,16 +212,38 @@ public class OfferApiControllerTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        assertEquals("Offer with given ID already exist!", result.getResponse().getContentAsString());
+        assertTrue(result.getResponse().getContentAsString().contains("Offer with given ID already exist!"));
+    }
+
+    @Test
+    public void whenAddOffer_AndValidationError_thenReturnBadRequest() throws Exception {
+//Given
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        offerDTO.setOwnerEmail(" ");
+
+        String expectedJson = gson.toJson(offerDTO);
+//When
+        MvcResult result = mvc.perform(
+                        post("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
+                                .content(expectedJson))
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertTrue(result.getResponse().getContentAsString()
+                .contains("Field 'ownerEmail' must be a well-formed email address"));
     }
 
     @Test
     public void whenEditOffer_thenEditAndReturnOffer() throws Exception {
 //Given
+        OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.editOffer(offerDTO)).thenReturn(offerDTO);
+        when(offerService.editOffer(offerEditDTO)).thenReturn(offerDTO);
 
-        String expectedJson = gson.toJson(offerDTO);
+        String expectedJson = gson.toJson(offerEditDTO);
 //When
         MvcResult result = mvc.perform(
                         put("/owner/offers")
@@ -274,7 +298,7 @@ public class OfferApiControllerTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        assertEquals("Can't remove non-existing offer!", result.getResponse().getContentAsString());
+        assertTrue(result.getResponse().getContentAsString().contains("Can't remove non-existing offer!"));
     }
 
     @Test

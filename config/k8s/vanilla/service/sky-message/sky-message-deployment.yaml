@@ -16,10 +16,24 @@ spec:
     spec:
       containers:
         - name: sky-message-container
-          image: lukk17/sky-message:latest
+          image: lukk17/sky-message:100-releaseCandidate-x10
           imagePullPolicy: Always
           ports:
             - containerPort: 5553
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 5553
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 35
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 5553
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 20
           env:
             - name: MESSAGE_PORT
               value: '5553'

@@ -23,13 +23,35 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Values.deployment.container.name }}
-          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-message:latest" }}"
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-booking:latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.actuator.livenessProbe.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.actuator.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.actuator.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.actuator.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.actuator.readinessProbe.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.actuator.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.actuator.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.actuator.readinessProbe.failureThreshold }}
           env:
-            - name: MESSAGE_PORT
+            - name: BOOKING_PORT
               value: "{{ .Values.service.port }}"
+            - name: OFFER_SERVICE_HOSTNAME
+              value: "{{ .Values.offerService.hostname }}"
+            - name: OFFER_SERVICE_HOST_PORT
+              value: "{{ .Values.offerService.port }}"
+            - name: KAFKA_ADDRESS
+              value: {{ .Values.kafka.address }}
+            - name: KAFKA_PORT
+              value: "{{ .Values.kafka.port }}"
             - name: SPRING_DATASOURCE_URL
               value: "{{ .Values.deployment.env.spring.datasourceUrl }}"
             - name: MYSQL_USER

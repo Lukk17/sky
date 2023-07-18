@@ -1,6 +1,8 @@
 package com.lukk.sky.booking.adapters.dto;
 
 import com.lukk.sky.booking.domain.model.Booking;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,10 +15,19 @@ import java.time.LocalDate;
 public class BookingDTO {
 
     private Long id;
+
+    @NotBlank
     private String offerId;
+
+    @NotBlank
     private String bookedDate;
+
+    @NotBlank
+    @Email
     private String bookingUser;
-    private String owner;
+
+    @Email
+    private String ownerEmail;
 
     public static BookingDTO of(Booking booking) {
         return BookingDTO.builder()
@@ -24,7 +35,7 @@ public class BookingDTO {
                 .offerId(booking.getOfferId())
                 .bookedDate(booking.getBookedDate().toString())
                 .bookingUser(booking.getBookingUser())
-                .owner(booking.getOwner())
+                .ownerEmail(booking.getOwnerEmail())
                 .build();
     }
 
@@ -34,7 +45,7 @@ public class BookingDTO {
                 .offerId(this.getOfferId())
                 .bookedDate(LocalDate.parse(this.getBookedDate()))
                 .bookingUser(this.getBookingUser())
-                .owner(this.getOwner())
+                .ownerEmail(this.getOwnerEmail())
                 .build();
     }
 }

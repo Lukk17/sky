@@ -34,6 +34,31 @@ nginx external IP - under this IP app is running
 34.118.116.39:80
 ```
 
+### Swagger access
+
+urls:
+```
+https://skycloud.luksarna.com/booking/swagger-ui/index.html
+```
+```
+https://skycloud.luksarna.com/msg/swagger-ui/index.html
+```
+```
+https://skycloud.luksarna.com/offer/swagger-ui/index.html`
+```
+
+Right now because of reverse proxy problem with swagger you will need to paste into Swagger "Explore"
+form url of swagger config files. Which are for each service:
+```
+https://skycloud.luksarna.com/booking/v3/api-docs/public
+```
+```
+https://skycloud.luksarna.com/msg/v3/api-docs/public
+```
+```
+https://skycloud.luksarna.com/offer/v3/api-docs/public
+```
+
 --------------
 
 ## 2. Login

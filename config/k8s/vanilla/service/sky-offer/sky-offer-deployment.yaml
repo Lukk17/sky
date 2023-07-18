@@ -20,10 +20,24 @@ spec:
     spec:
       containers:
         - name: sky-offer-container
-          image: lukk17/sky-offer:latest
+          image: lukk17/sky-offer:100-releaseCandidate-x10
           imagePullPolicy: Always
           ports:
             - containerPort: 5552
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 5552
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 35
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 5552
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 20
           env:
             - name: OFFER_PORT
               value: '5552'

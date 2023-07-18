@@ -54,7 +54,7 @@ public class BookingAssembler {
                 .offerId(offerId)
                 .bookedDate(TEST_DATE)
                 .bookingUser(bookingUser)
-                .owner(owner)
+                .ownerEmail(owner)
                 .build();
     }
 
@@ -64,7 +64,7 @@ public class BookingAssembler {
                 .offerId(offerId)
                 .bookedDate(TEST_DATE.toString())
                 .bookingUser(bookingUser)
-                .owner(owner)
+                .ownerEmail(owner)
                 .build();
     }
 

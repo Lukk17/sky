@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,22 +46,18 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @PostMapping("/send")
-    public ResponseEntity<?> sendMessage(@RequestBody MessageDTO message, @RequestHeader Map<String, String> headers) {
-        try {
-            String userEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message,
+                                         @RequestHeader Map<String, String> headers) {
+        String userEmail = getUserInfoFromHeaders(headers);
 
-            message.setSenderEmail(userEmail);
-            message.setCreatedTime(LocalDateTime.now().format(DATE_TIME_FORMAT));
-            log.info("Sending message from {} to {}", userEmail, message.getReceiverEmail());
+        message.setSenderEmail(userEmail);
+        message.setCreatedTime(LocalDateTime.now().format(DATE_TIME_FORMAT));
+        log.info("Sending message from {} to {}", userEmail, message.getReceiverEmail());
 
-            return ResponseEntity.ok(messageService.send(message));
-
-        } catch (MessageException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(messageService.send(message));
     }
 
     @Operation(summary = "Get received messages")
@@ -69,19 +66,14 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @GetMapping("/received")
     public ResponseEntity<?> getReceivedMessages(@RequestHeader Map<String, String> headers) {
-        try {
-            String userEmail = getUserInfoFromHeaders(headers);
-            log.info("Getting received messages for user: {}", userEmail);
+        String userEmail = getUserInfoFromHeaders(headers);
+        log.info("Getting received messages for user: {}", userEmail);
 
-            return ResponseEntity.ok(messageService.getReceivedMessages(userEmail));
-
-        } catch (MessageException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(messageService.getReceivedMessages(userEmail));
     }
 
     @Operation(summary = "Get sent messages")
@@ -90,19 +82,14 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @GetMapping("/sent")
     public ResponseEntity<?> getSentMessages(@RequestHeader Map<String, String> headers) {
-        try {
-            String userEmail = getUserInfoFromHeaders(headers);
-            log.info("Getting sent messages for user: {}", userEmail);
+        String userEmail = getUserInfoFromHeaders(headers);
+        log.info("Getting sent messages for user: {}", userEmail);
 
-            return ResponseEntity.ok(messageService.getSentMessages(userEmail));
-
-        } catch (MessageException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(messageService.getSentMessages(userEmail));
     }
 
     @Operation(summary = "Delete message")
@@ -111,7 +98,8 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @DeleteMapping("/delete/{messageId}")
     public ResponseEntity<?> deleteMessage(@RequestHeader Map<String, String> headers, @PathVariable String messageId) {
         try {
@@ -135,5 +123,4 @@ public class MessageController {
                 .findFirst()
                 .orElseThrow(() -> new MessageException("No user for messages"));
     }
-
 }

@@ -16,10 +16,24 @@ spec:
     spec:
       containers:
         - name: sky-notify-container
-          image: lukk17/sky-notify:latest
+          image: lukk17/sky-notify:100-releaseCandidate-x10
           imagePullPolicy: Always
           ports:
             - containerPort: 5554
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 5554
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 35
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 5554
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 20
           env:
             - name: NOTIFY_PORT
               value: '5554'

@@ -98,7 +98,7 @@ public class BookingServicePrimary implements BookingService {
 
             return "Booking removed by user";
 
-        } else if (booking.getOwner().equals(userEmail)) {
+        } else if (booking.getOwnerEmail().equals(userEmail)) {
             bookingRepository.deleteById(Long.parseLong(bookingId));
             log.info("Booking removed by owner");
 
@@ -141,7 +141,7 @@ public class BookingServicePrimary implements BookingService {
                 .offerId(offerId)
                 .bookedDate(dateToBook)
                 .bookingUser(bookingUser)
-                .owner(ownerEmail)
+                .ownerEmail(ownerEmail)
                 .build();
     }
 }

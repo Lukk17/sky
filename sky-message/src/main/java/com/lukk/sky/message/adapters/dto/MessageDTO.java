@@ -2,6 +2,9 @@ package com.lukk.sky.message.adapters.dto;
 
 
 import com.lukk.sky.message.domain.model.Message;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,9 +17,17 @@ import static com.lukk.sky.message.config.Constants.DATE_TIME_FORMAT;
 public class MessageDTO {
 
     private Long id;
+
+    @Size(max = 65000)
     private String text;
+
+    @NotBlank
+    @Email
     private String receiverEmail;
+
+    @Email
     private String senderEmail;
+
     private String createdTime;
     private boolean read;
 

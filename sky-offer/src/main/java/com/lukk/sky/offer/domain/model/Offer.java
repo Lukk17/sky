@@ -26,13 +26,12 @@ public class Offer {
     @Size(max = 3000)
     private String description;
 
+    @Size(max = 1000)
     private String comment;
 
     @NotNull
     @Min(value = 0)
     private BigDecimal price;
-
-    private String photoPath;
 
     @Column(nullable = false, length = 100)
     @NotBlank
@@ -48,4 +47,6 @@ public class Offer {
 
     @NotBlank
     private String country;
+
+    private String photoPath;
 }

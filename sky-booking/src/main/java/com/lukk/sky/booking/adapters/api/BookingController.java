@@ -2,6 +2,7 @@ package com.lukk.sky.booking.adapters.api;
 
 import com.google.gson.Gson;
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
+import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.booking.adapters.dto.KafkaPayloadModel;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,19 +42,15 @@ public class BookingController {
             @ApiResponse(responseCode = "200", description = "Welcome",
                     content = {@Content(mediaType = "application/json")}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @GetMapping(value = {"/", "/home"})
     public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
                                         @RequestHeader Map<String, String> headers) {
-        try {
-            String userEmail = getUserInfoFromHeaders(headers);
+        String userEmail = getUserInfoFromHeaders(headers);
 
-            sendNotification("Booking Hello World page", userEmail);
-            return new ResponseEntity<>(message, HttpStatus.OK);
-
-        } catch (BookingException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        sendNotification("Booking Hello World page", userEmail);
+        return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
     @Operation(summary = "Get all user's booking")
@@ -61,18 +59,14 @@ public class BookingController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = BookingDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @GetMapping("/user/bookings")
     public ResponseEntity<?> getBookedOffers(@RequestHeader Map<String, String> headers) {
-        try {
-            String userEmail = getUserInfoFromHeaders(headers);
+        String userEmail = getUserInfoFromHeaders(headers);
 
-            List<BookingDTO> bookings = bookingService.getBookedOffersForUser(userEmail);
-            return ResponseEntity.ok(bookings);
-
-        } catch (BookingException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        List<BookingDTO> bookings = bookingService.getBookedOffersForUser(userEmail);
+        return ResponseEntity.ok(bookings);
     }
 
     @Operation(summary = "Create new booking")
@@ -81,18 +75,16 @@ public class BookingController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = BookingDTO.class))}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @PostMapping("/bookings")
-    public Mono<ResponseEntity> bookOffer(@RequestBody Map<String, String> json,
+    public Mono<ResponseEntity> bookOffer(@Valid @RequestBody BookingPayload bookingPayload,
                                           @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
 
-        String offerId = json.get("offerId");
-        String dateToBook = json.get("dateToBook");
-
         return Mono.fromCallable(() -> getUserInfoFromHeaders(headers))
                 .flatMap(bookingUser ->
-                        bookingService.bookOffer(offerId, dateToBook, bookingUser)
+                        bookingService.bookOffer(bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser)
                                 .doOnSuccess(bookingDTO -> sendNotification(gson.toJson(bookingDTO), bookingUser))
                                 .map(ResponseEntity::ok)
                                 .cast(ResponseEntity.class)
@@ -108,23 +100,18 @@ public class BookingController {
             @ApiResponse(responseCode = "200", description = "Booking deleted",
                     content = {@Content(mediaType = "application/json")}),
             @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
+                    content = @Content)
+    })
     @DeleteMapping("/bookings/{bookingId}")
     public ResponseEntity<String> removeBooking(@RequestHeader Map<String, String> headers,
                                                 @PathVariable String bookingId) {
-        try {
-            String userEmail = getUserInfoFromHeaders(headers);
-            log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
+        String userEmail = getUserInfoFromHeaders(headers);
+        log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
 
-            String removeMessage = bookingService.removeBooking(bookingId, userEmail);
-            sendNotification(removeMessage, userEmail);
+        String removeMessage = bookingService.removeBooking(bookingId, userEmail);
+        sendNotification(removeMessage, userEmail);
 
-            return ResponseEntity.ok(removeMessage);
-
-        } catch (BookingException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(removeMessage);
     }
 
     private static String getUserInfoFromHeaders(Map<String, String> headers) {

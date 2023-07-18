@@ -10,6 +10,16 @@ sky:
 
 server:
   port: ${BOOKING_PORT:5555}
+  forward-headers-strategy: framework
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: '/swagger-ui.html'
+    urls:
+      - url: ${SWAGGER_URL:/v3/api-docs/public}
+        name: Booking API doc
 
 spring:
   application:
@@ -57,8 +67,6 @@ spring:
       client-id: bookingService
     admin:
       auto-create: true
-
-
 
 # expose actuator endpoints (* for all)
 management:
