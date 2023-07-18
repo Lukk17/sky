@@ -24,4 +24,3 @@ kubectl apply -f .\config\k8s\vanilla\service\sky-booking\
 kubectl apply -f .\config\k8s\vanilla\service\sky-message\
 kubectl apply -f .\config\k8s\vanilla\service\sky-notify\
 kubectl apply -f .\config\k8s\vanilla\service\sky-offer\
-

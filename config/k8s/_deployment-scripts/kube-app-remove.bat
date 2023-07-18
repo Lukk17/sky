@@ -23,4 +23,3 @@ kubectl delete -f .\config\k8s\vanilla\service\sky-booking\
 kubectl delete -f .\config\k8s\vanilla\service\sky-message\
 kubectl delete -f .\config\k8s\vanilla\service\sky-notify\
 kubectl delete -f .\config\k8s\vanilla\service\sky-offer\
-

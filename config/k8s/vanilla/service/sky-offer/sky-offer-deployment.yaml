@@ -1,9 +1,9 @@
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: "apps/v1"
+kind: "Deployment"
 metadata:
-  name: sky-offer-deployment
-  namespace: default
+  name: "sky-offer-deployment"
+  namespace: "default"
 spec:
   replicas: 1
   selector:
@@ -12,41 +12,41 @@ spec:
       #    "component" is just a name, can be any name as long as in service is named same, for example could be:
       #    workingLabel: web
       #     every service need to have UNIQUE label - if not every service in its endpoint will have other services endpoints
-      app: offer
+      app: "offer"
   template:
     metadata:
       labels:
-        app: offer
+        app: "offer"
     spec:
       containers:
-        - name: sky-offer-container
-          image: lukk17/sky-offer:100-releaseCandidate-x10
-          imagePullPolicy: Always
+        - name: "sky-offer-container"
+          image: "lukk17/sky-offer:v1.0.0"
+          imagePullPolicy: "Always"
           ports:
             - containerPort: 5552
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: "/actuator/health/liveness"
               port: 5552
             initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 35
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: "/actuator/health/readiness"
               port: 5552
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 20
           env:
             - name: OFFER_PORT
-              value: '5552'
+              value: "5552"
             - name: KAFKA_ADDRESS
-              value: 'kafka-service'
+              value: "kafka-service"
             - name: KAFKA_PORT
-              value: '9092'
+              value: "9092"
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql-service:3306/sky
+              value: "jdbc:mysql://mysql-service:3306/sky"
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
@@ -58,11 +58,11 @@ spec:
                   key: mysql-root-pass
                   name: sky-secrets
             - name: SPRING_DEBUG
-              value: 'INFO'
+              value: "INFO"
             - name: HIBERNATE_DEBUG
-              value: 'INFO'
+              value: "INFO"
             - name: SHOW_SQL_QUERIES
-              value: 'false'
+              value: "false"
             - name: SPRING_SECURITY_USER
               valueFrom:
                 secretKeyRef:

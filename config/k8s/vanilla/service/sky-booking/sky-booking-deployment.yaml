@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: "sky-booking-container"
-          image: "lukk17/sky-booking:100-releaseCandidate-x11"
+          image: "lukk17/sky-booking:v1.0.0"
           imagePullPolicy: "Always"
           ports:
             - containerPort: 5555

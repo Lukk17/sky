@@ -2,17 +2,17 @@
 :: .\config\k8s\_deployment-scripts\helm-app-upgrade.bat
 
 :: sealed secrets
-helm upgrade sealed-secrets-controller .\config\k8s\helm\sealed-secrets-controller\ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
+helm upgrade sealed-secrets-controller .\config\k8s\helm\api-gateway\sealed-secrets-controller\ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 
 :: api gateway
-helm upgrade oauth2-proxy .\config\k8s\helm\oauth2-proxy\
+helm upgrade oauth2-proxy .\config\k8s\helm\api-gateway\oauth2-proxy\
 
 :: independent services
 helm upgrade kafka-service .\config\k8s\helm\kafka\
 
 :: db
-helm upgrade database-persistent-volume-claim .\config\k8s\helm\database-persistent-volume-claim\
-helm upgrade mysql .\config\k8s\helm\mysql\
+helm upgrade database-persistent-volume-claim .\config\k8s\helm\db\database-persistent-volume-claim\
+helm upgrade mysql .\config\k8s\helm\db\mysql\
 kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=mysql
 
 :: services

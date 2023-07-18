@@ -13,7 +13,7 @@ deployment:
   image:
     repository: "lukk17/sky-booking"
     pullPolicy: "Always"
-    tag: "100-releaseCandidate-x11"
+    tag: "v1.0.0"
   container:
     name: "sky-booking-container"
   env:

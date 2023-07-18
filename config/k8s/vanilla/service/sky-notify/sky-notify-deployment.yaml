@@ -1,48 +1,48 @@
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: "apps/v1"
+kind: "Deployment"
 metadata:
-  name: sky-notify-deployment
-  namespace: default
+  name: "sky-notify-deployment"
+  namespace: "default"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: notify
+      app: "notify"
   template:
     metadata:
       labels:
-        app: notify
+        app: "notify"
     spec:
       containers:
-        - name: sky-notify-container
-          image: lukk17/sky-notify:100-releaseCandidate-x10
-          imagePullPolicy: Always
+        - name: "sky-notify-container"
+          image: "lukk17/sky-notify:v1.0.0"
+          imagePullPolicy: "Always"
           ports:
             - containerPort: 5554
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: "/actuator/health/liveness"
               port: 5554
             initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 35
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: "/actuator/health/readiness"
               port: 5554
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 20
           env:
             - name: NOTIFY_PORT
-              value: '5554'
+              value: "5554"
             - name: KAFKA_ADDRESS
-              value: 'kafka-service'
+              value: "kafka-service"
             - name: KAFKA_PORT
-              value: '9092'
+              value: "9092"
             - name: SPRING_DEBUG
-              value: 'INFO'
+              value: "INFO"
             - name: SPRING_SECURITY_USER
               valueFrom:
                 secretKeyRef:

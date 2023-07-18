@@ -1,5 +1,9 @@
 # Sky
 
+App deployed in Kubernetes on GCP:
+
+https://skycloud.luksarna.com/
+
 ---------------------------------
 
 

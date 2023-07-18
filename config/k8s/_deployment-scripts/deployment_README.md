@@ -1,5 +1,11 @@
 # DEPLOYMENT
 
+App deployed in Kubernetes on GCP:
+
+https://skycloud.luksarna.com/
+
+----------------------
+
 ## Table of content
 
 - [Docker build and publish](#1-docker-build-and-publish)
