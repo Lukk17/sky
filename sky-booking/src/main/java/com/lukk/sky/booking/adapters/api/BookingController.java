@@ -6,6 +6,11 @@ import com.lukk.sky.booking.adapters.dto.KafkaPayloadModel;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.service.BookingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +35,12 @@ public class BookingController {
     private final BookingService bookingService;
     private final BookingNotificationService bookingNotificationService;
 
+    @Operation(summary = "Hello World Page")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Welcome",
+                    content = {@Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @GetMapping(value = {"/", "/home"})
     public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
                                         @RequestHeader Map<String, String> headers) {
@@ -44,6 +55,13 @@ public class BookingController {
         }
     }
 
+    @Operation(summary = "Get all user's booking")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found user bookings",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BookingDTO.class))}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @GetMapping("/user/bookings")
     public ResponseEntity<?> getBookedOffers(@RequestHeader Map<String, String> headers) {
         try {
@@ -57,6 +75,13 @@ public class BookingController {
         }
     }
 
+    @Operation(summary = "Create new booking")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Booking created",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BookingDTO.class))}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @PostMapping("/bookings")
     public Mono<ResponseEntity> bookOffer(@RequestBody Map<String, String> json,
                                           @RequestHeader Map<String, String> headers) {
@@ -78,9 +103,15 @@ public class BookingController {
                 );
     }
 
+    @Operation(summary = "Delete booking")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Booking deleted",
+                    content = {@Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @DeleteMapping("/bookings/{bookingId}")
-    public ResponseEntity<?> removeBooking(@RequestHeader Map<String, String> headers,
-                                           @PathVariable String bookingId) {
+    public ResponseEntity<String> removeBooking(@RequestHeader Map<String, String> headers,
+                                                @PathVariable String bookingId) {
         try {
             String userEmail = getUserInfoFromHeaders(headers);
             log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);

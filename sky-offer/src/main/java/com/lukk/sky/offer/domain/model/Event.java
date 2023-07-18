@@ -1,6 +1,7 @@
 package com.lukk.sky.offer.domain.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     private Long offerId;
 
     private int sequenceNumber;
@@ -27,7 +29,7 @@ public class Event {
     private EventType eventType;
 
     @Lob
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition = "TEXT")
     private String payload;
 
     private LocalDateTime timestamp;

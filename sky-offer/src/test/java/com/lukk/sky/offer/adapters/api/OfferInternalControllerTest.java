@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,8 +40,8 @@ class OfferInternalControllerTest {
                 .thenReturn(TEST_OWNER_EMAIL);
 //When
         MvcResult result = mvc.perform(
-                get("/owners/{offerId}", TEST_DEFAULT_OFFER_ID)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        get("/owners/{offerId}", TEST_DEFAULT_OFFER_ID)
+                                .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();

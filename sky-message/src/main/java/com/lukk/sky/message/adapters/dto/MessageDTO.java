@@ -20,7 +20,7 @@ public class MessageDTO {
     private String createdTime;
     private boolean read;
 
-    public static MessageDTO of(Message message){
+    public static MessageDTO of(Message message) {
         return MessageDTO.builder()
                 .id(message.getId())
                 .text(message.getText())

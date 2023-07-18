@@ -18,7 +18,7 @@ public class BookingDTO {
     private String bookingUser;
     private String owner;
 
-    public static BookingDTO of(Booking booking){
+    public static BookingDTO of(Booking booking) {
         return BookingDTO.builder()
                 .id(booking.getId())
                 .offerId(booking.getOfferId())
@@ -28,7 +28,7 @@ public class BookingDTO {
                 .build();
     }
 
-    public Booking toDomain(){
+    public Booking toDomain() {
         return Booking.builder()
                 .id(this.getId())
                 .offerId(this.getOfferId())

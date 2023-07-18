@@ -24,7 +24,7 @@ public class Message {
     @NotBlank
 //    lob will make field type as longtext
     @Lob
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition = "TEXT")
     private String text;
 
     private LocalDateTime createdTime;

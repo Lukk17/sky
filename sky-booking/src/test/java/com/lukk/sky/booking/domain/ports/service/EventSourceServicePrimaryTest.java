@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DEFAULT_BOOKED_ID;
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DEFAULT_OFFER_ID;
 import static com.lukk.sky.booking.Assemblers.EventAssembler.*;
 import static org.mockito.Mockito.*;
 

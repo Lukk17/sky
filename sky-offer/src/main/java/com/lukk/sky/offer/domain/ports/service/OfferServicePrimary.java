@@ -14,6 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * This is the primary implementation of the {@link OfferService} interface.
+ * It uses an {@link OfferRepository} to interact with the database.
+ * It also logs operations and generates events using {@link EventSourceService}.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -24,6 +29,12 @@ public class OfferServicePrimary implements OfferService {
     private final OfferRepository offerRepository;
     private final EventSourceService eventSourceService;
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation retrieves all offers from the database using an {@link OfferRepository},
+     * transforms them into {@link OfferDTO}s and returns them as a list.
+     */
     @Override
     public List<OfferDTO> getAllOffers() {
         log.info("Pulling all offers");
@@ -34,6 +45,14 @@ public class OfferServicePrimary implements OfferService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation saves the given offer into the database using an {@link OfferRepository}.
+     * After successful save, it logs the operation and creates an event of type {@link EventType#OFFER_CREATED}.
+     *
+     * @throws OfferException if an offer with the same ID already exists in the database
+     */
     @Override
     public OfferDTO addOffer(OfferDTO offerDTO) throws OfferException {
 
@@ -49,6 +68,14 @@ public class OfferServicePrimary implements OfferService {
         return OfferDTO.of(savedOffer);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation removes the offer with the given ID from the database,
+     * logs the operation and generates an event of type {@link EventType#OFFER_DELETED}.
+     *
+     * @throws OfferException if the offer does not exist or the user is not the owner of the offer
+     */
     @Override
     public void deleteOffer(Long offerID, String userEmail) throws OfferException {
 
@@ -66,6 +93,12 @@ public class OfferServicePrimary implements OfferService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation retrieves all offers from the database belonging to the given owner email,
+     * transforms them into {@link OfferDTO}s and returns them as a list.
+     */
     @Override
     public List<OfferDTO> getOwnedOffers(String ownerEmail) {
         log.info("Pulling offers which owner is user: {}", ownerEmail);
@@ -77,6 +110,12 @@ public class OfferServicePrimary implements OfferService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation searches for offers that match the given criteria,
+     * transforms them into {@link OfferDTO}s and returns them as a list.
+     */
     @Override
     public List<OfferDTO> searchOffers(String searched) {
         log.info("Searching offers for: {}", searched);
@@ -92,6 +131,14 @@ public class OfferServicePrimary implements OfferService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation edits the offer in the database with the details from the given {@link OfferDTO},
+     * logs the operation and creates an event of type {@link EventType#OFFER_UPDATED}.
+     *
+     * @throws OfferException if the offer to be edited does not exist in the database
+     */
     @Override
     public OfferDTO editOffer(OfferDTO offerDTO) {
         Offer dbOffer = offerRepository
@@ -108,8 +155,15 @@ public class OfferServicePrimary implements OfferService {
         return OfferDTO.of(dbOffer);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation finds the owner of the offer with the given ID and returns their email.
+     *
+     * @throws OfferException if the offer does not exist in the database
+     */
     @Override
-    public String findOfferOwner(String offerId){
+    public String findOfferOwner(String offerId) {
 
         String ownerEmail = offerRepository
                 .findById(Long.parseLong(offerId))

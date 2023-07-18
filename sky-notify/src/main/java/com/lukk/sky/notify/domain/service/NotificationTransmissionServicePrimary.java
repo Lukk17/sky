@@ -9,6 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
+/**
+ * The primary implementation of the {@link NotificationTransmissionService} interface.
+ * This implementation uses a {@link NotificationPublisherPrimary} to publish notifications.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -17,6 +21,14 @@ public class NotificationTransmissionServicePrimary implements NotificationTrans
 
     private final NotificationPublisherPrimary notificationPublisherPrimary;
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation deserializes the message from JSON into a {@link KafkaPayloadModel} object.
+     * Then it creates a new {@link WebsocketPayloadModel} object, with the KafkaPayloadModel and the
+     * other provided parameters, serializes it into JSON and sends it to a client through a WebSocket.
+     * Finally, it logs the sent notification.
+     */
     @Override
     public void notifyClient(String message, String partition, String topic, String groupId, String timestamp, String offset) {
         Gson gson = new Gson();

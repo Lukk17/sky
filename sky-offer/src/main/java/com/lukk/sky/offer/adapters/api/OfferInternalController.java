@@ -2,6 +2,10 @@ package com.lukk.sky.offer.adapters.api;
 
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +20,12 @@ public class OfferInternalController {
 
     private final OfferService offerService;
 
+    @Operation(summary = "Get offer's owner")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found owner",
+                    content = {@Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @GetMapping("/owners/{offerId}")
     public ResponseEntity<String> getOfferOwner(@PathVariable String offerId) {
         try {
@@ -24,7 +34,7 @@ public class OfferInternalController {
 
             return ResponseEntity.ok(ownerEmail);
 
-        } catch (OfferException e){
+        } catch (OfferException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

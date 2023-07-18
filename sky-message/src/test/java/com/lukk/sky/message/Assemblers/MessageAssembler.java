@@ -17,10 +17,10 @@ public class MessageAssembler {
     public static final String TEXT = "messageText";
     public static final boolean IS_READ = false;
 
-    public static List<MessageDTO> getMessagesDTO(){
+    public static List<MessageDTO> getMessagesDTO() {
         return List.of(
                 getMessageDTO(TEST_MESSAGE_ID),
-                getMessageDTO(TEST_MESSAGE_ID+1));
+                getMessageDTO(TEST_MESSAGE_ID + 1));
     }
 
     public static MessageDTO getMessageDTO(Long id) {
@@ -34,7 +34,7 @@ public class MessageAssembler {
                 .build();
     }
 
-    public static List<MessageDTO> getMessagesDTO_withoutCreatedAndID(){
+    public static List<MessageDTO> getMessagesDTO_withoutCreatedAndID() {
         return List.of(
                 getMessageDTO_withoutCreatedAndID(),
                 getMessageDTO_withoutCreatedAndID());
@@ -49,10 +49,10 @@ public class MessageAssembler {
                 .build();
     }
 
-    public static List<Message> getMessages(){
+    public static List<Message> getMessages() {
         return List.of(
                 getMessage(TEST_MESSAGE_ID),
-                getMessage(TEST_MESSAGE_ID+1));
+                getMessage(TEST_MESSAGE_ID + 1));
     }
 
     public static Message getMessage(Long id) {

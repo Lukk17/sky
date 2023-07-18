@@ -40,7 +40,7 @@ spring:
     hikari:
       connection-timeout: 60000
       validation-timeout: 60000
-#      instead of adding as DB URL parameter:
+      #      instead of adding as DB URL parameter:
       data-source-properties:
         useUnicode: true
         characterEncoding: UTF-8

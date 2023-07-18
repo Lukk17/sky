@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+/**
+ * The primary implementation of the {@link EventSourceService} interface.
+ * This implementation uses an {@link EventSourceRepository} to persist events.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -20,6 +24,13 @@ public class EventSourceServicePrimary implements EventSourceService {
 
     private final EventSourceRepository eventSourceRepository;
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The event is saved with the next sequence number for the given offer,
+     * along with the current timestamp. The offer is serialized to JSON format
+     * and saved as the event payload.
+     */
     @Override
     public void saveEvent(Offer offer, EventType eventType) {
         Gson gson = new Gson();

@@ -11,10 +11,10 @@ import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DEFAULT_BOOK
 
 public class EventAssembler {
 
-    public static LocalDateTime TEST_DATE = LocalDateTime.of(2201, 6, 20,16,35,47);
+    public static LocalDateTime TEST_DATE = LocalDateTime.of(2201, 6, 20, 16, 35, 47);
     public static EventType TEST_EVENT_TYPE = EventType.BOOKED;
 
-    public static Event getTestEvent(int sequence, String payload){
+    public static Event getTestEvent(int sequence, String payload) {
         return Event.builder()
                 .bookingId(TEST_DEFAULT_BOOKED_ID)
                 .sequenceNumber(sequence)

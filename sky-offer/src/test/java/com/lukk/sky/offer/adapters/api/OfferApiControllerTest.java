@@ -114,8 +114,8 @@ public class OfferApiControllerTest {
 
 //When
         mvc.perform(
-                get("/")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        get("/")
+                                .contentType(MediaType.APPLICATION_JSON)
                 )
 //Then
                 .andExpect(status().isBadRequest())

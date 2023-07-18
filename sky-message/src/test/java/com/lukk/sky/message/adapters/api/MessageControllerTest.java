@@ -121,6 +121,25 @@ public class MessageControllerTest {
     }
 
     @Test
+    public void whenSendMessageWithoutUser_thenReturnError() throws Exception {
+//Given
+        MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
+
+        when(messageService.send(any())).thenReturn(messageDTO);
+
+        String expectedJson = gson.toJson(messageDTO);
+//When
+        mvc.perform(
+                        post("/send")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(expectedJson)
+                )
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    @Test
     public void whenGetReceivedMessages_thenReturnReceivedMessages() throws Exception {
 //Given
         List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
@@ -141,6 +160,22 @@ public class MessageControllerTest {
     }
 
     @Test
+    public void whenGetReceivedMessagesWithoutUser_thenReturnError() throws Exception {
+//Given
+        List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
+        when(messageService.getReceivedMessages(RECEIVER_EMAIL)).thenReturn(messagesDTO);
+//When
+        mvc.perform(
+                        get("/received")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+
+    @Test
     public void whenGetSentMessages_thenReturnSentMessages() throws Exception {
 //Given
         List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
@@ -158,6 +193,20 @@ public class MessageControllerTest {
                 .andReturn();
 
         assertEquals(expectedJson, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    public void whenGetSentMessagesWithoutUser_thenReturnError() throws Exception {
+//Given
+        List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
+        when(messageService.getSentMessages(SENDER_EMAIL)).thenReturn(messagesDTO);
+//When
+        mvc.perform(
+                        get("/sent")
+                                .contentType(MediaType.APPLICATION_JSON))
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
     }
 
     @Test

@@ -19,6 +19,12 @@ import java.util.List;
 
 import static com.lukk.sky.booking.config.Constants.DATE_FORMAT;
 
+/**
+ * Primary implementation of the {@link BookingService}.
+ * It uses {@link BookingRepository} to perform operations on the database.
+ * It uses {@link EventSourceService} to manage events.
+ * It uses {@link RestClient} to make requests.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -30,6 +36,10 @@ public class BookingServicePrimary implements BookingService {
     private final EventSourceService eventSourceService;
     private final RestClient restClient;
 
+    /**
+     * {@inheritDoc}
+     * <p>Logs a message when the bookings for the user are retrieved.
+     */
     @Override
     public List<BookingDTO> getBookedOffersForUser(String userEmail) {
         log.info("Pulling bookings for user: {}", userEmail);
@@ -39,6 +49,13 @@ public class BookingServicePrimary implements BookingService {
                 .toList();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Logs a message when the offer is booked and when the booking event is saved.
+     * <p>Checks if the date to book is in the future and if the offer has already been booked for that date.
+     *
+     * @throws BookingException if the date to book is not in the future or if the offer has already been booked for that date.
+     */
     @Override
     public Mono<BookingDTO> bookOffer(String offerId, String dateToBookUnparsed, String userEmail)
             throws BookingException {
@@ -63,6 +80,13 @@ public class BookingServicePrimary implements BookingService {
                 });
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Logs a message when the booking is removed.
+     * <p>Checks if the user trying to remove the booking is the user who made the booking or the owner of the booking.
+     *
+     * @throws BookingException if the user trying to remove the booking is neither the user who made the booking nor the owner of the booking.
+     */
     @Override
     public String removeBooking(String bookingId, String userEmail) {
         Booking booking = bookingRepository.findById(Long.parseLong(bookingId))

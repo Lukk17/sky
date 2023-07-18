@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.*;
-import static com.lukk.sky.booking.Assemblers.UserAssembler.*;
+import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
+import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -120,7 +121,7 @@ public class BookingServicePrimaryTest {
     }
 
     @Test
-    public void whenRemoveBookingByUser_thenRemove(){
+    public void whenRemoveBookingByUser_thenRemove() {
         // Given
         String expected = "Booking removed by user";
         Booking booking = getPopulatedBooked();
@@ -135,7 +136,7 @@ public class BookingServicePrimaryTest {
     }
 
     @Test
-    public void whenRemoveBookingByOwner_thenRemove(){
+    public void whenRemoveBookingByOwner_thenRemove() {
         // Given
         String expected = "Booking removed by owner";
         Booking booking = getPopulatedBooked();
@@ -150,7 +151,7 @@ public class BookingServicePrimaryTest {
     }
 
     @Test
-    public void whenRemoveBookingByOtherUser_thenThrowException(){
+    public void whenRemoveBookingByOtherUser_thenThrowException() {
         // Given
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
@@ -164,7 +165,7 @@ public class BookingServicePrimaryTest {
     }
 
     @Test
-    public void whenRemoveNonExistingBooking_thenThrowException(){
+    public void whenRemoveNonExistingBooking_thenThrowException() {
         // Given
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.empty());
 

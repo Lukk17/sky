@@ -27,7 +27,7 @@ public class Event {
     private EventType eventType;
 
     @Lob
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition = "TEXT")
     private String payload;
 
     private LocalDateTime timestamp;

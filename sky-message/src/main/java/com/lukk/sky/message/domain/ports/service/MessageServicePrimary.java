@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Primary implementation of the {@link MessageService}.
+ * It uses {@link MessageRepository} to perform operations on the database.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -22,6 +26,10 @@ public class MessageServicePrimary implements MessageService {
 
     private final MessageRepository messageRepo;
 
+    /**
+     * {@inheritDoc}
+     * <p>Logs a message when the message is successfully sent.
+     */
     @Override
     public MessageDTO send(MessageDTO messageDTO) {
 
@@ -32,6 +40,11 @@ public class MessageServicePrimary implements MessageService {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Throws a {@link MessageException} if the user trying to delete the message is neither the sender nor the receiver.
+     * Logs a message when the message is successfully deleted.
+     */
     @Override
     public void remove(Long messageId, String userId) {
         messageRepo.findById(messageId).ifPresent(
@@ -48,6 +61,9 @@ public class MessageServicePrimary implements MessageService {
         log.info("Message with ID: {} removed.", messageId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<MessageDTO> getReceivedMessages(String userEmail) {
         List<Message> messages = messageRepo.findAllByReceiverEmail(userEmail);
@@ -57,6 +73,9 @@ public class MessageServicePrimary implements MessageService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<MessageDTO> getSentMessages(String userEmail) {
         List<Message> messages = messageRepo.findAllBySenderEmail(userEmail);
@@ -65,6 +84,4 @@ public class MessageServicePrimary implements MessageService {
                 .map(MessageDTO::of)
                 .collect(Collectors.toList());
     }
-
-
 }

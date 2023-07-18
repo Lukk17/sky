@@ -203,8 +203,8 @@ public class BookingControllerTest {
         doNothing().when(bookingNotificationService).sendMessage(any());
 //When
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                 )
 //Then
                 .andExpect(status().is2xxSuccessful());

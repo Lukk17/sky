@@ -1,10 +1,7 @@
 package com.lukk.sky.offer.domain.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,6 +36,7 @@ public class Offer {
 
     @Column(nullable = false, length = 100)
     @NotBlank
+    @Email
     private String ownerEmail;
 
     @NotNull

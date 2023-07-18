@@ -33,15 +33,23 @@ Microservices are designed to work in Kubernetes cluster which will take care of
 authorization. Kubernetes Ingress controller is exposing services to the world.
 Each microservice will have its API endpoints exposed.  
 
+### Ingress
 More info about [Ingres](./config/k8s/api-gateway/ingress/ingress_README.md).
 
+### Postman
 In [postman-collection](./config/postman-collection). 
 folder you can find exported sky collection and envs.
 
+### Dev
 For development services can be run as Spring Boot app or via Gradle.  
 See more:
 [Local development](./config/local-dev/local_README.md)
 
+### Swagger
+Swagger is added and can be accessed under:  
+`<app address>/swagger-ui/index.html#/`  
+example:  
+`http://localhost:5552/swagger-ui/index.html#/`
 
 ---------------------------------
 

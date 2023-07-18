@@ -613,6 +613,67 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "deleteBooking",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/booking\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings/1",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5555",
+							"path": [
+								"booking",
+								"api",
+								"bookings",
+								"1"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -911,17 +972,8 @@
 								"type": "text"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "1",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/delete",
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/delete/1",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -930,7 +982,8 @@
 							"path": [
 								"msg",
 								"api",
-								"delete"
+								"delete",
+								"1"
 							]
 						}
 					},

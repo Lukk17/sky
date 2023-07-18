@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
 
 public class OfferAssembler {
     public static String TEST_HOTEL_NAME = "testHotelName";

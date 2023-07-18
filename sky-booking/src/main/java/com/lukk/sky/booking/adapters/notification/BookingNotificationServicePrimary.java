@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 
 import static com.lukk.sky.booking.config.Constants.KAFKA_TOPIC;
 
-
+/**
+ * Primary implementation of the {@link BookingNotificationService}.
+ * It uses {@link KafkaTemplate} to send messages to a Kafka topic.
+ */
 @Service
 @Data
 @Primary
@@ -18,6 +21,14 @@ public class BookingNotificationServicePrimary implements BookingNotificationSer
 
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    /**
+     * {@inheritDoc}
+     * <p>This implementation does more than just send a message:
+     * <ul>
+     *     <li>It uses Gson to convert the message to JSON format.</li>
+     *     <li>It sends the JSON-formatted message to a predefined Kafka topic.</li>
+     * </ul>
+     */
     @Override
     public void sendMessage(KafkaPayloadModel message) {
         Gson gson = new Gson();

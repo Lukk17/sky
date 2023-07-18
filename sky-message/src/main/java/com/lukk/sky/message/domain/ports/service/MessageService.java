@@ -4,37 +4,42 @@ import com.lukk.sky.message.adapters.dto.MessageDTO;
 
 import java.util.List;
 
+/**
+ * Service interface for managing messages.
+ * This service provides operations for sending, removing, and retrieving messages.
+ */
 public interface MessageService {
+
     /**
-     * Send message of given text to given receiver.
-     *  @param message     Text of message.
-     * @param senderEmail Email of message sender
-     * @return
+     * Sends a message.
+     *
+     * @param messageDTO The message to be sent.
+     * @return The sent message.
      */
     MessageDTO send(MessageDTO messageDTO);
 
     /**
-     * Remove message with given ID.
+     * Removes a message.
      *
-     * @param messageId ID of message to delete.
+     * @param messageId The ID of the message to be removed.
+     * @param username  The username of the user making the request.
+     * @throws IllegalArgumentException if either {@code messageId} or {@code username} is {@code null}.
      */
     void remove(Long messageId, String username);
 
-
     /**
-     * Get all messages in which given user is receiver.
+     * Retrieves the messages received by a user.
      *
-     * @param userEmail Receiver mail
-     * @return List of Messages as DTO
+     * @param userEmail The email of the user.
+     * @return The list of messages received by the user.
      */
     List<MessageDTO> getReceivedMessages(String userEmail);
 
-
     /**
-     * Get all messages in which given user is sender.
+     * Retrieves the messages sent by a user.
      *
-     * @param userEmail Sender mail
-     * @return List of Messages as DTO
+     * @param userEmail The email of the user.
+     * @return The list of messages sent by the user.
      */
     List<MessageDTO> getSentMessages(String userEmail);
 }

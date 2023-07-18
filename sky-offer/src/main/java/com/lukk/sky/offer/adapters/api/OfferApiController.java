@@ -6,6 +6,11 @@ import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +34,12 @@ public class OfferApiController {
     private final OfferService offerService;
     private final OfferNotificationService offerNotificationService;
 
+    @Operation(summary = "Hello World Page")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Welcome",
+                    content = {@Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @GetMapping(value = {"/", "/home"})
     public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
                                         @RequestHeader Map<String, String> headers) {
@@ -46,11 +57,24 @@ public class OfferApiController {
         }
     }
 
+    @Operation(summary = "Get all offers")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found offers",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OfferDTO.class))})}
+    )
     @GetMapping("/offers")
     public ResponseEntity<List<OfferDTO>> getAllOffers() {
         return ResponseEntity.ok(offerService.getAllOffers());
     }
 
+    @Operation(summary = "Get owned offers")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found owned offers",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @GetMapping("/owner/offers")
     public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
         try {
@@ -65,6 +89,13 @@ public class OfferApiController {
         }
     }
 
+    @Operation(summary = "Create new offer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Offer created",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @PostMapping(value = "/owner/offers")
     public ResponseEntity<?> addOffer(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
@@ -85,6 +116,13 @@ public class OfferApiController {
         }
     }
 
+    @Operation(summary = "Edit offer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Offer edited",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @PutMapping("/owner/offers")
     public ResponseEntity<?> edit(@RequestBody OfferDTO offer, @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
@@ -104,6 +142,13 @@ public class OfferApiController {
         }
     }
 
+    @Operation(summary = "Delete offer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Offer deleted",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @DeleteMapping("/owner/offers/{offerId}")
     public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers, @PathVariable String offerId) {
         try {
@@ -121,6 +166,13 @@ public class OfferApiController {
         }
     }
 
+    @Operation(summary = "Search for offers")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Offers found",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = List.class))}),
+            @ApiResponse(responseCode = "402", description = "No user Info",
+                    content = @Content)})
     @PostMapping("/search")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
         return ResponseEntity.ok(offerService.searchOffers(searched));

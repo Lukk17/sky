@@ -1,4 +1,4 @@
-package com.lukk.sky.booking.config;
+package com.lukk.sky.booking.config.kafka;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;

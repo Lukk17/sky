@@ -33,10 +33,16 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation:${springVersion}")
     implementation("org.springframework.boot:spring-boot-starter-web:${springVersion}")
     implementation("org.springframework.boot:spring-boot-devtools:${springVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-webflux:${springVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-validation:${springVersion}")
 
     implementation("mysql:mysql-connector-java:${project.extra["mysqlVersion"]}")
     implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
     implementation("org.springframework.kafka:spring-kafka:${project.extra["kafkaVersion"]}")
+//    Swagger
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${project.extra["openapi"]}")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.extra["openapi"]}")
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}"){
         exclude("junit", "junit")
