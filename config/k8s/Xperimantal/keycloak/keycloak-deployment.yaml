@@ -1,0 +1,56 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: default
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:21.1
+          args: ["start"]
+          imagePullPolicy: Always
+          env:
+            - name: KEYCLOAK_ADMIN
+#             first null value because of kubernetes bug
+              value: null
+              valueFrom:
+                secretKeyRef:
+                  key: keycloak-user
+                  name: sky-secrets
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: null
+              valueFrom:
+                secretKeyRef:
+                  key: keycloak-pass
+                  name: sky-secrets
+            - name: KC_PROXY
+              value: "edge"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+#              required for correct redirection of ingress path - it will add its path to existing one instead overwrite
+#            example: if ingress endpoint for keycloak is /auth then it will create path like /auth/admin instead of solo /admin
+            - name: PROXY_ADDRESS_FORWARDING
+              value: "true"
+            - name: KEYCLOAK_FRONTEND_URL
+              value: http://34.118.116.39/auth/
+            - name: KEYCLOAK_ADMIN_URL
+              value: http://34.118.116.39/auth/realms/master/admin/
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /realms/master
+              port: 8080

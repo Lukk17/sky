@@ -1,0 +1,50 @@
+# Default values for sky-offer.
+
+name: sky-notify
+namespace: default
+
+label:
+  app: sky-notify
+
+replicaCount: 1
+
+deployment:
+  name: sky-notify-deployment
+  image:
+    repository: lukk17/sky-notify
+    pullPolicy: Always
+    tag: "v1.0.0"
+  container:
+    name: sky-notify-container
+  env:
+    spring:
+      debug: "INFO"
+      securityUser: "spring-security-user"
+      securityPass: "spring-security-pass"
+
+secret:
+  name: sky-secrets
+
+imagePullSecrets:
+  - name: docker-cred
+
+service:
+  name: sky-notify-service
+  type: ClusterIP
+  port: "5554"
+
+kafka:
+  address: "kafka-service"
+  port: "9092"
+
+actuator:
+  livenessProbe:
+    path: "/actuator/health/liveness"
+    initialDelaySeconds: "30"
+    periodSeconds: "5"
+    failureThreshold: "35"
+  readinessProbe:
+    path: "/actuator/health/readiness"
+    initialDelaySeconds: "10"
+    periodSeconds: "5"
+    failureThreshold: "15"

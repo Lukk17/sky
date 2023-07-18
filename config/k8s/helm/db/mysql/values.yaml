@@ -1,0 +1,16 @@
+
+image:
+  name: "mysql:8.0.33"
+  imagePullPolicy: "IfNotPresent"
+
+service:
+  port: 3306
+
+volume:
+  claimName: "database-persistent-volume-claim"
+  storage: "1Gi"
+  configMap:
+    name: "mysql-initdb-config"
+
+data:
+  init: "CREATE DATABASE IF NOT EXISTS sky;GRANT ALL PRIVILEGES ON * . * TO '${MYSQL_USER}'@'%';FLUSH PRIVILEGES;"

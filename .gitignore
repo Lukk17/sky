@@ -1,6 +1,10 @@
+
+./config/k8s/secret/docker-cred.yaml
+./config/k8s/secret/secrets.yaml
+./config/k8s/secret/sealed-private.key
+
+
 /target/
-
-
 .mvn
 
 .gradle/
@@ -70,4 +74,5 @@ local.properties
 
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
 

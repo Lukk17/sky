@@ -1,0 +1,64 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "sky-message-deployment"
+  namespace: "default"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "message"
+  template:
+    metadata:
+      labels:
+        app: "message"
+    spec:
+      containers:
+        - name: "sky-message-container"
+          image: "lukk17/sky-message:v1.0.0"
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 5553
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health/liveness"
+              port: 5553
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 35
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health/readiness"
+              port: 5553
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 20
+          env:
+            - name: MESSAGE_PORT
+              value: "5553"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-service:3306/sky"
+            - name: MYSQL_USER
+              value: root
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-pass
+                  name: sky-secrets
+            - name: SPRING_DEBUG
+              value: "INFO"
+            - name: HIBERNATE_DEBUG
+              value: "INFO"
+            - name: SHOW_SQL_QUERIES
+              value: "false"
+            - name: SPRING_SECURITY_USER
+              valueFrom:
+                secretKeyRef:
+                  key: spring-security-user
+                  name: sky-secrets
+            - name: SPRING_SECURITY_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: spring-security-pass
+                  name: sky-secrets

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: sky-booking
+description: A Helm chart for Sky booking service
+type: application
+
+version: 1.0.0
+appVersion: "1.0.0"
+
+maintainers:
+  - name: Lukk
+    url: https://github.com/lukk17

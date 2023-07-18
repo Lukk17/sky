@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+#  can't be just "kafka" because then Kubernetes will create env named "KAFKA_PORT" which will collide
+#  with kafka internal config and pod will not start.
+#  When named "kafka-service" this env will be named "KAFKA_SERVICE_PORT" and that's ok for kafka.
+  name: kafka-service
+spec:
+  selector:
+    app: kafka
+  ports:
+    - protocol: TCP
+      port: 9092
+      targetPort: 9092

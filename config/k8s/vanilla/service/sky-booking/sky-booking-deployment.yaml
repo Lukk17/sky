@@ -1,0 +1,75 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "sky-booking-deployment"
+  namespace: "default"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "booking"
+  template:
+    metadata:
+      labels:
+        app: "booking"
+    spec:
+      containers:
+        - name: "sky-booking-container"
+          image: "lukk17/sky-booking:v1.0.0"
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 5555
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health/liveness"
+              port: 5555
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 35
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health/readiness"
+              port: 5555
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 20
+          env:
+            - name: BOOKING_PORT
+              value: "5555"
+            - name: OFFER_SERVICE_HOSTNAME
+              value: "http://sky-offer-service.default.svc.cluster.local"
+            - name: OFFER_SERVICE_HOST_PORT
+              value: "5552"
+            - name: KAFKA_ADDRESS
+              value: "kafka-service"
+            - name: KAFKA_PORT
+              value: "9092"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-service:3306/sky"
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-user
+                  name: sky-secrets
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-pass
+                  name: sky-secrets
+            - name: SPRING_DEBUG
+              value: "INFO"
+            - name: HIBERNATE_DEBUG
+              value: "INFO"
+            - name: SHOW_SQL_QUERIES
+              value: "false"
+            - name: SPRING_SECURITY_USER
+              valueFrom:
+                secretKeyRef:
+                  key: spring-security-user
+                  name: sky-secrets
+            - name: SPRING_SECURITY_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: spring-security-pass
+                  name: sky-secrets

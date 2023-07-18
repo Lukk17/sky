@@ -1,13 +1,13 @@
 package com.lukk.sky.offer.Assemblers;
 
-import com.lukk.sky.offer.dto.OfferDTO;
-import com.lukk.sky.offer.entity.Offer;
+import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.offer.domain.model.Offer;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 
 public class OfferAssembler {
     public static String TEST_HOTEL_NAME = "testHotelName";
@@ -32,7 +32,7 @@ public class OfferAssembler {
     public static Offer getPopulatedOffer(Long id) {
         return Offer.builder()
                 .hotelName(TEST_HOTEL_NAME)
-                .ownerEmail(TEST_USER_EMAIL)
+                .ownerEmail(TEST_OWNER_EMAIL)
                 .city(TEST_CITY)
                 .comment(TEST_COMMENT)
                 .country(TEST_COUNTRY)
@@ -40,7 +40,6 @@ public class OfferAssembler {
                 .photoPath(TEST_PHOTO_PATH)
                 .id(id)
                 .roomCapacity(TEST_ROOM_CAPACITY)
-                .booked(new ArrayList<>())
                 .price(TEST_PRICE)
                 .build();
     }
@@ -56,7 +55,6 @@ public class OfferAssembler {
                 .photoPath("")
                 .id(id)
                 .roomCapacity(1L)
-                .booked(new ArrayList<>())
                 .price(BigDecimal.valueOf(1))
                 .build();
     }
@@ -75,11 +73,25 @@ public class OfferAssembler {
                 .hotelName(TEST_HOTEL_NAME)
                 .city(TEST_CITY)
                 .country(TEST_COUNTRY)
-                .booked(new ArrayList<>())
                 .comment(TEST_COMMENT)
                 .description(TEST_DESCRIPTION)
                 .id(id)
-                .ownerEmail(TEST_USER_EMAIL)
+                .ownerEmail(TEST_OWNER_EMAIL)
+                .photoPath(TEST_PHOTO_PATH)
+                .price(TEST_PRICE)
+                .roomCapacity(TEST_ROOM_CAPACITY)
+                .build();
+    }
+
+    public static OfferEditDTO getPopulatedOfferEditDTO(Long id) {
+        return OfferEditDTO.builder()
+                .hotelName(TEST_HOTEL_NAME)
+                .city(TEST_CITY)
+                .country(TEST_COUNTRY)
+                .comment(TEST_COMMENT)
+                .description(TEST_DESCRIPTION)
+                .id(id)
+                .ownerEmail(TEST_OWNER_EMAIL)
                 .photoPath(TEST_PHOTO_PATH)
                 .price(TEST_PRICE)
                 .roomCapacity(TEST_ROOM_CAPACITY)

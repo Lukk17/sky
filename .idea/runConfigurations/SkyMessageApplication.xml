@@ -1,6 +1,18 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="SkyMessageApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <option name="ACTIVE_PROFILES" value="local" />
+    <envs>
+      <env name="MYSQL_USER" value="root" />
+      <env name="MYSQL_PASS" value="Lukk1234" />
+      <env name="SPRING_DEBUG" value="INFO" />
+      <env name="HIBERNATE_DEBUG" value="INFO" />
+      <env name="SHOW_SQL_QUERIES" value="false" />
+      <env name="SPRING_SECURITY_USER" value="XYZ" />
+      <env name="SPRING_SECURITY_PASS" value="XYZ" />
+      <env name="SPRING_DATASOURCE_URL" value="jdbc:mysql://localhost:3306/sky?useSSL=false&amp;useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=Europe/Warsaw" />
+    </envs>
     <module name="sky-message.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.lukk.sky.message.SkyMessageApplication" />
     <extension name="net.ashald.envfile">
       <option name="IS_ENABLED" value="false" />
       <option name="IS_SUBST" value="false" />
@@ -8,22 +20,9 @@
       <option name="IS_IGNORE_MISSING_FILES" value="false" />
       <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
       <ENTRIES>
-        <ENTRY IS_ENABLED="true" PARSER="runconfig" />
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
       </ENTRIES>
     </extension>
-    <option name="SPRING_BOOT_MAIN_CLASS" value="com.lukk.sky.message.SkyMessageApplication" />
-    <option name="ALTERNATIVE_JRE_PATH" />
-    <envs>
-      <env name="NAMING_SERVICE_URL" value="http://localhost:8761/eureka" />
-      <env name="MYSQL_USER" value="root" />
-      <env name="MYSQL_PASS" value="Lukk1234" />
-      <env name="SPRING_DEBUG" value="INFO" />
-      <env name="HIBERNATE_DEBUG" value="INFO" />
-      <env name="SHOW_SQL_QUERIES" value="false" />
-      <env name="SPRING_SECURITY_USER " value="XYZ" />
-      <env name="SPRING_SECURITY_PASS" value="XYZ" />
-      <env name="SPRING_DATASOURCE_URL" value="jdbc:mysql://localhost:3306/sky?useSSL=false&amp;useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=Europe/Warsaw" />
-    </envs>
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

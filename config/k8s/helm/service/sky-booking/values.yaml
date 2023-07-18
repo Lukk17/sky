@@ -1,0 +1,115 @@
+# Default values for sky-offer.
+
+name: "sky-booking"
+namespace: "default"
+
+label:
+  app: "sky-booking"
+
+replicaCount: "1"
+
+deployment:
+  name: "sky-booking-deployment"
+  image:
+    repository: "lukk17/sky-booking"
+    pullPolicy: "Always"
+    tag: "v1.0.0"
+  container:
+    name: "sky-booking-container"
+  env:
+    spring:
+      datasourceUrl: "jdbc:mysql://mysql-service:3306/sky"
+      debug: "INFO"
+      securityUser: "spring-security-user"
+      securityPass: "spring-security-pass"
+    hibernate:
+      showSqlQueries: "false"
+      debug: "INFO"
+    mysql:
+      user: "mysql-root-user"
+      pass: "mysql-root-pass"
+
+secret:
+  name: "sky-secrets"
+
+imagePullSecrets:
+  - name: "docker-cred"
+
+service:
+  name: "sky-booking-service"
+  type: "ClusterIP"
+  port: "5555"
+  apiPrefix: "/booking/api"
+
+ingress:
+  service:
+    name: "sky-booking-ingress"
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/rewrite-target: "/api/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/booking/api(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+  swagger:
+    name: "sky-booking-swagger-ingress"
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/booking/swagger-ui(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+  swaggerResource:
+    name: "sky-booking-swagger-resources-ingress"
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/rewrite-target: "/v3/api-docs/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/booking/v3/api-docs(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+kafka:
+  address: "kafka-service"
+  port: "9092"
+
+offerService:
+  hostname: "http://sky-offer-service.default.svc.cluster.local"
+  port: "5552"
+
+actuator:
+  livenessProbe:
+    path: "/actuator/health/liveness"
+    initialDelaySeconds: "30"
+    periodSeconds: "5"
+    failureThreshold: "35"
+  readinessProbe:
+    path: "/actuator/health/readiness"
+    initialDelaySeconds: "10"
+    periodSeconds: "5"
+    failureThreshold: "15"

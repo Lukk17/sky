@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: oauth2-proxy
+  name: oauth2-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        k8s-app: oauth2-proxy
+    spec:
+      containers:
+        - args:
+            - --provider=oidc
+            - --email-domain="*"
+            - --upstream=file:///dev/null
+            - --http-address=0.0.0.0:4180
+            - --cookie-secure=false
+            - --oidc-issuer-url=https://lukk17.eu.auth0.com/
+            - --insecure-oidc-allow-unverified-email=true
+            - --redirect-url=https://skycloud.luksarna.com/oauth2/callback
+            - --set-authorization-header=true
+            - --scope=openid email
+            - --set-xauthrequest=true
+            - --pass-authorization-header=true
+            - --set-authorization-header=true
+            - --pass-access-token=true
+            - --pass-host-header=true
+            - --pass-user-headers=true
+            - --pass-basic-auth=true
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-id
+                  name: sky-secrets
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-secret
+                  name: sky-secrets
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-cookie-secret
+                  name: sky-secrets
+
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.4.0
+          imagePullPolicy: Always
+          name: oauth2-proxy
+          ports:
+            - containerPort: 4180
+              protocol: TCP

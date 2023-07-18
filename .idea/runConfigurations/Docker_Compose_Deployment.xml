@@ -1,7 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Docker Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" server-name="Docker">
+  <configuration default="false" name="Docker Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" server-name="Docker2">
     <deployment type="docker-compose.yml">
       <settings>
+        <option name="envFilePath" value="" />
         <option name="envVars">
           <list>
             <DockerEnvVarImpl>
@@ -38,7 +39,7 @@
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="HIBERNATE_DEBUG" />
-              <option name="value" value="DEBUG" />
+              <option name="value" value="INFO" />
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="SHOW_SQL_QUERIES" />

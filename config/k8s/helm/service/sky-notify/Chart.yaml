@@ -1,0 +1,11 @@
+apiVersion: v2
+name: sky-notify
+description: A Helm chart for Sky notify service
+type: application
+
+version: 1.0.0
+appVersion: "1.0.0"
+
+maintainers:
+  - name: Lukk
+    url: https://github.com/lukk17

@@ -1,35 +1,40 @@
 version: "3.9"
 
 services:
-  eureka-service:
-    container_name: eureka-service
+
+  sky-booking:
+    container_name: sky-booking
     build:
-      dockerfile: ./eureka-service/docker/Dockerfile
+      dockerfile: ./sky-booking/docker/Dockerfile
       context: ../../
     networks:
       - sky-network
     restart: always
     expose:
-      - 8761
-    ports:
-      - 8761:8761
+      - 5555
     environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}?${DB_PARAMS}
       - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASS=${MYSQL_PASS}
+      - MYSQL_DATABASE_NAME=${MYSQL_DATABASE_NAME}
+      - SHOW_SQL_QUERIES=${SHOW_SQL_QUERIES}
       - SPRING_DEBUG=${SPRING_DEBUG}
       - HIBERNATE_DEBUG=${HIBERNATE_DEBUG}
+      - SPRING_SECURITY_USER=${SPRING_SECURITY_USER}
+      - SPRING_SECURITY_PASS=${SPRING_SECURITY_PASS}
 
-  auth-service:
-    container_name: auth-service
+  sky-notify:
+    container_name: sky-notify
     build:
-      dockerfile: ./auth-service/docker/Dockerfile
+      dockerfile: ./sky-notify/docker/Dockerfile
       context: ../../
     networks:
       - sky-network
+    restart: always
     expose:
-      - 9100
-    depends_on:
-      - eureka-service
+      - 5554
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}?${DB_PARAMS}
       - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
@@ -53,9 +58,6 @@ services:
     restart: always
     expose:
       - 5552
-    depends_on:
-      - eureka-service
-      - auth-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}?${DB_PARAMS}
       - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
@@ -80,10 +82,7 @@ services:
     expose:
       - 5553
     ports:
-      - 5553:5553
-    depends_on:
-      - eureka-service
-      - auth-service
+      - "5553:5553"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}?${DB_PARAMS}
       - NAMING_SERVICE_URL=${NAMING_SERVICE_URL}
@@ -95,26 +94,6 @@ services:
       - HIBERNATE_DEBUG=${HIBERNATE_DEBUG}
       - SPRING_SECURITY_USER=${SPRING_SECURITY_USER}
       - SPRING_SECURITY_PASS=${SPRING_SECURITY_PASS}
-
-  zuul-service:
-    container_name: zuul-service
-    build:
-      dockerfile: ./zuul-service/docker/Dockerfile
-      context: ../../
-    networks:
-      - sky-network
-    expose:
-      - 8762
-    ports:
-      - 8762:8762
-    depends_on:
-      - eureka-service
-      - auth-service
-      - sky-offer
-      - sky-message
-  #    environment:
-  #      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-  #      - SERVICE_URL_DEFAULT_ZONE=${NAMING_SERVICE_URL}
 
 networks:
   sky-network:

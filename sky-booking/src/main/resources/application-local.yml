@@ -1,0 +1,65 @@
+# ==================================================================================================================
+# SPRING setup
+
+sky:
+  offerServiceHostname: http://localhost
+  offerServiceHostPort: 5552
+  offerOwnerEndpoint: owners
+
+server:
+  port: 5555
+
+spring:
+  web:
+    locale-resolver: accept_header
+
+  mvc:
+    dispatch-options-request: true
+
+  security:
+    user:
+      name: XYZ
+      password: XYZ
+
+  jpa:
+    hibernate.ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/sky?useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+    hikari:
+      connection-timeout: 60000
+      validation-timeout: 60000
+    username: root
+    password: Lukk1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      client-id: offerBookingService
+    admin:
+      auto-create: true
+
+# expose actuator endpoints (* for all)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
+      apache:
+        kafka:
+          clients:
+            admin:
+              AdminClientConfig: WARN
+            producer:
+              ProducerConfig: WARN
+

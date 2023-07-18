@@ -1,6 +1,0 @@
-spring:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-lukk:
-  helloWorld: test auth text

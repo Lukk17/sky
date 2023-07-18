@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: oauth2-proxy
+  name: oauth2-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        k8s-app: oauth2-proxy
+    spec:
+      containers:
+        - args:
+            - --provider={{ .Values.args.provider }}
+            - --email-domain={{ .Values.args.emailDomain }}
+            - --upstream={{ .Values.args.upstream }}
+            - --http-address={{ .Values.args.httpAddress }}
+            - --cookie-secure={{ .Values.args.cookieSecure }}
+            - --oidc-issuer-url={{ .Values.args.oidcIssuerUrl }}
+            - --insecure-oidc-allow-unverified-email={{ .Values.args.insecureOidcAllowUnverifiedEmail }}
+            - --redirect-url={{ .Values.args.redirectUrl }}
+            - --scope={{ .Values.args.scope }}
+            - --set-xauthrequest={{ .Values.args.setXauthrequest }}
+            - --pass-authorization-header={{ .Values.args.passAuthorizationHeader }}
+            - --set-authorization-header={{ .Values.args.setAuthorizationHeader }}
+            - --pass-access-token={{ .Values.args.passAccessToken }}
+            - --pass-host-header={{ .Values.args.passHostHeader }}
+            - --pass-user-headers={{ .Values.args.passUserHeaders }}
+            - --pass-basic-auth={{ .Values.args.passBasicAuth }}
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-id
+                  name: sky-secrets
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-secret
+                  name: sky-secrets
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: auth0-client-cookie-secret
+                  name: sky-secrets
+
+          image: {{ .Values.image.name }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+          name: oauth2-proxy
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              protocol: TCP

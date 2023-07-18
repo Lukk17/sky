@@ -1,8 +1,21 @@
 # ==================================================================================================================
-# SPRING setup
+sky:
+  helloWorld: <center><h1>Welcome to Message app.</h1></center>
+  apiPrefix: /api
 
+# SPRING setup
 server:
-  port: 5553
+  port: ${MESSAGE_PORT:5553}
+  forward-headers-strategy: framework
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: '/swagger-ui.html'
+    urls:
+      - url: ${SWAGGER_URL:/v3/api-docs/public}
+        name: Booking API doc
 
 spring:
   application:
@@ -18,13 +31,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: ${SHOW_SQL_QUERIES:false}
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky?useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky}
     hikari:
       connection-timeout: 60000
       validation-timeout: 60000
+      data-source-properties:
+        useUnicode: true
+        characterEncoding: UTF-8
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASS:Lukk1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -35,23 +51,19 @@ management:
     web:
       exposure:
         include: "*"
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
 
 logging:
   level:
     org:
       springframework:
         web: ${SPRING_DEBUG:INFO}
-      hibernate: ${HIBERNATE_DEBUG:INFO}
-
-# ==================================================================================================================
-#  EUREKA setup
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${NAMING_SERVICE_URL:http://host.docker.internal:8761/eureka}
-    register-with-eureka: true
-    fetch-registry: true
-# in docker sometimes there is problem with DNS resolving - that why ip addresses are better as names
-  instance:
-    preferIpAddress: true
+      hibernate: ${HIBERNATE_DEBUG:WARN}

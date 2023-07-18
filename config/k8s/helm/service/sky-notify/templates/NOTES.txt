@@ -1,0 +1,10 @@
+
+{{- if contains "ClusterIP" .Values.service.type }}
+POD_NAME command:
+  kubectl get pods --namespace {{ .Values.namespace }} -l "{{- range $key, $value := .Values.label }}{{ $key }}={{ $value }} {{- end}}"
+
+{{- else if contains "LoadBalancer" .Values.service.type }}
+NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  You can watch the status of by running 'kubectl get --namespace {{ .Values.namespace }} svc -w {{ .Values.name }}'
+http://$(kubectl get svc --namespace {{ .Values.namespace }} {{ .Values.name }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}"):{{ .Values.service.port }}
+{{- end }}

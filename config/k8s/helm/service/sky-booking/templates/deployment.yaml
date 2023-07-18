@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace}}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- range $key, $value := .Values.label }}
+          {{ $key }}: {{ $value | quote }}
+      {{- end}}
+  template:
+    metadata:
+      labels:
+        {{- range $key, $value := .Values.label }}
+          {{ $key }}: {{ $value | quote }}
+        {{- end}}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.deployment.container.name }}
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-booking:latest" }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.actuator.livenessProbe.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.actuator.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.actuator.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.actuator.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.actuator.readinessProbe.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.actuator.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.actuator.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.actuator.readinessProbe.failureThreshold }}
+          env:
+            - name: BOOKING_PORT
+              value: "{{ .Values.service.port }}"
+            - name: OFFER_SERVICE_HOSTNAME
+              value: "{{ .Values.offerService.hostname }}"
+            - name: OFFER_SERVICE_HOST_PORT
+              value: "{{ .Values.offerService.port }}"
+            - name: KAFKA_ADDRESS
+              value: {{ .Values.kafka.address }}
+            - name: KAFKA_PORT
+              value: "{{ .Values.kafka.port }}"
+            - name: SPRING_DATASOURCE_URL
+              value: "{{ .Values.deployment.env.spring.datasourceUrl }}"
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.deployment.env.mysql.user }}
+                  name: "{{ .Values.secret.name }}"
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.deployment.env.mysql.pass }}
+                  name: "{{ .Values.secret.name }}"
+            - name: SPRING_DEBUG
+              value: "{{ .Values.deployment.env.spring.debug }}"
+            - name: HIBERNATE_DEBUG
+              value: "{{ .Values.deployment.env.hibernate.debug }}"
+            - name: SHOW_SQL_QUERIES
+              value: "{{ .Values.deployment.env.hibernate.showSqlQueries }}"
+            - name: SPRING_SECURITY_USER
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.deployment.env.spring.securityUser }}
+                  name: "{{ .Values.secret.name }}"
+            - name: SPRING_SECURITY_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.deployment.env.spring.securityPass }}
+                  name: "{{ .Values.secret.name }}"

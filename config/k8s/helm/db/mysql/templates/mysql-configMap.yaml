@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.volume.configMap.name }}
+data:
+  initdb.sql: |
+    {{  .Values.data.init }}

@@ -3,7 +3,7 @@ ARG APP_NAME=sky-offer
 ARG HOME=/home/app
 
 # ===============> BUILD STAGE <===============
-FROM gradle:7.4.2-jdk11 AS build
+FROM gradle:8.1.1-jdk17 AS build
 ARG APP_NAME
 ARG HOME
 LABEL stage=build
@@ -12,7 +12,7 @@ COPY ./config/*.gradle.kts /home/config/
 RUN gradle -p $HOME clean bootJar
 
 # ===============> RUN STAGE <===============
-FROM openjdk:11
+FROM openjdk:17
 ARG APP_NAME
 # only ENV is available in runtime, ARG is only avalaible in build
 ENV APP_NAME $APP_NAME

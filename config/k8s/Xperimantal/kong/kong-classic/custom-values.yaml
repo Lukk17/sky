@@ -1,0 +1,178 @@
+# --------------------------------------------------------------------------------
+# ADMIN
+
+#admin:
+#  annotations:
+#    konghq.com/protocol: https
+#  enabled: true
+#  http:
+#    enabled: false
+#  ingress:
+#    annotations:
+#      konghq.com/https-redirect-status-code: "301"
+#      konghq.com/protocols: https
+#      konghq.com/strip-path: "true"
+#      kubernetes.io/ingress.class: default
+#      nginx.ingress.kubernetes.io/app-root: /
+#      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+#      nginx.ingress.kubernetes.io/permanent-redirect-code: "301"
+#    enabled: true
+#    hostname: kong.127-0-0-1.nip.io
+#    path: /api
+#    tls: quickstart-kong-admin-cert
+#  tls:
+#    containerPort: 8444
+#    enabled: true
+#    parameters:
+#      - http2
+#    servicePort: 8444
+#  type: ClusterIP
+
+# --------------------------------------------------------------------------------
+# MANAGER
+manager:
+  annotations:
+    konghq.com/protocol: https
+  enabled: true
+  http:
+    containerPort: 8002
+    enabled: false
+    servicePort: 8002
+  ingress:
+    annotations:
+      konghq.com/https-redirect-status-code: "301"
+      kubernetes.io/ingress.class: default
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    enabled: truehttps://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes-examples/keycloak-ingress.yaml
+    hostname: kong.127-0-0-1.nip.io
+    path: /manager
+    tls: quickstart-kong-admin-cert
+  tls:
+    containerPort: 8445
+    enabled: true
+    parameters:
+      - http2
+    servicePort: 8445
+  type: ClusterIP
+
+# --------------------------------------------------------------------------------
+# Docker Image
+
+image:
+  repository: kong/kong-gateway
+  tag: "3.0"
+
+
+# --------------------------------------------------------------------------------
+# INGRESS CONTROLLER
+
+#ingressController:
+#  enabled: true
+#  env:
+#    kong_admin_filter_tag: ingress_controller_default
+#    kong_admin_tls_skip_verify: true
+#    kong_admin_token:
+#      valueFrom:
+#        secretKeyRef:
+#          key: password
+#          name: kong-config-secret
+#    kong_admin_url: https://localhost:8444
+#    kong_workspace: default
+#    publish_service: kong/quickstart-kong-proxy
+#  image:
+#    repository: docker.io/kong/kubernetes-ingress-controller
+#    tag: "2.2"
+#  ingressClass: default
+#  installCRDs: false
+
+# --------------------------------------------------------------------------------
+# ENVIRONMENT
+
+#env:
+#  admin_access_log: /dev/stdout
+#  admin_api_uri: https://kong.127-0-0-1.nip.io/api
+#  admin_error_log: /dev/stdout
+#  admin_gui_access_log: /dev/stdout
+#  admin_gui_error_log: /dev/stdout
+#  admin_gui_host: kong.127-0-0-1.nip.io
+#  admin_gui_protocol: https
+#  admin_gui_url: https://kong.127-0-0-1.nip.io/
+#  cluster_data_plane_purge_delay: 60
+#  cluster_listen: 0.0.0.0:8005
+#  cluster_telemetry_listen: 0.0.0.0:8006
+#  database: postgres
+#  log_level: debug
+#  lua_package_path: /opt/?.lua;;
+#  nginx_worker_processes: "2"
+#  password:
+#    valueFrom:
+#      secretKeyRef:
+#        key: kong_admin_password
+#        name: kong-config-secret
+#  pg_database: kong
+#  pg_host:
+#    valueFrom:
+#      secretKeyRef:
+#        key: pg_host
+#        name: kong-config-secret
+#  pg_password:
+#    valueFrom:
+#      secretKeyRef:
+#        key: password
+#        name: kong-config-secret
+#  pg_ssl: "off"
+#  pg_ssl_verify: "off"
+#  pg_user: kong
+#  plugins: bundled,openid-connect
+#  portal: true
+#  portal_api_access_log: /dev/stdout
+#  portal_api_error_log: /dev/stdout
+#  portal_api_url: https://developer.127-0-0-1.nip.io/api
+#  portal_auth: basic-auth
+#  portal_cors_origins: '*'
+#  portal_gui_access_log: /dev/stdout
+#  portal_gui_error_log: /dev/stdout
+#  portal_gui_host: developer.127-0-0-1.nip.io
+#  portal_gui_protocol: https
+#  portal_gui_url: https://developer.127-0-0-1.nip.io/
+#  portal_session_conf:
+#    valueFrom:
+#      secretKeyRef:
+#        key: portal_session_conf
+#        name: kong-config-secret
+#  prefix: /kong_prefix/
+#  proxy_access_log: /dev/stdout
+#  proxy_error_log: /dev/stdout
+#  proxy_stream_access_log: /dev/stdout
+#  proxy_stream_error_log: /dev/stdout
+#  smtp_mock: "on"
+#  status_listen: 0.0.0.0:8100
+#  trusted_ips: 0.0.0.0/0,::/0
+#  vitals: true
+
+
+# --------------------------------------------------------------------------------
+# POSTGRES EXTERNAL CONFIG
+
+#env:
+#  database: postgres
+#  pg_database: kong
+#  pg_hos: kong-ingress-controller-postgresql
+#  pg_user:
+#    valueFrom:
+#      secretKeyRef:
+#        key: postgresUser
+#        name: skysecrets
+#  pg_password:
+#    valueFrom:
+#      secretKeyRef:
+#        key: postgresPass
+#        name: skysecrets
+#postgresql:
+#  enabled: true
+#  postgresqlUsername: postgres
+#  postgresqlDatabase: kong
+#  service:
+#    port: 5432
+#  existingSecret: skysecrets
+
