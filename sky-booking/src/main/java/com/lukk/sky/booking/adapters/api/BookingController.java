@@ -62,6 +62,7 @@ public class BookingController {
                     content = @Content)
     })
     @GetMapping("/user/bookings")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> getBookedOffers(@RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
 
@@ -78,6 +79,7 @@ public class BookingController {
                     content = @Content)
     })
     @PostMapping("/bookings")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public Mono<ResponseEntity> bookOffer(@Valid @RequestBody BookingPayload bookingPayload,
                                           @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
@@ -103,15 +105,17 @@ public class BookingController {
                     content = @Content)
     })
     @DeleteMapping("/bookings/{bookingId}")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<String> removeBooking(@RequestHeader Map<String, String> headers,
                                                 @PathVariable String bookingId) {
+        Gson gson = new Gson();
         String userEmail = getUserInfoFromHeaders(headers);
         log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
 
         String removeMessage = bookingService.removeBooking(bookingId, userEmail);
         sendNotification(removeMessage, userEmail);
 
-        return ResponseEntity.ok(removeMessage);
+        return ResponseEntity.ok(gson.toJson(removeMessage));
     }
 
     private static String getUserInfoFromHeaders(Map<String, String> headers) {

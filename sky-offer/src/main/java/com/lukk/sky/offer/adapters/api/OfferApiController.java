@@ -1,6 +1,7 @@
 package com.lukk.sky.offer.adapters.api;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.lukk.sky.offer.adapters.dto.KafkaPayloadModel;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
@@ -61,6 +62,7 @@ public class OfferApiController {
                             schema = @Schema(implementation = OfferDTO.class))})
     })
     @GetMapping("/offers")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<List<OfferDTO>> getAllOffers() {
         return ResponseEntity.ok(offerService.getAllOffers());
     }
@@ -74,6 +76,7 @@ public class OfferApiController {
                     content = @Content)
     })
     @GetMapping("/owner/offers")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
         String ownerEmail = getUserInfoFromHeaders(headers);
         List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
@@ -90,6 +93,7 @@ public class OfferApiController {
                     content = @Content)
     })
     @PostMapping(value = "/owner/offers")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer,
                                       @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
@@ -112,6 +116,7 @@ public class OfferApiController {
                     content = @Content)
     })
     @PutMapping("/owner/offers")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer,
                                   @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
@@ -134,16 +139,17 @@ public class OfferApiController {
                     content = @Content)
     })
     @DeleteMapping("/owner/offers/{offerId}")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers,
                                          @PathVariable String offerId) {
-
+        Gson gson = new Gson();
         String ownerEmail = getUserInfoFromHeaders(headers);
         log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
         offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
 
         sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
-        return ResponseEntity.ok("Offer deleted.");
+        return ResponseEntity.ok(gson.toJson(String.format("Offer with id: %s deleted.", offerId)));
     }
 
     @Operation(summary = "Search for offers")
@@ -155,6 +161,7 @@ public class OfferApiController {
                     content = @Content)
     })
     @PostMapping("/search")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
         return ResponseEntity.ok(offerService.searchOffers(searched));
     }

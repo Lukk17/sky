@@ -2,6 +2,8 @@
 sky:
   helloWorld: <center><h1>Welcome to Offer app.</h1></center>
   apiPrefix: /api
+  crossOrigin:
+    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:*}
 
 # SPRING setup
 

@@ -1,5 +1,6 @@
 package com.lukk.sky.message.adapters.api;
 
+import com.google.gson.Gson;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.exception.MessageException;
 import com.lukk.sky.message.domain.ports.service.MessageService;
@@ -49,6 +50,7 @@ public class MessageController {
                     content = @Content)
     })
     @PostMapping("/send")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message,
                                          @RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
@@ -69,6 +71,7 @@ public class MessageController {
                     content = @Content)
     })
     @GetMapping("/received")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> getReceivedMessages(@RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
         log.info("Getting received messages for user: {}", userEmail);
@@ -85,6 +88,7 @@ public class MessageController {
                     content = @Content)
     })
     @GetMapping("/sent")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> getSentMessages(@RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
         log.info("Getting sent messages for user: {}", userEmail);
@@ -101,14 +105,16 @@ public class MessageController {
                     content = @Content)
     })
     @DeleteMapping("/delete/{messageId}")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> deleteMessage(@RequestHeader Map<String, String> headers, @PathVariable String messageId) {
         try {
+            Gson gson = new Gson();
             String userEmail = getUserInfoFromHeaders(headers);
 
             log.info("Removing message with ID: {}", messageId);
             messageService.remove(Long.parseLong(messageId), userEmail);
 
-            return ResponseEntity.ok("Message removed.");
+            return ResponseEntity.ok(gson.toJson("Message removed."));
 
         } catch (MessageException exception) {
             return ResponseEntity.badRequest().body(exception.getMessage());
