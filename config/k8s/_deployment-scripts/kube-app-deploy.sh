@@ -9,7 +9,7 @@ kubectl apply -f ./config/k8s/secret/sealed/sealed-secrets.yaml
 kubectl apply -f ./config/k8s/secret/sealed/sealed-docker-cred.yaml
 
 # api gateway
-kubectl apply -f ./config/k8s/vanilla/api-gateway/ingress/ingress.yaml
+kubectl apply -f ./config/k8s/vanilla/api-gateway/ingress/
 kubectl apply -f ./config/k8s/vanilla/api-gateway/oauth2-proxy/
 
 # independent services

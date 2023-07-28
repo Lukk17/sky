@@ -6,6 +6,7 @@ import com.lukk.sky.offer.config.propertyBind.ServerConfigProperties;
 import com.lukk.sky.offer.config.propertyBind.SpringConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -25,6 +26,9 @@ public class SkyOfferApplication {
     private final ManagementConfigProperties managementConfigProperties;
     private final ServerConfigProperties serverConfigProperties;
     private final LoggingLvlConfigProperties loggingLvlConfigProperties;
+
+    @Value("${sky.crossOrigin.allowed}")
+    private String allowedCrossOrigin;
 
     public static void main(String[] args) {
         log.info(">>>>>>>>>> Offer App start <<<<<<<<<<");
@@ -61,6 +65,8 @@ public class SkyOfferApplication {
         log.info("Kafka server address:\t\t {}", springConfigProperties.getKafka().bootstrapServers());
         log.info("Kafka producer ID:\t\t\t {}", springConfigProperties.getKafka().producer().clientId());
         log.info("Kafka topics auto create:\t {}", springConfigProperties.getKafka().admin().autoCreate());
+
+        log.info("Allowed Cross-Origins: {}", allowedCrossOrigin);
 
         log.info("-------------------- CONFIGURATION END ----------------------");
         log.info("");

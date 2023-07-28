@@ -13,7 +13,7 @@ deployment:
   image:
     repository: "lukk17/sky-message"
     pullPolicy: "Always"
-    tag: "v1.0.0"
+    tag: "v1.0.1-candidate-x00"
   container:
     name: "sky-message-container"
   env:
