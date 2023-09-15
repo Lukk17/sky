@@ -1,8 +1,11 @@
 ## Kafka install and run
 
-1. Download binary from:  
+1. Download binary (Scala 2.13 or newer) from:  
    https://kafka.apache.org/downloads
-2. Extract to place like `C:/kafka`
+2. Extract to place like `C:/kafka` or `$HOME`
+
+### Windows:
+
 3. In `config` folder open `zookeeper.properties`
    set field `dataDir` with path like `C:/kafka/zookeeper-data`
 4. In `config` folder open `server.properties`
@@ -23,6 +26,26 @@
    or use full path like:
    ```shell
    D:\Development\kafka\bin\windows\kafka-server-start.bat D:\Development\kafka\config\server.properties
+   ```
+
+### Linux:
+3. Start the ZooKeeper service
+   inside kafka dir
+   ```
+   $ bin/zookeeper-server-start.sh config/zookeeper.properties
+   ``` 
+   or full path:  
+   ```
+   $ /home/lukk/Documents/kafka/bin/zookeeper-server-start.sh /home/lukk/Documents/kafka/config/zookeeper.properties
+   ```
+4. In another terminal start the Kafka broker service
+   inside kafka dir
+   ```
+   $ bin/kafka-server-start.sh config/server.properties
+   ```
+   or full path:
+   ```
+   $ /home/lukk/Documents/kafka/bin/kafka-server-start.sh /home/lukk/Documents/kafka/config/server.properties
    ```
 ---------------------------------
 
