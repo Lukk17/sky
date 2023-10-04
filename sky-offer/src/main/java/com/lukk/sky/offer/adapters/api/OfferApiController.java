@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,9 +50,7 @@ public class OfferApiController {
                                         @RequestHeader Map<String, String> headers) {
         printHeaders(headers);
 
-        String ownerEmail = getUserInfoFromHeaders(headers);
-
-        sendNotification("Offer Hello World page", ownerEmail);
+        sendNotification("Offer Hello World page", Strings.EMPTY);
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 

@@ -1,0 +1,39 @@
+
+image:
+  name: "quay.io/oauth2-proxy/oauth2-proxy:v7.4.0"
+  imagePullPolicy: "Always"
+
+args:
+  provider: "oidc"
+  emailDomain: "*"
+  upstream: "file:///dev/null"
+  httpAddress: "0.0.0.0:4180"
+  cookieSecure: "false"
+  oidcIssuerUrl: "https://lukk17.eu.auth0.com/"
+  insecureOidcAllowUnverifiedEmail: "true"
+  redirectUrl: "http://localhost/oauth2/callback"
+  setAuthorizationHeader: "true"
+  scope: "openid email"
+  setXauthrequest: "true"
+  passAuthorizationHeader: "true"
+  passAccessToken: "true"
+  passHostHeader: "true"
+  passUserHeaders: "true"
+  passBasicAuth: "true"
+
+service:
+  name: oauth2-proxy
+  port: 4180
+
+ingress:
+  name: oauth2-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+
+  hosts:
+    - host: localhost
+      paths:
+        - path: "/oauth2(/|$)(.*)"
+          pathType: ImplementationSpecific

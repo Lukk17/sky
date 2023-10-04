@@ -218,6 +218,29 @@ In microservice docker-compose.yml description dependency to right MySQL image n
 ```shell
 minikube start --cpus 4 --memory 16384
 ```
+or with different driver than default (docker)
+```shell
+minikube start --cpus 4 --memory 16384 --driver=virtualbox
+minikube start --cpus 4 --memory 16384 --driver=docker
+```
+for linux only
+```shell
+minikube start --cpus 4 --memory 16384 --driver=kvm2
+```
+for windows only
+```shell
+minikube start --cpus 4 --memory 16384 --driver=hyperv
+```
+Driver can be checked in Minikube configuration in  
+on Linux
+```
+~/.minikube/profiles/minikube/config.json
+``` 
+on Windows
+```
+%USERPROFILE%\.minikube\profiles\minikube\config.json
+```
+
 on Windows, it needs setup in wsl - by creating `.wslconfig` file in home directory:
 ```
 [wsl2]
@@ -286,9 +309,48 @@ mysql, sky-offer, sky-booking and sky-message services may require restarting du
 -------------
 ## Accessing app
 
+### URL
 App should be accessible from URL:  
-`http://<minikubeIP>/offer`
+`http://<minikubeIP>/offer/api/home`
 
+but there can be some problems because docker driver adds additional layer of networking,
+which can complicate things and make app not accessible.  
+As a **workaround** to access cluster nginx use port forwarding:
+```shell
+kubectl port-forward svc/ingress-nginx-controller -n ingress-nginx 80:80
+```
+now app will be accessible under:  
+`http://localhost/offer/api/home`
+
+### With host defined in ingress
+
+Edit file (as admin):  
+on Windows
+```
+C:\Windows\System32\drivers\etc\hosts
+```
+on Linux
+```
+/etc/hosts
+```
+
+adding:
+```
+127.0.0.1 skycloud.luksarna.com
+```
+where `skycloud.luksarna.com` is host name from ingress
+
+then app will respond at address:  
+```
+http://skycloud.luksarna.com/offer/api/home
+```  
+where `offer/api/home` is service endpoint
+
+-------------
+
+## Troubleshooting
+
+### Load Balancer
 if type loadBalancer after minikube tunnel  
 `http://<minikubeIP>:<external port>/`  
 to get external port run:
@@ -302,23 +364,18 @@ sky-offer-service   LoadBalancer   10.106.230.5   10.106.230.5   5552:31182/TCP 
 ```
 under ports there is `5552:31182/TCP` - you need to use `31182` port.
 
--------------
-
-## Accessing cluster on local the machine (no Load balancer configured)
-
-There are two ways
-1. `minikube tunnel`  
-   it will forward traffic to ingresses
-
-2. MetalLB install  - problem with configuring it  
-   Use yaml files or install via url (can be found in `installingMetalLB.sh`)
-   At beginning, it can fail due to lack of "memberlist" secret, but it will start working in minute
-
--------------
-
-## Troubleshooting
-
 ### Minikube
+
+#### Changing Windows Docker max RAM usage
+
+Create `.wslconfig` in user directory
+populate with this config:
+```
+[wsl2]
+memory=26GB # Limits VM memory in WSL 2 to 4 GB
+processors=6 # Makes the WSL 2 VM use two virtual processors
+```
+restart service `LxssManager` to restart WSL settings
 
 #### If error with pulling docker images:
 
@@ -408,4 +465,9 @@ and `default` is namespace
 
 ```shell
 minikube delete
+```
+
+full delete:
+```shell
+minikube delete --all
 ```

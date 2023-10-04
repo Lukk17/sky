@@ -293,6 +293,12 @@ To be able to set up service accounts (required by sealed secrets)
 
 ## 6. Troubleshooting
 
+### Creating temporary pod for test
+
+```shell
+kubectl run -i --tty --rm debug --image=busybox -- sh
+```
+
 ### MYSQL configuration
 
 #### Exec into mysql container (easy via minikube dashboard)

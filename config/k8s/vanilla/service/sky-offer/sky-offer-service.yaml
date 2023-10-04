@@ -16,4 +16,4 @@ spec:
   selector:
     #    "component" is just a name, can be any name as long as in target pod is named same, for example could be:
     #    workingLabel: web
-    app: offer
+    app: "offer"
