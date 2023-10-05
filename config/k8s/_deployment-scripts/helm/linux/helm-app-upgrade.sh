@@ -1,5 +1,5 @@
 # Will work only if script is run from project main directory with:
-# ./config/k8s/_deployment-scripts/helm-app-upgrade.sh
+# ./config/k8s/_deployment-scripts/helm/linux/helm-app-upgrade.sh
 
 # sealed secrets
 helm upgrade sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secrets-controller/ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
@@ -8,7 +8,7 @@ helm upgrade sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secr
 helm upgrade oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/
 
 # independent services
-helm upgrade kafka ./config/k8s/helm/kafka/
+helm upgrade kafka-service ./config/k8s/helm/kafka/
 
 # db
 helm upgrade database-persistent-volume-claim ./config/k8s/helm/db/database-persistent-volume-claim/

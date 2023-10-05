@@ -4,10 +4,10 @@
    https://kafka.apache.org/downloads
 2. Extract to place like `C:/kafka`
 3. In `config` folder open `zookeeper.properties`
-   set field `dataDir` with path like `C:/kafka/zookeeper-data`
+   set field `dataDir` with a path like `C:/kafka/zookeeper-data`
 4. In `config` folder open `server.properties`
-   set field `log.dirs` with path like `C:/kafka/kafka-logs`
-5. Open terminal in kafka directory and use command:
+   set field `log.dirs` with a path like `C:/kafka/kafka-logs`
+5. Open the terminal in kafka directory and use command:
    ```shell
       .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
    ```
@@ -28,18 +28,18 @@
 
 ## Build and Run with Gradle
 
-### All run configuration are saved in folder:
+### All run configurations are saved in the folder:
 ```
 .idea\runConfigurations
 ```
 
-To run build project with commend:
+To run a build project with command:
 ```
 gradle clean bootRun --args='--spring.profiles.active=local'
 ```
 
 It will be using default environment variables.  
-To change them add all variables to operating system.
+To change them, add all variables to an operating system.
 
 ---------------------------------
 
@@ -51,13 +51,13 @@ It can be run by docker-compose file or individually via Dockerfiles.
 
 ### A) Using [docker-compose.yml](../docker/docker-compose.yml)
 
-After starting give containers minute or so to fully start and connect with each others.  
+After starting, give containers a minute or so to fully start and connect with each other.  
 Before that, there could be 500 errors.  
 This log need to appear in all containers:  
 `Getting all instance registry info from the eureka server`
 
 
-In main project folder (before any modules) run:
+In the main project folder (before any modules) run:
 ```
 docker-compose -f config/docker/docker-compose.yml up
 ```  
@@ -77,7 +77,7 @@ or with clean build:
 docker-compose -f config/docker/docker-compose.yml build --no-cache
 ```
 
-## B) Using Dockerfiles, creates and start/run methods
+## B) Using Dockerfiles, create and start/run methods
 
 ### Prerequisite
 
@@ -86,9 +86,9 @@ Create a network for microservices:
 docker network create sky-net
 ```
 
-ALL DOCKER BUILD COMMANDS NEEDS TO BE STARTED FROM MAIN (SKY) FOLDER,   
+ALL DOCKER BUILD COMMANDS NEED TO BE STARTED FROM the MAIN (SKY) FOLDER,   
 NOT FROM EACH MODULE FOLDER  
-due to gradle build dependency on config module gradle file
+due to the gradle build dependency on config module Gradle file
 
 
 ### 1. sky-booking
@@ -168,7 +168,7 @@ docker run sky-notify:latest
 docker run sky-message:latest 
 ```  
 
-Now you need to add them into same network:
+Now you need to add them into the same network:
 ```  
 docker network connect sky-net sky-booking  
 docker network connect sky-net sky-offer  
@@ -176,7 +176,7 @@ docker network connect sky-net sky-notify
 docker network connect sky-net sky-message 
 ```
 
-If network not needed can be removed with:
+If the network is not needed can be removed with:
 ```
 docker network rm sky-net
 ```
@@ -185,8 +185,8 @@ docker network rm sky-net
 
 ## Adding MySQL server to docker
 
-For every microservice which needs its one database MySQL DB image should be created in docker.   
-Mysql image can be added to docker-compose.yml for example sky-offer DB image should look like:
+For every microservice that needs its one database MySQL DB image should be created in docker.   
+Mysql image can be added to docker-compose.yml, for example, sky-offer DB image should look like:
 
 ```yaml
   mysql-sky_offer:
@@ -201,7 +201,7 @@ Mysql image can be added to docker-compose.yml for example sky-offer DB image sh
       - 3306
 ```
 
-In microservice docker-compose.yml description dependency to right MySQL image need to be added:
+In microservice docker-compose.yml description dependency to right MySQL image needs to be added:
 
 ```yaml
     depends_on:
@@ -218,7 +218,7 @@ In microservice docker-compose.yml description dependency to right MySQL image n
 ```shell
 minikube start --cpus 4 --memory 16384
 ```
-or with different driver than default (docker)
+or with a different driver than default (docker)
 ```shell
 minikube start --cpus 4 --memory 16384 --driver=virtualbox
 minikube start --cpus 4 --memory 16384 --driver=docker
@@ -269,7 +269,7 @@ minikube addons enable ingress-dns
 ```
 
 ### Update minikube context:
-After that kubernetes know on what it is working and know its config.
+After that, kubernetes know what it is working and know its config.
 ```shell
 minikube update-context
 ```
@@ -279,7 +279,7 @@ minikube update-context
 minikube ip
 ```
 
-### minikube dashboard - terminal need to remain open
+### minikube dashboard - terminal needs to remain open
 ```shell
 minikube dashboard
 ```
@@ -297,13 +297,13 @@ minikube dashboard --url
 ```shell
 htpasswd -c auth <username>
 ```
-where `username` will be user to log in via basic auth in nginx ingress  
+where `username` will be user to log in via basic auth in nginx ingress   
 it will prompt for password
 
 ### Run deployment script:
 `services-deploy.sh`
 
-mysql, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage etc.
+mysql, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage, etc.
 
 
 -------------
@@ -313,13 +313,13 @@ mysql, sky-offer, sky-booking and sky-message services may require restarting du
 App should be accessible from URL:  
 `http://<minikubeIP>/offer/api/home`
 
-but there can be some problems because docker driver adds additional layer of networking,
-which can complicate things and make app not accessible.  
+But there can be some problems because a docker driver adds a layer of networking,
+which can complicate things and make the app not accessible.  
 As a **workaround** to access cluster nginx use port forwarding:
 ```shell
-kubectl port-forward svc/ingress-nginx-controller -n ingress-nginx 80:80
+kubectl port-forward svc/ingress-nginx-controller -n ingress-nginx 80:80 443:443
 ```
-now app will be accessible under:  
+now app will be accessible and under:  
 `http://localhost/offer/api/home`
 
 ### With host defined in ingress
@@ -340,7 +340,7 @@ adding:
 ```
 where `skycloud.luksarna.com` is host name from ingress
 
-then app will respond at address:  
+then the app will respond at address:  
 ```
 http://skycloud.luksarna.com/offer/api/home
 ```  
@@ -391,7 +391,7 @@ minikube ssh docker pull lukk17/sky-offer
 minikube ssh docker pull lukk17/sky-message
 ```
 
-#### If not working start in containerd runtime:
+#### If not working, start in containerd runtime:
 
 ```shell
 minikube start --container-runtime=containerd
@@ -403,12 +403,12 @@ minikube config set container-runtime containerd
 ```
 Valid options: docker, cri-o, containerd (default: auto)
 
-Sometimes change of driver helps:
+Sometimes change of a driver helps:
 ```shell
 minikube start --driver=none
 ```
 
-#### If not working try cache images:
+#### If not working, try cache images:
 ```shell
 minikube cache add <dockerhub username>/<repo name>:<version optional>
 ```
@@ -418,7 +418,7 @@ due to cache deprecation best to use:
 minikube image load <dockerhub username>/<repo name>:<version optional>
 ```
 
-AND add in deployments definition:
+AND add in deployment's definition:
 ```yaml
 spec:
     template:
@@ -441,7 +441,7 @@ docker pull <imageName>
 ```
 <br>
 
-#### minikube visibility under localhost (127.0.0.1") - terminal need to remain open
+#### minikube visibility under localhost (127.0.0.1") - terminal needs to remain open
 ```shell
 minikube tunnel
 ```

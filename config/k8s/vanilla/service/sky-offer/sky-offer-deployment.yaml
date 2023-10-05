@@ -9,9 +9,9 @@ spec:
   selector:
     #  label need to be same as selector in service pod
     matchLabels:
-      #    "component" is just a name, can be any name as long as in service is named same, for example could be:
+      #    "component" is just a name, can be any name as long as in service is named same, for example, could be:
       #    workingLabel: web
-      #     every service need to have UNIQUE label - if not every service in its endpoint will have other services endpoints
+      #     every service need to have UNIQUE label - if not every service in its endpoint does have other services endpoints
       app: "offer"
   template:
     metadata:

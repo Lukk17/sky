@@ -3,9 +3,9 @@
 ----------
 
 ## Host
-When adding host - then in headers you need add it in every request,
-without host all traffic (not only from sky.192.168.59.103.nip.io) will be routed to this service,
-depending on rule below
+When adding host - then in headers, you need to add it in every request.
+Without host-all traffic (not only from sky.192.168.59.103.nip.io) will be routed to this service,
+depending on the rule below.
 
 ```shell
 spec:
@@ -19,23 +19,39 @@ spec:
 
 ----------
 
-## Class name
-use:
+## TLS setup
+
+In ingress to use certificate:
 ```shell
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
+tls:
+- hosts:
+    - skycloud.luksarna.com
+  secretName: dev-ssl-cert
 ```
-instead of:
+for no tls use:
+```shell
+tls: []
+```
+
+----------
+
+## Class name
+use (introduced in 1.18):
 ```shell
 spec:
   ingressClassName: nginx
+```
+instead of (deprecated from Kubernetes v1.22+):
+```shell
+annotations:
+    kubernetes.io/ingress.class: "nginx"
 ```
 
 ----------
 
 ## Stripping path
 
-Without rewriting 404 because of wrong path (need to strip first part for each service)
+Without rewriting 404 because of a wrong path (need to strip the first part for each service)
 ```shell
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2

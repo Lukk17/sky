@@ -14,7 +14,7 @@ kubectl apply -f ./keycloak-deployment.yaml
 kubectl apply -f ./keycloak-service.yaml
 kubectl apply -f ./keycloak-ingress.yaml
 ```
-which base on:
+which is based on:
 
 service and deployment:  
 https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes-examples/keycloak.yaml
@@ -89,12 +89,12 @@ Create a user:
 Set password:
 1. Click Credentials at the top of the page.
 2. Fill in the Set password form with `test1234`.
-3. Toggle Temporary to Off so that the user does not need update this password at the first login.
+3. Toggle Temporary to Off so that the user does not need to update this password at the first login.
 
 Check if log in to the Account Console is working
 1. Go to:
    `keycloak.<minikube IP>.nip.io/realms/sky/account`
-2. log in using created account (`lukk`:`test1234`)
+2. log in using a created account (`lukk`:`test1234`)
 
 Secure application:
 1. Open the Keycloak Admin Console.
@@ -127,7 +127,7 @@ https://www.keycloak.org/keycloak-benchmark/kubernetes-guide/latest/installation
 After deployment on GCP:
 https://console.cloud.google.com/kubernetes/discovery?
 
-in "Services & Ingress" you can find link to external endpoint <cluster ip>:<port>
+in "Services & Ingress" you can find a link to external endpoint <cluster ip>:<port>
 ```shell
 kubectl get svc
 ```
@@ -148,8 +148,8 @@ keycloak: 34.116.246.43:8080
 
 #### 404 not found on keycloak
 
-If above configuration not working this can be tried:
-To check correct keycloak address paste this command in terminal:
+If the above configuration is not working, this can be tried:
+To check the correct keycloak address to paste this command in the terminal:
 ```shell
 KEYCLOAK_URL=http://$(minikube ip):$(kubectl get services/keycloak -o go-template='{{(index .spec.ports 0).nodePort}}') &&
 echo "" &&
@@ -165,4 +165,4 @@ Admin console
 Account:
 < minikubeIP>:< PORT>/realms/skyrealm/account
 
-But it is common that this way it will not be working (stuck on loading screen)
+But it is common that this way it will not be working (stuck on the loading screen)

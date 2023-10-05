@@ -8,7 +8,7 @@ https://bitnami.com/stack/kong/helm
 
 <br>
 
-#### Firstly install ingress-nginx or enable plugin in minikube(if not done readiness probe will fail with code 500):
+#### Firstly, install ingress-nginx or enable plugin in minikube(if not done, readiness probe will fail with code 500):
 ```
 minikube addons enable ingress
 ```

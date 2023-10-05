@@ -25,9 +25,6 @@ Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk1
 - [Docker build and publish](#docker-build-and-publish)
 - [Kubernetes deployment](#kubernetes-deployment)
 - [DB configuration](#db-configuration)
-- [Token example in a header](#token-example-in-a-header)
-- [Environment external config](#environment-external-config)
-- [Adding MySQL server to docker](#adding-mysql-server-to-docker)
 
 ---------------------------------
 
@@ -38,11 +35,11 @@ authorization. Kubernetes Ingress controller is exposing services to the world.
 Each microservice will have its API endpoints exposed.  
 
 ### Ingress
-More info about [Ingres](./config/k8s/api-gateway/ingress/ingress_README.md).
+More info about [Ingres](./config/k8s/vanilla/api-gateway/ingress/ingress_README.md).
 
 ### Postman
 In [postman-collection](./config/postman-collection). 
-folder you can find exported sky collection and envs.
+Folder you can find an exported sky collection and envs.
 
 ### Dev
 For development services can be run as Spring Boot app or via Gradle.  
@@ -55,7 +52,7 @@ Swagger is added and can be accessed under:
 example:  
 `http://localhost:5552/swagger-ui/index.html`
 
-For Kubernetes Swagger access see [this](./config/k8s/k8s_README.md#swagger-access)
+For Kubernetes Swagger access, see [this](./config/k8s/k8s_README.md#swagger-access)
 
 ---------------------------------
 
@@ -68,7 +65,7 @@ See [DB configuration](#DB-configuration) for manual how to configure.
 
 ### Kafka
 
-* Kubernetes deployment: [Kafka kubernetes](./config/k8s/kafka/kafka_README.md).  
+* Kubernetes deployment: [Kafka kubernetes](./config/k8s/vanilla/kafka/kafka_README.md).  
 * Local installation: [Local development](./config/local-dev/local_README.md).
 
 ---------------------------------

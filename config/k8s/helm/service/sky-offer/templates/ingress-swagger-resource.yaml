@@ -9,6 +9,13 @@ metadata:
     {{ $key }}: {{ $value | quote }}
   {{- end}}
 spec:
+  ingressClassName: {{ .Values.ingress.swaggerResource.controller }}
+
+  {{- with .Values.ingress.swaggerResource.tls }}
+  tls:
+  {{ toYaml . | nindent 4 }}
+  {{- end }}
+
   rules:
     {{- range .Values.ingress.swaggerResource.hosts }}
     - host: {{ .host | quote }}
