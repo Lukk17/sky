@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,11 +46,8 @@ public class BookingController {
                     content = @Content)
     })
     @GetMapping(value = {"/", "/home"})
-    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
-                                        @RequestHeader Map<String, String> headers) {
-        String userEmail = getUserInfoFromHeaders(headers);
-
-        sendNotification("Booking Hello World page", userEmail);
+    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message) {
+        sendNotification("Booking Hello World page", Strings.EMPTY);
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 

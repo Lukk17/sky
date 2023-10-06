@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,7 +42,7 @@ class OfferInternalControllerTest {
                 .thenReturn(TEST_OWNER_EMAIL);
 //When
         MvcResult result = mvc.perform(
-                        get("/owners/{offerId}", TEST_DEFAULT_OFFER_ID)
+                        get("/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().is2xxSuccessful())
@@ -58,7 +59,7 @@ class OfferInternalControllerTest {
                 .thenThrow(new OfferException(expectedErrorMessage));
 //When
         MvcResult result = mvc.perform(
-                        get("/owners/{offerId}", TEST_DEFAULT_OFFER_ID)
+                        get("/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().isBadRequest())

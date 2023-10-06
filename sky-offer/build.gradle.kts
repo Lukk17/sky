@@ -50,6 +50,9 @@ dependencies {
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
     testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
+    testImplementation("com.h2database:h2:2.2.224")
+    testImplementation("org.springframework.kafka:spring-kafka-test:${project.extra["kafkaVersion"]}")
+    testImplementation("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
     compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")

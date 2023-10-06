@@ -25,6 +25,7 @@ Working via rest API. Example can be seen in [Sky-View](https://github.com/Lukk1
 - [Docker build and publish](#docker-build-and-publish)
 - [Kubernetes deployment](#kubernetes-deployment)
 - [DB configuration](#db-configuration)
+- [E2E Postman testing](#e2e-postman-testing)
 
 ---------------------------------
 
@@ -115,3 +116,18 @@ The Fastest way to configure the DB is:
 4. run in sky DB: ./config/script/sql_commands/sql_messages_insert.sql
 
 ---------------------------------
+
+## E2E Postman testing
+1. In [postman-collection](./config/postman-collection) click on "sky" collection.
+2. Click "Run" in the right top corner.
+3. Change run order:  
+   `deleteOffer` should be called last,  
+   `deleteBooking` second last.
+4. Click "Run sky"
+
+Request:  
+`workaround for auth0 no information callback`  
+is needed because of lack of starting endpoint in Auth0 callback redirection.  
+Due to that ingress controller redirect to a root path "https://skycloud.luksarna.com".
+This way first endpoint which needs authentication will not be checked because redirected to root endpoint.
+

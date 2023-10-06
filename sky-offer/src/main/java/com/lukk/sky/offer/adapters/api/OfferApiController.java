@@ -1,7 +1,6 @@
 package com.lukk.sky.offer.adapters.api;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.lukk.sky.offer.adapters.dto.KafkaPayloadModel;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
@@ -19,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,11 +76,10 @@ public class OfferApiController {
     })
     @GetMapping("/owner/offers")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
+    public ResponseEntity<List<OfferDTO>> getOwnedOffers(@RequestHeader Map<String, String> headers) {
         String ownerEmail = getUserInfoFromHeaders(headers);
-        List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
 
-        return ResponseEntity.ok(offers);
+        return ResponseEntity.ok(offerService.getOwnedOffers(ownerEmail));
     }
 
     @Operation(summary = "Create new offer")
@@ -91,7 +90,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PostMapping(value = "/owner/offers")
+    @PostMapping(value = "/owner/offer")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer,
                                       @RequestHeader Map<String, String> headers) {
@@ -103,7 +102,7 @@ public class OfferApiController {
         OfferDTO addedOffer = offerService.addOffer(offer);
 
         sendNotification(gson.toJson(addedOffer), ownerEmail);
-        return ResponseEntity.ok(addedOffer);
+        return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(addedOffer);
     }
 
     @Operation(summary = "Edit offer")
@@ -114,7 +113,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PutMapping("/owner/offers")
+    @PutMapping("/owner/offer")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer,
                                   @RequestHeader Map<String, String> headers) {
@@ -137,7 +136,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @DeleteMapping("/owner/offers/{offerId}")
+    @DeleteMapping("/owner/offer/{offerId}")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers,
                                          @PathVariable String offerId) {
@@ -181,6 +180,8 @@ public class OfferApiController {
     }
 
     private void sendNotification(String payload, String owner) {
+        log.info("Publishing to Kafka");
+
         KafkaPayloadModel model = new KafkaPayloadModel(
                 payload,
                 LocalDateTime.now().format(DATE_TIME_FORMAT),

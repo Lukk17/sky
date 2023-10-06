@@ -7,7 +7,332 @@
 	},
 	"item": [
 		{
-			"name": "offer",
+			"name": "Auth0 Code Flow",
+			"item": [
+				{
+					"name": "1. Get to /authorize",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetState\", function () {",
+									"    console.log(`Retrieving STATE...`)",
+									"    let state = pm.response.headers.get('Location');",
+									"    state = state.slice(state.lastIndexOf('=') + 1);",
+									"    ",
+									"    pm.environment.set(\"state\", state);",
+									"    console.log(`Setting STATE (${state}) as environmental variable.`);",
+									"",
+									"    pm.response.to.have.status(302);",
+									"",
+									"    // works only in via postman runner",
+									"    // postman.setNextRequest(\"2. Post to /u/login\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{auth0_domain}}/authorize?response_type=code&client_id={{auth0_client_id}}&redirect_uri={{redirect_uri}}",
+							"protocol": "https",
+							"host": [
+								"{{auth0_domain}}"
+							],
+							"path": [
+								"authorize"
+							],
+							"query": [
+								{
+									"key": "response_type",
+									"value": "code"
+								},
+								{
+									"key": "client_id",
+									"value": "{{auth0_client_id}}"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "{{redirect_uri}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Post to /u/login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetResumeState\", function () {",
+									"    console.log(`Retrieving RESUME_STATE...`)",
+									"    let resume_state = pm.response.headers.get('Location');",
+									"    resume_state = resume_state.slice(resume_state.lastIndexOf('=') + 1);",
+									"    ",
+									"    pm.environment.set(\"resume_state\", resume_state);",
+									"",
+									"    pm.response.to.have.status(302);",
+									"",
+									"    // works only in via postman runner",
+									"    // postman.setNextRequest(\"2. Post to /u/login\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "{{auth0_username}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{auth0_password}}",
+									"type": "text"
+								},
+								{
+									"key": "state",
+									"value": "{{state}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{auth0_domain}}/u/login?state={{state}}",
+							"protocol": "https",
+							"host": [
+								"{{auth0_domain}}"
+							],
+							"path": [
+								"u",
+								"login"
+							],
+							"query": [
+								{
+									"key": "state",
+									"value": "{{state}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get to /resume",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetCode\", function () {",
+									"    console.log(`Retrieving CODE...`)",
+									"    let code = pm.response.headers.get('Location');",
+									"    code = code.slice(code.lastIndexOf('=') + 1);",
+									"",
+									"    pm.environment.set(\"code\", code);",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{auth0_domain}}/authorize/resume?state={{resume_state}}",
+							"protocol": "https",
+							"host": [
+								"{{auth0_domain}}"
+							],
+							"path": [
+								"authorize",
+								"resume"
+							],
+							"query": [
+								{
+									"key": "state",
+									"value": "{{resume_state}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Exchange CODE against a TOKEN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetToken\", function () {",
+									"    console.log(`Retrieving TOKENS...`)",
+									"    let tokens = pm.response.json();",
+									"    ",
+									"    console.log(tokens);",
+									"    console.log(tokens.access_token);",
+									"",
+									"    pm.environment.set(\"sky-token\", tokens.access_token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{auth0_client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "{{code}}",
+									"type": "text"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "{{redirect_uri}}",
+									"type": "text"
+								},
+								{
+									"key": "audience",
+									"value": "{{audience}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{auth0_domain}}/oauth/token",
+							"protocol": "https",
+							"host": [
+								"{{auth0_domain}}"
+							],
+							"path": [
+								"oauth",
+								"token"
+							]
+						},
+						"description": "This is the OAuth 2.0 grant that regular web apps utilize in order to access an API. Use this endpoint to exchange an Authorization Code for an Access Token."
+					},
+					"response": []
+				},
+				{
+					"name": "workaround for auth0 no information callback",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetResumeState\", function () {\r",
+									"\r",
+									"    // callback redirect to rooth path which is not setup in ingress\r",
+									"    pm.response.to.have.status(404);\r",
+									"\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"api",
+								"owner",
+								"offers"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Offer Service",
 			"item": [
 				{
 					"name": "Home",
@@ -41,15 +366,10 @@
 								"name": "Content-Type",
 								"value": "application/json",
 								"type": "text"
-							},
-							{
-								"key": "x-auth-request-email",
-								"value": "offer@user.com",
-								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/",
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/home",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -58,7 +378,7 @@
 							"path": [
 								"offer",
 								"api",
-								""
+								"home"
 							]
 						}
 					},
@@ -95,11 +415,6 @@
 								"key": "Content-Type",
 								"name": "Content-Type",
 								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "x-auth-request-email",
-								"value": "offer@user.com",
 								"type": "text"
 							}
 						],
@@ -142,21 +457,27 @@
 					],
 					"request": {
 						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNTg1OTQ2NDQ3LCJleHAiOjE1ODYwMzI4NDd9.85chOYliB_ikaXOBMA6pXGjop6snE8MSwrL083-dtZ8mCVOIf0zw721htI_KZjK15LlvGFLefPoArgVHxv6b1g",
-									"type": "string"
-								}
-							]
+							"type": "noauth"
 						},
 						"method": "GET",
 						"header": [
 							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"url": {
@@ -204,6 +525,7 @@
 									"    console.log(`Retrieving createdOfferID...`)\r",
 									"    const body = pm.response.json()\r",
 									"    const id = body[\"id\"]\r",
+									"    \r",
 									"    pm.environment.set(\"createdOfferID\", id);\r",
 									"    console.log(`RetrivedId: ` + id)\r",
 									"});"
@@ -225,14 +547,21 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
 								"type": "text"
 							},
 							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"body": {
@@ -245,7 +574,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers",
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offer",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -255,7 +584,7 @@
 								"offer",
 								"api",
 								"owner",
-								"offers"
+								"offer"
 							]
 						}
 					},
@@ -301,9 +630,18 @@
 								"type": "text"
 							},
 							{
+								"warning": "This is a duplicate header and will be overridden by the Authorization header generated by Postman.",
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"body": {
@@ -311,7 +649,7 @@
 							"raw": "{\r\n\t\"id\": {{createdOfferID}},\r\n\t\"price\": \"456\",\r\n\t\"roomCapacity\": \"52\"\r\n}"
 						},
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers",
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offer",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -321,7 +659,7 @@
 								"offer",
 								"api",
 								"owner",
-								"offers"
+								"offer"
 							]
 						}
 					},
@@ -363,18 +701,26 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
 								"type": "text"
 							},
 							{
+								"warning": "This is a duplicate header and will be overridden by the Authorization header generated by Postman.",
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offers/{{createdOfferID}}",
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/api/owner/offer/{{createdOfferID}}",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -384,7 +730,7 @@
 								"offer",
 								"api",
 								"owner",
-								"offers",
+								"offer",
 								"{{createdOfferID}}"
 							]
 						}
@@ -424,9 +770,17 @@
 								"type": "text"
 							},
 							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"body": {
@@ -449,10 +803,32 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
-			"name": "booking",
+			"name": "Booking Service",
 			"item": [
 				{
 					"name": "Home",
@@ -490,7 +866,9 @@
 							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"url": {
@@ -545,9 +923,17 @@
 								"type": "text"
 							},
 							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"body": {
@@ -619,14 +1005,22 @@
 								"type": "text"
 							},
 							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"offerId\": {{createdOfferID}},\n\t\"dateToBook\": \"2023-09-09\"\n}"
+							"raw": "{\n\t\"offerId\": {{createdOfferID}},\n\t\"dateToBook\": \"2025-09-09\"\n}"
 						},
 						"url": {
 							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings",
@@ -677,14 +1071,23 @@
 								"type": "text"
 							},
 							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
 								"type": "text",
+								"description": "local dev only without kubernetes",
 								"disabled": true
 							}
 						],
@@ -705,10 +1108,32 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
-			"name": "message",
+			"name": "Message Service",
 			"item": [
 				{
 					"name": "Home",
@@ -746,7 +1171,9 @@
 							{
 								"key": "X-Forwarded-User",
 								"value": "message@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"url": {
@@ -794,20 +1221,28 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
 								"type": "text",
-								"value": "application/json"
+								"description": "from Auth0 code flow"
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
 								"type": "text",
+								"description": "local dev only without kubernetes",
 								"disabled": true
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"url": {
@@ -855,19 +1290,27 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
 								"type": "text"
 							},
 							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
 								"type": "text",
+								"description": "local dev only without kubernetes",
 								"disabled": true
 							}
 						],
@@ -906,6 +1349,22 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"GetMessageId\", function () {\r",
+									"    console.log(`Retrieving createdMessageID...`)\r",
+									"    const body = pm.response.json()\r",
+									"    const id = body[\"id\"]\r",
+									"    \r",
+									"    pm.environment.set(\"createdMessageID\", id);\r",
+									"    console.log(`RetrivedId: ` + id)\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -916,20 +1375,28 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
 								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
 								"type": "text",
+								"description": "local dev only without kubernetes",
 								"disabled": true
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"body": {
@@ -986,24 +1453,32 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
 								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "offer@owner.com",
 								"type": "text",
+								"description": "local dev only without kubernetes",
 								"disabled": true
 							},
 							{
 								"key": "X-Forwarded-User",
 								"value": "booking@user.com",
-								"type": "text"
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/delete/1",
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/delete/{{createdMessageID}}",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -1013,247 +1488,33 @@
 								"msg",
 								"api",
 								"delete",
-								"1"
+								"{{createdMessageID}}"
 							]
 						}
 					},
 					"response": []
 				}
-			]
-		},
-		{
-			"name": "cloud",
-			"item": [
+			],
+			"event": [
 				{
-					"name": "Auth0 Code Flow",
-					"item": [
-						{
-							"name": "1. Get to /authorize Copy",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"GetState\", function () {",
-											"    console.log(`Retrieving STATE...`)",
-											"    let state = pm.response.headers.get('Location');",
-											"    state = state.slice(state.lastIndexOf('=') + 1);",
-											"    pm.environment.set(\"state\", state);",
-											"    console.log(`Setting STATE (${state}) as environmental variable.`);",
-											"    postman.setNextRequest(\"2. Post to /u/login\");",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"followRedirects": false
-							},
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "https://{{auth0_domain}}/authorize?response_type=code&client_id={{auth0_client_id}}&redirect_uri={{redirect_uri}}",
-									"protocol": "https",
-									"host": [
-										"{{auth0_domain}}"
-									],
-									"path": [
-										"authorize"
-									],
-									"query": [
-										{
-											"key": "response_type",
-											"value": "code"
-										},
-										{
-											"key": "client_id",
-											"value": "{{auth0_client_id}}"
-										},
-										{
-											"key": "redirect_uri",
-											"value": "{{redirect_uri}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "2. Post to /u/login Copy",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"GetResumeState\", function () {",
-											"    console.log(`Retrieving RESUME_STATE...`)",
-											"    let resume_state = pm.response.headers.get('Location');",
-											"    resume_state = resume_state.slice(resume_state.lastIndexOf('=') + 1);",
-											"    pm.environment.set(\"resume_state\", resume_state);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"followRedirects": false
-							},
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "urlencoded",
-									"urlencoded": [
-										{
-											"key": "username",
-											"value": "{{auth0_username}}",
-											"type": "text"
-										},
-										{
-											"key": "password",
-											"value": "{{auth0_password}}",
-											"type": "text"
-										},
-										{
-											"key": "state",
-											"value": "{{state}}",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "https://{{auth0_domain}}/u/login?state={{state}}",
-									"protocol": "https",
-									"host": [
-										"{{auth0_domain}}"
-									],
-									"path": [
-										"u",
-										"login"
-									],
-									"query": [
-										{
-											"key": "state",
-											"value": "{{state}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "3. Get to /resume Copy",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"GetCode\", function () {",
-											"    console.log(`Retrieving CODE...`)",
-											"    let code = pm.response.headers.get('Location');",
-											"    code = code.slice(code.lastIndexOf('=') + 1);",
-											"    pm.environment.set(\"code\", code);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"followRedirects": false
-							},
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "https://{{auth0_domain}}/authorize/resume?state={{resume_state}}",
-									"protocol": "https",
-									"host": [
-										"{{auth0_domain}}"
-									],
-									"path": [
-										"authorize",
-										"resume"
-									],
-									"query": [
-										{
-											"key": "state",
-											"value": "{{resume_state}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "4. Exchange CODE against a TOKEN Copy",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"GetToken\", function () {",
-											"    console.log(`Retrieving TOKENS...`)",
-											"    let tokens = pm.response.json();",
-											"    console.log(tokens);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "urlencoded",
-									"urlencoded": [
-										{
-											"key": "grant_type",
-											"value": "authorization_code",
-											"type": "text"
-										},
-										{
-											"key": "client_id",
-											"value": "{{auth0_client_id}}",
-											"type": "text"
-										},
-										{
-											"key": "code",
-											"value": "{{code}}",
-											"type": "text"
-										},
-										{
-											"key": "redirect_uri",
-											"value": "{{redirect_uri}}",
-											"type": "text"
-										},
-										{
-											"key": "audience",
-											"value": "{{audience}}",
-											"type": "text"
-										}
-									]
-								},
-								"url": {
-									"raw": "https://{{auth0_domain}}/oauth/token",
-									"protocol": "https",
-									"host": [
-										"{{auth0_domain}}"
-									],
-									"path": [
-										"oauth",
-										"token"
-									]
-								},
-								"description": "This is the OAuth 2.0 grant that regular web apps utilize in order to access an API. Use this endpoint to exchange an Authorization Code for an Access Token."
-							},
-							"response": []
-						}
-					]
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
 				}
 			]
 		}
@@ -1273,9 +1534,7 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					"pm.test(\"Status code is 200\", function () {",
-					"    pm.response.to.have.status(200);",
-					"});"
+					""
 				]
 			}
 		}

@@ -1,3 +1,56 @@
 # ==================================================================================================================
 sky:
   apiPrefix: api
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    password:
+    username: sa
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    consumer:
+      auto-offset-reset: earliest
+
+logging:
+  level:
+    state:
+      change:
+        logger: ERROR
+    kafka:
+      cluster: ERROR
+      controller:
+        KafkaController: ERROR
+        RequestSendThread: ERROR
+        ZkReplicaStateMachine: ERROR
+        TopicDeletionManager: ERROR
+      network: ERROR
+      zk: ERROR
+      coordinator: ERROR
+      log: ERROR
+      server:
+        KafkaConfig: ERROR
+        FinalizedFeatureChangeListener: ERROR
+        BrokerToControllerRequestThread: ERROR
+    org:
+      apache:
+        zookeeper: ERROR
+        kafka:
+          server:
+            ReplicaAlterLogDirsManager: ERROR
+            operationPurgatory$ExpiredOperationReaper: ERROR
+            controllerEventManager$ControllerEventThread: ERROR
+          common: ERROR
+          coordinator: ERROR
+          log: ERROR
+          clients:
+            quota: ERROR
+            Metadata: ERROR
+            consumer:
+              ConsumerConfig: ERROR
+              internals: ERROR

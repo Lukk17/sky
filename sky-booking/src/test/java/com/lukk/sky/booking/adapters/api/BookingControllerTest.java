@@ -79,6 +79,7 @@ public class BookingControllerTest {
                 .enableComplexMapKeySerialization()
                 .serializeNulls()
                 .create();
+        doNothing().when(bookingNotificationService).sendMessage(any());
     }
 
     @Test
@@ -86,7 +87,6 @@ public class BookingControllerTest {
 //When
         MvcResult result = mvc.perform(
                         get("/")
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().is2xxSuccessful())
@@ -96,23 +96,11 @@ public class BookingControllerTest {
     }
 
     @Test
-    public void whenHomeBookingsError_thenReturnBadRequest() throws Exception {
-
-//When
-        mvc.perform(get("/")
-                        .contentType(MediaType.APPLICATION_JSON))
-//Then
-                .andExpect(status().isBadRequest())
-                .andReturn();
-    }
-
-    @Test
     public void whenGetBooking_thenReturnBookings() throws Exception {
 //Given
         List<BookingDTO> bookingsDTO = BookingAssembler.getPopulatedBookedDTOList();
 
         when(bookingService.getBookedOffersForUser(TEST_USER_EMAIL)).thenReturn(bookingsDTO);
-        doNothing().when(bookingNotificationService).sendMessage(any());
 
         String expectedJson = gson.toJson(bookingsDTO);
 //When
@@ -194,7 +182,6 @@ public class BookingControllerTest {
 //Given
         when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
-        doNothing().when(bookingNotificationService).sendMessage(any());
 //When
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
