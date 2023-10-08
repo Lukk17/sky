@@ -3,7 +3,7 @@ sky:
   helloWorld: <center><h1>Welcome to Booking app.</h1></center>
   apiPrefix: /api
   offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
-  offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT}
+  offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT:}
   offerOwnerEndpoint: owner/offer
   crossOrigin:
     allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:*}

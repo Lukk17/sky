@@ -1,13 +1,13 @@
 buildscript {
     apply(from = File("../config/microservicesConfig.gradle.kts"))
 
-    val springVersion = "${project.extra["springVersion"]}"
-    System.setProperty("springVersion", springVersion)
+    val springBootVersion = "${project.extra["springBootVersion"]}"
+    System.setProperty("springBootVersion", springBootVersion)
 }
 
 plugins {
-    val springVersion = System.getProperty("springVersion")
-    id("org.springframework.boot") version springVersion
+    val springBootVersion = System.getProperty("springBootVersion")
+    id("org.springframework.boot") version springBootVersion
 }
 
 version = "1.0.0"
@@ -26,39 +26,37 @@ tasks.test {
 }
 
 dependencies {
-    val springVersion = "${project.extra["springVersion"]}"
-    implementation("org.springframework.boot:spring-boot-starter-actuator:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-data-rest:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-validation:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-web:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-devtools:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-webflux:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-validation:${springVersion}")
+    val springBootVersion = "${project.extra["springBootVersion"]}"
+    implementation("org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-data-rest:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-validation:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-devtools:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-webflux:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-validation:${springBootVersion}")
 
     implementation("mysql:mysql-connector-java:${project.extra["mysqlVersion"]}")
     implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
     implementation("org.springframework.kafka:spring-kafka:${project.extra["kafkaVersion"]}")
 //    Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${project.extra["openapi"]}")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.extra["openapi"]}")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${project.extra["openapiVersion"]}")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.extra["openapiVersion"]}")
 
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}"){
+    testImplementation("org.springframework.boot:spring-boot-starter-test:${springBootVersion}"){
         exclude("junit", "junit")
     }
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
     testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
-    testImplementation("com.h2database:h2:2.2.224")
     testImplementation("org.springframework.kafka:spring-kafka-test:${project.extra["kafkaVersion"]}")
-    testImplementation("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")
+    compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
 
     annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
 
     //  JAX-B dependencies for JDK 9+ (without hibernate/hikari error)
     implementation("jakarta.xml.bind:jakarta.xml.bind-api:${project.extra["jakartaBindApiVersion"]}")

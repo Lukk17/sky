@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,12 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.AssertionErrors.fail;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
+@EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
 public class BookingControllerTest {
 
     private Gson gson;
@@ -151,9 +154,12 @@ public class BookingControllerTest {
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
-        ResponseEntity<BookingDTO> actual = (ResponseEntity) result.getAsyncResult(10);
+        ResponseEntity<BookingDTO> actual = castAsyncResultToBookingResponse(result);
+
+        assert actual != null;
         assertTrue(actual.getStatusCode().is2xxSuccessful());
         assertEquals(expected, actual.getBody());
+
     }
 
     @Test
@@ -204,4 +210,20 @@ public class BookingControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    private ResponseEntity<BookingDTO> castAsyncResultToBookingResponse(MvcResult result) {
+        Object actualObject = result.getAsyncResult(10);
+
+        if (actualObject instanceof ResponseEntity<?> responseEntity) {
+            if (responseEntity.getBody() instanceof BookingDTO body) {
+
+                return new ResponseEntity<>(body, responseEntity.getHeaders(), responseEntity.getStatusCode());
+
+            } else {
+                fail("Response body is not of type BookingDTO");
+            }
+        } else {
+            fail("Actual object is not of type ResponseEntity");
+        }
+        return null;
+    }
 }

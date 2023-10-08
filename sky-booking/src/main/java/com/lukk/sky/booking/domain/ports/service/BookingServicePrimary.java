@@ -70,14 +70,13 @@ public class BookingServicePrimary implements BookingService {
 
         return ownerEmail
                 .flatMap(retrievedOwnerEmail -> Mono.just(
-                        BookingDTO.of(bookingRepository.save(
-                                addBooking(createNewBooked(offerId, userEmail, dateToBook, retrievedOwnerEmail))
-                        )))
-                ).doOnNext(bookingDto -> {
+                        addBooking(createNewBooked(offerId, userEmail, dateToBook, retrievedOwnerEmail)))
+                ).doOnNext(booking -> {
                     log.info("Offer with ID: {} booked for date: {} by user: {}",
                             offerId, dateToBook.format(DATE_FORMAT), userEmail);
-                    eventSourceService.saveEvent(bookingDto.toDomain(), EventType.BOOKED);
-                });
+                    eventSourceService.saveEvent(booking, EventType.BOOKED);
+                })
+                .map(BookingDTO::of);
     }
 
     /**
@@ -133,6 +132,7 @@ public class BookingServicePrimary implements BookingService {
     }
 
     private Booking addBooking(Booking booked) {
+        log.info("Saving booking to DB with data {}", booked);
         return bookingRepository.save(booked);
     }
 

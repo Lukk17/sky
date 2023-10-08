@@ -1,6 +1,7 @@
 package com.lukk.sky.booking.Assemblers;
 
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
+import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.booking.domain.model.Booking;
 
 import java.time.LocalDate;
@@ -18,49 +19,39 @@ public class BookingAssembler {
 
     public static LocalDate TEST_DATE = LocalDate.of(2201, 6, 20);
 
-    public static String TEST_APP_PORT = "5552";
-    public static String TEST_OFFER_ENDPOINT = "owners";
-
-
-    public static List<Booking> getEmptyBookedList() {
-        return List.of(new Booking(), new Booking());
-    }
-
     public static List<Booking> getPopulatedBookedList() {
         return List.of(
                 getPopulatedBooked(TEST_DEFAULT_BOOKED_ID, TEST_DEFAULT_OFFER_ID,
-                        TEST_USER_EMAIL, TEST_OWNER_EMAIL),
+                        TEST_OWNER_EMAIL),
                 getPopulatedBooked(TEST_DEFAULT_BOOKED_ID_2, TEST_DEFAULT_OFFER_ID_2,
-                        TEST_USER_EMAIL, TEST_OWNER_EMAIL_2));
-
+                        TEST_OWNER_EMAIL_2));
     }
 
     public static List<BookingDTO> getPopulatedBookedDTOList() {
         return List.of(
-                getPopulatedBookedDTO(TEST_DEFAULT_BOOKED_ID, TEST_DEFAULT_OFFER_ID,
+                getPopulatedBookedDTO(TEST_DEFAULT_OFFER_ID,
                         TEST_USER_EMAIL, TEST_OWNER_EMAIL),
-                getPopulatedBookedDTO(TEST_DEFAULT_BOOKED_ID_2, TEST_DEFAULT_OFFER_ID_2,
+                getPopulatedBookedDTO(TEST_DEFAULT_OFFER_ID_2,
                         TEST_USER_EMAIL, TEST_OWNER_EMAIL_2));
     }
 
     public static Booking getPopulatedBooked() {
         return getPopulatedBooked(TEST_DEFAULT_BOOKED_ID, TEST_DEFAULT_OFFER_ID,
-                TEST_USER_EMAIL, TEST_OWNER_EMAIL);
+                TEST_OWNER_EMAIL);
     }
 
-    public static Booking getPopulatedBooked(Long Id, String offerId, String bookingUser, String owner) {
+    private static Booking getPopulatedBooked(Long Id, String offerId, String owner) {
         return Booking.builder()
                 .id(Id)
                 .offerId(offerId)
                 .bookedDate(TEST_DATE)
-                .bookingUser(bookingUser)
+                .bookingUser(UserAssembler.TEST_USER_EMAIL)
                 .ownerEmail(owner)
                 .build();
     }
 
-    public static BookingDTO getPopulatedBookedDTO(Long Id, String offerId, String bookingUser, String owner) {
+    public static BookingDTO getPopulatedBookedDTO(String offerId, String bookingUser, String owner) {
         return BookingDTO.builder()
-                .id(Id)
                 .offerId(offerId)
                 .bookedDate(TEST_DATE.toString())
                 .bookingUser(bookingUser)
@@ -69,7 +60,11 @@ public class BookingAssembler {
     }
 
     public static BookingDTO getPopulatedBookedDTO() {
-        return getPopulatedBookedDTO(TEST_DEFAULT_BOOKED_ID, TEST_DEFAULT_OFFER_ID,
+        return getPopulatedBookedDTO(TEST_DEFAULT_OFFER_ID,
                 TEST_USER_EMAIL, TEST_OWNER_EMAIL);
+    }
+
+    public static BookingPayload getBookingPayload() {
+        return new BookingPayload(TEST_DEFAULT_BOOKED_ID.toString(), TEST_DATE.toString());
     }
 }

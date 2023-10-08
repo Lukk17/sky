@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OfferIntegrationTest {
 
     public static final String UPDATED_NAME = "UpdatedName";
+    public static final String OFFER_TOPIC = "offerTopic-1";
     @Autowired
     private OfferRepository offerRepository;
 
@@ -65,16 +66,15 @@ public class OfferIntegrationTest {
 
     @Test
     public void testCreateOffer() {
-
+//Given
         OfferDTO offer = OfferDTO.of(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Forwarded-User", TEST_OWNER_EMAIL);
+        HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
-
+//When
         ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/owner/offer", request, OfferDTO.class);
-
-        ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, "offerTopic-1");
+//Then
+        ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, OFFER_TOPIC);
 
         assertOfferFields(requireNonNull(actual.getBody()), TEST_HOTEL_NAME);
         assertKafkaPayload(actual.getBody(), record);
@@ -82,35 +82,37 @@ public class OfferIntegrationTest {
 
     @Test
     public void testGetAllOwnersOffers() {
+//Given
         populateDatabase();
 
         Offer offer = getPopulatedOffer(2L);
         offer.setOwnerEmail(TEST_OWNER_EMAIL_2);
         offerRepository.save(offer);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Forwarded-User", TEST_OWNER_EMAIL);
+        HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
-
-        ResponseEntity<OfferDTO[]> response = restTemplate.exchange(
+//When
+        ResponseEntity<OfferDTO[]> actual = restTemplate.exchange(
                 "/api/owner/offers",
                 HttpMethod.GET,
                 request,
                 OfferDTO[].class
         );
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(2, requireNonNull(response.getBody()).length);
+//Then
+        assertEquals(HttpStatus.OK, actual.getStatusCode());
+        assertEquals(2, requireNonNull(actual.getBody()).length);
     }
 
     @Test
     public void testGetAllOffers() {
+//Given
         populateDatabase();
-        ResponseEntity<OfferDTO[]> response = restTemplate.getForEntity("/api/offers", OfferDTO[].class);
+//When
+        ResponseEntity<OfferDTO[]> actual = restTemplate.getForEntity("/api/offers", OfferDTO[].class);
+//Then
+        assertEquals(HttpStatus.OK, actual.getStatusCode());
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-
-        List<OfferDTO> offers = Arrays.asList(requireNonNull(response.getBody()));
+        List<OfferDTO> offers = Arrays.asList(requireNonNull(actual.getBody()));
 
         OfferDTO firstOffer = offers.get(0);
         assertOfferFields(firstOffer, TEST_HOTEL_NAME);
@@ -118,55 +120,66 @@ public class OfferIntegrationTest {
 
     @Test
     public void testGetOfferOwner() {
+//Given
         long offerId = populateDatabase().getId();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Forwarded-User", TEST_OWNER_EMAIL);
+        HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
-
-        ResponseEntity<String> response = restTemplate.getForEntity("/owner/offer/" + offerId, String.class, request);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(TEST_OWNER_EMAIL, response.getBody());
+//When
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/owner/offer/" + offerId,
+                HttpMethod.GET,
+                request,
+                String.class);
+//Then
+        assertEquals(HttpStatus.OK, actual.getStatusCode());
+        assertEquals(TEST_OWNER_EMAIL, actual.getBody());
     }
 
     @Test
     public void testUpdateOffer() {
+//Given
         long offerId = populateDatabase().getId();
 
         OfferEditDTO updatedOffer = OfferEditDTO.of(OfferAssembler.getPopulatedOffer(offerId));
         updatedOffer.setHotelName(UPDATED_NAME);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Forwarded-User", TEST_OWNER_EMAIL);
+        HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, headers);
-
-        ResponseEntity<OfferDTO> response = restTemplate.exchange("/api/owner/offer", HttpMethod.PUT, request, OfferDTO.class);
-
+//When
+        ResponseEntity<OfferDTO> actual = restTemplate.exchange(
+                "/api/owner/offer",
+                HttpMethod.PUT,
+                request,
+                OfferDTO.class);
+//Then
         ConsumerRecords<String, String> consumedRecord = consumer.poll(Duration.ofSeconds(5));
 
         assertNotNull(consumedRecord);
         ConsumerRecord<String, String> record = consumedRecord.iterator().next();
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertOfferFields(requireNonNull(response.getBody()), UPDATED_NAME);
-        assertKafkaPayload(response.getBody(), record);
+        assertEquals(HttpStatus.OK, actual.getStatusCode());
+        assertOfferFields(requireNonNull(actual.getBody()), UPDATED_NAME);
+        assertKafkaPayload(actual.getBody(), record);
     }
 
     @Test
     public void testDeleteOffer() {
+//Given
         long offerId = populateDatabase().getId();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Forwarded-User", TEST_OWNER_EMAIL);
+        HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
+//When
+        restTemplate.exchange(
+                "/api/owner/offer/" + offerId,
+                HttpMethod.DELETE,
+                request,
+                String.class);
+//Then
+        ResponseEntity<OfferDTO[]> savedOffers = restTemplate.getForEntity("/api/offers", OfferDTO[].class);
 
-        restTemplate.exchange("/api/owner/offer/" + offerId, HttpMethod.DELETE, request, String.class);
-
-
-        ResponseEntity<OfferDTO[]> response = restTemplate.getForEntity("/api/offers", OfferDTO[].class);
-
-        List<OfferDTO> offers = Arrays.asList(requireNonNull(response.getBody()));
+        List<OfferDTO> offers = Arrays.asList(requireNonNull(savedOffers.getBody()));
 
         assertTrue(offers
                 .stream()
@@ -174,14 +187,19 @@ public class OfferIntegrationTest {
                 .findFirst()
                 .isEmpty());
 
-        ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, "offerTopic-1");
+        ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, OFFER_TOPIC);
 
         assertTrue(record.value().contains("Offer with ID"));
         assertTrue(record.value().contains("was deleted"));
     }
 
-    private Offer populateDatabase() {
+    private static HttpHeaders createTestHttpHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Forwarded-User", TEST_OWNER_EMAIL);
+        return headers;
+    }
 
+    private Offer populateDatabase() {
         Offer offer = getPopulatedOffer(2L);
         offerRepository.save(offer);
 

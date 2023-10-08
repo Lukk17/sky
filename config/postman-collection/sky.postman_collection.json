@@ -802,6 +802,57 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "inner getOfferOwnerEmail",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/offer\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5552/offer/owner/offer/{{createdOfferID}}",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5552",
+							"path": [
+								"offer",
+								"owner",
+								"offer",
+								"{{createdOfferID}}"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"event": [

@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -81,12 +82,13 @@ public class BookingController {
     public Mono<ResponseEntity> bookOffer(@Valid @RequestBody BookingPayload bookingPayload,
                                           @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
+        log.info("Starting to book offer with payload: {}", bookingPayload);
 
         return Mono.fromCallable(() -> getUserInfoFromHeaders(headers))
                 .flatMap(bookingUser ->
                         bookingService.bookOffer(bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser)
                                 .doOnSuccess(bookingDTO -> sendNotification(gson.toJson(bookingDTO), bookingUser))
-                                .map(ResponseEntity::ok)
+                                .map(bookingDTO -> ResponseEntity.status(HttpStatusCode.valueOf(201)).body(bookingDTO))
                                 .cast(ResponseEntity.class)
                 )
                 .doOnError(throwable -> log.info(throwable.getMessage()))
