@@ -41,7 +41,6 @@ public class BookingDTO {
 
     public Booking toDomain() {
         return Booking.builder()
-                .id(this.getId())
                 .offerId(this.getOfferId())
                 .bookedDate(LocalDate.parse(this.getBookedDate()))
                 .bookingUser(this.getBookingUser())

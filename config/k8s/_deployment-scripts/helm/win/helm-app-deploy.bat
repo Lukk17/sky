@@ -1,5 +1,5 @@
 :: Will work only if script is run from project main directory with:
-:: .\config\k8s\_deployment-scripts\helm-app-deploy.bat
+:: 6
 
 :: sealed secrets
 kubectl create namespace sealed-secrets
@@ -8,6 +8,7 @@ helm install sealed-secrets-controller .\config\k8s\helm\api-gateway\sealed-secr
 
 kubectl apply -f .\config\k8s\secret\sealed\sealed-secrets.yaml
 kubectl apply -f .\config\k8s\secret\sealed\sealed-docker-cred.yaml
+kubectl apply -f .\config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
 
 :: api gateway
 helm install oauth2-proxy .\config\k8s\helm\api-gateway\oauth2-proxy\

@@ -1,13 +1,13 @@
 buildscript {
     apply(from = File("../config/microservicesConfig.gradle.kts"))
 
-    val springVersion = "${project.extra["springVersion"]}"
-    System.setProperty("springVersion", springVersion)
+    val springBootVersion = "${project.extra["springBootVersion"]}"
+    System.setProperty("springBootVersion", springBootVersion)
 }
 
 plugins {
-    val springVersion = System.getProperty("springVersion")
-    id("org.springframework.boot") version springVersion
+    val springBootVersion = System.getProperty("springBootVersion")
+    id("org.springframework.boot") version springBootVersion
 }
 
 version = "1.0.0"
@@ -33,22 +33,22 @@ tasks.test {
 }
 
 dependencies {
-    val springVersion = "${project.extra["springVersion"]}"
+    val springBootVersion = "${project.extra["springBootVersion"]}"
 
     implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-actuator:${springVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-websocket:3.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-websocket:${springBootVersion}")
 
     implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
     implementation("org.springframework.kafka:spring-kafka:${project.extra["kafkaVersion"]}")
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")
+    compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
 
     annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springVersion}")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springVersion}"){
+    testImplementation("org.springframework.boot:spring-boot-starter-test:${springBootVersion}"){
         exclude("junit", "junit")
     }
     testImplementation("com.h2database:h2:${project.extra["h2Version"]}")

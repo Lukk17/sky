@@ -34,6 +34,8 @@ spec:
             - --pass-host-header=true
             - --pass-user-headers=true
             - --pass-basic-auth=true
+            - --cookie-csrf-per-request=true
+            - --cookie-csrf-expire=15m
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:

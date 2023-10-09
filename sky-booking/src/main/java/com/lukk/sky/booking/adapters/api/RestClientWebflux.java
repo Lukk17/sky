@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -53,14 +54,16 @@ public class RestClientWebflux implements RestClient {
 
         return webClient.get()
                 .uri(url)
-                .exchangeToMono(clientResponse -> {
-                    if (clientResponse.statusCode().isError()) {
-                        // clientResponse.bodyToMono(String.class) extracts the error message from response body
-                        return clientResponse.bodyToMono(String.class)
-                                .flatMap(errorMessage -> Mono.error(new BookingException(errorMessage)));
-                    } else {
-                        return clientResponse.bodyToMono(String.class);
-                    }
-                });
+                .exchangeToMono(RestClientWebflux::getClientResponseMono);
+    }
+
+    private static Mono<String> getClientResponseMono(ClientResponse clientResponse) {
+        if (clientResponse.statusCode().isError()) {
+            // clientResponse.bodyToMono(String.class) extracts the error message from response body
+            return clientResponse.bodyToMono(String.class)
+                    .flatMap(errorMessage -> Mono.error(new BookingException(errorMessage)));
+        } else {
+            return clientResponse.bodyToMono(String.class);
+        }
     }
 }

@@ -6,6 +6,9 @@
 ./k8s/secret/docker-cred.yaml
 ./k8s/secret/secrets.yaml
 ./k8s/secret/sealed-private.key
+./k8s/secret/ssl/dev-ssl-cert.csr
+./k8s/secret/ssl/dev-ssl-cert.key
+./k8s/secret/ssl/dev-ssl-cert.yaml
 
 
 # User-specific stuff

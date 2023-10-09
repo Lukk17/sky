@@ -1,5 +1,5 @@
 :: Will work only if script is run from project main directory with:
-:: .\config\k8s\_deployment-scripts\kube-app-deploy.bat
+:: .\config\k8s\_deployment-scripts\vanilla\win\kube-app-deploy.bat
 
 :: sealed secrets
 kubectl create namespace sealed-secrets
@@ -7,9 +7,10 @@ kubectl create secret tls sealed-secrets-key --cert=.\config\k8s\secret\sealed-p
 kubectl apply -f .\config\k8s\secret\sealed-secrets-controller.yaml -n sealed-secrets
 kubectl apply -f .\config\k8s\secret\sealed\sealed-secrets.yaml
 kubectl apply -f .\config\k8s\secret\sealed\sealed-docker-cred.yaml
+kubectl apply -f .\config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
 
 :: api gateway
-kubectl apply -f .\config\k8s\vanilla\api-gateway\ingress\ingress.yaml
+kubectl apply -f .\config\k8s\vanilla\api-gateway\ingress\
 kubectl apply -f .\config\k8s\vanilla\api-gateway\oauth2-proxy\
 
 :: independent services

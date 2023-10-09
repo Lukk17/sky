@@ -62,7 +62,7 @@ kubectl config current-context
        helm install sealed-secrets-controller sealed-secrets/sealed-secrets -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
        ``` 
    
-4. Deploy sealed secrets (should be in already in repo)
+4. Deploy sealed secrets (should be already in repo)
    ```shell
      kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
      kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
@@ -125,7 +125,7 @@ helm install sky-notify ./sky-notify
 When changing app web address (host) for example from  
 `https://sky.luksarna.com` to `https://skycloud.luksarna.com`
 
-1. In app config you need to change:
+1. In-app config you need to change:
    * Every Ingress `spec.rules.host` in each service `values.yaml`
    * Every Ingress `nginx.ingress.kubernetes.io/auth-url` and `nginx.ingress.kubernetes.io/auth-signin`
    * `redirect-url` in `oauth2-proxy` `values.yaml`  
@@ -140,7 +140,7 @@ When changing app web address (host) for example from
    * Google: https://console.cloud.google.com/apis/credentials  
      just add new address to selected oauth client `Authorized JavaScript origins` field.  
      <br>
-   * Github: https://github.com/settings/developers  
+   * GitHub: https://github.com/settings/developers  
      need to create new oauth app with new address as `Homepage URL`  
     <br>
 3. Update Postman envs

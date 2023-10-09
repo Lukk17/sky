@@ -17,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
+@EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
 public class OfferApiControllerTest {
 
     private Gson gson;
@@ -81,6 +83,8 @@ public class OfferApiControllerTest {
                 .enableComplexMapKeySerialization()
                 .serializeNulls()
                 .create();
+
+        doNothing().when(offerNotificationService).sendMessage(any());
     }
 
     @Test
@@ -102,26 +106,12 @@ public class OfferApiControllerTest {
 //When
         MvcResult result = mvc.perform(
                         get("/home")
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
         assertEquals("<center><h1>Welcome to Offer app.</h1></center>", result.getResponse().getContentAsString());
-    }
-
-    @Test
-    public void whenHomeOfferError_thenReturnBadRequest() throws Exception {
-
-//When
-        mvc.perform(
-                        get("/")
-                                .contentType(MediaType.APPLICATION_JSON)
-                )
-//Then
-                .andExpect(status().isBadRequest())
-                .andReturn();
     }
 
     @Test
@@ -183,7 +173,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/owner/offers")
+                        post("/owner/offer")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
@@ -204,7 +194,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/owner/offers")
+                        post("/owner/offer")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
@@ -224,7 +214,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/owner/offers")
+                        post("/owner/offer")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
@@ -246,7 +236,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerEditDTO);
 //When
         MvcResult result = mvc.perform(
-                        put("/owner/offers")
+                        put("/owner/offer")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson)
@@ -263,7 +253,7 @@ public class OfferApiControllerTest {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         String expectedJson = gson.toJson(offerDTO);
 //When
-        mvc.perform(put("/owner/offers").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
+        mvc.perform(put("/owner/offer").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
 //Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -275,7 +265,7 @@ public class OfferApiControllerTest {
         doNothing().when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
 //When
         mvc.perform(
-                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
+                        delete(String.format("/owner/offer/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                 )
@@ -290,7 +280,7 @@ public class OfferApiControllerTest {
                 .when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
 //When
         MvcResult result = mvc.perform(
-                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
+                        delete(String.format("/owner/offer/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                 )

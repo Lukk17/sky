@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,12 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.AssertionErrors.fail;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
+@EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
 public class BookingControllerTest {
 
     private Gson gson;
@@ -79,6 +82,7 @@ public class BookingControllerTest {
                 .enableComplexMapKeySerialization()
                 .serializeNulls()
                 .create();
+        doNothing().when(bookingNotificationService).sendMessage(any());
     }
 
     @Test
@@ -86,7 +90,6 @@ public class BookingControllerTest {
 //When
         MvcResult result = mvc.perform(
                         get("/")
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().is2xxSuccessful())
@@ -96,23 +99,11 @@ public class BookingControllerTest {
     }
 
     @Test
-    public void whenHomeBookingsError_thenReturnBadRequest() throws Exception {
-
-//When
-        mvc.perform(get("/")
-                        .contentType(MediaType.APPLICATION_JSON))
-//Then
-                .andExpect(status().isBadRequest())
-                .andReturn();
-    }
-
-    @Test
     public void whenGetBooking_thenReturnBookings() throws Exception {
 //Given
         List<BookingDTO> bookingsDTO = BookingAssembler.getPopulatedBookedDTOList();
 
         when(bookingService.getBookedOffersForUser(TEST_USER_EMAIL)).thenReturn(bookingsDTO);
-        doNothing().when(bookingNotificationService).sendMessage(any());
 
         String expectedJson = gson.toJson(bookingsDTO);
 //When
@@ -163,9 +154,12 @@ public class BookingControllerTest {
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
-        ResponseEntity<BookingDTO> actual = (ResponseEntity) result.getAsyncResult(10);
+        ResponseEntity<BookingDTO> actual = castAsyncResultToBookingResponse(result);
+
+        assert actual != null;
         assertTrue(actual.getStatusCode().is2xxSuccessful());
         assertEquals(expected, actual.getBody());
+
     }
 
     @Test
@@ -194,7 +188,6 @@ public class BookingControllerTest {
 //Given
         when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
-        doNothing().when(bookingNotificationService).sendMessage(any());
 //When
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -217,4 +210,20 @@ public class BookingControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    private ResponseEntity<BookingDTO> castAsyncResultToBookingResponse(MvcResult result) {
+        Object actualObject = result.getAsyncResult(10);
+
+        if (actualObject instanceof ResponseEntity<?> responseEntity) {
+            if (responseEntity.getBody() instanceof BookingDTO body) {
+
+                return new ResponseEntity<>(body, responseEntity.getHeaders(), responseEntity.getStatusCode());
+
+            } else {
+                fail("Response body is not of type BookingDTO");
+            }
+        } else {
+            fail("Actual object is not of type ResponseEntity");
+        }
+        return null;
+    }
 }

@@ -15,8 +15,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -45,11 +47,8 @@ public class BookingController {
                     content = @Content)
     })
     @GetMapping(value = {"/", "/home"})
-    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
-                                        @RequestHeader Map<String, String> headers) {
-        String userEmail = getUserInfoFromHeaders(headers);
-
-        sendNotification("Booking Hello World page", userEmail);
+    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message) {
+        sendNotification("Booking Hello World page", Strings.EMPTY);
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
@@ -62,6 +61,7 @@ public class BookingController {
                     content = @Content)
     })
     @GetMapping("/user/bookings")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> getBookedOffers(@RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
 
@@ -78,15 +78,17 @@ public class BookingController {
                     content = @Content)
     })
     @PostMapping("/bookings")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public Mono<ResponseEntity> bookOffer(@Valid @RequestBody BookingPayload bookingPayload,
                                           @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
+        log.info("Starting to book offer with payload: {}", bookingPayload);
 
         return Mono.fromCallable(() -> getUserInfoFromHeaders(headers))
                 .flatMap(bookingUser ->
                         bookingService.bookOffer(bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser)
                                 .doOnSuccess(bookingDTO -> sendNotification(gson.toJson(bookingDTO), bookingUser))
-                                .map(ResponseEntity::ok)
+                                .map(bookingDTO -> ResponseEntity.status(HttpStatusCode.valueOf(201)).body(bookingDTO))
                                 .cast(ResponseEntity.class)
                 )
                 .doOnError(throwable -> log.info(throwable.getMessage()))
@@ -103,15 +105,17 @@ public class BookingController {
                     content = @Content)
     })
     @DeleteMapping("/bookings/{bookingId}")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<String> removeBooking(@RequestHeader Map<String, String> headers,
                                                 @PathVariable String bookingId) {
+        Gson gson = new Gson();
         String userEmail = getUserInfoFromHeaders(headers);
         log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
 
         String removeMessage = bookingService.removeBooking(bookingId, userEmail);
         sendNotification(removeMessage, userEmail);
 
-        return ResponseEntity.ok(removeMessage);
+        return ResponseEntity.ok(gson.toJson(removeMessage));
     }
 
     private static String getUserInfoFromHeaders(Map<String, String> headers) {

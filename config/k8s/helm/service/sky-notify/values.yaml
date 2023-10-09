@@ -13,7 +13,7 @@ deployment:
   image:
     repository: lukk17/sky-notify
     pullPolicy: Always
-    tag: "v1.0.0"
+    tag: "v1.0.1-candidate-x01"
   container:
     name: sky-notify-container
   env:

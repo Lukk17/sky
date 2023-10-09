@@ -1,5 +1,5 @@
 :: Will work only if script is run from project main directory with:
-:: .\config\k8s\_deployment-scripts\helm-app-upgrade.bat
+:: .\config\k8s\_deployment-scripts\helm\win\helm-app-upgrade.bat
 
 :: sealed secrets
 helm upgrade sealed-secrets-controller .\config\k8s\helm\api-gateway\sealed-secrets-controller\ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller

@@ -26,7 +26,7 @@ public class OfferInternalController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @GetMapping("/owners/{offerId}")
+    @GetMapping("/owner/offer/{offerId}")
     public ResponseEntity<String> getOfferOwner(@PathVariable String offerId) {
         log.info("Trying to find owner of offer with ID: {}", offerId);
         String ownerEmail = offerService.findOfferOwner(offerId);

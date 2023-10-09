@@ -2,8 +2,11 @@ package com.lukk.sky.notify.adapters.outbound;
 
 import com.lukk.sky.notify.adapters.outbound.service.WebSocketService;
 import com.lukk.sky.notify.domain.ports.NotificationPublisher;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
+import org.springframework.messaging.simp.stomp.StompSession;
+import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.stereotype.Component;
 
 import static com.lukk.sky.notify.config.Constants.NOTIFY_DEST;
@@ -26,6 +29,6 @@ public class NotificationPublisherPrimary implements NotificationPublisher {
      */
     @Override
     public void publish(String payload) {
-        webSocketService.triggerMessage("/" + NOTIFY_DEST, payload);
+        webSocketService.triggerMessage(payload);
     }
 }

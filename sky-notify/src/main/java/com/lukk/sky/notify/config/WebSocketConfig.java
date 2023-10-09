@@ -21,6 +21,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/notifyWebsocket").withSockJS();
+        registry.addEndpoint("/notifyWebsocket")
+                .setAllowedOrigins("https://sky.luksarna.com", "https://skycloud.luksarna.com", "http://localhost:4200")
+                .withSockJS();
+        registry.addEndpoint("/notifyWebsocket")
+                .setAllowedOrigins("https://sky.luksarna.com", "https://skycloud.luksarna.com", "http://localhost:4200");
     }
 }

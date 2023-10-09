@@ -1,0 +1,26 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: "nginx"
+  tls:
+    - hosts:
+        - skycloud.luksarna.com
+      secretName: dev-ssl-cert
+  rules:
+    - host: skycloud.luksarna.com
+      http:
+        paths:
+          - path: "/oauth2(/|$)(.*)"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180

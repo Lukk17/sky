@@ -15,8 +15,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,9 +50,7 @@ public class OfferApiController {
                                         @RequestHeader Map<String, String> headers) {
         printHeaders(headers);
 
-        String ownerEmail = getUserInfoFromHeaders(headers);
-
-        sendNotification("Offer Hello World page", ownerEmail);
+        sendNotification("Offer Hello World page", Strings.EMPTY);
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
@@ -61,6 +61,7 @@ public class OfferApiController {
                             schema = @Schema(implementation = OfferDTO.class))})
     })
     @GetMapping("/offers")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<List<OfferDTO>> getAllOffers() {
         return ResponseEntity.ok(offerService.getAllOffers());
     }
@@ -74,11 +75,11 @@ public class OfferApiController {
                     content = @Content)
     })
     @GetMapping("/owner/offers")
-    public ResponseEntity<?> getOwnedOffers(@RequestHeader Map<String, String> headers) {
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
+    public ResponseEntity<List<OfferDTO>> getOwnedOffers(@RequestHeader Map<String, String> headers) {
         String ownerEmail = getUserInfoFromHeaders(headers);
-        List<OfferDTO> offers = offerService.getOwnedOffers(ownerEmail);
 
-        return ResponseEntity.ok(offers);
+        return ResponseEntity.ok(offerService.getOwnedOffers(ownerEmail));
     }
 
     @Operation(summary = "Create new offer")
@@ -89,7 +90,8 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PostMapping(value = "/owner/offers")
+    @PostMapping(value = "/owner/offer")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer,
                                       @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
@@ -100,7 +102,7 @@ public class OfferApiController {
         OfferDTO addedOffer = offerService.addOffer(offer);
 
         sendNotification(gson.toJson(addedOffer), ownerEmail);
-        return ResponseEntity.ok(addedOffer);
+        return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(addedOffer);
     }
 
     @Operation(summary = "Edit offer")
@@ -111,7 +113,8 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PutMapping("/owner/offers")
+    @PutMapping("/owner/offer")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer,
                                   @RequestHeader Map<String, String> headers) {
         Gson gson = new Gson();
@@ -133,17 +136,18 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @DeleteMapping("/owner/offers/{offerId}")
+    @DeleteMapping("/owner/offer/{offerId}")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers,
                                          @PathVariable String offerId) {
-
+        Gson gson = new Gson();
         String ownerEmail = getUserInfoFromHeaders(headers);
         log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
         offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
 
         sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
-        return ResponseEntity.ok("Offer deleted.");
+        return ResponseEntity.ok(gson.toJson(String.format("Offer with id: %s deleted.", offerId)));
     }
 
     @Operation(summary = "Search for offers")
@@ -155,6 +159,7 @@ public class OfferApiController {
                     content = @Content)
     })
     @PostMapping("/search")
+    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
         return ResponseEntity.ok(offerService.searchOffers(searched));
     }
@@ -175,6 +180,8 @@ public class OfferApiController {
     }
 
     private void sendNotification(String payload, String owner) {
+        log.info("Publishing to Kafka");
+
         KafkaPayloadModel model = new KafkaPayloadModel(
                 payload,
                 LocalDateTime.now().format(DATE_TIME_FORMAT),

@@ -50,20 +50,31 @@ docker push lukk17/sky-message:latest
 
 ## 2. App deployment
 
+### Certificate
+For creating sealed secret from certificate see [this](#sealed-secret-from-certificate).
+
+In ingress with generated sealed secret with ssl certificate, tls part can be added under spec:
+```shell
+  tls:
+    - hosts:
+        - skycloud.luksarna.com
+      secretName: dev-ssl-cert
+```
+
 
 ### Sealed secret
 
-To install `kubeseal` on system see [this](#install-sealed-secret-on-system).  
-To deploy standard Kubernetes base64 encoded secrets see [this](#kubernetes-basic-base64-encode-secrets-apply).
+To install `kubeseal` on a system see [this](#install-sealed-secret-on-a-system).  
+To deploy standard Kubernetes base64 encoded secrets, see [this](#kubernetes-basic-base64-encode-secrets-apply).
 
-To create new keys for sealed secret controller see [this](#create-private-and-public-keys-for-sealed-secrets)
+To create new keys for sealed secret controller, see [this](#create-private-and-public-keys-for-sealed-secrets)
 
 1. Create namespace
     ```shell
     kubectl create namespace sealed-secrets
     ```
 2. Create a TLS secret from public.crt and private.key  
-   These keys are not stored in repo - should be stored in protected location like password manager.  
+   These keys are not stored in repo — should be stored in protected location like password manager.  
    See [this](../_deployment-scripts/deployment_README.md#create-private-and-public-keys-for-sealed-secrets)
    for creating new keys.
 
@@ -72,19 +83,20 @@ To create new keys for sealed secret controller see [this](#create-private-and-p
    ```
 3. Deploy sealed secrets controller  
    See [this](#deploy-sealed-secrets-controller) for different or online version.
-   This one have namespace "sealed-secrets" changed in .yaml file.  
+   This one has namespace "sealed-secrets" changed in .yaml file.  
    And is using previously generated TLS secret.
    
       ```shell
       kubectl apply -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
       ``` 
    
-   To create new sealed secrets see [this](#create-new-sealed-secrets).
+   To create new sealed secrets, see [this](#create-new-sealed-secrets).
 
-4. Deploy sealed secrets (should be in already in repo)
+4. Deploy sealed secrets (should be already in repo)
    ```shell
-     kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
-     kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
+   kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
+   kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
+   kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
    ```
 
 ----------------------
@@ -199,7 +211,7 @@ https://developers.google.com/identity/sign-in/web/sign-in
 
 ## 5. Sealed secrets
 
-### Install sealed secret on system
+### Install sealed secret on a system
 
 #### Linux
 ```shell
@@ -217,7 +229,7 @@ sudo install -m 755 kubeseal /usr/local/bin/kubeseal
 
 ### Deploy sealed secrets controller
 
-By default, it tries to use `kube-system` namespace which can't be used on GKE. 
+By default, it tries to use `kube-system` namespace which can't be used on GKE.
 You need to change namespace in yaml file and add creating of new namespace:
 ```yaml
 ---
@@ -236,6 +248,7 @@ kubectl apply -f config/k8s/secret/sealed-secrets-controller.yaml
 ```shell
 kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.22.0/controller.yaml
 ```
+
 ----------------------
 
 ### Create private and public keys for sealed secrets
@@ -255,7 +268,7 @@ sudo chmod 777 ./sealed-private.key
 ### Create new sealed secrets
 
 1. Create secret.yaml (do not ad to git - should be in .gitignore)
-   Keep it only locally as it have base64 encoded password, easy to decode.
+   Keep it only locally as it has base64 encoded password, easy to decode.
 
    secret.yaml should look like:
    ```yaml
@@ -280,7 +293,7 @@ sudo chmod 777 ./sealed-private.key
    ```
 
 2. Create docker.cred.yml  (do not ad to git - should be in .gitignore)
-   Keep it only locally as it have base64 encoded password, easy to decode.
+   Keep it only locally as it has base64 encoded password, easy to decode.
 
    docker-cred.yaml should look like:
    ```yaml
@@ -294,7 +307,7 @@ sudo chmod 777 ./sealed-private.key
       docker-username: "<your-name>"
       docker-password: "<your-password>"
    ```
-3. Create sealed secrets form normal ones:
+3. Create sealed secrets form normal ones:  
    Linux:
    ```shell
    kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/secrets.yaml > config/k8s/secret/sealed/sealed-secrets.yaml
@@ -313,6 +326,65 @@ sudo chmod 777 ./sealed-private.key
    ```shell
    kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
    kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
+   ```
+
+----------------------
+
+### Sealed secret from certificate
+
+For generating self-signed cert (development) see [this](#self-signed-certificate-for-development).
+
+1. Create Kubernetes Secret from the SSL Certificates
+   ```shell
+   kubectl create secret tls dev-ssl-cert --cert=config/k8s/secret/ssl/dev-ssl-cert.crt --key=config/k8s/secret/ssl/dev-ssl-cert.key --dry-run=client -o yaml > config/k8s/secret/ssl/dev-ssl-cert.yaml
+   ```
+2. Create sealed secret from ssl cert:  
+   Linux
+   ```shell
+   kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/ssl/dev-ssl-cert.yaml > config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
+   ```  
+   Windows
+   ```powershell
+   Get-Content .\config\k8s\secret\ssl\dev-ssl-cert.yaml | kubeseal --format=yaml --cert=.\config\k8s\secret\sealed-public.crt | Set-Content .\config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
+   ```
+3. Deploy sealed secrets:
+   ```shell
+   kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml 
+   ```
+
+----------------------
+
+### Self-signed Certificate (for development)
+1. Generate a Private Key:
+   ```shell
+   openssl genrsa -out config/k8s/secret/ssl/dev-ssl-cert.key 2048
+   ```
+2. Generate a Certificate Signing Request (CSR):
+   ```shell
+   openssl req -new -key config/k8s/secret/ssl/dev-ssl-cert.key -out config/k8s/secret/ssl/dev-ssl-cert.csr
+   ```
+   The most important field is the "Common Name",
+   which should match the domain name you're securing (e.g., skycloud.luksarna.com).  
+   If you're creating a self-signed certificate for local development, you can use localhost as the Common Name.
+   Example:
+   ```shell
+   Country Name (2 letter code) [AU]:PL
+   State or Province Name (full name) [Some-State]:WAW
+   Locality Name (eg, city) []:<nothing>
+   Organization Name (eg, company) [Internet Widgits Pty Ltd]:Lukk
+   Organizational Unit Name (eg, section) []:<nothing>
+   Common Name (e.g. server FQDN or YOUR name) []:skycloud.luksarna.com
+   Email Address []: <nothing>
+   
+   Please enter the following 'extra' attributes
+   to be sent with your certificate request
+   A challenge password []:<nothing>
+   An optional company name []:<nothing>
+   ```
+   `<nothing>` mean I did not put anything there (just enter)
+3. Generate the Self-Signed Certificate:
+   ```shell
+   openssl x509 -req -days 3655 -in config/k8s/secret/ssl/dev-ssl-cert.csr -signkey config/k8s/secret/ssl/dev-ssl-cert.key -out config/k8s/secret/ssl/dev-ssl-cert.crt
    ```
 
 ----------------------
@@ -347,7 +419,7 @@ When changing app web address (host) for example from
 `https://sky.luksarna.com`  
 to  
 `https://skycloud.luksarna.com`  
-1. In app config you need to change:
+1. In-app config you need to change:
    * Every Ingress `spec.rules.host`
    * Every Ingress `nginx.ingress.kubernetes.io/auth-url` and `nginx.ingress.kubernetes.io/auth-signin`
    * `redirect-url` in `oauth2-proxy-deployment.yaml`  
@@ -362,7 +434,7 @@ to
    * Google: https://console.cloud.google.com/apis/credentials
      just add new address to selected oauth client `Authorized JavaScript origins` field.  
      <br>
-   * Github: https://github.com/settings/developers
+   * GitHub: https://github.com/settings/developers
      need to create new oauth app with new address as `Homepage URL`  
    <br>
 3. Update Postman envs
@@ -424,7 +496,7 @@ kubectl delete -f config/k8s/service --recursive
 ### Fetching public cert from sealed secret
 
 It should not be required as you should use openssl generated `public.crt` to generate passwords in sealed secrets.  
-But if you need to fetch then use this:
+But if you need to fetch, then use this:
 ```shell
 kubeseal --fetch-cert --controller-name=sealed-secrets-controller --controller-namespace=sealed-secrets > config/k8s/secret/sky-sealed-secrets.pem
 ```

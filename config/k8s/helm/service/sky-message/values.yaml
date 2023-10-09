@@ -1,4 +1,4 @@
-# Default values for sky-offer.
+# Default values for sky-message.
 
 name: "sky-message"
 namespace: "default"
@@ -13,7 +13,7 @@ deployment:
   image:
     repository: "lukk17/sky-message"
     pullPolicy: "Always"
-    tag: "v1.0.0"
+    tag: "v1.0.1-candidate-x03"
   container:
     name: "sky-message-container"
   env:
@@ -45,15 +45,21 @@ ingress:
   service:
     name: "sky-message-ingress"
     annotations:
-      kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/rewrite-target: "/api/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
-      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
       nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+
+    controller: "nginx"
+    tls:
+      - hosts:
+          - skycloud.luksarna.com
+        secretName: dev-ssl-cert
+
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
@@ -61,35 +67,49 @@ ingress:
             pathType: "ImplementationSpecific"
           - path: "/swagger-ui(/|$)(.*)"
             pathType: "ImplementationSpecific"
+
   swagger:
     name: "sky-message-swagger-ingress"
     annotations:
-      kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
-      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
       nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+
+    controller: "nginx"
+    tls:
+      - hosts:
+          - skycloud.luksarna.com
+        secretName: dev-ssl-cert
+
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
           - path: "/msg/swagger-ui(/|$)(.*)"
             pathType: "ImplementationSpecific"
+
   swaggerResource:
     name: "sky-message-swagger-resources-ingress"
     annotations:
-      kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/rewrite-target: "/v3/api-docs/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
-      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
       nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+
+    controller: "nginx"
+    tls:
+      - hosts:
+          - skycloud.luksarna.com
+        secretName: dev-ssl-cert
+
     hosts:
       - host: "skycloud.luksarna.com"
         paths:

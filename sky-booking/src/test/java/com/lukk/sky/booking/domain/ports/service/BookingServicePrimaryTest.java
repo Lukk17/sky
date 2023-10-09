@@ -54,6 +54,9 @@ public class BookingServicePrimaryTest {
         List<BookingDTO> actual = bookingService.getBookedOffersForUser(TEST_USER_EMAIL);
 
         //Then
+        // for comparison
+        expected.get(0).setId(actual.get(0).getId());
+        expected.get(1).setId(actual.get(1).getId());
         assertEquals(expected, actual);
     }
 
@@ -73,6 +76,8 @@ public class BookingServicePrimaryTest {
                 booking.getBookingUser()).block();
 
         //Then
+        // for comparison
+        bookingDTO.setId(actual.getId());
         assertEquals(bookingDTO, actual);
     }
 

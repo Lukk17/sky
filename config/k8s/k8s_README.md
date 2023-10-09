@@ -18,7 +18,7 @@ App should be accessible under its domain:
 or you can find its ip on GKE:
 https://console.cloud.google.com/kubernetes/discovery
 
-in "Services & Ingress" you can find link to external endpoint <cluster ip>:<port>
+in "Services & Ingress" you can find a link to external endpoint <cluster ip>:<port>
 ```shell
 kubectl get svc
 ```
@@ -47,7 +47,7 @@ https://skycloud.luksarna.com/msg/swagger-ui/index.html
 https://skycloud.luksarna.com/offer/swagger-ui/index.html`
 ```
 
-Right now because of reverse proxy problem with swagger you will need to paste into Swagger "Explore"
+Right now because of a reverse proxy problem with swagger, you will need to paste into Swagger "Explore"
 form url of swagger config files. Which are for each service:
 ```
 https://skycloud.luksarna.com/booking/v3/api-docs/public
@@ -64,7 +64,7 @@ https://skycloud.luksarna.com/offer/v3/api-docs/public
 ## 2. Login
 
 Nginx's ingress should catch every unauthenticated request and redirect to login page.
-Login page is controlled by oauth2-proxy and will redirect to provider (for example auth0).  
+Login page is controlled by oauth2-proxy and will redirect to provider (for example, auth0).  
 
 ### Easiest
 
@@ -155,7 +155,7 @@ kubectl get pvc
 ```shell
 kubectl describe <object type> <name>
 ```
-where object type can be:
+where an object type can be:
 * pod (or pods)
   name - name of object (pod)
 
@@ -211,7 +211,7 @@ example:
 kubectl port-forward sky-offer-deployment-5796d4f74d-98bs5 5553:5552
 ```
 
-will be available on the browser:
+it will be available in the browser:
 ```
 localhost:5553
 ```
@@ -244,7 +244,7 @@ localhost:5553
 -------------
 ### Secret from generated auth file
 
-Generate auth file with secrets (must be generated in same folder):
+Generate auth file with secrets (must be generated in the same folder):
 ```shell
 htpasswd -c auth <username>
 ```
@@ -268,7 +268,7 @@ https://community.auth0.com/t/full-auth-code-flow-using-postman/105024
 Request are in postman collection config/postman-collection/sky.postman_collection.json  
 inside cloud/Auth0 Code Flow
 
-IMPORTANT : clear cookies in postman (if not then Bad request error occurs)
+IMPORTANT: clear cookies in postman (if not then Bad request error occurs)
 
 Go step by step:
 1. Get to /authorize
@@ -278,7 +278,7 @@ Go step by step:
 
 --------------
 
-### Setting account role to "Kubernetes Engine Admin"
+### Setting an account role to "Kubernetes Engine Admin"
 
 To be able to set up service accounts (required by sealed secrets)
 
@@ -293,6 +293,12 @@ To be able to set up service accounts (required by sealed secrets)
 
 ## 6. Troubleshooting
 
+### Creating temporary pod for test
+
+```shell
+kubectl run -i --tty --rm debug --image=busybox -- sh
+```
+
 ### MYSQL configuration
 
 #### Exec into mysql container (easy via minikube dashboard)
@@ -302,7 +308,7 @@ kubectl exec --stdin --tty <podFullName> -- /bin/bash
 ```
 where podFullName can be obtained from `kubectl get pod`
 
-#### Making root for all host, not only localhost:
+#### Making root for all hosts, not only localhost:
 ```mysql
 USE mysql;
 UPDATE user SET host='%' WHERE host='localhost'
