@@ -10,7 +10,7 @@ plugins {
     id("org.springframework.boot") version springBootVersion
 }
 
-version = "1.0.0"
+version = "1.0.1"
 description = "sky-offer"
 
 java {
