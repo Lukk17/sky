@@ -19,13 +19,12 @@ public class MessageAssembler {
 
     public static List<MessageDTO> getMessagesDTO() {
         return List.of(
-                getMessageDTO(TEST_MESSAGE_ID),
-                getMessageDTO(TEST_MESSAGE_ID + 1));
+                getMessageDTO(),
+                getMessageDTO());
     }
 
-    public static MessageDTO getMessageDTO(Long id) {
+    public static MessageDTO getMessageDTO() {
         return MessageDTO.builder()
-                .id(id)
                 .createdTime(CREATED.format(DATE_TIME_FORMAT))
                 .receiverEmail(RECEIVER_EMAIL)
                 .senderEmail(SENDER_EMAIL)
@@ -54,6 +53,7 @@ public class MessageAssembler {
                 getMessage(TEST_MESSAGE_ID),
                 getMessage(TEST_MESSAGE_ID + 1));
     }
+
 
     public static Message getMessage(Long id) {
         return Message.builder()

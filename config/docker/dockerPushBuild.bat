@@ -16,12 +16,12 @@ docker push lukk17/sky-message:latest
 docker push lukk17/sky-notify:latest
 docker push lukk17/sky-offer:latest
 
-docker tag lukk17/sky-booking lukk17/sky-booking:v1.0.1-candidate-x01
-docker tag lukk17/sky-message lukk17/sky-message:v1.0.1-candidate-x01
-docker tag lukk17/sky-notify lukk17/sky-notify:v1.0.1-candidate-x00
-docker tag lukk17/sky-offer lukk17/sky-offer:v1.0.1-candidate-x03
+docker tag lukk17/sky-booking lukk17/sky-booking:v1.0.1-candidate-x03
+docker tag lukk17/sky-message lukk17/sky-message:v1.0.1-candidate-x03
+docker tag lukk17/sky-notify lukk17/sky-notify:v1.0.1-candidate-x01
+docker tag lukk17/sky-offer lukk17/sky-offer:v1.0.1-candidate-x04
 
-docker push lukk17/sky-booking:v1.0.1-candidate-x01
-docker push lukk17/sky-message:v1.0.1-candidate-x01
-docker push lukk17/sky-notify:v1.0.1-candidate-x00
-docker push lukk17/sky-offer:v1.0.1-candidate-x03
+docker push lukk17/sky-booking:v1.0.1-candidate-x03
+docker push lukk17/sky-message:v1.0.1-candidate-x03
+docker push lukk17/sky-notify:v1.0.1-candidate-x01
+docker push lukk17/sky-offer:v1.0.1-candidate-x04

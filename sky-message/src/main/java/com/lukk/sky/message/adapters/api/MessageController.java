@@ -14,10 +14,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static com.lukk.sky.message.config.Constants.DATE_TIME_FORMAT;
@@ -49,7 +51,7 @@ public class MessageController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PostMapping("/send")
+    @PostMapping("/message")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message,
                                          @RequestHeader Map<String, String> headers) {
@@ -59,7 +61,7 @@ public class MessageController {
         message.setCreatedTime(LocalDateTime.now().format(DATE_TIME_FORMAT));
         log.info("Sending message from {} to {}", userEmail, message.getReceiverEmail());
 
-        return ResponseEntity.ok(messageService.send(message));
+        return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(messageService.send(message));
     }
 
     @Operation(summary = "Get received messages")
@@ -70,9 +72,9 @@ public class MessageController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @GetMapping("/received")
+    @GetMapping("/messages/received")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> getReceivedMessages(@RequestHeader Map<String, String> headers) {
+    public ResponseEntity<List<MessageDTO>> getReceivedMessages(@RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
         log.info("Getting received messages for user: {}", userEmail);
 
@@ -87,7 +89,7 @@ public class MessageController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @GetMapping("/sent")
+    @GetMapping("messages/sent")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> getSentMessages(@RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
@@ -104,7 +106,7 @@ public class MessageController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @DeleteMapping("/delete/{messageId}")
+    @DeleteMapping("/message/{messageId}")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> deleteMessage(@RequestHeader Map<String, String> headers, @PathVariable String messageId) {
         try {
@@ -114,7 +116,7 @@ public class MessageController {
             log.info("Removing message with ID: {}", messageId);
             messageService.remove(Long.parseLong(messageId), userEmail);
 
-            return ResponseEntity.ok(gson.toJson("Message removed."));
+            return ResponseEntity.ok("Message removed.");
 
         } catch (MessageException exception) {
             return ResponseEntity.badRequest().body(exception.getMessage());

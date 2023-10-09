@@ -353,6 +353,17 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -403,6 +414,17 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -450,6 +472,17 @@
 									"  // Remove the port number from the URL and set the URL in the request.\r",
 									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
 									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -528,6 +561,10 @@
 									"    \r",
 									"    pm.environment.set(\"createdOfferID\", id);\r",
 									"    console.log(`RetrivedId: ` + id)\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
 									"});"
 								],
 								"type": "text/javascript"
@@ -609,6 +646,17 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -684,6 +732,17 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -753,6 +812,17 @@
 									"  // Remove the port number from the URL and set the URL in the request.\r",
 									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
 									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -870,9 +940,7 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
+							""
 						]
 					}
 				}
@@ -897,6 +965,17 @@
 									"  // Remove the port number from the URL and set the URL in the request.\r",
 									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
 									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -954,6 +1033,17 @@
 									"  // Remove the port number from the URL and set the URL in the request.\r",
 									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
 									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -1036,8 +1126,13 @@
 									"    console.log(`Retrieving Booking ID...`)\r",
 									"    const body = pm.response.json()\r",
 									"    const id = body[\"id\"]\r",
-									"    pm.environment.set(\"bookingID\", id);\r",
+									"\r",
+									"    pm.environment.set(\"createdBookingID\", id);\r",
 									"    console.log(`RetrivedId: ` + id)\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1108,6 +1203,17 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -1143,7 +1249,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings/{{bookingID}}",
+							"raw": "{{protocol}}://{{baseUrl}}:5555/booking/api/bookings/{{createdBookingID}}",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -1153,7 +1259,7 @@
 								"booking",
 								"api",
 								"bookings",
-								"{{bookingID}}"
+								"{{createdBookingID}}"
 							]
 						}
 					},
@@ -1175,9 +1281,7 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
+							""
 						]
 					}
 				}
@@ -1202,6 +1306,17 @@
 									"  // Remove the port number from the URL and set the URL in the request.\r",
 									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
 									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -1262,72 +1377,14 @@
 								],
 								"type": "text/javascript"
 							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
 						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{sky-token}}",
-								"type": "text",
-								"description": "from Auth0 code flow"
-							},
-							{
-								"key": "X-Forwarded-User",
-								"value": "offer@owner.com",
-								"type": "text",
-								"description": "local dev only without kubernetes",
-								"disabled": true
-							},
-							{
-								"key": "X-Forwarded-User",
-								"value": "booking@user.com",
-								"type": "text",
-								"description": "local dev only without kubernetes",
-								"disabled": true
-							}
-						],
-						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/sent",
-							"protocol": "{{protocol}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"port": "5553",
-							"path": [
-								"msg",
-								"api",
-								"sent"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getReceivedMessages",
-					"event": [
 						{
-							"listen": "prerequest",
+							"listen": "test",
 							"script": {
 								"exec": [
-									"// Check if the environment is localhost.\r",
-									"if (pm.environment.name === \"localhost\") {\r",
-									"    // Remove \"/offer\" path prefix for localhost\r",
-									"    pm.request.url = pm.request.url.toString().replace(\"/msg\", \"\");\r",
-									"\r",
-									"} else {\r",
-									"  // Remove the port number from the URL and set the URL in the request.\r",
-									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
-									"}"
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -1366,7 +1423,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/received",
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/messages/sent",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -1375,6 +1432,88 @@
 							"path": [
 								"msg",
 								"api",
+								"messages",
+								"sent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getReceivedMessages",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Check if the environment is localhost.\r",
+									"if (pm.environment.name === \"localhost\") {\r",
+									"    // Remove \"/offer\" path prefix for localhost\r",
+									"    pm.request.url = pm.request.url.toString().replace(\"/msg\", \"\");\r",
+									"\r",
+									"} else {\r",
+									"  // Remove the port number from the URL and set the URL in the request.\r",
+									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{sky-token}}",
+								"type": "text",
+								"description": "from Auth0 code flow"
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "offer@owner.com",
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
+							},
+							{
+								"key": "X-Forwarded-User",
+								"value": "booking@user.com",
+								"type": "text",
+								"description": "local dev only without kubernetes",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/messages/received",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"port": "5553",
+							"path": [
+								"msg",
+								"api",
+								"messages",
 								"received"
 							]
 						}
@@ -1412,6 +1551,10 @@
 									"    \r",
 									"    pm.environment.set(\"createdMessageID\", id);\r",
 									"    console.log(`RetrivedId: ` + id)\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1460,7 +1603,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/send",
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/message",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -1469,7 +1612,7 @@
 							"path": [
 								"msg",
 								"api",
-								"send"
+								"message"
 							]
 						}
 					},
@@ -1491,6 +1634,17 @@
 									"  // Remove the port number from the URL and set the URL in the request.\r",
 									"    pm.request.url = pm.request.url.toString().replace(/:\\d{4}/g, \"\");\r",
 									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -1529,7 +1683,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/delete/{{createdMessageID}}",
+							"raw": "{{protocol}}://{{baseUrl}}:5553/msg/api/message/{{createdMessageID}}",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{baseUrl}}"
@@ -1538,7 +1692,7 @@
 							"path": [
 								"msg",
 								"api",
-								"delete",
+								"message",
 								"{{createdMessageID}}"
 							]
 						}
@@ -1561,9 +1715,7 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
+							""
 						]
 					}
 				}

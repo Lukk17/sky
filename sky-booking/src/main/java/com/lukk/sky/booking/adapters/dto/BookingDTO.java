@@ -14,6 +14,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class BookingDTO {
 
+    private Long id;
+
     @NotBlank
     private String offerId;
 
@@ -29,6 +31,7 @@ public class BookingDTO {
 
     public static BookingDTO of(Booking booking) {
         return BookingDTO.builder()
+                .id(booking.getId())
                 .offerId(booking.getOfferId())
                 .bookedDate(booking.getBookedDate().toString())
                 .bookingUser(booking.getBookingUser())

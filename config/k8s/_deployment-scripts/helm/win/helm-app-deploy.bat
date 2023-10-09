@@ -1,5 +1,5 @@
 :: Will work only if script is run from project main directory with:
-:: .\config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
+:: 6
 
 :: sealed secrets
 kubectl create namespace sealed-secrets

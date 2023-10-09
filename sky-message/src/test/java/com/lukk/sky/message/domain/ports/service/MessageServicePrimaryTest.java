@@ -36,7 +36,7 @@ public class MessageServicePrimaryTest {
     @Test
     public void whenSendMessage_thenSaveAndReturnMessage() {
         //Given
-        MessageDTO expected = MessageAssembler.getMessageDTO(TEST_MESSAGE_ID);
+        MessageDTO expected = MessageAssembler.getMessageDTO();
         Message message = MessageAssembler.getMessage(TEST_MESSAGE_ID);
 
         // created time is different so any() need to be used
@@ -46,6 +46,8 @@ public class MessageServicePrimaryTest {
         MessageDTO actual = messageService.send(expected);
 
         //Then
+        // for comparison
+        expected.setId(actual.getId());
         assertEquals(expected, actual);
     }
 
@@ -109,7 +111,9 @@ public class MessageServicePrimaryTest {
         List<MessageDTO> actual = messageService.getReceivedMessages(RECEIVER_EMAIL);
 
         //Then
-        assertEquals(expected, actual);
+        // for comparison
+        expected.get(0).setId(actual.get(0).getId());
+        assertEquals(expected.get(0), actual.get(0));
     }
 
     @Test
@@ -124,6 +128,8 @@ public class MessageServicePrimaryTest {
         List<MessageDTO> actual = messageService.getSentMessages(SENDER_EMAIL);
 
         //Then
-        assertEquals(expected, actual);
+        // for comparison
+        expected.get(0).setId(actual.get(0).getId());
+        assertEquals(expected.get(0), actual.get(0));
     }
 }

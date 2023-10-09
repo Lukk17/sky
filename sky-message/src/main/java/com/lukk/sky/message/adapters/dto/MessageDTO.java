@@ -43,7 +43,6 @@ public class MessageDTO {
 
     public Message toDomain() {
         return Message.builder()
-                .id(this.getId())
                 .text(this.getText())
                 .receiverEmail(this.getReceiverEmail())
                 .senderEmail(this.getSenderEmail())

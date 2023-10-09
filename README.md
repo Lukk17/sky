@@ -123,7 +123,10 @@ The Fastest way to configure the DB is:
 3. Change run order:  
    `deleteOffer` should be called last,  
    `deleteBooking` second last.
-4. Click "Run sky"
+4. `inner getOfferOwnerEmail` test should not be run because it has no ingress
+5. In Runner "Function" tab > Advanced Settings  
+   check checkbox "Run collection without stored cookies"
+6. Click "Run sky"
 
 Request:  
 `workaround for auth0 no information callback`  
