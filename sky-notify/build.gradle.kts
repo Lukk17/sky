@@ -8,14 +8,17 @@ buildscript {
 plugins {
     val springBootVersion = System.getProperty("springBootVersion")
     id("org.springframework.boot") version springBootVersion
+    id("io.spring.dependency-management") version "1.1.7"
+    id("java")
 }
 
-version = "1.0.1"
+version = "1.0.2"
 description = "sky-notify"
 
 
 java {
-    JavaVersion.valueOf("${project.extra["javaVersion"]}")
+    sourceCompatibility = JavaVersion.valueOf("${project.extra["javaVersion"]}")
+    targetCompatibility = JavaVersion.valueOf("${project.extra["javaVersion"]}")
 }
 
 configurations {
@@ -33,28 +36,25 @@ tasks.test {
 }
 
 dependencies {
-    val springBootVersion = "${project.extra["springBootVersion"]}"
-
     implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-websocket:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
 
-    implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
-    implementation("org.springframework.kafka:spring-kafka:${project.extra["kafkaVersion"]}")
+    implementation("com.google.code.gson:gson")
+    implementation("org.springframework.kafka:spring-kafka")
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
-
     annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springBootVersion}"){
-        exclude("junit", "junit")
+    compileOnly("org.springframework.boot:spring-boot-configuration-processor")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude(group = "junit", module = "junit")
     }
-    testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
-    testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
-    testImplementation("org.springframework.kafka:spring-kafka-test:${project.extra["kafkaVersion"]}")
-
+    testImplementation("com.h2database:h2")
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.springframework.kafka:spring-kafka-test")
 }
 

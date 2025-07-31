@@ -8,9 +8,11 @@ buildscript {
 plugins {
     val springBootVersion = System.getProperty("springBootVersion")
     id("org.springframework.boot") version springBootVersion
+    id("io.spring.dependency-management") version "1.1.7"
+    id("java")
 }
 
-version = "1.0.1"
+version = "1.0.2"
 description = "sky-offer"
 
 java {
@@ -26,40 +28,39 @@ tasks.test {
 }
 
 dependencies {
-    val springBootVersion = "${project.extra["springBootVersion"]}"
-    implementation("org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-data-rest:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-validation:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-devtools:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-webflux:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-validation:${springBootVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-data-rest")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-    implementation("mysql:mysql-connector-java:${project.extra["mysqlVersion"]}")
-    implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
-    implementation("org.springframework.kafka:spring-kafka:${project.extra["kafkaVersion"]}")
-//    Swagger
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    runtimeOnly("com.mysql:mysql-connector-j")
+
+    implementation("com.google.code.gson:gson")
+    implementation("org.springframework.kafka:spring-kafka")
+
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${project.extra["openapiVersion"]}")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.extra["openapiVersion"]}")
 
-
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springBootVersion}"){
-        exclude("junit", "junit")
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude(group = "junit", module = "junit")
     }
-    testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
-    testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
-    testImplementation("org.springframework.kafka:spring-kafka-test:${project.extra["kafkaVersion"]}")
+    testImplementation("com.h2database:h2")
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.springframework.kafka:spring-kafka-test")
 
     compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
-
     annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
+
+    compileOnly("org.springframework.boot:spring-boot-configuration-processor")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     //  JAX-B dependencies for JDK 9+ (without hibernate/hikari error)
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:${project.extra["jakartaBindApiVersion"]}")
-    implementation("org.glassfish.jaxb:jaxb-runtime:${project.extra["jaxbRuntimeVersion"]}")
+    implementation("jakarta.xml.bind:jakarta.xml.bind-api")
+    implementation("org.glassfish.jaxb:jaxb-runtime")
 }
 
