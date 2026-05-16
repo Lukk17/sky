@@ -1,5 +1,3 @@
-rootProject.name = "sky-notify"
-
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
@@ -7,3 +5,5 @@ dependencyResolutionManagement {
         }
     }
 }
+
+rootProject.name = "buildSrc"
