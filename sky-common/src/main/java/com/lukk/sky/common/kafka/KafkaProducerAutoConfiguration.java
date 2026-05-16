@@ -28,6 +28,15 @@ public class KafkaProducerAutoConfiguration {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, producerClientId);
+
+        // Durability: wait for full ISR replication before the broker acks. Pair with
+        // enable.idempotence=true to make retries safe (no duplicates from re-sends).
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        props.put(ProducerConfig.RETRIES_CONFIG, Integer.MAX_VALUE);
+        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 120_000);
+        // Idempotence caps in-flight at 5; explicit so future bumps don't accidentally break it.
+        props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
         return props;
     }
 
