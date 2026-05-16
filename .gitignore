@@ -8,6 +8,18 @@
 .mvn
 
 .gradle/
+build/
+**/build/
+
+# Kafka / Zookeeper local runtime data (never tracked)
+**/kafka-logs/
+**/zookeeper-data/
+Developmentkafka*
+kafka-logs/
+zookeeper-data/
+
+# AWS Elastic Beanstalk leftovers (project no longer targets EB)
+Dockerrun.aws.json
 
 ### IntelliJ IDEA ###
 *.iws
