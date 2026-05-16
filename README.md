@@ -36,7 +36,9 @@ authorization. Kubernetes Ingress controller is exposing services to the world.
 Each microservice will have its API endpoints exposed.  
 
 ### Ingress
-More info about [Ingres](./config/k8s/vanilla/api-gateway/ingress/ingress_README.md).
+More info about Ingress in the Helm chart values under
+[`./config/k8s/helm/service/`](./config/k8s/helm/service/) (each service chart
+templates its own Ingress; the `helm_README.md` covers routing detail).
 
 ### Postman
 In [postman-collection](./config/postman-collection). 
@@ -66,7 +68,7 @@ See [DB configuration](#DB-configuration) for manual how to configure.
 
 ### Kafka
 
-* Kubernetes deployment: [Kafka kubernetes](./config/k8s/vanilla/kafka/kafka_README.md).  
+* Kubernetes deployment: [Kafka Helm chart](./config/k8s/helm/kafka/).  
 * Local installation: [Local development](./config/local-dev/local_README.md).
 
 ---------------------------------

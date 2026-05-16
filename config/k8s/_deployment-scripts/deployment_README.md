@@ -103,29 +103,21 @@ To create new keys for sealed secret controller, see [this](#create-private-and-
 
 ### Deploy services
 
+All deployment is via Helm. Use the scripts under `_deployment-scripts/helm/`
+(linux/.sh, win/.bat). They wrap `helm install` / `helm upgrade` per chart in
+the right dependency order (sealed-secrets → MySQL → Kafka → oauth2-proxy →
+services).
+
 ```shell
-kubectl apply -f config/k8s/vanilla/api-gateway/ingress/ingress.yaml
-kubectl apply -f config/k8s/vanilla/api-gateway/oauth2-proxy/
+# Linux
+./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
 
-kubectl apply -f config/k8s/vanilla/kafka/
-
-kubectl apply -f config/k8s/vanilla/db/mysql/
-kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=mysql
-
-kubectl apply -f config/k8s/vanilla/service/sky-offer/
-kubectl apply -f config/k8s/vanilla/service/sky-booking/
-kubectl apply -f config/k8s/vanilla/service/sky-notify/
-kubectl apply -f config/k8s/vanilla/service/sky-message/
+# Windows
+config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
 ```
 
-Simpler, you can run all scripts in a folder (in terminal being in parent folder):
-```shell
-kubectl apply -f config/k8s/api-gateway --recursive
-kubectl apply -f config/k8s/db --recursive
-kubectl wait --namespace default --for=condition=ready --timeout=120s deployment/mysql-deployment
-kubectl apply -f config/k8s/kafka --recursive
-kubectl apply -f config/k8s/service --recursive
-```
+The vanilla `kubectl apply -f ...` path was removed in favour of Helm; see
+the Helm chart tree under `config/k8s/helm/`.
 
 ----------------------
 
