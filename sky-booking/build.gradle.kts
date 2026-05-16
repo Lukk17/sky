@@ -16,6 +16,8 @@ dependencies {
     implementation(libs.spring.boot.starter.webflux)
 
     runtimeOnly(libs.mysql.connector.j)
+    implementation(libs.flyway.core)
+    runtimeOnly(libs.flyway.mysql)
 
     implementation(libs.gson)
     implementation(libs.spring.kafka)

@@ -3,6 +3,9 @@
 spring-boot = "3.5.4"
 spring-dependency-management = "1.1.7"
 
+# Persistence
+flyway = "10.20.0"
+
 # Tooling
 lombok = "1.18.38"
 springdoc = "2.6.0"
@@ -37,6 +40,8 @@ spring-test = { module = "org.springframework:spring-test" }
 mysql-connector-j = { module = "com.mysql:mysql-connector-j" }
 gson = { module = "com.google.code.gson:gson" }
 h2 = { module = "com.h2database:h2" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-mysql = { module = "org.flywaydb:flyway-mysql", version.ref = "flyway" }
 
 # JAX-B (JDK 9+ Hibernate/Hikari compatibility)
 jakarta-xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api" }

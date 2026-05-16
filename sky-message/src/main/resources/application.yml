@@ -26,9 +26,15 @@ spring:
     locale-resolver: accept_header
   mvc:
     dispatch-options-request: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
+    locations: classpath:db/migration
   jpa:
+    # validate: schema must match entities; migrations own evolution.
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: ${SHOW_SQL_QUERIES:false}
   datasource:

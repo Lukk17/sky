@@ -29,9 +29,14 @@ spring:
   mvc:
     # for option request handling
     dispatch-options-request: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
+    locations: classpath:db/migration
   jpa:
-    #   type of database operations on app start
-    hibernate.ddl-auto: update
+    # validate: schema must match entities; migrations own evolution.
+    hibernate.ddl-auto: validate
     database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: ${SHOW_SQL_QUERIES:false}
     properties:
