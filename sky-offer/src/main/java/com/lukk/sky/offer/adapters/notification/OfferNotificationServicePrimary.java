@@ -1,7 +1,7 @@
 package com.lukk.sky.offer.adapters.notification;
 
 import com.google.gson.Gson;
-import com.lukk.sky.offer.adapters.dto.KafkaPayloadModel;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import lombok.Data;
 import org.springframework.context.annotation.Primary;

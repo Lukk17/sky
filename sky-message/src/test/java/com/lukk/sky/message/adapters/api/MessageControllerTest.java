@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.util.List;
 
 import static com.lukk.sky.message.Assemblers.MessageAssembler.*;
-import static com.lukk.sky.message.config.Constants.USER_INFO_HEADERS;
+import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;

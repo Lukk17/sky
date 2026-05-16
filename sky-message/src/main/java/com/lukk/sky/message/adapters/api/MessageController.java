@@ -22,8 +22,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.lukk.sky.message.config.Constants.DATE_TIME_FORMAT;
-import static com.lukk.sky.message.config.Constants.USER_INFO_HEADERS;
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
+import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 
 @RestController
 @RequiredArgsConstructor

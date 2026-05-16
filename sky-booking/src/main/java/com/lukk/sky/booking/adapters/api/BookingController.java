@@ -3,7 +3,7 @@ package com.lukk.sky.booking.adapters.api;
 import com.google.gson.Gson;
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.adapters.dto.BookingPayload;
-import com.lukk.sky.booking.adapters.dto.KafkaPayloadModel;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.service.BookingService;
@@ -27,8 +27,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.lukk.sky.booking.config.Constants.DATE_TIME_FORMAT;
-import static com.lukk.sky.booking.config.Constants.USER_INFO_HEADERS;
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
+import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 
 @RestController
 @RequiredArgsConstructor

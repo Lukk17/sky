@@ -1,5 +1,4 @@
-package com.lukk.sky.offer.adapters.dto;
+package com.lukk.sky.common.kafka;
 
 public record KafkaPayloadModel(String payload, String accessedAt, String userInfo) {
-
 }

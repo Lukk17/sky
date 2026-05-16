@@ -14,6 +14,8 @@ configurations {
 }
 
 dependencies {
+    implementation(project(":sky-common"))
+
     implementation(libs.spring.boot.starter)
     implementation(libs.spring.boot.starter.websocket)
 

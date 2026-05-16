@@ -1,7 +1,7 @@
 package com.lukk.sky.notify.domain.service;
 
 import com.google.gson.Gson;
-import com.lukk.sky.notify.adapters.dto.KafkaPayloadModel;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.notify.adapters.dto.WebsocketPayloadModel;
 import com.lukk.sky.notify.adapters.outbound.NotificationPublisherPrimary;
 import lombok.RequiredArgsConstructor;

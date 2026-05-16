@@ -1,6 +1,6 @@
 package com.lukk.sky.offer.domain.ports.notification;
 
-import com.lukk.sky.offer.adapters.dto.KafkaPayloadModel;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 
 /**
  * This interface defines the contract for sending notifications related to offers.

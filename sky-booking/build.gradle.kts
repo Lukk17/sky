@@ -6,6 +6,8 @@ version = "1.0.2"
 description = "sky-booking"
 
 dependencies {
+    implementation(project(":sky-common"))
+
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.data.rest)
     implementation(libs.spring.boot.starter.validation)

@@ -1,6 +1,7 @@
 rootProject.name = "sky"
 
 include(
+    ":sky-common",
     ":sky-booking",
     ":sky-offer",
     ":sky-message",

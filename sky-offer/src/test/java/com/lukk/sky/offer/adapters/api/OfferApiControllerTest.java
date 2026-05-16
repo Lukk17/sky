@@ -31,7 +31,7 @@ import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_HOTEL_NAME;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
-import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
+import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;

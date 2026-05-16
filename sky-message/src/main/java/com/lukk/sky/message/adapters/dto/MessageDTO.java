@@ -10,7 +10,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-import static com.lukk.sky.message.config.Constants.DATE_TIME_FORMAT;
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Builder
 @Data

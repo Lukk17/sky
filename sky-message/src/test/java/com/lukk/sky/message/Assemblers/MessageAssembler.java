@@ -6,7 +6,7 @@ import com.lukk.sky.message.domain.model.Message;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.lukk.sky.message.config.Constants.DATE_TIME_FORMAT;
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 public class MessageAssembler {
 

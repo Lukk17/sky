@@ -1,7 +1,7 @@
 package com.lukk.sky.booking.domain.ports.notification;
 
 
-import com.lukk.sky.booking.adapters.dto.KafkaPayloadModel;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 
 /**
  * Service interface for sending booking notifications.

@@ -1,7 +1,7 @@
 package com.lukk.sky.offer.adapters.api;
 
 import com.google.gson.Gson;
-import com.lukk.sky.offer.adapters.dto.KafkaPayloadModel;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -26,8 +26,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.lukk.sky.offer.config.Constants.DATE_TIME_FORMAT;
-import static com.lukk.sky.offer.config.Constants.USER_INFO_HEADERS;
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
+import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 
 @RestController
 @RequiredArgsConstructor

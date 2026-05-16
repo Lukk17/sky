@@ -31,7 +31,7 @@ import java.util.Map;
 
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.*;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
-import static com.lukk.sky.booking.config.Constants.USER_INFO_HEADERS;
+import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;

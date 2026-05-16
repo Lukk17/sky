@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.lukk.sky.booking.config.Constants.DATE_FORMAT;
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_FORMAT;
 
 /**
  * Primary implementation of the {@link BookingService}.
