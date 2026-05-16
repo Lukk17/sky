@@ -1,22 +1,16 @@
-buildscript {
-    apply(from = File("../config/microservicesConfig.gradle.kts"))
-
-    val springBootVersion = "${project.extra["springBootVersion"]}"
-    System.setProperty("springBootVersion", springBootVersion)
-}
-
 plugins {
-    val springBootVersion = System.getProperty("springBootVersion")
-    id("org.springframework.boot") version springBootVersion
-    id("io.spring.dependency-management") version "1.1.7"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
     id("java")
 }
 
+group = "com.lukk"
 version = "1.0.2"
 description = "sky-offer"
 
 java {
-    JavaVersion.valueOf("${project.extra["javaVersion"]}")
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
@@ -28,39 +22,37 @@ tasks.test {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-data-rest")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.data.rest)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.webflux)
 
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    developmentOnly(libs.spring.boot.devtools)
 
-    runtimeOnly("com.mysql:mysql-connector-j")
+    runtimeOnly(libs.mysql.connector.j)
 
-    implementation("com.google.code.gson:gson")
-    implementation("org.springframework.kafka:spring-kafka")
+    implementation(libs.gson)
+    implementation(libs.spring.kafka)
 
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${project.extra["openapiVersion"]}")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.extra["openapiVersion"]}")
+    implementation(libs.springdoc.openapi.starter.webflux.ui)
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+    testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "junit", module = "junit")
     }
-    testImplementation("com.h2database:h2")
-    testImplementation("org.springframework.security:spring-security-test")
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.springframework.kafka:spring-kafka-test")
+    testImplementation(libs.h2)
+    testImplementation(libs.spring.security.test)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.spring.kafka.test)
 
-    compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
 
-    compileOnly("org.springframework.boot:spring-boot-configuration-processor")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    compileOnly(libs.spring.boot.configuration.processor)
+    annotationProcessor(libs.spring.boot.configuration.processor)
 
     //  JAX-B dependencies for JDK 9+ (without hibernate/hikari error)
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api")
-    implementation("org.glassfish.jaxb:jaxb-runtime")
+    implementation(libs.bundles.jaxb)
 }
-
