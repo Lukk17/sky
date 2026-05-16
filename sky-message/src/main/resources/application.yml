@@ -3,7 +3,7 @@ sky:
   helloWorld: <center><h1>Welcome to Message app.</h1></center>
   apiPrefix: /api
   crossOrigin:
-    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:*}
+    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com}
 
 # SPRING setup
 server:
@@ -26,10 +26,6 @@ spring:
     locale-resolver: accept_header
   mvc:
     dispatch-options-request: true
-  security:
-    user:
-      name: ${SPRING_SECURITY_USER:XYZ}
-      password: ${SPRING_SECURITY_PASS:XYZ}
   jpa:
     hibernate:
       ddl-auto: update
@@ -43,8 +39,8 @@ spring:
       data-source-properties:
         useUnicode: true
         characterEncoding: UTF-8
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASS:Lukk1234}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASS}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 # expose actuator endpoints (* for all)

@@ -9,7 +9,6 @@ dependencies {
     implementation(project(":sky-common"))
 
     implementation(libs.spring.boot.starter.data.jpa)
-    implementation(libs.spring.boot.starter.data.rest)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.web)
 
@@ -17,7 +16,6 @@ dependencies {
 
     implementation(libs.gson)
 
-    implementation(libs.springdoc.openapi.starter.webflux.ui)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     // JAX-B for Hibernate/Hikari compatibility on JDK 9+

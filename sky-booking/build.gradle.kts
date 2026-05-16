@@ -9,9 +9,10 @@ dependencies {
     implementation(project(":sky-common"))
 
     implementation(libs.spring.boot.starter.data.jpa)
-    implementation(libs.spring.boot.starter.data.rest)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.web)
+    // Reactive stack retained: BookingService port returns Mono<BookingDTO> and
+    // RestClientWebflux uses WebClient. Migration to RestClient is a separate change.
     implementation(libs.spring.boot.starter.webflux)
 
     runtimeOnly(libs.mysql.connector.j)
@@ -19,7 +20,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.spring.kafka)
 
-    implementation(libs.springdoc.openapi.starter.webflux.ui)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     testImplementation(libs.spring.kafka.test)
