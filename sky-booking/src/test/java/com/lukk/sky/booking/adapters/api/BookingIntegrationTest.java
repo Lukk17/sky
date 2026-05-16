@@ -94,7 +94,7 @@ public class BookingIntegrationTest {
         assertBookingFields(bookingPayload, actual.getBody());
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals(String.format("/owner/offer/%s", bookingPayload.offerId()), recordedRequest.getPath());
+        assertEquals(String.format("/api/internal/owner/offer/%s", bookingPayload.offerId()), recordedRequest.getPath());
     }
 
     @Test

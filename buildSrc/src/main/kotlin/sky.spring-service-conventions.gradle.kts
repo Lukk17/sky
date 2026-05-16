@@ -26,6 +26,7 @@ dependencies {
     "testImplementation"(libs.h2)
     "testImplementation"(libs.spring.security.test)
     "testImplementation"(libs.junit.jupiter)
+    "testImplementation"(libs.archunit.junit5)
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
