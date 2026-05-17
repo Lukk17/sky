@@ -1,0 +1,97 @@
+package com.lukk.sky.message.domain.ports.repository;
+
+import com.lukk.sky.message.domain.model.Message;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Repository slice test for {@link MessageRepository}. Template for the wider
+ * repository-test backfill called for in the test-modernization change.
+ *
+ * <p><b>Currently disabled.</b> Two blockers must be resolved first:
+ * <ul>
+ *   <li>The H2 in-memory DB does not accept Hibernate's MySQL DDL options
+ *       ({@code engine=InnoDB}). Switching to Testcontainers MySQL fixes this
+ *       and removes the dialect divergence between tests and prod.</li>
+ *   <li>{@code @DataJpaTest} loads a narrow slice that does not include
+ *       custom @ConfigurationProperties beans
+ *       ({@code SpringConfigProperties}); the application main class injects
+ *       one. Resolve by either narrowing the test to a single
+ *       {@code @ContextConfiguration} or moving the property class to a
+ *       conditional auto-config.</li>
+ * </ul>
+ *
+ * The assertions below are sound and form the spec for the eventual passing
+ * version once the two infrastructure blockers above are fixed.
+ */
+@DataJpaTest
+@AutoConfigureTestDatabase
+@ActiveProfiles("test")
+@Disabled("Re-enable after Testcontainers MySQL replaces H2 and @ConfigurationProperties scanning is wired for @DataJpaTest")
+class MessageRepositoryDataJpaTest {
+
+    private static final String RECEIVER = "receiver@example.com";
+    private static final String SENDER = "sender@example.com";
+    private static final String OTHER = "other@example.com";
+
+    @Autowired
+    private MessageRepository messageRepository;
+
+    @Test
+    @DisplayName("findAllByReceiverEmail returns only messages with the matching receiver")
+    void findsMessagesByReceiver() {
+        save("hello", SENDER, RECEIVER);
+        save("hi back", RECEIVER, SENDER);
+        save("unrelated", OTHER, SENDER);
+
+        List<Message> received = messageRepository.findAllByReceiverEmail(RECEIVER);
+
+        assertEquals(1, received.size());
+        assertEquals("hello", received.get(0).getText());
+        assertEquals(SENDER, received.get(0).getSenderEmail());
+    }
+
+    @Test
+    @DisplayName("findAllBySenderEmail returns only messages with the matching sender")
+    void findsMessagesBySender() {
+        save("first", SENDER, RECEIVER);
+        save("second", SENDER, OTHER);
+        save("third", OTHER, RECEIVER);
+
+        List<Message> sent = messageRepository.findAllBySenderEmail(SENDER);
+
+        assertEquals(2, sent.size());
+        assertTrue(sent.stream().allMatch(m -> m.getSenderEmail().equals(SENDER)));
+    }
+
+    @Test
+    @DisplayName("returns empty list when no message matches receiver")
+    void emptyOnUnknownReceiver() {
+        save("hello", SENDER, RECEIVER);
+
+        List<Message> received = messageRepository.findAllByReceiverEmail("nobody@example.com");
+
+        assertTrue(received.isEmpty());
+    }
+
+    private void save(String text, String sender, String receiver) {
+        Message message = Message.builder()
+                .text(text)
+                .senderEmail(sender)
+                .receiverEmail(receiver)
+                .createdTime(LocalDateTime.now())
+                .build();
+        messageRepository.save(message);
+    }
+}
