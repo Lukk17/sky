@@ -1,7 +1,16 @@
 [versions]
-# Framework
+# Framework — Spring Boot version. Bump to 4.x with the SB4 migration guide in hand;
+# extensive package moves (spring-boot-test autoconfigure split, Jackson 3 ->
+# tools.jackson, web autoconfigure module split) need targeted triage. The catalog is
+# otherwise SB4-ready: JDK 25 toolchain is live, @MockitoBean is in place, jacoco
+# 0.8.13 supports class file version 69 (Java 25).
 spring-boot = "3.5.4"
 spring-dependency-management = "1.1.7"
+
+# Java toolchain — auto-downloaded by the Foojay resolver convention plugin declared
+# in root settings.gradle.kts. Single source of truth: bumping here propagates to
+# every module via sky.java-conventions.
+java = "25"
 
 # Persistence
 flyway = "10.20.0"

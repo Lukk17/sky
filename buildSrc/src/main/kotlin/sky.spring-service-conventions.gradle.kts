@@ -77,6 +77,12 @@ tasks.jacocoTestReport {
     )
 }
 
+// JaCoCo 0.8.13 supports Java 25 class files. Older versions error on unknown class
+// file major version when the Spring Boot 4 / Java 25 toolchain bump lands.
+jacoco {
+    toolVersion = "0.8.13"
+}
+
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
     violationRules {
