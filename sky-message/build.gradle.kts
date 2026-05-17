@@ -16,6 +16,8 @@ dependencies {
     implementation(libs.flyway.core)
     runtimeOnly(libs.flyway.mysql)
 
+    testImplementation(libs.testcontainers.mysql)
+
     implementation(libs.gson)
 
     implementation(libs.springdoc.openapi.starter.webmvc.ui)

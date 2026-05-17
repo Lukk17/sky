@@ -1,5 +1,6 @@
 package com.lukk.sky.message.adapters.api;
 
+import com.lukk.sky.message.AbstractIntegrationTest;
 import com.lukk.sky.message.Assemblers.MessageAssembler;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.model.Message;
@@ -7,13 +8,9 @@ import com.lukk.sky.message.domain.ports.repository.MessageRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
@@ -22,10 +19,7 @@ import static com.lukk.sky.message.Assemblers.MessageAssembler.SENDER_EMAIL;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ActiveProfiles("test")
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class MessageIntegrationTest {
+public class MessageIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MessageRepository messageRepository;

@@ -22,6 +22,8 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     testImplementation(libs.spring.kafka.test)
+    testImplementation(libs.testcontainers.mysql)
+    testImplementation(libs.testcontainers.kafka)
 
     // JAX-B for Hibernate/Hikari compatibility on JDK 9+
     implementation(libs.bundles.jaxb)

@@ -18,7 +18,7 @@ spring:
       ddl-auto: update
     show-sql: true
   kafka:
-    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    # bootstrap-servers wired by @ServiceConnection on the Testcontainers Kafka.
     consumer:
       auto-offset-reset: earliest
 

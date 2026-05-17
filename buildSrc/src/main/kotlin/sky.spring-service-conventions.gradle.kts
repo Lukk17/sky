@@ -28,6 +28,13 @@ dependencies {
     "testImplementation"(libs.spring.security.test)
     "testImplementation"(libs.junit.jupiter)
     "testImplementation"(libs.archunit.junit5)
+
+    // Testcontainers — pinned via BOM (test-only), per-service base classes pick the
+    // modules they need (mysql / kafka). spring-boot-testcontainers provides
+    // @ServiceConnection so subclasses don't need @DynamicPropertySource.
+    "testImplementation"(platform(libs.testcontainers.bom))
+    "testImplementation"(libs.testcontainers.junit.jupiter)
+    "testImplementation"(libs.spring.boot.testcontainers)
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {

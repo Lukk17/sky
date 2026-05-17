@@ -1,5 +1,6 @@
 package com.lukk.sky.offer.adapters.api;
 
+import com.lukk.sky.offer.AbstractIntegrationTest;
 import com.lukk.sky.offer.Assemblers.OfferAssembler;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
@@ -11,16 +12,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -33,11 +29,7 @@ import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ActiveProfiles("test")
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-public class OfferIntegrationTest {
+public class OfferIntegrationTest extends AbstractIntegrationTest {
 
     public static final String UPDATED_NAME = "UpdatedName";
     public static final String OFFER_TOPIC = "offerTopic-1";

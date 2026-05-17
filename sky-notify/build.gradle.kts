@@ -25,4 +25,5 @@ dependencies {
     implementation(libs.spring.kafka)
 
     testImplementation(libs.spring.kafka.test)
+    testImplementation(libs.testcontainers.kafka)
 }
