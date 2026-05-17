@@ -90,7 +90,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PostMapping(value = "/owner/offer")
+    @PostMapping("/owner/offers")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer,
                                       @RequestHeader Map<String, String> headers) {
@@ -113,7 +113,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PutMapping("/owner/offer")
+    @PutMapping("/owner/offers")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer,
                                   @RequestHeader Map<String, String> headers) {
@@ -136,7 +136,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @DeleteMapping("/owner/offer/{offerId}")
+    @DeleteMapping("/owner/offers/{offerId}")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers,
                                          @PathVariable String offerId) {

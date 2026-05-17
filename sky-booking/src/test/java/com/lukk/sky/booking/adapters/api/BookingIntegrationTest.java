@@ -144,7 +144,12 @@ public class BookingIntegrationTest {
     }
 
     private Booking populateDatabase() {
-        return bookingRepository.save(BookingAssembler.getPopulatedBooked());
+        // Null the assembler's hardcoded id so save() does an INSERT and Hibernate
+        // picks up the IDENTITY-assigned value rather than treating id=1 as a detached
+        // entity to merge (latent flakiness this test had under different test orderings).
+        Booking booking = BookingAssembler.getPopulatedBooked();
+        booking.setId(null);
+        return bookingRepository.save(booking);
     }
 
     private List<Booking> populateDatabaseWithMany() {

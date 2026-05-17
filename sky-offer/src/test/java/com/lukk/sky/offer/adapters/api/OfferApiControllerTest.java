@@ -173,7 +173,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/owner/offer")
+                        post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
@@ -194,7 +194,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/owner/offer")
+                        post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
@@ -214,7 +214,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/owner/offer")
+                        post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson))
@@ -236,7 +236,7 @@ public class OfferApiControllerTest {
         String expectedJson = gson.toJson(offerEditDTO);
 //When
         MvcResult result = mvc.perform(
-                        put("/owner/offer")
+                        put("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
                                 .content(expectedJson)
@@ -253,7 +253,7 @@ public class OfferApiControllerTest {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         String expectedJson = gson.toJson(offerDTO);
 //When
-        mvc.perform(put("/owner/offer").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
+        mvc.perform(put("/owner/offers").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
 //Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -265,7 +265,7 @@ public class OfferApiControllerTest {
         doNothing().when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
 //When
         mvc.perform(
-                        delete(String.format("/owner/offer/%s", TEST_DEFAULT_OFFER_ID))
+                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                 )
@@ -280,7 +280,7 @@ public class OfferApiControllerTest {
                 .when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
 //When
         MvcResult result = mvc.perform(
-                        delete(String.format("/owner/offer/%s", TEST_DEFAULT_OFFER_ID))
+                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                 )

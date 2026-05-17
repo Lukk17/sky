@@ -72,7 +72,7 @@ public class OfferIntegrationTest {
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
 //When
-        ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/owner/offer", request, OfferDTO.class);
+        ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/owner/offers", request, OfferDTO.class);
 //Then
         ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, OFFER_TOPIC);
 
@@ -86,6 +86,7 @@ public class OfferIntegrationTest {
         populateDatabase();
 
         Offer offer = getPopulatedOffer(2L);
+        offer.setId(null);
         offer.setOwnerEmail(TEST_OWNER_EMAIL_2);
         offerRepository.save(offer);
 
@@ -127,7 +128,7 @@ public class OfferIntegrationTest {
         HttpEntity<?> request = new HttpEntity<>(headers);
 //When
         ResponseEntity<String> actual = restTemplate.exchange(
-                "/owner/offer/" + offerId,
+                "/api/internal/owner/offer/" + offerId,
                 HttpMethod.GET,
                 request,
                 String.class);
@@ -148,7 +149,7 @@ public class OfferIntegrationTest {
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, headers);
 //When
         ResponseEntity<OfferDTO> actual = restTemplate.exchange(
-                "/api/owner/offer",
+                "/api/owner/offers",
                 HttpMethod.PUT,
                 request,
                 OfferDTO.class);
@@ -172,7 +173,7 @@ public class OfferIntegrationTest {
         HttpEntity<?> request = new HttpEntity<>(headers);
 //When
         restTemplate.exchange(
-                "/api/owner/offer/" + offerId,
+                "/api/owner/offers/" + offerId,
                 HttpMethod.DELETE,
                 request,
                 String.class);
@@ -200,10 +201,15 @@ public class OfferIntegrationTest {
     }
 
     private Offer populateDatabase() {
+        // Null the assembler-hardcoded ids so save() takes the INSERT path and
+        // Hibernate picks up the IDENTITY-assigned values rather than treating
+        // a fixed id as a detached entity to merge.
         Offer offer = getPopulatedOffer(2L);
+        offer.setId(null);
         offerRepository.save(offer);
 
         Offer offer1 = getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        offer1.setId(null);
         return offerRepository.save(offer1);
     }
 

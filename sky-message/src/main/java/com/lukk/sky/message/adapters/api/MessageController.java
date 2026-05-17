@@ -51,7 +51,7 @@ public class MessageController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @PostMapping("/message")
+    @PostMapping("/messages")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message,
                                          @RequestHeader Map<String, String> headers) {
@@ -89,7 +89,7 @@ public class MessageController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @GetMapping("messages/sent")
+    @GetMapping("/messages/sent")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> getSentMessages(@RequestHeader Map<String, String> headers) {
         String userEmail = getUserInfoFromHeaders(headers);
@@ -106,7 +106,7 @@ public class MessageController {
             @ApiResponse(responseCode = "402", description = "No user Info",
                     content = @Content)
     })
-    @DeleteMapping("/message/{messageId}")
+    @DeleteMapping("/messages/{messageId}")
     @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<?> deleteMessage(@RequestHeader Map<String, String> headers, @PathVariable String messageId) {
         try {

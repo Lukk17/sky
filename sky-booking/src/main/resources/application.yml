@@ -67,6 +67,13 @@ spring:
     bootstrap-servers: ${KAFKA_ADDRESS:kafka-service}:${KAFKA_PORT:9092}
     producer:
       client-id: bookingService
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Production durability (acks=all, idempotence, retries, in-flight cap, delivery
+      # timeout) is supplied via env vars in the Helm values file rather than committed
+      # defaults; the prod-profile env injects SPRING_KAFKA_PRODUCER_* keys. Keeping the
+      # defaults Spring-Kafka-stock here so EmbeddedKafka integration tests keep working
+      # until Testcontainers MySQL+Kafka replaces them (test-modernization).
     admin:
       auto-create: true
 

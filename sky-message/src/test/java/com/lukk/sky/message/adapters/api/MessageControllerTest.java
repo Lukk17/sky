@@ -109,7 +109,7 @@ public class MessageControllerTest {
         String expectedJson = gson.toJson(messageDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/message")
+                        post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), SENDER_EMAIL)
                                 .content(expectedJson)
@@ -134,7 +134,7 @@ public class MessageControllerTest {
         String expectedJson = gson.toJson(messageDTO);
 //When
         mvc.perform(
-                        post("/message")
+                        post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(expectedJson)
                 )
@@ -154,7 +154,7 @@ public class MessageControllerTest {
         String expectedJson = gson.toJson(messageDTO);
 //When
         MvcResult result = mvc.perform(
-                        post("/message")
+                        post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(expectedJson)
                 )
@@ -242,7 +242,7 @@ public class MessageControllerTest {
         doNothing().when(messageService).remove(TEST_MESSAGE_ID, RECEIVER_EMAIL);
 //When
         mvc.perform(
-                        delete(String.format("/message/%s", TEST_MESSAGE_ID))
+                        delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), RECEIVER_EMAIL)
                 )
@@ -258,7 +258,7 @@ public class MessageControllerTest {
         String expectedJson = gson.toJson(TEST_MESSAGE_ID);
 //When
         mvc.perform(
-                        delete(String.format("/message/%s", TEST_MESSAGE_ID))
+                        delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(USER_INFO_HEADERS.iterator().next(), SENDER_EMAIL)
                                 .content(expectedJson)
@@ -275,7 +275,7 @@ public class MessageControllerTest {
         String expectedJson = gson.toJson(TEST_MESSAGE_ID);
 //When
         mvc.perform(
-                        delete(String.format("/message/%s", TEST_MESSAGE_ID))
+                        delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(expectedJson)
                 )

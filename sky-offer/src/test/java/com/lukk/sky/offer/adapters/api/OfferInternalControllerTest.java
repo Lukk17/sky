@@ -42,7 +42,7 @@ class OfferInternalControllerTest {
                 .thenReturn(TEST_OWNER_EMAIL);
 //When
         MvcResult result = mvc.perform(
-                        get("/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
+                        get("/api/internal/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().is2xxSuccessful())
@@ -59,7 +59,7 @@ class OfferInternalControllerTest {
                 .thenThrow(new OfferException(expectedErrorMessage));
 //When
         MvcResult result = mvc.perform(
-                        get("/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
+                        get("/api/internal/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().isBadRequest())

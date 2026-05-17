@@ -1,3 +1,13 @@
 # ==================================================================================================================
+# Test-profile overrides for sky-message. Flyway is disabled because the V1__init.sql
+# uses MySQL-specific column types (TEXT → CLOB) that H2-in-MySQL-mode does not map
+# the same way as a real MySQL server. Tests fall back to Hibernate-generated DDL
+# against H2; Testcontainers MySQL is the right long-term substrate (test-modernization).
 sky:
   apiPrefix: api
+spring:
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update

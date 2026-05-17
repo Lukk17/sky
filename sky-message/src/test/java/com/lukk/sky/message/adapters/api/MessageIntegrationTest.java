@@ -52,7 +52,7 @@ public class MessageIntegrationTest {
 
         // When
         ResponseEntity<MessageDTO> actual = restTemplate.exchange(
-                "/api/message",
+                "/api/messages",
                 HttpMethod.POST,
                 request,
                 MessageDTO.class);
@@ -117,7 +117,7 @@ public class MessageIntegrationTest {
 
         // When
         ResponseEntity<String> actual = restTemplate.exchange(
-                "/api/message/" + messages.get(0).getId(),
+                "/api/messages/" + messages.get(0).getId(),
                 HttpMethod.DELETE,
                 request,
                 String.class);
@@ -135,7 +135,11 @@ public class MessageIntegrationTest {
     }
 
     private List<Message> populateDatabaseWithMany() {
-        return messageRepository.saveAll(MessageAssembler.getMessages());
+        // Null the assembler-hardcoded ids so saveAll() takes the INSERT path on
+        // IDENTITY columns rather than treating fixed ids as detached entities.
+        List<Message> messages = MessageAssembler.getMessages();
+        messages.forEach(m -> m.setId(null));
+        return messageRepository.saveAll(messages);
     }
 
     private void clearDatabase() {

@@ -8,7 +8,12 @@ sky:
   offerServiceHostPort: 80
 
 spring:
+  flyway:
+    enabled: false
   jpa:
+    # `update` (rather than create-drop) preserves the existing test
+    # behaviour around inter-test row state; revisit when Testcontainers
+    # MySQL lands (test-modernization).
     hibernate:
       ddl-auto: update
     show-sql: true
