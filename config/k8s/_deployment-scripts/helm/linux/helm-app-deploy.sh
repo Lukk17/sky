@@ -1,5 +1,12 @@
-# Will work only if script is run from project main directory with:
-# ./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
+#!/usr/bin/env bash
+# Will work only if script is run from project main directory:
+#   ./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
+#
+# Pass `ENV=prod` (default) to layer the production overlay on top of each service's
+# values.yaml. Future env split: pass `ENV=dev` etc. once values-dev.yaml exists.
+set -euo pipefail
+
+ENV="${ENV:-prod}"
 
 # sealed secrets
 kubectl create namespace sealed-secrets
@@ -21,9 +28,9 @@ helm install database-persistent-volume-claim ./config/k8s/helm/db/database-pers
 helm install mysql ./config/k8s/helm/db/mysql/
 kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=mysql
 
-# services
-helm install sky-booking ./config/k8s/helm/service/sky-booking
-helm install sky-message ./config/k8s/helm/service/sky-message
-helm install sky-notify ./config/k8s/helm/service/sky-notify
-helm install sky-offer ./config/k8s/helm/service/sky-offer
-
+# services — each chart's defaults plus the per-env overlay
+for svc in sky-booking sky-message sky-notify sky-offer; do
+  helm install "$svc" "./config/k8s/helm/service/$svc" \
+    -f "./config/k8s/helm/service/$svc/values.yaml" \
+    -f "./config/k8s/helm/service/$svc/values-${ENV}.yaml"
+done

@@ -1,0 +1,16 @@
+# Production-environment overlay for sky-booking.
+#
+# Apply on top of values.yaml:
+#   helm upgrade --install sky-booking ./config/k8s/helm/service/sky-booking \
+#     -f values.yaml -f values-prod.yaml
+#
+# Defaults in values.yaml are also production-ready today; this file exists so
+# future non-prod environments can fork via a values-dev.yaml / values-staging.yaml
+# without editing the chart's default.
+
+ingress:
+  host: "skycloud.luksarna.com"
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"

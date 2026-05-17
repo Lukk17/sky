@@ -1,5 +1,11 @@
+@echo off
 :: Will work only if script is run from project main directory with:
-:: .\config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
+::   .\config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
+::
+:: Set the ENV variable to switch overlays:
+::   set ENV=prod  (default)
+
+if "%ENV%"=="" set ENV=prod
 
 :: sealed secrets
 kubectl create namespace sealed-secrets
@@ -21,8 +27,9 @@ helm install database-persistent-volume-claim .\config\k8s\helm\db\database-pers
 helm install mysql .\config\k8s\helm\db\mysql\
 kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=mysql
 
-:: services
-helm install sky-booking .\config\k8s\helm\service\sky-booking
-helm install sky-message .\config\k8s\helm\service\sky-message
-helm install sky-notify .\config\k8s\helm\service\sky-notify
-helm install sky-offer .\config\k8s\helm\service\sky-offer
+:: services — each chart's defaults plus the per-env overlay
+for %%S in (sky-booking sky-message sky-notify sky-offer) do (
+    helm install %%S .\config\k8s\helm\service\%%S ^
+        -f .\config\k8s\helm\service\%%S\values.yaml ^
+        -f .\config\k8s\helm\service\%%S\values-%ENV%.yaml
+)

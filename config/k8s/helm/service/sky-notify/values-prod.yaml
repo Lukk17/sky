@@ -1,0 +1,15 @@
+# Production-environment overlay for sky-notify.
+# See sky-booking/values-prod.yaml header for the rationale.
+
+ingress:
+  host: "skycloud.luksarna.com"
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"
+  # Keycloak OIDC issuer-uri — required at boot for the WebSocket JWT decoder
+  # (websocket-auth change). Set as an env var so it can vary per environment
+  # without baking the realm URL into the chart default.
+  env:
+    oauth2:
+      issuerUri: "https://keycloak.luksarna.com/realms/sky"
