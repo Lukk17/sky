@@ -20,6 +20,13 @@ spring:
     bootstrap-servers: ${KAFKA_ADDRESS:kafka-service}:${KAFKA_PORT:9092}
     admin:
       auto-create: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Auth0 issuer, e.g. https://<tenant>.auth0.com/. Mandatory in non-test runs;
+          # WebSocketAuthChannelInterceptor uses the JwtDecoder built from this value.
+          issuer-uri: ${AUTH0_ISSUER_URI}
 
 # expose actuator endpoints (* for all)
 management:

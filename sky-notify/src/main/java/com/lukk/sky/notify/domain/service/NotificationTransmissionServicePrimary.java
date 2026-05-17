@@ -10,8 +10,11 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 /**
- * The primary implementation of the {@link NotificationTransmissionService} interface.
- * This implementation uses a {@link NotificationPublisherPrimary} to publish notifications.
+ * Translates a Kafka payload into a per-user WebSocket payload.
+ *
+ * <p>The Kafka producer side (booking/offer) stamps the originating user identity into
+ * {@link KafkaPayloadModel#userInfo()}; we route the WebSocket message to that user only,
+ * never broadcasting.
  */
 @Service
 @Slf4j
@@ -20,25 +23,21 @@ import org.springframework.stereotype.Service;
 public class NotificationTransmissionServicePrimary implements NotificationTransmissionService {
 
     private final NotificationPublisherPrimary notificationPublisherPrimary;
+    private final Gson gson = new Gson();
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation deserializes the message from JSON into a {@link KafkaPayloadModel} object.
-     * Then it creates a new {@link WebsocketPayloadModel} object, with the KafkaPayloadModel and the
-     * other provided parameters, serializes it into JSON and sends it to a client through a WebSocket.
-     * Finally, it logs the sent notification.
-     */
     @Override
     public void notifyClient(String message, String partition, String topic, String groupId, String timestamp, String offset) {
-        Gson gson = new Gson();
-
         KafkaPayloadModel payloadModel = gson.fromJson(message, KafkaPayloadModel.class);
+        if (payloadModel == null || payloadModel.userInfo() == null || payloadModel.userInfo().isBlank()) {
+            log.warn("Dropping Kafka message with missing userInfo (topic={}, offset={})", topic, offset);
+            return;
+        }
 
         String websocketPayloadJson = gson.toJson(new WebsocketPayloadModel(
                 payloadModel, partition, topic, groupId, timestamp, offset));
 
-        notificationPublisherPrimary.publish(websocketPayloadJson);
-        log.info("Notification sent to websocket with payload: {}", websocketPayloadJson);
+        notificationPublisherPrimary.publish(payloadModel.userInfo(), websocketPayloadJson);
+        log.info("Notification routed to user='{}' (topic={}, offset={})",
+                payloadModel.userInfo(), topic, offset);
     }
 }
