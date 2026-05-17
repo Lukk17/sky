@@ -10,7 +10,7 @@ spring-dependency-management = "1.1.7"
 # Java toolchain — auto-downloaded by the Foojay resolver convention plugin declared
 # in root settings.gradle.kts. Single source of truth: bumping here propagates to
 # every module via sky.java-conventions.
-java = "25"
+java = "21"
 
 # Persistence
 flyway = "10.20.0"
