@@ -39,19 +39,6 @@ public class BookingController {
     private final BookingService bookingService;
     private final BookingNotificationService bookingNotificationService;
 
-    @Operation(summary = "Hello World Page")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Welcome",
-                    content = {@Content(mediaType = "application/json")}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)
-    })
-    @GetMapping(value = {"/", "/home"})
-    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message) {
-        sendNotification("Booking Hello World page", Strings.EMPTY);
-        return new ResponseEntity<>(message, HttpStatus.OK);
-    }
-
     @Operation(summary = "Get all user's booking")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found user bookings",

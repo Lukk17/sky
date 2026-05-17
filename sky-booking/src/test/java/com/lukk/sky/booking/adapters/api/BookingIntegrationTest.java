@@ -72,7 +72,7 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
         HttpEntity<BookingPayload> request = new HttpEntity<>(bookingPayload, headers);
 //When
         ResponseEntity<BookingDTO> actual = restTemplate.exchange(
-                "/api/bookings",
+                "/api/v1/bookings",
                 HttpMethod.POST,
                 request,
                 BookingDTO.class);
@@ -97,7 +97,7 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
         HttpEntity<?> request = new HttpEntity<>(headers);
 //When
         ResponseEntity<BookingDTO[]> actual = restTemplate.exchange(
-                "/api/user/bookings",
+                "/api/v1/user/bookings",
                 HttpMethod.GET,
                 request,
                 BookingDTO[].class);
@@ -119,13 +119,13 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
         HttpEntity<?> request = new HttpEntity<>(headers);
 //When
         ResponseEntity<String> actual = restTemplate.exchange(
-                "/api/bookings/" + bookingId,
+                "/api/v1/bookings/" + bookingId,
                 HttpMethod.DELETE,
                 request,
                 String.class);
 //Then
         ResponseEntity<BookingDTO[]> savedBookings = restTemplate.exchange(
-                "/api/user/bookings",
+                "/api/v1/user/bookings",
                 HttpMethod.GET,
                 request,
                 BookingDTO[].class);

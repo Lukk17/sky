@@ -46,7 +46,7 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
 
         // When
         ResponseEntity<MessageDTO> actual = restTemplate.exchange(
-                "/api/messages",
+                "/api/v1/messages",
                 HttpMethod.POST,
                 request,
                 MessageDTO.class);
@@ -65,7 +65,7 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
 
         // When
         ResponseEntity<MessageDTO[]> actual = restTemplate.exchange(
-                "/api/messages/received",
+                "/api/v1/messages/received",
                 HttpMethod.GET,
                 request,
                 MessageDTO[].class);
@@ -88,7 +88,7 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
 
         // When
         ResponseEntity<MessageDTO[]> actual = restTemplate.exchange(
-                "/api/messages/sent",
+                "/api/v1/messages/sent",
                 HttpMethod.GET,
                 request,
                 MessageDTO[].class);
@@ -111,14 +111,14 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
 
         // When
         ResponseEntity<String> actual = restTemplate.exchange(
-                "/api/messages/" + messages.get(0).getId(),
+                "/api/v1/messages/" + messages.get(0).getId(),
                 HttpMethod.DELETE,
                 request,
                 String.class);
         //
         // Then
         ResponseEntity<MessageDTO[]> savedMessages = restTemplate.exchange(
-                "/api/messages/received",
+                "/api/v1/messages/received",
                 HttpMethod.GET,
                 request,
                 MessageDTO[].class);

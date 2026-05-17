@@ -1,6 +1,6 @@
 # ==================================================================================================================
 sky:
-  apiPrefix: api
+  apiPrefix: api/v1
 #  Need to be http:// because without a port, the WebClient defaults to using HTTP.
 #  However, when you specify a port (even if it's port 80, which is the default for HTTP),
 #  the WebClient might be expecting a full URL with a scheme (like "http://").

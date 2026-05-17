@@ -46,7 +46,7 @@ ingress:
     name: "sky-offer-ingress"
     annotations:
       kubernetes.io/ingress.class: "nginx"
-      nginx.ingress.kubernetes.io/rewrite-target: "/api/$2"
+      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
@@ -68,7 +68,7 @@ ingress:
   serviceOwner:
     name: "sky-offer-owner-ingress"
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: "/api/owner/$2"
+      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/owner/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"

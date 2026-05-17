@@ -88,33 +88,6 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    public void whenGoOnlyDash_thenReturnWelcomingMessage() throws Exception {
-//When
-        MvcResult result = mvc.perform(
-                        get("/")
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
-                                .contentType(MediaType.APPLICATION_JSON))
-//Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals("<center><h1>Welcome to Offer app.</h1></center>", result.getResponse().getContentAsString());
-    }
-
-    @Test
-    public void whenGoHomePage_thenReturnWelcomingMessage() throws Exception {
-//When
-        MvcResult result = mvc.perform(
-                        get("/home")
-                                .contentType(MediaType.APPLICATION_JSON))
-//Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals("<center><h1>Welcome to Offer app.</h1></center>", result.getResponse().getContentAsString());
-    }
-
-    @Test
     public void whenGetAllOffers_thenReturnOffers() throws Exception {
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();

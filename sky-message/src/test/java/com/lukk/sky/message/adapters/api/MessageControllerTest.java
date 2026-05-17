@@ -73,33 +73,6 @@ public class MessageControllerTest {
     }
 
     @Test
-    public void whenGoOnlyDash_thenReturnWelcomingMessage() throws Exception {
-//When
-        MvcResult result = mvc.perform(
-                        get("/")
-                                .contentType(MediaType.APPLICATION_JSON))
-//Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals("<center><h1>Welcome to Message app.</h1></center>", result.getResponse().getContentAsString());
-    }
-
-    @Test
-    public void whenGoHomePage_thenReturnWelcomingMessage() throws Exception {
-//When
-        MvcResult result = mvc.perform(
-                        get("/home")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), RECEIVER_EMAIL))
-//Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals("<center><h1>Welcome to Message app.</h1></center>", result.getResponse().getContentAsString());
-    }
-
-    @Test
     public void whenSendMessage_thenReturnMessage() throws Exception {
 //Given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();

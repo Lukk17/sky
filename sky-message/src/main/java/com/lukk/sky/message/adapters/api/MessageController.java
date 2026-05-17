@@ -33,16 +33,6 @@ public class MessageController {
 
     private final MessageService messageService;
 
-    @Operation(summary = "Hello World Page")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Welcome",
-                    content = {@Content(mediaType = "application/json")})
-    })
-    @GetMapping(value = {"/", "/home"})
-    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message) {
-        return new ResponseEntity<>(message, HttpStatus.OK);
-    }
-
     @Operation(summary = "Send message")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Message sent",

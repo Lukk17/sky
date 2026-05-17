@@ -38,22 +38,6 @@ public class OfferApiController {
     private final OfferService offerService;
     private final OfferNotificationService offerNotificationService;
 
-    @Operation(summary = "Hello World Page")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Welcome",
-                    content = {@Content(mediaType = "application/json")}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)})
-    @GetMapping(value = {"/", "/home"
-    })
-    public ResponseEntity<String> hello(@Value("${sky.helloWorld}") String message,
-                                        @RequestHeader Map<String, String> headers) {
-        printHeaders(headers);
-
-        sendNotification("Offer Hello World page", Strings.EMPTY);
-        return new ResponseEntity<>(message, HttpStatus.OK);
-    }
-
     @Operation(summary = "Get all offers")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found offers",

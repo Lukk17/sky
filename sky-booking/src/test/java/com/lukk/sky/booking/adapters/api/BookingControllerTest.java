@@ -86,19 +86,6 @@ public class BookingControllerTest {
     }
 
     @Test
-    public void whenGoOnlyDash_thenReturnWelcomingMessage() throws Exception {
-//When
-        MvcResult result = mvc.perform(
-                        get("/")
-                                .contentType(MediaType.APPLICATION_JSON))
-//Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals("<center><h1>Welcome to Booking app.</h1></center>", result.getResponse().getContentAsString());
-    }
-
-    @Test
     public void whenGetBooking_thenReturnBookings() throws Exception {
 //Given
         List<BookingDTO> bookingsDTO = BookingAssembler.getPopulatedBookedDTOList();

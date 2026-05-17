@@ -64,7 +64,7 @@ public class OfferIntegrationTest extends AbstractIntegrationTest {
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
 //When
-        ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/owner/offers", request, OfferDTO.class);
+        ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/v1/owner/offers", request, OfferDTO.class);
 //Then
         ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, OFFER_TOPIC);
 
@@ -86,7 +86,7 @@ public class OfferIntegrationTest extends AbstractIntegrationTest {
         HttpEntity<?> request = new HttpEntity<>(headers);
 //When
         ResponseEntity<OfferDTO[]> actual = restTemplate.exchange(
-                "/api/owner/offers",
+                "/api/v1/owner/offers",
                 HttpMethod.GET,
                 request,
                 OfferDTO[].class
@@ -101,7 +101,7 @@ public class OfferIntegrationTest extends AbstractIntegrationTest {
 //Given
         populateDatabase();
 //When
-        ResponseEntity<OfferDTO[]> actual = restTemplate.getForEntity("/api/offers", OfferDTO[].class);
+        ResponseEntity<OfferDTO[]> actual = restTemplate.getForEntity("/api/v1/offers", OfferDTO[].class);
 //Then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
 
@@ -141,7 +141,7 @@ public class OfferIntegrationTest extends AbstractIntegrationTest {
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, headers);
 //When
         ResponseEntity<OfferDTO> actual = restTemplate.exchange(
-                "/api/owner/offers",
+                "/api/v1/owner/offers",
                 HttpMethod.PUT,
                 request,
                 OfferDTO.class);
@@ -165,12 +165,12 @@ public class OfferIntegrationTest extends AbstractIntegrationTest {
         HttpEntity<?> request = new HttpEntity<>(headers);
 //When
         restTemplate.exchange(
-                "/api/owner/offers/" + offerId,
+                "/api/v1/owner/offers/" + offerId,
                 HttpMethod.DELETE,
                 request,
                 String.class);
 //Then
-        ResponseEntity<OfferDTO[]> savedOffers = restTemplate.getForEntity("/api/offers", OfferDTO[].class);
+        ResponseEntity<OfferDTO[]> savedOffers = restTemplate.getForEntity("/api/v1/offers", OfferDTO[].class);
 
         List<OfferDTO> offers = Arrays.asList(requireNonNull(savedOffers.getBody()));
 

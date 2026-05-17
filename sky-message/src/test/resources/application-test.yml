@@ -4,7 +4,7 @@
 # the same way as a real MySQL server. Tests fall back to Hibernate-generated DDL
 # against H2; Testcontainers MySQL is the right long-term substrate (test-modernization).
 sky:
-  apiPrefix: api
+  apiPrefix: api/v1
 spring:
   flyway:
     enabled: false

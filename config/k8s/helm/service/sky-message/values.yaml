@@ -45,7 +45,7 @@ ingress:
   service:
     name: "sky-message-ingress"
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: "/api/$2"
+      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
