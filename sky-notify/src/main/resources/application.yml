@@ -24,9 +24,12 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # Auth0 issuer, e.g. https://<tenant>.auth0.com/. Mandatory in non-test runs;
-          # WebSocketAuthChannelInterceptor uses the JwtDecoder built from this value.
-          issuer-uri: ${AUTH0_ISSUER_URI}
+          # Keycloak realm issuer, e.g. https://<keycloak-host>/realms/<realm>.
+          # Mandatory in non-test runs — WebSocketAuthChannelInterceptor uses the
+          # JwtDecoder built from this value. Provider-neutral env var name so the
+          # same property name works whether we point at Keycloak, Auth0, or any
+          # other OIDC IdP.
+          issuer-uri: ${OAUTH2_ISSUER_URI}
 
 # expose actuator endpoints (* for all)
 management:
