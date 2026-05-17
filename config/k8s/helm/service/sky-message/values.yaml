@@ -12,8 +12,8 @@ deployment:
   name: "sky-message-deployment"
   image:
     repository: "lukk17/sky-message"
-    pullPolicy: "Always"
-    tag: "v1.0.1"
+    pullPolicy: "IfNotPresent"
+    tag: "1.0.2"
   container:
     name: "sky-message-container"
   env:

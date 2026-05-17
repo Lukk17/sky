@@ -12,8 +12,8 @@ deployment:
   name: "sky-offer-deployment"
   image:
     repository: "lukk17/sky-offer"
-    pullPolicy: "Always"
-    tag: "v1.0.1"
+    pullPolicy: "IfNotPresent"
+    tag: "1.0.2"
   container:
     name: "sky-offer-container"
   env:
