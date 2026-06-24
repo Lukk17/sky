@@ -5,7 +5,7 @@
 
 ## 2. JWT decoder config
 
-- [x] 2.1 Add `spring.security.oauth2.resourceserver.jwt.issuer-uri: ${AUTH0_ISSUER_URI}` to sky-notify `application.yml`.
+- [x] 2.1 Add `spring.security.oauth2.resourceserver.jwt.issuer-uri: ${AUTH0_ISSUER_URI}` to sky-notify `application.yaml`.
 - [x] 2.2 Add a `SecurityConfig` that permits the actuator health/info endpoints and otherwise requires authentication. The WebSocket handshake itself is best left as `permitAll` (auth lives in the STOMP CONNECT interceptor).
 - [x] 2.3 Confirm the JWT issuer matches Auth0 tenant the Ingress already validates (re-use the same env var convention).
 

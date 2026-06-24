@@ -19,15 +19,15 @@
 
 ## 4. Defaults & secrets
 
-- [x] 4.1 Remove default value `Lukk1234` from `spring.datasource.password`: change `${MYSQL_PASS:Lukk1234}` → `${MYSQL_PASS}` in `application.yml` for booking, offer, message.
+- [x] 4.1 Remove default value `Lukk1234` from `spring.datasource.password`: change `${MYSQL_PASS:Lukk1234}` → `${MYSQL_PASS}` in `application.yaml` for booking, offer, message.
 - [x] 4.2 Same for `spring.datasource.username` if it has a default.
 - [x] 4.3 Remove default `XYZ` from Spring Security user/password — better to delete the section entirely and let Spring Boot's auto-config fail open with the standard generated password warning in dev (which we ignore because we go through Ingress in prod).
-- [x] 4.4 Verify each service can still start locally given `application-local.yml` supplies the values (or sets them via env in `config/local-dev/`).
+- [x] 4.4 Verify each service can still start locally given `application-local.yaml` supplies the values (or sets them via env in `config/local-dev/`).
 
 ## 5. CORS tightening
 
-- [x] 5.1 Change `crossOrigin.allowed` default in `application.yml` to `https://skycloud.luksarna.com`.
-- [x] 5.2 In `application-local.yml`, override to `http://localhost:4200`.
+- [x] 5.1 Change `crossOrigin.allowed` default in `application.yaml` to `https://skycloud.luksarna.com`.
+- [x] 5.2 In `application-local.yaml`, override to `http://localhost:4200`.
 - [x] 5.3 Update CorsConfiguration consumer code to parse comma-separated origins so the env var can carry a list.
 
 ## 6. Verify

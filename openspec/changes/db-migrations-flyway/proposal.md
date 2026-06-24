@@ -12,8 +12,8 @@ Flyway is the lightweight answer: SQL-first migrations under `db/migration/`, mo
 
 - **Add** `org.flywaydb:flyway-core` and `org.flywaydb:flyway-mysql` to `sky-booking`, `sky-offer`, `sky-message`. Catalog-managed.
 - **Capture** the current Hibernate-generated schema per service as the baseline. Run each service in a clean DB, dump the schema (`mysqldump --no-data`), commit as `V1__init.sql` per service. Add the contents of `sql_offers_insert.sql` and `sql_messages_insert.sql` as separate seed migrations (e.g., `R__seed_test_data.sql`) under a `dev` profile.
-- **Set** `spring.flyway.enabled: true`, `spring.flyway.locations: classpath:db/migration` in each service's `application.yml`.
-- **Flip** `spring.jpa.hibernate.ddl-auto: validate` in `application.yml` (default profile = prod-like). Keep `update` only under `application-local.yml` if a developer profile explicitly opts in (or set to `validate` there too and require migrations).
+- **Set** `spring.flyway.enabled: true`, `spring.flyway.locations: classpath:db/migration` in each service's `application.yaml`.
+- **Flip** `spring.jpa.hibernate.ddl-auto: validate` in `application.yaml` (default profile = prod-like). Keep `update` only under `application-local.yaml` if a developer profile explicitly opts in (or set to `validate` there too and require migrations).
 - **Delete** `config/script/sql_commands/sql_create_schema.sql` (Flyway creates schemas if `schemas:` is set). Delete the seed SQLs after promoting them into migrations.
 - **Update** README's "DB configuration" section to say "start services; Flyway applies migrations; no manual SQL."
 
@@ -27,7 +27,7 @@ Flyway is the lightweight answer: SQL-first migrations under `db/migration/`, mo
 
 ## Impact
 
-- **Touched files**: 3 × `build.gradle.kts` (flyway deps), 3 × `application.yml` (flyway config + ddl-auto change), 3 × `application-local.yml` if profile-specific overrides needed, 3 new `db/migration/V1__init.sql` files, 1 README update, deletion of 3 SQL scripts under `config/script/`.
+- **Touched files**: 3 × `build.gradle.kts` (flyway deps), 3 × `application.yaml` (flyway config + ddl-auto change), 3 × `application-local.yaml` if profile-specific overrides needed, 3 new `db/migration/V1__init.sql` files, 1 README update, deletion of 3 SQL scripts under `config/script/`.
 - **Existing local DBs**: developers must either start with a clean schema or `flyway baseline` against their existing one. Documented in tasks and README.
 - **Existing prod DB**: same — `flyway baseline` once, with `baselineVersion: 1` so V1 is treated as already applied.
 - **CI**: tests use H2 (or Testcontainers MySQL after `test-modernization`) — both flyway-compatible.

@@ -17,7 +17,7 @@
 
 ## 4. Reconfigure services
 
-- [x] 4.1 Update `sky-booking/src/main/resources/application.yml` JDBC URL to `${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky_booking}`. Same in `application-local.yml`.
+- [x] 4.1 Update `sky-booking/src/main/resources/application.yaml` JDBC URL to `${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky_booking}`. Same in `application-local.yaml`.
 - [x] 4.2 Repeat for sky-offer and sky-message with their respective schemas.
 - [x] 4.3 Update env-var defaults in `config/k8s/helm/service/*/values.yaml` for each service.
 - [x] 4.4 Update `MYSQL_DATABASE_NAME` env var documentation in README.

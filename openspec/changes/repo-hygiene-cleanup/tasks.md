@@ -2,7 +2,7 @@
 
 - [x] 1.1 Confirmed Kafka data dirs were untracked (`git ls-files` returned 0).
 - [x] 1.2 Confirmed no source references `Dockerrun.aws.json`.
-- [x] 1.3 No `docker-compose.yml` or script in `config/` produces the malformed `Developmentkafka*` path. Likely a one-off `docker run -v` with a malformed Windows path.
+- [x] 1.3 No `docker-compose.yaml` or script in `config/` produces the malformed `Developmentkafka*` path. Likely a one-off `docker run -v` with a malformed Windows path.
 
 ## 2. Delete
 

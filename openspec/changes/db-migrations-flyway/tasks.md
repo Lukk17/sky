@@ -16,12 +16,12 @@
 - [x] 3.2 Move `sql_messages_insert.sql` similarly into sky-message.
 - [x] 3.3 If keeping seeds optional, document the activation env var in README.
 
-## 4. Wire Flyway in application.yml
+## 4. Wire Flyway in application.yaml
 
-- [x] 4.1 In each data service's `application.yml`: set `spring.flyway.enabled: true`, `spring.flyway.baseline-on-migrate: true`, `spring.flyway.baseline-version: 1`, `spring.flyway.locations: classpath:db/migration`.
+- [x] 4.1 In each data service's `application.yaml`: set `spring.flyway.enabled: true`, `spring.flyway.baseline-on-migrate: true`, `spring.flyway.baseline-version: 1`, `spring.flyway.locations: classpath:db/migration`.
 - [x] 4.2 Flip `spring.jpa.hibernate.ddl-auto: validate`.
-- [x] 4.3 In `application-test.yml`: keep `ddl-auto: validate` (Flyway applies V1 in tests too). Or `create-drop` only if a service has migration-incompatible tests; address case-by-case.
-- [x] 4.4 In `application-local.yml`: same as default; no per-dev `update` mode.
+- [x] 4.3 In `application-test.yaml`: keep `ddl-auto: validate` (Flyway applies V1 in tests too). Or `create-drop` only if a service has migration-incompatible tests; address case-by-case.
+- [x] 4.4 In `application-local.yaml`: same as default; no per-dev `update` mode.
 
 ## 5. Delete manual SQL scripts
 

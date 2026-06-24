@@ -32,7 +32,7 @@ This pairs with `kafka-reliability` (consumer must ack only after the per-user e
 
 ## Impact
 
-- **Touched files**: sky-notify `build.gradle.kts` (security deps), new `WebSocketAuthChannelInterceptor`, edits to `WebSocketConfig`, `WebSocketService`, `NotificationTransmissionServicePrimary`, `NotificationPublisherPrimary` (now needs a user ID), `application.yml` (Auth0 issuer URI).
+- **Touched files**: sky-notify `build.gradle.kts` (security deps), new `WebSocketAuthChannelInterceptor`, edits to `WebSocketConfig`, `WebSocketService`, `NotificationTransmissionServicePrimary`, `NotificationPublisherPrimary` (now needs a user ID), `application.yaml` (Auth0 issuer URI).
 - **Client breaking change**: existing sky-view WebSocket subscriptions stop working until updated. Coordinate with sky-view repo.
 - **CORS origin whitelist** stays as defense-in-depth.
 - **Risk**: medium-high. Auth failures could lock all WS clients out during rollout. Mitigation: feature flag (`sky.notify.ws.auth.enabled`) for a brief overlap window. Default `true` after smoke test.

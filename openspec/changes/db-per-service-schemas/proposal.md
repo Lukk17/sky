@@ -12,7 +12,7 @@ Splitting into per-service schemas (`sky_booking`, `sky_offer`, `sky_message`) o
 
 - **Create** three new schemas: `sky_booking`, `sky_offer`, `sky_message`.
 - **Migrate data** from the old `sky` schema: per-service, move tables that belong to that service into its new schema. Each service owns: booking → `booking`, `booking_event`; offer → `offer`, `offer_event`; message → `message`. (Other tables that exist accidentally in `sky` — investigate during apply.)
-- **Update** each service's JDBC URL in `application.yml` to point at its own schema.
+- **Update** each service's JDBC URL in `application.yaml` to point at its own schema.
 - **Update** `config/k8s/helm/db/mysql/` chart values to create all three schemas on initial provision (init SQL or post-install hook).
 - **Update** each service's V1 Flyway migration (if migrations have already landed via `db-migrations-flyway`) to target the new schema. If they have not, no change there.
 - **Drop** the old `sky` schema once migration is verified.

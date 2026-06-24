@@ -51,7 +51,7 @@ Two-stage is already there; the proposal is to do it *well*:
 
 ## Impact
 
-- **Touched files**: 4 × `<service>/docker/Dockerfile`. Possibly `docker/docker-compose.yml` if build context paths change.
+- **Touched files**: 4 × `<service>/docker/Dockerfile`. Possibly `docker/docker-compose.yaml` if build context paths change.
 - **Image size**: drops noticeably (JDK→JRE saves ~150MB; Alpine vs Debian-based saves another ~80MB; rough drop from ~400MB to ~180MB per service).
 - **Pull time**: faster after first pull thanks to layered jars (most changes invalidate only the small application layer).
 - **CI**: `docker build` from repo root; update any CI step that did `docker build sky-booking/`.

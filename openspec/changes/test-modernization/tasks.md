@@ -42,7 +42,7 @@
 
 ## 7. Newman in CI
 
-- [x] 7.1 Add `.github/workflows/e2e.yml` (or equivalent) that:
+- [x] 7.1 Add `.github/workflows/e2e.yaml` (or equivalent) that:
   - Spins up the stack (docker-compose preferred for CI speed; Helm against kind cluster as alternative).
   - Waits for `/actuator/health` on each service.
   - Runs `newman run config/postman-collection/sky.postman_collection.json -e config/postman-collection/<env>` — pick the localhost env file.

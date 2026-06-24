@@ -2,7 +2,7 @@
 
 - [x] 1.1 In `sky-common`'s `KafkaProducerAutoConfiguration`, set the five producer properties listed in proposal.md.
 - [x] 1.2 Add `KafkaProducerProperties` (`@ConfigurationProperties("sky.kafka.producer")`) exposing `bootstrap-servers`, `acks`, `retries`, `enable-idempotence`, `delivery-timeout`, `max-in-flight` with sensible defaults.
-- [x] 1.3 Wire `spring.kafka.producer.bootstrap-servers` from each service's `application.yml` (already present as `kafka.host`/`kafka.port`).
+- [x] 1.3 Wire `spring.kafka.producer.bootstrap-servers` from each service's `application.yaml` (already present as `kafka.host`/`kafka.port`).
 - [x] 1.4 Add a producer-side integration test in `sky-booking` (existing `@EmbeddedKafka` test) asserting properties via `ProducerFactory.getConfigurationProperties()`.
 
 ## 2. Consumer hardening (sky-notify)
