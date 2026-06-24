@@ -59,7 +59,7 @@
             </DockerEnvVarImpl>
           </list>
         </option>
-        <option name="sourceFilePath" value="config/docker/docker-compose.yml" />
+        <option name="sourceFilePath" value="config/docker/docker-compose.yaml" />
       </settings>
     </deployment>
     <method v="2" />

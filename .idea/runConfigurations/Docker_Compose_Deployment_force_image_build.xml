@@ -60,7 +60,7 @@
           </list>
         </option>
         <option name="commandLineOptions" value="--build" />
-        <option name="sourceFilePath" value="config/docker/docker-compose.yml" />
+        <option name="sourceFilePath" value="config/docker/docker-compose.yaml" />
       </settings>
     </deployment>
     <method v="2" />
