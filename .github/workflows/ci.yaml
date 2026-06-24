@@ -1,9 +1,9 @@
 name: CI (build & test)
 
+# Runs once when a PR is opened/reopened (not on every pushed commit), and on demand.
 on:
   pull_request:
-  push:
-    branches: [master]
+    types: [opened, reopened]
   workflow_dispatch:
 
 jobs:
@@ -39,6 +39,8 @@ jobs:
         with:
           name: test-reports
           path: |
+            sky-common/build/reports/tests/
+            sky-common/build/test-results/
             sky-booking/build/reports/tests/
             sky-booking/build/test-results/
             sky-offer/build/reports/tests/
@@ -47,3 +49,5 @@ jobs:
             sky-message/build/test-results/
             sky-notify/build/reports/tests/
             sky-notify/build/test-results/
+            sky-gateway/build/reports/tests/
+            sky-gateway/build/test-results/

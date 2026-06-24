@@ -21,6 +21,10 @@ zookeeper-data/
 # AWS Elastic Beanstalk leftovers (project no longer targets EB)
 Dockerrun.aws.json
 
+# IntelliJ "Inspect Code" export dumps (generated to the project root)
+/*.xml
+/.descriptions.xml
+
 ### IntelliJ IDEA ###
 *.iws
 *.iml
