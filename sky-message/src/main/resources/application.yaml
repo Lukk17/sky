@@ -45,19 +45,15 @@ spring:
     # validate: schema must match entities; migrations own evolution.
     hibernate:
       ddl-auto: validate
-    database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: ${SHOW_SQL_QUERIES:false}
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://host.docker.internal:5432/sky}
     hikari:
       connection-timeout: 60000
       validation-timeout: 60000
-      data-source-properties:
-        useUnicode: true
-        characterEncoding: UTF-8
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASS}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
 management:
   endpoints:

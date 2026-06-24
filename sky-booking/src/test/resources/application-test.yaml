@@ -1,9 +1,6 @@
 # ==================================================================================================================
 sky:
   apiPrefix: api/v1
-#  Need to be http:// because without a port, the WebClient defaults to using HTTP.
-#  However, when you specify a port (even if it's port 80, which is the default for HTTP),
-#  the WebClient might be expecting a full URL with a scheme (like "http://").
   offerServiceHostname: http://localhost
   offerServiceHostPort: 80
 
@@ -14,11 +11,10 @@ spring:
         jwt:
           issuer-uri: http://localhost/test-issuer
   flyway:
-    enabled: false
+    enabled: true
   jpa:
-    # `update` (rather than create-drop) preserves the existing test
-    # behaviour around inter-test row state; revisit when Testcontainers
-    # MySQL lands (test-modernization).
+    # `update` lets Hibernate create the schema against the Testcontainers Postgres
+    # without requiring a pre-existing Flyway baseline in the fresh container.
     hibernate:
       ddl-auto: update
     show-sql: true

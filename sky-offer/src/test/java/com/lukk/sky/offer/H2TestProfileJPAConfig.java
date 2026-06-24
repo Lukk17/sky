@@ -1,26 +1,13 @@
 package com.lukk.sky.offer;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import javax.sql.DataSource;
-
+/**
+ * Formerly provided an H2 datasource for the test profile. Replaced by
+ * Testcontainers PostgreSQL wired via {@code @ServiceConnection} in
+ * {@link AbstractIntegrationTest}. Kept as an empty placeholder so the
+ * class name remains resolvable if any external tooling references it.
+ */
 @Configuration
-@EnableJpaRepositories()
 public class H2TestProfileJPAConfig {
-
-    @Bean
-    @Profile("test")
-    public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.h2.Driver");
-        dataSource.setUrl("jdbc:h2:mem:db;DB_CLOSE_DELAY=-1;MODE=MySQL");
-        dataSource.setUsername("testUser");
-        dataSource.setPassword("testPass");
-
-        return dataSource;
-    }
 }

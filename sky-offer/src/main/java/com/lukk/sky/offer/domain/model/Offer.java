@@ -37,6 +37,7 @@ public class Offer {
 
     @NotNull
     @Min(value = 0)
+    @Column(precision = 12, scale = 2)
     private BigDecimal price;
 
     @Column(nullable = false, length = 100)

@@ -13,11 +13,11 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
 
-    runtimeOnly(libs.mysql.connector.j)
+    runtimeOnly(libs.postgresql)
     implementation(libs.flyway.core)
-    runtimeOnly(libs.flyway.mysql)
+    runtimeOnly(libs.flyway.database.postgresql)
 
-    testImplementation(libs.testcontainers.mysql)
+    testImplementation(libs.testcontainers.postgresql)
 
     implementation(libs.gson)
 

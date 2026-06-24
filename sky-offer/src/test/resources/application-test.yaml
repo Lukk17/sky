@@ -9,7 +9,7 @@ spring:
         jwt:
           issuer-uri: http://localhost/test-issuer
   flyway:
-    enabled: false
+    enabled: true
   jpa:
     hibernate:
       ddl-auto: update

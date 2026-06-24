@@ -50,28 +50,20 @@ spring:
   jpa:
     # validate: schema must match entities; migrations own evolution.
     hibernate.ddl-auto: validate
-    database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: ${SHOW_SQL_QUERIES:false}
     properties:
       hibernate:
         jdbc:
-          # If DB timezone is set to UTC and it differ with your current then it will save date wrong
-          # Example: 2020-03-28 was saved as 2020-03-27
           time_zone: Europe/Warsaw
 
-  # IMPORTANT#1 : DOCKER OVERWRITE IT, SO TO CHANGE THIS VALUES YOU NEED TO CHANGE DOCKER .env FILE
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/sky}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://host.docker.internal:5432/sky}
     hikari:
       connection-timeout: 60000
       validation-timeout: 60000
-      #      instead of adding as DB URL parameter:
-      data-source-properties:
-        useUnicode: true
-        characterEncoding: UTF-8
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASS}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
   kafka:
     bootstrap-servers: ${KAFKA_ADDRESS:kafka-service}:${KAFKA_PORT:9092}
@@ -83,7 +75,7 @@ spring:
       # timeout) is supplied via env vars in the Helm values file rather than committed
       # defaults; the prod-profile env injects SPRING_KAFKA_PRODUCER_* keys. Keeping the
       # defaults Spring-Kafka-stock here so EmbeddedKafka integration tests keep working
-      # until Testcontainers MySQL+Kafka replaces them (test-modernization).
+      # until Testcontainers Kafka replaces them (test-modernization).
     admin:
       auto-create: true
 
@@ -140,4 +132,3 @@ logging:
               AdminClientConfig: WARN
             producer:
               ProducerConfig: WARN
-

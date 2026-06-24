@@ -23,17 +23,16 @@ spring:
 
   jpa:
     hibernate.ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
 
   datasource:
-    url: jdbc:mysql://localhost:3306/sky?useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+    url: jdbc:postgresql://localhost:5432/sky
     hikari:
       connection-timeout: 60000
       validation-timeout: 60000
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -61,4 +60,3 @@ logging:
               AdminClientConfig: WARN
             producer:
               ProducerConfig: WARN
-

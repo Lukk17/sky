@@ -14,7 +14,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, TestcontainersConfiguration.class})
 class SkyBookingApplicationTests {
 
     @Test

@@ -50,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import(com.lukk.sky.booking.TestSecurityConfig.class)
+@Import({com.lukk.sky.booking.TestSecurityConfig.class, com.lukk.sky.booking.TestcontainersConfiguration.class})
 public class BookingControllerTest {
 
     private Gson gson;

@@ -4,13 +4,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Base for sky-message integration tests. sky-message uses MySQL only — no Kafka.
+ * Base for sky-message integration tests. sky-message uses PostgreSQL only — no Kafka.
  *
  * <p>{@link TestSecurityConfig} provides a stub {@link org.springframework.security.oauth2.jwt.JwtDecoder}
  * that treats the bearer token value as the {@code email} claim.
@@ -23,7 +23,7 @@ public abstract class AbstractIntegrationTest {
 
     @Container
     @ServiceConnection
-    protected static final MySQLContainer<?> MYSQL =
-            new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
+    protected static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
                     .withReuse(true);
 }

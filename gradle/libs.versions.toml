@@ -62,11 +62,11 @@ spring-security-test = { module = "org.springframework.security:spring-security-
 spring-test = { module = "org.springframework:spring-test" }
 
 # Persistence + serdes
-mysql-connector-j = { module = "com.mysql:mysql-connector-j" }
+postgresql = { module = "org.postgresql:postgresql" }
 gson = { module = "com.google.code.gson:gson" }
 h2 = { module = "com.h2database:h2" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
-flyway-mysql = { module = "org.flywaydb:flyway-mysql", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 
 # JAX-B (JDK 9+ Hibernate/Hikari compatibility)
 jakarta-xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api" }
@@ -82,7 +82,7 @@ mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter" }
-testcontainers-mysql = { module = "org.testcontainers:testcontainers-mysql" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
 testcontainers-kafka = { module = "org.testcontainers:testcontainers-kafka" }
 
 [plugins]

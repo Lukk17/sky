@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import(com.lukk.sky.offer.TestSecurityConfig.class)
+@Import({com.lukk.sky.offer.TestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class})
 class OfferInternalControllerTest {
 
     @Autowired

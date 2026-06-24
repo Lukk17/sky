@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(com.lukk.sky.message.TestSecurityConfig.class)
+@Import({com.lukk.sky.message.TestSecurityConfig.class, com.lukk.sky.message.TestcontainersConfiguration.class})
 @DisplayName("MessageController — HTTP adapter tests")
 public class MessageControllerTest {
 
