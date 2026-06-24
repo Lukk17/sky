@@ -42,23 +42,19 @@ service:
   apiPrefix: "/offer/api"
 
 ingress:
+  tls:
+    secretName: dev-ssl-cert
+
   service:
     name: "sky-offer-ingress"
     annotations:
-      kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
-      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
 
     controller: "nginx"
-    #  to ignore tls use "tls: []"
-    tls:
-      - hosts:
-          - skycloud.luksarna.com
-        secretName: dev-ssl-cert
-
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
@@ -73,18 +69,13 @@ ingress:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
       nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
-      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
       nginx.ingress.kubernetes.io/enable-cors: "true"
-      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.lukksarna.com, https://sky.luksarna.com"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
 
     controller: "nginx"
-    tls:
-      - hosts:
-          - skycloud.luksarna.com
-        secretName: dev-ssl-cert
-
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
@@ -99,18 +90,13 @@ ingress:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
       nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
-      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
       nginx.ingress.kubernetes.io/enable-cors: "true"
-      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.lukksarna.com, https://sky.luksarna.com"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
 
     controller: "nginx"
-    tls:
-      - hosts:
-          - skycloud.luksarna.com
-        secretName: dev-ssl-cert
-
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
@@ -125,36 +111,47 @@ ingress:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
       nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
-      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
       nginx.ingress.kubernetes.io/enable-cors: "true"
-      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.lukksarna.com, https://sky.luksarna.com"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
 
     controller: "nginx"
-    tls:
-      - hosts:
-          - skycloud.luksarna.com
-        secretName: dev-ssl-cert
-
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
           - path: "/offer/v3/api-docs(/|$)(.*)"
             pathType: "ImplementationSpecific"
 
+oauth2:
+  issuerUri: "https://keycloak.luksarna.com/realms/sky"
+  audience: ""
+
 kafka:
   address: "kafka-service"
   port: "9092"
 
 actuator:
+  startupProbe:
+    path: "/actuator/health/liveness"
+    periodSeconds: 5
+    failureThreshold: 36
   livenessProbe:
     path: "/actuator/health/liveness"
-    initialDelaySeconds: "30"
-    periodSeconds: "5"
-    failureThreshold: "35"
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    failureThreshold: 3
   readinessProbe:
     path: "/actuator/health/readiness"
-    initialDelaySeconds: "10"
-    periodSeconds: "5"
-    failureThreshold: "15"
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 3
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

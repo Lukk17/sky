@@ -5,6 +5,7 @@ metadata:
   labels:
     k8s-app: oauth2-proxy
   name: oauth2-proxy
+  namespace: {{ .Release.Namespace }}
 spec:
   ports:
     - name: http

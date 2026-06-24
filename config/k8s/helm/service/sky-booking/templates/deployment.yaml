@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.deployment.name }}
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -21,12 +21,31 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        runAsNonRoot: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: {{ .Values.deployment.container.name }}
           image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-booking:latest" }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
           ports:
             - containerPort: {{ .Values.service.port }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: {{ .Values.actuator.startupProbe.path }}
+              port: {{ .Values.service.port }}
+            periodSeconds: {{ .Values.actuator.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.actuator.startupProbe.failureThreshold }}
           livenessProbe:
             httpGet:
               path: {{ .Values.actuator.livenessProbe.path }}
@@ -41,6 +60,8 @@ spec:
             initialDelaySeconds: {{ .Values.actuator.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.actuator.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.actuator.readinessProbe.failureThreshold }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: BOOKING_PORT
               value: "{{ .Values.service.port }}"
@@ -80,3 +101,7 @@ spec:
                 secretKeyRef:
                   key: {{ .Values.deployment.env.spring.securityPass }}
                   name: "{{ .Values.secret.name }}"
+            - name: OAUTH2_ISSUER_URI
+              value: "{{ .Values.oauth2.issuerUri }}"
+            - name: OAUTH2_AUDIENCE
+              value: "{{ .Values.oauth2.audience }}"

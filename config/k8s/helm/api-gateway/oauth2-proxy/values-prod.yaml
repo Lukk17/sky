@@ -1,0 +1,4 @@
+
+ingress:
+  tls:
+    secretName: sky-tls-cert

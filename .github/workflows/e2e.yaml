@@ -11,6 +11,8 @@ jobs:
   newman:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -37,12 +39,10 @@ jobs:
 
       - name: Bring up the stack
         run: |
-          # The local-dev docker-compose covers MySQL + Kafka + Zookeeper +
-          # the four services. Adjust the path if the compose file moves.
-          if [ -f config/docker/docker-compose.yml ]; then
-            docker compose -f config/docker/docker-compose.yml up -d
+          if [ -f config/docker/docker-compose.yaml ]; then
+            docker compose -f config/docker/docker-compose.yaml up -d
           else
-            echo "::error::Expected config/docker/docker-compose.yml — required for E2E"
+            echo "::error::Expected config/docker/docker-compose.yaml — required for E2E"
             exit 1
           fi
 
@@ -57,7 +57,7 @@ jobs:
               fi
               if [ "${attempt}" -eq 60 ]; then
                 echo "::error::service on port ${port} did not become ready in 5 minutes"
-                docker compose -f config/docker/docker-compose.yml logs
+                docker compose -f config/docker/docker-compose.yaml logs
                 exit 1
               fi
               sleep 5
@@ -83,4 +83,4 @@ jobs:
 
       - name: Tear down
         if: always()
-        run: docker compose -f config/docker/docker-compose.yml down -v
+        run: docker compose -f config/docker/docker-compose.yaml down -v

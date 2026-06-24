@@ -86,7 +86,7 @@ pass: `Test1234!`
 
 ### Encrypted using Sealed Secrets
 
-Install instruction can be found [here](/k8s/_deployment-scripts/deployment_README.md)
+Install instruction can be found [here](./_deployment-scripts/deployment_README.md)
 
 Save Public Key Locally:
 ```shell
@@ -116,7 +116,7 @@ kubectl apply -f <sealed-secret-file>.yaml
 
 ### Deploy
 
-[README](/k8s/_deployment-scripts/deployment_README.md)
+[README](./_deployment-scripts/deployment_README.md)
 
 Waiting for deployment to be ready:
 ```shell

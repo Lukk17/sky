@@ -10,6 +10,8 @@
 
 ingress:
   host: "skycloud.luksarna.com"
+  tls:
+    secretName: sky-tls-cert
 
 deployment:
   image:

@@ -33,18 +33,34 @@ service:
   type: ClusterIP
   port: "5554"
 
+oauth2:
+  issuerUri: "https://keycloak.luksarna.com/realms/sky"
+  audience: ""
+
 kafka:
   address: "kafka-service"
   port: "9092"
 
 actuator:
+  startupProbe:
+    path: "/actuator/health/liveness"
+    periodSeconds: 5
+    failureThreshold: 36
   livenessProbe:
     path: "/actuator/health/liveness"
-    initialDelaySeconds: "30"
-    periodSeconds: "5"
-    failureThreshold: "35"
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    failureThreshold: 3
   readinessProbe:
     path: "/actuator/health/readiness"
-    initialDelaySeconds: "10"
-    periodSeconds: "5"
-    failureThreshold: "15"
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 3
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

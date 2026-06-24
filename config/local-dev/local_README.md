@@ -207,7 +207,7 @@ It can be run by docker-compose file or individually via Dockerfiles.
 
 #### Remember of adding env variable to your system or use Intellij RunConfiguration which has those variables.
 
-### A) Using [docker-compose.yml](../docker/docker-compose.yml)
+### A) Using [docker-compose.yaml](../docker/docker-compose.yaml)
 
 After starting, give containers a minute or so to fully start and connect with each other.  
 Before that, there could be 500 errors.  
@@ -217,7 +217,7 @@ This log need to appear in all containers:
 
 In the main project folder (before any modules) run:
 ```
-docker-compose -f config/docker/docker-compose.yml up
+docker-compose -f config/docker/docker-compose.yaml up
 ```  
 
 or in "config/docker/" folder:
@@ -227,12 +227,12 @@ docker-compose up
 
 or if you want to rebuild all:
 ```
-docker-compose -f config/docker/docker-compose.yml up --build
+docker-compose -f config/docker/docker-compose.yaml up --build
 ```
 
 or with clean build:
 ```
-docker-compose -f config/docker/docker-compose.yml build --no-cache
+docker-compose -f config/docker/docker-compose.yaml build --no-cache
 ```
 
 ### B) Using Dockerfiles, create and start/run methods
@@ -344,7 +344,7 @@ docker network rm sky-net
 ## Adding MySQL server to docker
 
 For every microservice that needs its one database MySQL DB image should be created in docker.   
-Mysql image can be added to docker-compose.yml, for example, sky-offer DB image should look like:
+Mysql image can be added to docker-compose.yaml, for example, sky-offer DB image should look like:
 
 ```yaml
   mysql-sky_offer:
@@ -359,7 +359,7 @@ Mysql image can be added to docker-compose.yml, for example, sky-offer DB image 
       - 3306
 ```
 
-In microservice docker-compose.yml description dependency to right MySQL image needs to be added:
+In microservice docker-compose.yaml description dependency to right MySQL image needs to be added:
 
 ```yaml
     depends_on:

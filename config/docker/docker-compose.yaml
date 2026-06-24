@@ -1,0 +1,211 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: sky-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: sky_root_pass
+      MYSQL_DATABASE: sky
+      MYSQL_USER: sky_user
+      MYSQL_PASSWORD: sky_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - sky-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-psky_root_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: sky-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - sky-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  sky-booking:
+    container_name: sky-booking
+    build:
+      dockerfile: sky-booking/docker/Dockerfile
+      context: ../../
+    image: sky-booking:e2e
+    networks:
+      - sky-network
+    ports:
+      - "5555:5555"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sky?useSSL=false&useUnicode=true&serverTimezone=Europe/Warsaw
+      MYSQL_USER: sky_user
+      MYSQL_PASS: sky_pass
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5555/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-offer:
+    container_name: sky-offer
+    build:
+      dockerfile: sky-offer/docker/Dockerfile
+      context: ../../
+    image: sky-offer:e2e
+    networks:
+      - sky-network
+    ports:
+      - "5552:5552"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sky?useSSL=false&useUnicode=true&serverTimezone=Europe/Warsaw
+      MYSQL_USER: sky_user
+      MYSQL_PASS: sky_pass
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5552/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-message:
+    container_name: sky-message
+    build:
+      dockerfile: sky-message/docker/Dockerfile
+      context: ../../
+    image: sky-message:e2e
+    networks:
+      - sky-network
+    ports:
+      - "5553:5553"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sky?useSSL=false&useUnicode=true&serverTimezone=Europe/Warsaw
+      MYSQL_USER: sky_user
+      MYSQL_PASS: sky_pass
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5553/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-notify:
+    container_name: sky-notify
+    build:
+      dockerfile: sky-notify/docker/Dockerfile
+      context: ../../
+    image: sky-notify:e2e
+    networks:
+      - sky-network
+    ports:
+      - "5554:5554"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://skycloud.luksarna.com/}
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_DEBUG: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5554/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-gateway:
+    container_name: sky-gateway
+    build:
+      dockerfile: sky-gateway/docker/Dockerfile
+      context: ../../
+    image: sky-gateway:e2e
+    networks:
+      - sky-network
+    ports:
+      - "8080:8080"
+    depends_on:
+      sky-booking:
+        condition: service_healthy
+      sky-offer:
+        condition: service_healthy
+      sky-message:
+        condition: service_healthy
+      sky-notify:
+        condition: service_healthy
+    environment:
+      BOOKING_URI: http://sky-booking:5555
+      OFFER_URI: http://sky-offer:5552
+      MESSAGE_URI: http://sky-message:5553
+      NOTIFY_URI: http://sky-notify:5554
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_DEBUG: INFO
+      GATEWAY_DEBUG: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+
+volumes:
+  mysql_data:
+  kafka_data:
+
+networks:
+  sky-network:
+    name: sky-network

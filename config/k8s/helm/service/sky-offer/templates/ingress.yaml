@@ -3,18 +3,20 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Values.ingress.service.name }}
-  namespace: {{ .Values.namespace}}
+  namespace: {{ .Release.Namespace }}
   annotations:
   {{- range $key, $value := .Values.ingress.service.annotations }}
     {{ $key }}: {{ $value | quote }}
   {{- end}}
 spec:
   ingressClassName: {{ .Values.ingress.service.controller }}
-{{/*  with will be populated only if "tls" will be present in values.yaml*/}}
-  {{- with .Values.ingress.service.tls }}
+
   tls:
-  {{ toYaml . | nindent 4 }}
-  {{- end }}
+    - hosts:
+        {{- range .Values.ingress.service.hosts }}
+        - {{ .host | quote }}
+        {{- end }}
+      secretName: {{ .Values.ingress.tls.secretName }}
 
   rules:
     {{- range .Values.ingress.service.hosts }}
