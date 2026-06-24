@@ -526,9 +526,8 @@ paths:
         In production this path is not exposed to the public internet via nginx-ingress.
 
         The `offerId` is the string representation of the numeric offer ID.
-        Returns 402 (documented in the controller) when no owner information is found —
-        note this is an unusual status code; actual behavior depends on the OfferService
-        implementation.
+        Returns 400 when the offer does not exist or has no owner information: the
+        service throws `OfferException`, which the global handler maps to 400 Bad Request.
       security:
         - bearerAuth: []
       parameters:
@@ -547,7 +546,7 @@ paths:
               schema:
                 type: string
               example: "owner@example.com"
+        "400":
+          description: Offer not found or has no owner information.
         "401":
           description: Missing or invalid bearer token.
-        "402":
-          description: Owner not found (documented in the controller as "No user Info").

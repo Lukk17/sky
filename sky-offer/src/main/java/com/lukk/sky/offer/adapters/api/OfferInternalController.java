@@ -25,7 +25,9 @@ public class OfferInternalController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found owner",
                     content = {@Content(mediaType = "application/json")}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "400", description = "Offer not found / no owner info",
+                    content = @Content),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @GetMapping("/owner/offer/{offerId}")
