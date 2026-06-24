@@ -24,6 +24,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *       follow-up refactor.</li>
  * </ul>
  */
+@DisplayName("Hexagonal architecture constraints for sky-notify")
 class HexagonalArchitectureTest {
 
     private static JavaClasses classes;
@@ -37,7 +38,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("Domain ports are interfaces")
-    void domainPortsAreInterfaces() {
+    void domainPorts_whenInspected_thenAllAreInterfaces() {
         classes()
                 .that().resideInAPackage("..domain.ports..")
                 .should().beInterfaces()
@@ -46,7 +47,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("Domain has no Spring Web / Reactor / RestTemplate / WebClient dependencies")
-    void domainHasNoWebStackDependencies() {
+    void domain_whenInspected_thenHasNoWebStackDependencies() {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAnyPackage(
@@ -59,7 +60,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("Kafka listeners live under adapters.inbound")
-    void kafkaListenersInInboundAdapters() {
+    void kafkaListeners_whenInspected_thenResideInInboundAdaptersPackage() {
         classes()
                 .that().haveSimpleNameContaining("Listener")
                 .should().resideInAPackage("..adapters.inbound..")

@@ -1,6 +1,7 @@
 package com.lukk.sky.notify.adapters.inbound;
 
 import com.lukk.sky.notify.domain.service.NotificationTransmissionService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+@DisplayName("KafkaListeners — inbound Kafka adapter acknowledgement behaviour")
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 public class KafkaListenersTest {
@@ -36,7 +38,8 @@ public class KafkaListenersTest {
     KafkaListeners kafkaListeners;
 
     @Test
-    public void testOfferListener_acksAfterSuccessfulNotify() {
+    @DisplayName("offerListener acknowledges the message when notifyClient succeeds")
+    public void offerListener_whenNotifySucceeds_thenAcknowledge() {
         String offerMessage = "This is an offer message.";
         kafkaListeners.offerListener(offerMessage, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);
@@ -47,7 +50,8 @@ public class KafkaListenersTest {
     }
 
     @Test
-    public void testBookingListener_acksAfterSuccessfulNotify() {
+    @DisplayName("bookingListener acknowledges the message when notifyClient succeeds")
+    public void bookingListener_whenNotifySucceeds_thenAcknowledge() {
         String bookingMessage = "This is a booking message.";
         kafkaListeners.bookingListener(bookingMessage, TEST_PARTITION, KAFKA_BOOKING_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);
@@ -58,7 +62,8 @@ public class KafkaListenersTest {
     }
 
     @Test
-    public void testOfferListener_doesNotAckIfNotifyThrows() {
+    @DisplayName("offerListener does not acknowledge when notifyClient throws a RuntimeException")
+    public void offerListener_whenNotifyThrows_thenDoNotAcknowledge() {
         String offerMessage = "boom";
         doThrow(new RuntimeException("ws failed"))
                 .when(notificationTransmissionService)

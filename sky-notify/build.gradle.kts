@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.spring.boot.starter.websocket)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
+    implementation("org.springframework.security:spring-security-messaging")
 
     implementation(libs.gson)
     implementation(libs.spring.kafka)

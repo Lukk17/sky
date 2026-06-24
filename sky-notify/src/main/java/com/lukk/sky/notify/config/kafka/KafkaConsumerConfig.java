@@ -1,6 +1,8 @@
 package com.lukk.sky.notify.config.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -35,8 +37,11 @@ import java.util.Map;
  *       apart) and a {@link DeadLetterPublishingRecoverer} routing failures to
  *       {@code <topic>.DLT}.</li>
  *   <li>Non-retryable exceptions ({@link JsonProcessingException},
+ *       {@link com.google.gson.JsonSyntaxException},
+ *       {@link com.google.gson.JsonParseException},
  *       {@link IllegalArgumentException}) route to DLT on first failure rather
- *       than burning the retry budget on a poison pill.</li>
+ *       than burning the retry budget on a poison pill. Gson exceptions are
+ *       included because the notify path deserializes with Gson, not Jackson.</li>
  *   <li>{@code auto.offset.reset=earliest} so a restart doesn't silently skip
  *       events produced while sky-notify was down.</li>
  * </ul>
@@ -93,7 +98,11 @@ public class KafkaConsumerConfig {
                 dltKafkaTemplate,
                 (record, ex) -> new TopicPartition(record.topic() + ".DLT", record.partition()));
         DefaultErrorHandler handler = new DefaultErrorHandler(recoverer, new FixedBackOff(1_000L, 3L));
-        handler.addNotRetryableExceptions(JsonProcessingException.class, IllegalArgumentException.class);
+        handler.addNotRetryableExceptions(
+                JsonProcessingException.class,
+                JsonSyntaxException.class,
+                JsonParseException.class,
+                IllegalArgumentException.class);
         return handler;
     }
 

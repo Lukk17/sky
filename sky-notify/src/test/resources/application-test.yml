@@ -1,8 +1,0 @@
-# Test-profile overrides for sky-notify. The integration test bootstraps the full
-# Spring context; we don't want it pulling Auth0's JWKS at boot, so we wire a fixed
-# unauthenticated set-up. STOMP CONNECT auth is exercised separately by unit tests
-# against WebSocketAuthChannelInterceptor.
-spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration

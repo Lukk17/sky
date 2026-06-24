@@ -1,9 +1,9 @@
 package com.lukk.sky.notify;
 
-import com.lukk.sky.notify.config.propertyBind.LoggingLvlConfigProperties;
-import com.lukk.sky.notify.config.propertyBind.ManagementConfigProperties;
-import com.lukk.sky.notify.config.propertyBind.ServerConfigProperties;
 import com.lukk.sky.notify.config.propertyBind.SpringConfigProperties;
+import com.lukk.sky.common.config.LoggingLvlConfigProperties;
+import com.lukk.sky.common.config.ManagementConfigProperties;
+import com.lukk.sky.common.config.ServerConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
