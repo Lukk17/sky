@@ -18,16 +18,16 @@ deployment:
     name: "sky-offer-container"
   env:
     spring:
-      datasourceUrl: "jdbc:mysql://mysql-service:3306/sky"
+      datasourceUrl: "jdbc:postgresql://postgres-service:5432/sky"
       debug: "INFO"
       securityUser: "spring-security-user"
       securityPass: "spring-security-pass"
     hibernate:
       showSqlQueries: "false"
       debug: "INFO"
-    mysql:
-      user: "mysql-root-user"
-      pass: "mysql-root-pass"
+    postgres:
+      user: "postgres-user"
+      pass: "postgres-password"
 
 secret:
   name: "sky-secrets"
@@ -126,7 +126,13 @@ ingress:
 
 oauth2:
   issuerUri: "https://keycloak.luksarna.com/realms/sky"
-  audience: ""
+  audience: "sky-backend"
+
+s3:
+  endpoint: "http://minio-service:9000"
+  bucket: "sky-offers"
+  accessKeySecretKey: "s3-access-key"
+  secretKeySecretKey: "s3-secret-key"
 
 kafka:
   address: "kafka-service"

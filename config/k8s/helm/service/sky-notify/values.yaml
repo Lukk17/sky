@@ -35,7 +35,7 @@ service:
 
 oauth2:
   issuerUri: "https://keycloak.luksarna.com/realms/sky"
-  audience: ""
+  audience: "sky-backend"
 
 kafka:
   address: "kafka-service"

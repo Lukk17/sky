@@ -1,8 +1,8 @@
 # Helm deployment guide
 
 Charts live under [config/k8s/helm/](.). The stack installs in dependency order: Sealed Secrets controller, then
-`oauth2-proxy`, then Kafka and MySQL, then the four service charts. Each step is independent; partial installs are
-safe to resume.
+Keycloak (with its own backing PostgreSQL), then `oauth2-proxy`, then the app PostgreSQL, MinIO, Kafka, and the four
+service charts. Each step is independent; partial installs are safe to resume.
 
 ---
 
@@ -71,36 +71,122 @@ kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
 kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
 ```
 
-To create new or rotated credentials, see
-[config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md#create-new-sealed-secrets).
-
 ---
 
-### 2. oauth2-proxy (API gateway)
+### 2. Sky secrets — full key inventory
 
-`oauth2-proxy` sits in front of authenticated routes. It validates OIDC sessions with Keycloak and forwards the
-caller's identity in `x-auth-request-email`, `x-auth-request-access-token`, and `authorization` headers so the
-downstream JWT resource-servers can verify the bearer token independently.
+The single `sky-secrets` SealedSecret must contain all keys listed below. Re-create and re-seal it whenever any
+credential changes.
 
-**Before deploying, re-seal the Keycloak credentials.** The chart reads three keys from `sky-secrets`:
-`keycloak-client-id`, `keycloak-client-secret`, and `keycloak-client-cookie-secret`. Seal them with kubeseal:
+**Keycloak keys**
+
+| Key | Description |
+|---|---|
+| `keycloak-client-id` | oauth2-proxy OIDC client ID (`sky-backend`) |
+| `keycloak-client-secret` | oauth2-proxy OIDC client secret |
+| `keycloak-client-cookie-secret` | oauth2-proxy cookie encryption secret (32-byte random base64) |
+| `keycloak-admin` | Keycloak admin username |
+| `keycloak-admin-password` | Keycloak admin password |
+| `keycloak-db-user` | PostgreSQL username for the Keycloak-internal backing database |
+| `keycloak-db-password` | PostgreSQL password for the Keycloak-internal backing database |
+
+**App database keys (PostgreSQL)**
+
+| Key | Description |
+|---|---|
+| `postgres-user` | PostgreSQL username for the sky application database |
+| `postgres-password` | PostgreSQL password for the sky application database |
+
+**MinIO / S3 keys**
+
+| Key | Description |
+|---|---|
+| `minio-root-user` | MinIO root user (acts as S3 access key for admin operations) |
+| `minio-root-password` | MinIO root password |
+| `s3-access-key` | S3 access key used by sky-offer (may equal `minio-root-user`) |
+| `s3-secret-key` | S3 secret key used by sky-offer (may equal `minio-root-password`) |
+
+**Spring Security keys (used by all four services)**
+
+| Key | Description |
+|---|---|
+| `spring-security-user` | Spring Boot basic-auth username for local/dev profiles |
+| `spring-security-pass` | Spring Boot basic-auth password for local/dev profiles |
+
+**kubeseal command — re-create `sky-secrets`**
+
+Build the plain secret first (substitute real values):
 
 ```shell
 kubectl create secret generic sky-secrets \
-  --from-literal=keycloak-client-id=<client-id> \
+  --from-literal=keycloak-client-id=sky-backend \
   --from-literal=keycloak-client-secret=<client-secret> \
   --from-literal=keycloak-client-cookie-secret=<32-byte-random-base64> \
+  --from-literal=keycloak-admin=admin \
+  --from-literal=keycloak-admin-password=<keycloak-admin-password> \
+  --from-literal=keycloak-db-user=keycloak \
+  --from-literal=keycloak-db-password=<keycloak-db-password> \
+  --from-literal=postgres-user=sky \
+  --from-literal=postgres-password=<postgres-password> \
+  --from-literal=minio-root-user=<minio-root-user> \
+  --from-literal=minio-root-password=<minio-root-password> \
+  --from-literal=s3-access-key=<s3-access-key> \
+  --from-literal=s3-secret-key=<s3-secret-key> \
+  --from-literal=spring-security-user=<spring-user> \
+  --from-literal=spring-security-pass=<spring-pass> \
   --dry-run=client -o yaml \
   | kubeseal --controller-namespace sealed-secrets --controller-name sealed-secrets-controller \
   --cert config/k8s/secret/sealed-public.crt -o yaml \
   > config/k8s/secret/sealed/sealed-secrets.yaml
 ```
 
-Then apply:
+Then apply it:
 
 ```shell
 kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
 ```
+
+To generate the 32-byte cookie secret:
+
+```shell
+python3 -c "import os,base64; print(base64.b64encode(os.urandom(32)).decode())"
+```
+
+---
+
+### 3. Keycloak
+
+Keycloak 26.x runs with a dedicated backing PostgreSQL (managed inside the same Helm chart — do not share the app DB).
+The `sky` realm is pre-imported from `config/keycloak/sky-realm.json` via `--import-realm` on first boot.
+
+Install (production overlay swaps the TLS secret name):
+
+```shell
+helm install keycloak ./config/k8s/helm/infra/keycloak/ \
+  -f ./config/k8s/helm/infra/keycloak/values.yaml \
+  -f ./config/k8s/helm/infra/keycloak/values-prod.yaml
+```
+
+Wait for the backing PostgreSQL to be ready before Keycloak finishes startup:
+
+```shell
+kubectl wait --namespace default --for=condition=ready --timeout=300s pod -l component=keycloak-postgres
+```
+
+```shell
+kubectl wait --namespace default --for=condition=ready --timeout=300s pod -l component=keycloak
+```
+
+Keycloak is reachable at `https://keycloak.luksarna.com`. The admin console is at
+`https://keycloak.luksarna.com/admin`.
+
+---
+
+### 4. oauth2-proxy (API gateway)
+
+`oauth2-proxy` sits in front of authenticated routes. It validates OIDC sessions with Keycloak and forwards the
+caller's identity in `x-auth-request-email`, `x-auth-request-access-token`, and `authorization` headers so the
+downstream JWT resource-servers can verify the bearer token independently.
 
 Install oauth2-proxy with the production overlay:
 
@@ -110,12 +196,53 @@ helm install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/ -f ./confi
 
 ---
 
-### 3. Kafka
+### 5. App database (PostgreSQL)
+
+The app database is PostgreSQL 16. All four services connect to it at `jdbc:postgresql://postgres-service:5432/sky`.
+The PVC (`database-persistent-volume-claim`) is installed in a separate chart to allow the database pod to be
+recreated without losing the claim.
+
+Install the PVC:
+
+```shell
+helm install database-persistent-volume-claim ./config/k8s/helm/db/database-persistent-volume-claim/
+```
+
+Install PostgreSQL:
+
+```shell
+helm install postgres ./config/k8s/helm/db/postgres/
+```
+
+Wait for it to be ready:
+
+```shell
+kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=postgres
+```
+
+---
+
+### 6. MinIO (object storage)
+
+sky-offer stores offer photos in MinIO (S3-compatible). Services reach it at `http://minio-service:9000`. The
+application creates its bucket on first boot; no manual bucket-init step is required.
+
+```shell
+helm install minio ./config/k8s/helm/infra/minio/
+```
+
+```shell
+kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=minio
+```
+
+---
+
+### 7. Kafka
 
 Install the bundled Bitnami chart (v3.5.0):
 
 ```shell
-helm install kafka ./config/k8s/helm/kafka/
+helm install kafka-service ./config/k8s/helm/kafka/
 ```
 
 Install the latest upstream chart:
@@ -126,35 +253,25 @@ helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka
 
 ---
 
-### 4. MySQL
-
-Install the bundled chart (MySQL v8.0.33):
-
-```shell
-helm install mysql ./config/k8s/helm/mysql/
-```
-
----
-
-### 5. Service charts
+### 8. Service charts
 
 Each service chart lives under [config/k8s/helm/service/](./service/). Install them in any order after the
 infrastructure charts are healthy.
 
 ```shell
-helm install sky-offer ./config/k8s/helm/service/sky-offer
+helm install sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values.yaml -f ./config/k8s/helm/service/sky-offer/values-prod.yaml
 ```
 
 ```shell
-helm install sky-booking ./config/k8s/helm/service/sky-booking
+helm install sky-booking ./config/k8s/helm/service/sky-booking -f ./config/k8s/helm/service/sky-booking/values.yaml -f ./config/k8s/helm/service/sky-booking/values-prod.yaml
 ```
 
 ```shell
-helm install sky-message ./config/k8s/helm/service/sky-message
+helm install sky-message ./config/k8s/helm/service/sky-message -f ./config/k8s/helm/service/sky-message/values.yaml -f ./config/k8s/helm/service/sky-message/values-prod.yaml
 ```
 
 ```shell
-helm install sky-notify ./config/k8s/helm/service/sky-notify
+helm install sky-notify ./config/k8s/helm/service/sky-notify -f ./config/k8s/helm/service/sky-notify/values.yaml -f ./config/k8s/helm/service/sky-notify/values-prod.yaml
 ```
 
 ---
@@ -221,6 +338,30 @@ helm uninstall sky-notify
 Remove infrastructure:
 
 ```shell
+helm uninstall kafka-service
+```
+
+```shell
+helm uninstall minio
+```
+
+```shell
+helm uninstall postgres
+```
+
+```shell
+helm uninstall database-persistent-volume-claim
+```
+
+```shell
+helm uninstall oauth2-proxy
+```
+
+```shell
+helm uninstall keycloak
+```
+
+```shell
 helm uninstall sealed-secrets-controller -n sealed-secrets
 ```
 
@@ -254,6 +395,12 @@ A release with that name is already installed. Either upgrade it or uninstall it
 helm uninstall sky-offer
 ```
 
+**Keycloak fails to start with `KC_DB` errors**
+
+The Keycloak-backing PostgreSQL pod must be ready before Keycloak starts. The `kubectl wait` commands in the deploy
+script handle this ordering, but if installing manually ensure `component=keycloak-postgres` is Ready before
+installing or upgrading the keycloak chart.
+
 ---
 
 ### Common Helm commands
@@ -282,7 +429,7 @@ helm install <release name> ./<chart folder>
 
 | Document | What it covers |
 |---|---|
-| [../k8s_README.md](../k8s_README.md) | kubectl reference, secrets, cluster access, Auth0 login |
+| [../k8s_README.md](../k8s_README.md) | kubectl reference, secrets, cluster access |
 | [../../local-dev/local_README.md](../../local-dev/local_README.md) | Local dev: Gradle, Docker, Minikube |
 | [../../../README.md](../../../README.md) | Root README: platform overview, modules, build |
 | [api-gateway/sealed-secrets-controller/sealedSecrets_README.md](api-gateway/sealed-secrets-controller/sealedSecrets_README.md) | Sealed Secrets chart parameter reference |

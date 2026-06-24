@@ -1,0 +1,24 @@
+image:
+  name: "minio/minio:RELEASE.2024-11-07T00-52-20Z"
+  imagePullPolicy: "IfNotPresent"
+
+service:
+  port: 9000
+  consolePort: 9001
+
+volume:
+  claimName: "minio-pvc"
+  storage: "10Gi"
+
+secret:
+  name: "sky-secrets"
+  rootUserKey: "minio-root-user"
+  rootPasswordKey: "minio-root-password"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

@@ -1,0 +1,8 @@
+# Production-environment overlay for keycloak.
+# Apply on top of values.yaml:
+#   helm upgrade --install keycloak ./config/k8s/helm/infra/keycloak \
+#     -f values.yaml -f values-prod.yaml
+
+ingress:
+  tls:
+    secretName: sky-tls-cert
