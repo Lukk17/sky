@@ -12,7 +12,8 @@ include(
     ":sky-booking",
     ":sky-offer",
     ":sky-message",
-    ":sky-notify"
+    ":sky-notify",
+    ":sky-gateway"
 )
 
 // The version catalog is auto-discovered at gradle/libs.versions.toml by Gradle.

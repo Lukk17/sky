@@ -19,6 +19,14 @@ java {
     }
 }
 
+dependencies {
+    constraints {
+        // Force the patched commons-lang3 over the version springdoc-openapi pulls
+        // transitively (3.17.0 carries CVE-2025-48924, uncontrolled recursion / DoS).
+        "implementation"("org.apache.commons:commons-lang3:3.18.0")
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
 }
