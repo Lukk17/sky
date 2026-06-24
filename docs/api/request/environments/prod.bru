@@ -1,0 +1,21 @@
+vars {
+  baseUrl: https://skycloud.luksarna.com
+  bearerToken:
+}
+
+vars:secret [
+  bearerToken
+]
+
+# How to mint a token (Keycloak password grant):
+#
+#   POST https://keycloak.luksarna.com/realms/sky/protocol/openid-connect/token
+#   Content-Type: application/x-www-form-urlencoded
+#
+#   grant_type=password
+#   client_id=<your-client-id>
+#   username=<user@example.com>
+#   password=<password>
+#
+# Copy the access_token from the response and paste it into bearerToken above.
+# Tokens are short-lived (typically 5 minutes). Re-mint when you receive a 401.

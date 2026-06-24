@@ -1,0 +1,36 @@
+meta {
+  name: Create Offer
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/offer/api/owner/offers
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{bearerToken}}
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "hotelName": "Grand Hotel Paris",
+    "description": "A luxury hotel in the heart of Paris, steps from the Eiffel Tower.",
+    "comment": "Breakfast included.",
+    "price": 249.99,
+    "roomCapacity": 2,
+    "city": "Paris",
+    "country": "France",
+    "photoPath": "/images/grand-hotel-paris.jpg"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.hotelName: isDefined
+}

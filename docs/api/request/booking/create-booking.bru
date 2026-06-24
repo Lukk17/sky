@@ -1,0 +1,32 @@
+meta {
+  name: Create Booking
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/booking/api/bookings
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{bearerToken}}
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "offerId": "42",
+    "dateToBook": "2024-08-15"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.offerId: isDefined
+  res.body.bookedDate: isDefined
+  res.body.bookingUser: isDefined
+}

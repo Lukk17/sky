@@ -1,0 +1,21 @@
+meta {
+  name: Get All Offers (public)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/offer/api/offers?page=0&size=20
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.content: isDefined
+  res.body.totalElements: isDefined
+}
