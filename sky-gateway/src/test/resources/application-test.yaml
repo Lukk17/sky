@@ -1,0 +1,7 @@
+# Test profile: no external services required.
+# Routes are defined but the test context never actually proxies traffic.
+sky-gateway:
+  booking-uri: http://localhost:15555
+  offer-uri: http://localhost:15552
+  message-uri: http://localhost:15553
+  notify-uri: http://localhost:15554

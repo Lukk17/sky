@@ -1,0 +1,140 @@
+sky-gateway:
+  booking-uri: ${BOOKING_URI:http://localhost:5555}
+  offer-uri: ${OFFER_URI:http://localhost:5552}
+  message-uri: ${MESSAGE_URI:http://localhost:5553}
+  notify-uri: ${NOTIFY_URI:http://localhost:5554}
+
+server:
+  port: ${GATEWAY_PORT:8080}
+
+spring:
+  application:
+    name: sky-gateway
+
+  # Cloud Gateway routes — mirror the nginx-ingress rewrite rules used in production.
+  #
+  # Production mapping (nginx annotation):
+  #   /booking/api(/|$)(.*)  ->  sky-booking:5555/api/v1/$2
+  #   /offer/api(/|$)(.*)    ->  sky-offer:5552/api/v1/$2
+  #   /msg/api(/|$)(.*)      ->  sky-message:5553/api/v1/$2
+  #   /notify/**             ->  sky-notify:5554   (WebSocket passthrough, no rewrite)
+  #
+  # In docker-compose the downstream URIs are overridden via BOOKING_URI / OFFER_URI /
+  # MESSAGE_URI / NOTIFY_URI env vars so the service names resolve inside the Docker
+  # network (e.g. BOOKING_URI=http://sky-booking:5555).
+  cloud:
+    gateway:
+      routes:
+        - id: booking-route
+          uri: ${sky-gateway.booking-uri}
+          predicates:
+            - Path=/booking/api/**
+          filters:
+            - RewritePath=/booking/api/(?<seg>.*), /api/v1/${seg}
+
+        - id: offer-route
+          uri: ${sky-gateway.offer-uri}
+          predicates:
+            - Path=/offer/api/**
+          filters:
+            - RewritePath=/offer/api/(?<seg>.*), /api/v1/${seg}
+
+        - id: message-route
+          uri: ${sky-gateway.message-uri}
+          predicates:
+            - Path=/msg/api/**
+          filters:
+            - RewritePath=/msg/api/(?<seg>.*), /api/v1/${seg}
+
+        - id: notify-route
+          uri: ${sky-gateway.notify-uri}
+          predicates:
+            - Path=/notify/**
+          # No rewrite — sky-notify exposes WebSocket paths at /notify/... natively.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus"
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: ${GATEWAY_DEBUG:INFO}
+        web: ${SPRING_DEBUG:INFO}
+
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# Profile: secure
+#
+# Activates Keycloak OAuth2 login + TokenRelay filter so the gateway handles
+# OIDC authentication and forwards the bearer token to every upstream service.
+# Requires a running Keycloak instance and the env vars below:
+#
+#   KEYCLOAK_ISSUER_URI  — e.g. http://localhost:8090/realms/sky
+#   KEYCLOAK_CLIENT_ID   — client registered in Keycloak
+#   KEYCLOAK_CLIENT_SECRET — client secret
+# ──────────────────────────────────────────────────────────────────────────────
+spring:
+  config:
+    activate:
+      on-profile: secure
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI}
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${KEYCLOAK_CLIENT_ID}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            scope: openid,email,profile
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+  cloud:
+    gateway:
+      routes:
+        - id: booking-route
+          uri: ${sky-gateway.booking-uri}
+          predicates:
+            - Path=/booking/api/**
+          filters:
+            - RewritePath=/booking/api/(?<seg>.*), /api/v1/${seg}
+            - TokenRelay=
+
+        - id: offer-route
+          uri: ${sky-gateway.offer-uri}
+          predicates:
+            - Path=/offer/api/**
+          filters:
+            - RewritePath=/offer/api/(?<seg>.*), /api/v1/${seg}
+            - TokenRelay=
+
+        - id: message-route
+          uri: ${sky-gateway.message-uri}
+          predicates:
+            - Path=/msg/api/**
+          filters:
+            - RewritePath=/msg/api/(?<seg>.*), /api/v1/${seg}
+            - TokenRelay=
+
+        - id: notify-route
+          uri: ${sky-gateway.notify-uri}
+          predicates:
+            - Path=/notify/**
+          filters:
+            - TokenRelay=
