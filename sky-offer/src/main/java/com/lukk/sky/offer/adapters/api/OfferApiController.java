@@ -27,8 +27,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -144,6 +147,35 @@ public class OfferApiController {
     @PostMapping("/search")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
         return ResponseEntity.ok(offerService.searchOffers(searched));
+    }
+
+    @Operation(summary = "Upload a photo for an offer (owner only)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Photo uploaded; updated offer returned with photoUrl",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "400", description = "Offer not found or caller is not the owner",
+                    content = @Content),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content)
+    })
+    @PostMapping(value = "/owner/offers/{offerId}/photo", consumes = "multipart/form-data")
+    public ResponseEntity<OfferDTO> uploadPhoto(
+            @PathVariable Long offerId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+
+        String ownerEmail = SecurityUtils.currentUserEmail();
+        log.info("Uploading photo for offer ID: {} from owner: {}", offerId, ownerEmail);
+
+        OfferDTO updated = offerService.uploadPhoto(
+                offerId,
+                ownerEmail,
+                file.getBytes(),
+                file.getContentType(),
+                file.getOriginalFilename()
+        );
+
+        return ResponseEntity.ok(updated);
     }
 
     private void sendNotification(String payload, String owner) {

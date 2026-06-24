@@ -6,6 +6,7 @@ import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
+import com.lukk.sky.offer.domain.ports.storage.PhotoStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,9 @@ public class OfferServicePrimaryTest {
 
     @Mock
     EventSourceService eventSourceService;
+
+    @Mock
+    PhotoStorage photoStorage;
 
     @InjectMocks
     OfferServicePrimary offerService;
@@ -295,5 +299,56 @@ public class OfferServicePrimaryTest {
             //When
             offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID.toString());
         });
+    }
+
+    @Test
+    @DisplayName("uploadPhoto stores the photo key on the offer and returns updated OfferDTO when caller is the owner")
+    public void uploadPhoto_whenCallerIsOwner_thenSetPhotoPathAndReturnUpdatedDto() {
+        //Given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        String expectedKey = "offers/test-uuid-hotel.jpg";
+        String expectedUrl = "http://localhost:9000/sky-offers-test/" + expectedKey;
+
+        when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.of(offer));
+        when(offerRepository.save(any())).thenReturn(offer);
+        when(photoStorage.upload(any(byte[].class), eq("image/jpeg"), eq("hotel.jpg")))
+                .thenReturn(expectedKey);
+        when(photoStorage.presignedUrl(expectedKey)).thenReturn(expectedUrl);
+
+        //When
+        OfferDTO actual = offerService.uploadPhoto(
+                TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL, "bytes".getBytes(), "image/jpeg", "hotel.jpg"
+        );
+
+        //Then
+        assertEquals(expectedKey, actual.getPhotoPath());
+        assertEquals(expectedUrl, actual.getPhotoUrl());
+        verify(photoStorage).upload(any(byte[].class), eq("image/jpeg"), eq("hotel.jpg"));
+        verify(offerRepository).save(any(Offer.class));
+    }
+
+    @Test
+    @DisplayName("uploadPhoto throws OfferException when the offer does not exist")
+    public void uploadPhoto_whenOfferDoesNotExist_thenThrowOfferException() {
+        //Given
+        when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.empty());
+
+        //Then
+        assertThrows(OfferException.class, () ->
+                offerService.uploadPhoto(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL, new byte[0], "image/jpeg", "f.jpg")
+        );
+    }
+
+    @Test
+    @DisplayName("uploadPhoto throws OfferException when the caller is not the offer owner")
+    public void uploadPhoto_whenCallerIsNotOwner_thenThrowOfferException() {
+        //Given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.of(offer));
+
+        //Then
+        assertThrows(OfferException.class, () ->
+                offerService.uploadPhoto(TEST_DEFAULT_OFFER_ID, SECOND_TEST_USER_EMAIL, new byte[0], "image/jpeg", "f.jpg")
+        );
     }
 }

@@ -34,6 +34,11 @@ booking creation. That endpoint is not exposed through the public ingress.
 | `POST` | `/api/v1/owner/offers` | Create a new offer | `OfferDTO` |
 | `PUT` | `/api/v1/owner/offers` | Edit an existing offer | `OfferEditDTO` |
 | `DELETE` | `/api/v1/owner/offers/{offerId}` | Delete an offer | |
+| `POST` | `/api/v1/owner/offers/{offerId}/photo` | Upload or replace the offer photo (multipart) | `multipart/form-data` |
+
+Photo upload accepts a `multipart/form-data` request with a single part named `file`. The uploaded bytes are stored in MinIO (S3-compatible object storage) under the key `offers/{uuid}-{filename}`. The stored object key is persisted in `Offer.photoPath`. The response is the updated `OfferDTO` that includes a `photoUrl` field containing a time-limited presigned GET URL (default 15 minutes; configurable via `S3_PRESIGN_TTL`).
+
+All other endpoints that return `OfferDTO` (list, search, create, edit) also populate `photoUrl` automatically for any offer that has a non-blank `photoPath`.
 
 **Pagination** — `GET /api/v1/offers` and `GET /api/v1/owner/offers` both return a Spring Data `Page<OfferDTO>` envelope. Use the `page` and `size` query parameters to control pagination (default: page 0, size 20):
 
@@ -79,11 +84,12 @@ Swagger UI: `http://localhost:5552/swagger-ui/index.html` (local) or
 
 Uses hexagonal (ports-and-adapters):
 
-- `domain/model`, `domain/ports`, `domain/exception`: core domain. `OfferService` is the primary port.
-- `adapters/api`: `OfferApiController` (public + owner REST) and `OfferInternalController` (intra-cluster only).
+- `domain/model`, `domain/ports`, `domain/exception`: core domain. `OfferService` is the primary port. `PhotoStorage` (in `domain/ports/storage`) is the outbound port for binary photo storage.
+- `adapters/api`: `OfferApiController` (public + owner REST, including photo upload) and `OfferInternalController` (intra-cluster only).
 - `adapters/notification`: outbound Kafka producer.
-- `adapters/dto`: `OfferDTO`, `OfferEditDTO` wire types.
-- `config/kafka`, `config/propertyBind`: Spring and Kafka wiring.
+- `adapters/storage`: `S3PhotoStorage` — AWS SDK v2 adapter implementing `PhotoStorage` using S3Client and S3Presigner.
+- `adapters/dto`: `OfferDTO` (now includes `photoUrl` presigned-URL field), `OfferEditDTO` wire types.
+- `config/kafka`, `config/propertyBind`: Spring, Kafka, and S3 wiring.
 
 Plain Spring MVC stack (`spring-boot-starter-web`); no WebFlux here, unlike `sky-booking`.
 
@@ -101,6 +107,20 @@ Schema versioning via Flyway. Migrations in [src/main/resources/db/migration/](s
 | `SPRING_DATASOURCE_URL` | `jdbc:mysql://host.docker.internal:3306/sky` | JDBC URL |
 | `KAFKA_ADDRESS` | `kafka-service` | Kafka host |
 | `KAFKA_PORT` | `9092` | Kafka port |
+
+**Photo storage (MinIO / S3):**
+
+| Variable | Default | Notes |
+|---|---|---|
+| `S3_ENDPOINT` | `http://localhost:9000` | MinIO endpoint URL |
+| `S3_REGION` | `us-east-1` | AWS region (MinIO ignores value but requires it) |
+| `S3_BUCKET` | `sky-offers` | Bucket name (auto-created on startup if missing) |
+| `S3_ACCESS_KEY` | `minioadmin` | S3 / MinIO access key |
+| `S3_SECRET_KEY` | `minioadmin` | S3 / MinIO secret key |
+| `S3_PATH_STYLE` | `true` | Force path-style URLs (required for MinIO) |
+| `S3_PRESIGN_TTL` | `PT15M` | Presigned URL lifetime (ISO-8601 duration) |
+
+The service is resilient to MinIO being unavailable at startup: the bucket-existence check is wrapped in a try/catch that logs a warning and lets the application boot normally. Photo-related endpoints will return errors if MinIO is unreachable at request time.
 
 ---
 

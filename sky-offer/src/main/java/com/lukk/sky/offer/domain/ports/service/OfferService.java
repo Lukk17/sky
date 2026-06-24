@@ -74,4 +74,18 @@ public interface OfferService {
      * @throws OfferException if the offer doesn't exist
      */
     String findOfferOwner(String offerId);
+
+    /**
+     * Uploads a photo for an offer owned by {@code ownerEmail}, stores the object
+     * key on the offer, and returns the updated OfferDTO with {@code photoUrl} populated.
+     *
+     * @param offerId      the ID of the offer
+     * @param ownerEmail   email of the authenticated caller (must be offer owner)
+     * @param content      raw file bytes
+     * @param contentType  MIME type
+     * @param filename     original filename
+     * @return the updated offer DTO including the presigned photo URL
+     * @throws OfferException if the offer does not exist or the caller is not the owner
+     */
+    OfferDTO uploadPhoto(Long offerId, String ownerEmail, byte[] content, String contentType, String filename);
 }

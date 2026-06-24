@@ -22,6 +22,10 @@ dependencies {
 
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
+    // AWS SDK v2 — imported as BOM so transitive versions align across s3/url-connection-client
+    implementation(platform(libs.awssdk.bom))
+    implementation(libs.awssdk.s3)
+
     testImplementation(libs.spring.kafka.test)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.kafka)

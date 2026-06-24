@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.List;
 
@@ -52,7 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({com.lukk.sky.offer.TestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class})
+@Import({com.lukk.sky.offer.TestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class, com.lukk.sky.offer.TestS3Config.class})
 public class OfferApiControllerTest {
 
     private Gson gson;
@@ -222,19 +223,20 @@ public class OfferApiControllerTest {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         when(offerService.editOffer(offerEditDTO)).thenReturn(offerDTO);
 
-        String expectedJson = gson.toJson(offerEditDTO);
+        String requestJson = gson.toJson(offerEditDTO);
+        String expectedResponseJson = gson.toJson(offerDTO);
 //When
         MvcResult result = mvc.perform(
                         put("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
-                                .content(expectedJson)
+                                .content(requestJson)
                 )
 //Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
-        assertEquals(expectedJson, result.getResponse().getContentAsString());
+        assertEquals(expectedResponseJson, result.getResponse().getContentAsString());
     }
 
     @Test
@@ -302,5 +304,82 @@ public class OfferApiControllerTest {
                 .andReturn();
 
         assertEquals(expectedJson, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    @DisplayName("POST /owner/offers/{id}/photo with valid file uploads photo and returns updated OfferDTO with photoUrl")
+    public void uploadPhoto_whenValidFile_thenReturnUpdatedOfferDtoWithPhotoUrl() throws Exception {
+//Given
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        offerDTO.setPhotoPath("offers/test-uuid-hotel.jpg");
+        offerDTO.setPhotoUrl("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.jpg?X-Amz-Signature=sig");
+
+        when(offerService.uploadPhoto(
+                eq(TEST_DEFAULT_OFFER_ID),
+                eq(TEST_OWNER_EMAIL),
+                any(byte[].class),
+                eq("image/jpeg"),
+                eq("hotel.jpg")
+        )).thenReturn(offerDTO);
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.jpg", "image/jpeg", "fake-image-bytes".getBytes()
+        );
+//When
+        mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                )
+//Then
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.photoPath").value("offers/test-uuid-hotel.jpg"))
+                .andExpect(jsonPath("$.photoUrl").value("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.jpg?X-Amz-Signature=sig"));
+    }
+
+    @Test
+    @DisplayName("POST /owner/offers/{id}/photo without JWT returns 401 Unauthorized")
+    public void uploadPhoto_whenNoJwt_thenReturn401() throws Exception {
+//Given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.jpg", "image/jpeg", "fake-image-bytes".getBytes()
+        );
+//When
+        mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                )
+//Then
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("POST /owner/offers/{id}/photo when service throws OfferException returns 400")
+    public void uploadPhoto_whenNotOwner_thenReturn400() throws Exception {
+//Given
+        doThrow(new OfferException("You can only upload photos for your own offers."))
+                .when(offerService).uploadPhoto(
+                        eq(TEST_DEFAULT_OFFER_ID),
+                        eq(TEST_OWNER_EMAIL),
+                        any(byte[].class),
+                        any(),
+                        any()
+                );
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.jpg", "image/jpeg", "fake-image-bytes".getBytes()
+        );
+//When
+        MvcResult result = mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                )
+//Then
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertTrue(result.getResponse().getContentAsString()
+                .contains("You can only upload photos for your own offers."));
     }
 }

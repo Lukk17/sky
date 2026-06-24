@@ -5,6 +5,7 @@
 # otherwise SB4-ready: JDK 25 toolchain is live, @MockitoBean is in place, jacoco
 # 0.8.13 supports class file version 69 (Java 25).
 spring-boot = "3.5.4"
+aws-sdk = "2.28.29"
 spring-dependency-management = "1.1.7"
 spring-cloud = "2025.0.3"
 
@@ -71,6 +72,10 @@ flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql
 # JAX-B (JDK 9+ Hibernate/Hikari compatibility)
 jakarta-xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime" }
+
+# AWS SDK v2 — BOM + S3 client
+awssdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk" }
+awssdk-s3 = { module = "software.amazon.awssdk:s3" }
 
 # Versioned (not BOM-managed)
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }

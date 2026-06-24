@@ -1,6 +1,14 @@
 # ==================================================================================================================
 sky:
   apiPrefix: api/v1
+  s3:
+    endpoint: http://localhost:9000
+    region: us-east-1
+    bucket: sky-offers-test
+    access-key: minioadmin
+    secret-key: minioadmin
+    path-style-access: true
+    presign-ttl: PT15M
 
 spring:
   security:

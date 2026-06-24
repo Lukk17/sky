@@ -43,6 +43,9 @@ public class OfferDTO {
     private String country;
     private String photoPath;
 
+    /** Presigned GET URL, populated by the service layer when returning DTOs to callers. */
+    private String photoUrl;
+
     public static OfferDTO of(Offer offer) {
         return OfferDTO.builder()
                 .hotelName(offer.getHotelName())

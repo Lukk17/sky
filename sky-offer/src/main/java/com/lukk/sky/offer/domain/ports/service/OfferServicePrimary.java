@@ -6,6 +6,7 @@ import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
+import com.lukk.sky.offer.domain.ports.storage.PhotoStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
@@ -30,6 +31,7 @@ public class OfferServicePrimary implements OfferService {
 
     private final OfferRepository offerRepository;
     private final EventSourceService eventSourceService;
+    private final PhotoStorage photoStorage;
 
     /**
      * {@inheritDoc}
@@ -41,7 +43,7 @@ public class OfferServicePrimary implements OfferService {
     @Transactional(readOnly = true)
     public Page<OfferDTO> getAllOffers(Pageable pageable) {
         log.info("Pulling all offers page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
-        return offerRepository.findAll(pageable).map(OfferDTO::of);
+        return offerRepository.findAll(pageable).map(offer -> withPresignedUrl(OfferDTO.of(offer)));
     }
 
     /**
@@ -63,7 +65,7 @@ public class OfferServicePrimary implements OfferService {
         log.info("Saved offer with ID: {} from user: {}", savedOffer.getId(), savedOffer.getOwnerEmail());
         eventSourceService.saveEvent(savedOffer, EventType.OFFER_CREATED);
 
-        return OfferDTO.of(savedOffer);
+        return withPresignedUrl(OfferDTO.of(savedOffer));
     }
 
     /**
@@ -102,7 +104,8 @@ public class OfferServicePrimary implements OfferService {
         log.info("Pulling offers which owner is user: {} page={} size={}",
                 ownerEmail, pageable.getPageNumber(), pageable.getPageSize());
 
-        return offerRepository.findAllByOwnerEmail(ownerEmail, pageable).map(OfferDTO::of);
+        return offerRepository.findAllByOwnerEmail(ownerEmail, pageable)
+                .map(offer -> withPresignedUrl(OfferDTO.of(offer)));
     }
 
     /**
@@ -120,6 +123,7 @@ public class OfferServicePrimary implements OfferService {
 
         return offerRepository.searchByTerm(searched).stream()
                 .map(OfferDTO::of)
+                .map(this::withPresignedUrl)
                 .toList();
     }
 
@@ -144,7 +148,7 @@ public class OfferServicePrimary implements OfferService {
         offerEditDTO.setId(dbOffer.getId());
         eventSourceService.saveEvent(offerEditDTO.toDomain(), EventType.OFFER_UPDATED);
 
-        return OfferDTO.of(dbOffer);
+        return withPresignedUrl(OfferDTO.of(dbOffer));
     }
 
     /**
@@ -165,5 +169,29 @@ public class OfferServicePrimary implements OfferService {
         log.info("Found owner with ID:{} of offer with ID: {}", ownerEmail, offerId);
 
         return ownerEmail;
+    }
+
+    @Override
+    public OfferDTO uploadPhoto(Long offerId, String ownerEmail, byte[] content, String contentType, String filename) {
+        Offer offer = offerRepository.findById(offerId)
+                .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
+
+        if (!offer.getOwnerEmail().equals(ownerEmail)) {
+            throw new OfferException("You can only upload photos for your own offers.");
+        }
+
+        String key = photoStorage.upload(content, contentType, filename);
+        offer.setPhotoPath(key);
+        Offer saved = offerRepository.save(offer);
+
+        log.info("Photo uploaded for offer ID: {} key={}", offerId, key);
+
+        return withPresignedUrl(OfferDTO.of(saved));
+    }
+
+    private OfferDTO withPresignedUrl(OfferDTO dto) {
+        String url = photoStorage.presignedUrl(dto.getPhotoPath());
+        dto.setPhotoUrl(url);
+        return dto;
     }
 }
