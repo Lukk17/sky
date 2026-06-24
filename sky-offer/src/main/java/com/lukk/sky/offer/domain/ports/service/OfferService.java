@@ -3,6 +3,8 @@ package com.lukk.sky.offer.domain.ports.service;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -12,11 +14,12 @@ import java.util.List;
 public interface OfferService {
 
     /**
-     * Retrieves all offers.
+     * Retrieves a paginated view of all offers.
      *
-     * @return list of all offers
+     * @param pageable pagination and sort parameters
+     * @return page of offers
      */
-    List<OfferDTO> getAllOffers();
+    Page<OfferDTO> getAllOffers(Pageable pageable);
 
     /**
      * Adds a new offer.
@@ -37,12 +40,13 @@ public interface OfferService {
     void deleteOffer(Long id, String userEmail);
 
     /**
-     * Retrieves offers owned by a specific user.
+     * Retrieves a paginated view of offers owned by a specific user.
      *
      * @param ownerEmail the email of the owner
-     * @return list of offers owned by the user
+     * @param pageable   pagination and sort parameters
+     * @return page of offers owned by the user
      */
-    List<OfferDTO> getOwnedOffers(String ownerEmail);
+    Page<OfferDTO> getOwnedOffers(String ownerEmail, Pageable pageable);
 
     /**
      * Searches for offers that match the provided query.

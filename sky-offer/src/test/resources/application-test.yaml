@@ -3,6 +3,11 @@ sky:
   apiPrefix: api/v1
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost/test-issuer
   flyway:
     enabled: false
   jpa:

@@ -6,12 +6,17 @@ import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.*;
@@ -20,9 +25,11 @@ import static com.lukk.sky.offer.Assemblers.OfferAssembler.*;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@DisplayName("OfferServicePrimary — unit tests for the core offer service business logic")
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 public class OfferServicePrimaryTest {
@@ -37,37 +44,41 @@ public class OfferServicePrimaryTest {
     OfferServicePrimary offerService;
 
     @Test
-    public void whenGetAllOffers_thenReturnOffers() {
+    @DisplayName("getAllOffers returns mapped OfferDTO page when offers are present in the repository")
+    public void getAllOffers_whenOffersExist_thenReturnMappedOfferDtoPage() {
         //Given
         List<Offer> offers = OfferAssembler.getPopulatedOffers();
-        when(offerRepository.findAll()).thenReturn(offers);
+        Pageable pageable = PageRequest.of(0, 20);
+        when(offerRepository.findAll(pageable)).thenReturn(new PageImpl<>(offers, pageable, offers.size()));
 
         List<OfferDTO> expected = OfferAssembler.getPopulatedOffersDTO();
 
         //When
-        List<OfferDTO> actual = offerService.getAllOffers();
+        Page<OfferDTO> actual = offerService.getAllOffers(pageable);
 
         //Then
-        assertEquals(expected, actual);
+        assertEquals(expected, actual.getContent());
+        assertEquals(2, actual.getTotalElements());
     }
 
     @Test
-    public void whenGetAllOffersAndNoOffersSaved_thenReturnEmptyList() {
+    @DisplayName("getAllOffers returns an empty page when no offers have been saved")
+    public void getAllOffers_whenNoOffersSaved_thenReturnEmptyPage() {
         //Given
-        List<Offer> offers = new ArrayList<>();
-        when(offerRepository.findAll()).thenReturn(offers);
-
-        List<OfferDTO> expected = new ArrayList<>();
+        Pageable pageable = PageRequest.of(0, 20);
+        when(offerRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         //When
-        List<OfferDTO> actual = offerService.getAllOffers();
+        Page<OfferDTO> actual = offerService.getAllOffers(pageable);
 
         //Then
-        assertEquals(expected, actual);
+        assertEquals(0, actual.getTotalElements());
+        assertTrue(actual.getContent().isEmpty());
     }
 
     @Test
-    public void whenAddOffer_thenReturnAddedOffer() throws OfferException {
+    @DisplayName("addOffer saves the offer to the repository and returns the persisted OfferDTO")
+    public void addOffer_whenValidOfferDto_thenSaveAndReturnOfferDto() throws OfferException {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
@@ -86,12 +97,12 @@ public class OfferServicePrimaryTest {
 
     @Test
     // This scenario should not happen
-    public void whenAddExistingOffer_thenThrowException() throws OfferException {
+    @DisplayName("addOffer throws OfferException when an offer with the same ID already exists")
+    public void addOffer_whenOfferWithIdAlreadyExists_thenThrowOfferException() throws OfferException {
         //Given
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
 
-        when(offerRepository.findById(any())).thenReturn(Optional.of(offer));
+        when(offerRepository.existsById(TEST_DEFAULT_OFFER_ID)).thenReturn(true);
 
         //Then
         assertThrows(OfferException.class, () -> {
@@ -102,7 +113,8 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenDeleteOffer_thenDeleteOffer() {
+    @DisplayName("deleteOffer removes the offer from the repository when it exists and the requester is the owner")
+    public void deleteOffer_whenOfferExistsAndOwnerMatches_thenDeleteFromRepository() {
         //Given
         Offer expected = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         ArgumentCaptor<Offer> valueCapture = ArgumentCaptor.forClass(Offer.class);
@@ -119,7 +131,8 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenDeleteNotExistingOffer_thenThrowException() {
+    @DisplayName("deleteOffer throws OfferException when the offer does not exist in the repository")
+    public void deleteOffer_whenOfferDoesNotExist_thenThrowOfferException() {
         //Given
         Offer expected = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
 
@@ -134,7 +147,8 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenDeleteNotOwnedOffer_thenThrowException() {
+    @DisplayName("deleteOffer throws OfferException when the requester email does not match the offer owner")
+    public void deleteOffer_whenRequesterIsNotOwner_thenThrowOfferException() {
         //Given
         Offer expected = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
 
@@ -149,61 +163,62 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenGetOwnedOffers_thenReturnOffersList() {
+    @DisplayName("getOwnedOffers returns mapped OfferDTO page for offers belonging to the given user")
+    public void getOwnedOffers_whenUserHasOffers_thenReturnMappedOfferDtoPage() {
         //Given
         List<Offer> offers = getPopulatedOffers();
         List<OfferDTO> expected = getPopulatedOffersDTO();
+        Pageable pageable = PageRequest.of(0, 20);
 
-        when(offerRepository.findAllByOwnerEmail(TEST_USER_EMAIL)).thenReturn(offers);
+        when(offerRepository.findAllByOwnerEmail(TEST_USER_EMAIL, pageable))
+                .thenReturn(new PageImpl<>(offers, pageable, offers.size()));
 
         //When
-        List<OfferDTO> actual = offerService.getOwnedOffers(TEST_USER_EMAIL);
+        Page<OfferDTO> actual = offerService.getOwnedOffers(TEST_USER_EMAIL, pageable);
 
         //Then
-        assertEquals(expected, actual);
+        assertEquals(expected, actual.getContent());
+        assertEquals(2, actual.getTotalElements());
     }
 
     @Test
-    public void whenGetOwnedOffersNotExist_thenReturnEmptyList() {
+    @DisplayName("getOwnedOffers returns an empty page when the user owns no offers")
+    public void getOwnedOffers_whenUserHasNoOffers_thenReturnEmptyPage() {
         //Given
-        List<Offer> offers = new ArrayList<>();
-        List<OfferDTO> expected = new ArrayList<>();
+        Pageable pageable = PageRequest.of(0, 20);
 
-        when(offerRepository.findAllByOwnerEmail(TEST_USER_EMAIL)).thenReturn(offers);
+        when(offerRepository.findAllByOwnerEmail(TEST_USER_EMAIL, pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         //When
-        List<OfferDTO> actual = offerService.getOwnedOffers(TEST_USER_EMAIL);
+        Page<OfferDTO> actual = offerService.getOwnedOffers(TEST_USER_EMAIL, pageable);
 
         //Then
-        assertEquals(expected, actual);
+        assertEquals(0, actual.getTotalElements());
+        assertTrue(actual.getContent().isEmpty());
     }
 
     // problem with JUnit Vintage - not seeing other test when run parametrized...
 //    @ParameterizedTest
-//    @CsvSource({"testHotelName,2", "testUser@user,2", "testCity,2", "testCountry,2", "99,1"})
+//    @CsvSource({"testHotelName,2", "testUser@user,2", "testCity,2", "testCountry,2"})
     @Test
-    public void searchOffer() {
+    @DisplayName("searchOffers delegates to searchByTerm and returns matching offers for hotel name, owner email, city, and country")
+    public void searchOffers_whenSearchTermMatchesOfferFields_thenReturnMatchingOffers() {
+        // The id-substring case ("99" → 1) is intentionally omitted: that behaviour relied on
+        // in-memory String.valueOf(id).contains(term) filtering which is replaced by a DB LIKE
+        // query across text columns only.
         Map<String, Integer> map = new HashMap<>();
         map.put("testHotelName", 2);
         map.put("test@owner.com", 2);
         map.put("testCity", 2);
         map.put("testCountry", 2);
-        map.put("99", 1);
+
+        List<Offer> twoMatches = OfferAssembler.getPopulatedOffers();
 
         map.forEach((input, expected) -> {
 
 //Given
-            long id = 0L;
-            try {
-                id = Long.parseLong(input);
-            } catch (NumberFormatException e) {
-                // normal operation for most of CsvSource values
-            }
-            //  need to convert into mutable list to add element
-            List<Offer> offers = new ArrayList<>(OfferAssembler.getPopulatedOffers());
-            offers.add(OfferAssembler.getEmptyOffer(id));
-
-            when(offerRepository.findAll()).thenReturn(offers);
+            when(offerRepository.searchByTerm(input)).thenReturn(twoMatches);
 
 //When
             List<OfferDTO> actual = offerService.searchOffers(input);
@@ -214,7 +229,8 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenEditOffer_thenSaveAndReturnOffer() {
+    @DisplayName("editOffer updates fields, saves to the repository, and returns the updated OfferDTO")
+    public void editOffer_whenOfferExists_thenSaveAndReturnUpdatedOfferDto() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         OfferEditDTO input = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
@@ -232,7 +248,8 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenEditOfferWithoutID_then() {
+    @DisplayName("editOffer throws OfferException when the edit DTO has no ID and the offer is not found")
+    public void editOffer_whenOfferIdIsNull_thenThrowOfferException() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         offer.setId(null);
@@ -251,7 +268,8 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenFindOfferOwner_thenReturnOwnerId() {
+    @DisplayName("findOfferOwner returns the owner email when the offer exists in the repository")
+    public void findOfferOwner_whenOfferExists_thenReturnOwnerEmail() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
@@ -266,7 +284,8 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    public void whenFindOwner_ofNonExistingOffer_thenThrowError() {
+    @DisplayName("findOfferOwner throws OfferException when no offer with the given ID exists")
+    public void findOfferOwner_whenOfferDoesNotExist_thenThrowOfferException() {
         //Given
         when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.empty());
 

@@ -9,11 +9,12 @@ import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This is the primary implementation of the {@link OfferService} interface.
@@ -33,17 +34,14 @@ public class OfferServicePrimary implements OfferService {
     /**
      * {@inheritDoc}
      * <p>
-     * This implementation retrieves all offers from the database using an {@link OfferRepository},
-     * transforms them into {@link OfferDTO}s and returns them as a list.
+     * This implementation retrieves a page of offers from the database using an {@link OfferRepository},
+     * transforms them into {@link OfferDTO}s and returns a {@link Page}.
      */
     @Override
-    public List<OfferDTO> getAllOffers() {
-        log.info("Pulling all offers");
-        List<Offer> offers = offerRepository.findAll();
-
-        return offers.stream()
-                .map(OfferDTO::of)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<OfferDTO> getAllOffers(Pageable pageable) {
+        log.info("Pulling all offers page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
+        return offerRepository.findAll(pageable).map(OfferDTO::of);
     }
 
     /**
@@ -56,8 +54,7 @@ public class OfferServicePrimary implements OfferService {
      */
     @Override
     public OfferDTO addOffer(OfferDTO offerDTO) throws OfferException {
-
-        if (offerDTO.getId() != null && offerRepository.findById(offerDTO.getId()).isPresent()) {
+        if (offerDTO.getId() != null && offerRepository.existsById(offerDTO.getId())) {
             throw new OfferException("Offer with given ID already exist!");
         }
 
@@ -79,7 +76,6 @@ public class OfferServicePrimary implements OfferService {
      */
     @Override
     public void deleteOffer(Long offerID, String userEmail) throws OfferException {
-
         Offer offerToDelete = offerRepository.findById(offerID)
                 .orElseThrow(() -> new OfferException("Can't remove non-existing offer!"));
 
@@ -97,18 +93,16 @@ public class OfferServicePrimary implements OfferService {
     /**
      * {@inheritDoc}
      * <p>
-     * This implementation retrieves all offers from the database belonging to the given owner email,
-     * transforms them into {@link OfferDTO}s and returns them as a list.
+     * This implementation retrieves a page of offers from the database belonging to the given owner email,
+     * transforms them into {@link OfferDTO}s and returns a {@link Page}.
      */
     @Override
-    public List<OfferDTO> getOwnedOffers(String ownerEmail) {
-        log.info("Pulling offers which owner is user: {}", ownerEmail);
+    @Transactional(readOnly = true)
+    public Page<OfferDTO> getOwnedOffers(String ownerEmail, Pageable pageable) {
+        log.info("Pulling offers which owner is user: {} page={} size={}",
+                ownerEmail, pageable.getPageNumber(), pageable.getPageSize());
 
-        List<Offer> offers = offerRepository.findAllByOwnerEmail(ownerEmail);
-
-        return offers.stream()
-                .map(OfferDTO::of)
-                .collect(Collectors.toList());
+        return offerRepository.findAllByOwnerEmail(ownerEmail, pageable).map(OfferDTO::of);
     }
 
     /**
@@ -116,20 +110,17 @@ public class OfferServicePrimary implements OfferService {
      * <p>
      * This implementation searches for offers that match the given criteria,
      * transforms them into {@link OfferDTO}s and returns them as a list.
+     * The search is delegated to the database via a case-insensitive LIKE query
+     * across hotelName, city, country, and ownerEmail.
      */
     @Override
+    @Transactional(readOnly = true)
     public List<OfferDTO> searchOffers(String searched) {
         log.info("Searching offers for: {}", searched);
 
-        List<OfferDTO> offers = getAllOffers();
-
-        return offers.stream()
-                .filter(offer -> offer.getHotelName().contains(searched)
-                        || offer.getOwnerEmail().contains(searched)
-                        || offer.getCity().contains(searched)
-                        || offer.getCountry().contains(searched)
-                        || Long.toString(offer.getId()).contains(searched))
-                .collect(Collectors.toList());
+        return offerRepository.searchByTerm(searched).stream()
+                .map(OfferDTO::of)
+                .toList();
     }
 
     /**
@@ -164,8 +155,8 @@ public class OfferServicePrimary implements OfferService {
      * @throws OfferException if the offer does not exist in the database
      */
     @Override
+    @Transactional(readOnly = true)
     public String findOfferOwner(String offerId) {
-
         String ownerEmail = offerRepository
                 .findById(Long.parseLong(offerId))
                 .map(Offer::getOwnerEmail)

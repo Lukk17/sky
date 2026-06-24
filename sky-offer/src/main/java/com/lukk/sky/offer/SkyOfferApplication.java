@@ -1,9 +1,9 @@
 package com.lukk.sky.offer;
 
-import com.lukk.sky.offer.config.propertyBind.LoggingLvlConfigProperties;
-import com.lukk.sky.offer.config.propertyBind.ManagementConfigProperties;
-import com.lukk.sky.offer.config.propertyBind.ServerConfigProperties;
 import com.lukk.sky.offer.config.propertyBind.SpringConfigProperties;
+import com.lukk.sky.common.config.LoggingLvlConfigProperties;
+import com.lukk.sky.common.config.ManagementConfigProperties;
+import com.lukk.sky.common.config.ServerConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,14 +48,12 @@ public class SkyOfferApplication {
         String actuatorOpenEndpoints = managementConfigProperties.getEndpoints().web().exposure().include();
         log.info("Actuator open endpoints:\t\t {}", actuatorOpenEndpoints.equals("*") ? "ALL" : actuatorOpenEndpoints);
 
-        String dbUrlSimplified = springConfigProperties.getDatasource().url().split("\\?")[0];
-        log.info("Database URL:\t\t\t\t {}", dbUrlSimplified);
+        String[] dbUrlParts = springConfigProperties.getDatasource().url().split("\\?", 2);
+        log.info("Database URL:\t\t\t\t {}", dbUrlParts[0]);
 
-        try {
-            String dbParams = springConfigProperties.getDatasource().url().split("\\?")[1];
-            log.info("Database connection params:\t\t {}", dbParams);
-
-        } catch (ArrayIndexOutOfBoundsException e) {
+        if (dbUrlParts.length > 1) {
+            log.info("Database connection params:\t\t {}", dbUrlParts[1]);
+        } else {
             log.info("Database has no connections parameters");
         }
 

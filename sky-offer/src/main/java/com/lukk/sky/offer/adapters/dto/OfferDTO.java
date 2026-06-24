@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.util.Objects;
 
 @Builder
 @Data
@@ -59,7 +59,6 @@ public class OfferDTO {
     }
 
     public Offer toDomain() {
-
         return Offer.builder()
                 .id(this.getId())
                 .hotelName(this.getHotelName())
@@ -77,24 +76,15 @@ public class OfferDTO {
     public OfferDTO mergeWithDomain(Offer dbOffer) {
         OfferDTO.OfferDTOBuilder builder = OfferDTO.builder();
         builder.id(dbOffer.getId());
-        builder.hotelName(Optional.ofNullable(this.getHotelName())
-                .orElse(dbOffer.getHotelName()));
-        builder.city(Optional.ofNullable(this.getCity())
-                .orElse(dbOffer.getCity()));
-        builder.country(Optional.ofNullable(this.getCountry())
-                .orElse(dbOffer.getCountry()));
-        builder.ownerEmail(Optional.ofNullable(this.getOwnerEmail())
-                .orElse(dbOffer.getOwnerEmail()));
-        builder.description(Optional.ofNullable(this.getDescription())
-                .orElse(dbOffer.getDescription()));
-        builder.comment(Optional.ofNullable(this.getComment())
-                .orElse(dbOffer.getComment()));
-        builder.price(Optional.ofNullable(this.getPrice())
-                .orElse(dbOffer.getPrice()));
-        builder.roomCapacity(Optional.ofNullable(this.getRoomCapacity())
-                .orElse(dbOffer.getRoomCapacity()));
-        builder.photoPath(Optional.ofNullable(this.getPhotoPath())
-                .orElse(dbOffer.getPhotoPath()));
+        builder.hotelName(Objects.requireNonNullElseGet(this.getHotelName(), dbOffer::getHotelName));
+        builder.city(Objects.requireNonNullElseGet(this.getCity(), dbOffer::getCity));
+        builder.country(Objects.requireNonNullElseGet(this.getCountry(), dbOffer::getCountry));
+        builder.ownerEmail(Objects.requireNonNullElseGet(this.getOwnerEmail(), dbOffer::getOwnerEmail));
+        builder.description(Objects.requireNonNullElseGet(this.getDescription(), dbOffer::getDescription));
+        builder.comment(Objects.requireNonNullElseGet(this.getComment(), dbOffer::getComment));
+        builder.price(Objects.requireNonNullElseGet(this.getPrice(), dbOffer::getPrice));
+        builder.roomCapacity(Objects.requireNonNullElseGet(this.getRoomCapacity(), dbOffer::getRoomCapacity));
+        builder.photoPath(Objects.requireNonNullElseGet(this.getPhotoPath(), dbOffer::getPhotoPath));
 
         return builder.build();
     }

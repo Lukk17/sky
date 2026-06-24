@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
+@DisplayName("Hexagonal Architecture Tests — enforce package dependency rules for sky-offer")
 class HexagonalArchitectureTest {
 
     private static JavaClasses classes;
@@ -23,7 +24,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("Entities (domain.model) do not import any adapter type")
-    void entitiesDoNotImportAdapters() {
+    void domainModel_whenCheckedForDependencies_thenDoesNotImportAdapterClasses() {
         noClasses()
                 .that().resideInAPackage("..domain.model..")
                 .should().dependOnClassesThat().resideInAPackage("..adapters..")
@@ -32,7 +33,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("Domain has no Spring Web / Reactor / RestTemplate / WebClient dependencies")
-    void domainHasNoWebStackDependencies() {
+    void domainClasses_whenCheckedForWebDependencies_thenHaveNoSpringWebOrReactorImports() {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .and().areNotAnnotatedWith("org.springframework.web.bind.annotation.RestControllerAdvice")
@@ -46,7 +47,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("Controllers live under adapters.api")
-    void controllersInAdaptersApi() {
+    void restControllers_whenPackageChecked_thenResideInAdaptersApiPackage() {
         classes()
                 .that().areAnnotatedWith("org.springframework.web.bind.annotation.RestController")
                 .or().areAnnotatedWith("org.springframework.stereotype.Controller")
@@ -56,7 +57,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("JPA entities live under domain.model")
-    void entitiesInDomainModel() {
+    void jpaEntities_whenPackageChecked_thenResideInDomainModelPackage() {
         classes()
                 .that().areAnnotatedWith("jakarta.persistence.Entity")
                 .should().resideInAPackage("..domain.model..")
@@ -65,7 +66,7 @@ class HexagonalArchitectureTest {
 
     @Test
     @DisplayName("Repositories live under domain.ports.repository")
-    void repositoriesInPortsRepository() {
+    void repositories_whenPackageChecked_thenResideInDomainPortsRepositoryPackage() {
         classes()
                 .that().areAssignableTo("org.springframework.data.jpa.repository.JpaRepository")
                 .or().haveSimpleNameEndingWith("Repository")

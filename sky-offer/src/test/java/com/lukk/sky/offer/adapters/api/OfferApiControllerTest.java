@@ -9,6 +9,7 @@ import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,23 +29,30 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import org.springframework.context.annotation.Import;
+
 import java.util.List;
 
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_HOTEL_NAME;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
-import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@DisplayName("OfferApiController — MockMvc tests for the public and owner offer API endpoints")
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
+@Import(com.lukk.sky.offer.TestSecurityConfig.class)
 public class OfferApiControllerTest {
 
     private Gson gson;
@@ -88,56 +99,58 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    public void whenGetAllOffers_thenReturnOffers() throws Exception {
+    @DisplayName("GET /offers returns paged offers with content and totalElements when offers exist (no JWT required)")
+    public void getAllOffers_whenOffersExist_thenReturnPagedOffers() throws Exception {
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
-        when(offerService.getAllOffers()).thenReturn(offersDTO);
-
-        String expectedJson = gson.toJson(offersDTO);
+        Pageable pageable = PageRequest.of(0, 20);
+        when(offerService.getAllOffers(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
 //When
-        MvcResult result = mvc.perform(
+        mvc.perform(
                         get("/offers")
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals(expectedJson, result.getResponse().getContentAsString());
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].hotelName").value(offersDTO.get(0).getHotelName()))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
-    public void whenGetOwnedOffers_thenReturnOwnedOffers() throws Exception {
+    @DisplayName("GET /owner/offers returns paged offers owned by the authenticated user")
+    public void getOwnedOffers_whenUserHasOffers_thenReturnPagedOwnedOffers() throws Exception {
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
-        when(offerService.getOwnedOffers(TEST_USER_EMAIL)).thenReturn(offersDTO);
-
-        String expectedJson = gson.toJson(offersDTO);
+        Pageable pageable = PageRequest.of(0, 20);
+        when(offerService.getOwnedOffers(eq(TEST_USER_EMAIL), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
 //When
-        MvcResult result = mvc.perform(
+        mvc.perform(
                         get("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
 //Then
                 .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals(expectedJson, result.getResponse().getContentAsString());
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].hotelName").value(offersDTO.get(0).getHotelName()))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
-    public void whenOwnedOffersOfferError_thenReturnBadRequest() throws Exception {
-
+    @DisplayName("GET /owner/offers without JWT returns 401 Unauthorized")
+    public void getOwnedOffers_whenNoJwt_thenReturn401() throws Exception {
 //When
         mvc.perform(get("/owner/offers").contentType(MediaType.APPLICATION_JSON))
 //Then
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
     }
 
     @Test
-    public void whenAddOffer_thenAddAndReturnOffer() throws Exception {
+    @DisplayName("POST /owner/offers with a valid offer body creates the offer and returns it")
+    public void addOffer_whenValidOffer_thenReturnCreatedOfferDto() throws Exception {
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
 
@@ -148,7 +161,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(expectedJson))
 //Then
                 .andExpect(status().is2xxSuccessful())
@@ -158,7 +171,8 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    public void whenAddAlreadyExistingOffer_thenReturnBadRequest() throws Exception {
+    @DisplayName("POST /owner/offers when service throws OfferException returns 400 with error message")
+    public void addOffer_whenOfferAlreadyExists_thenReturn400WithErrorMessage() throws Exception {
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         doThrow(new OfferException("Offer with given ID already exist!"))
@@ -169,7 +183,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(expectedJson))
 //Then
                 .andExpect(status().isBadRequest())
@@ -179,7 +193,8 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    public void whenAddOffer_AndValidationError_thenReturnBadRequest() throws Exception {
+    @DisplayName("POST /owner/offers with a blank ownerEmail returns 400 with a validation message")
+    public void addOffer_whenOwnerEmailInvalid_thenReturn400WithValidationMessage() throws Exception {
 //Given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         offerDTO.setOwnerEmail(" ");
@@ -189,7 +204,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(expectedJson))
 //Then
                 .andExpect(status().isBadRequest())
@@ -200,7 +215,8 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    public void whenEditOffer_thenEditAndReturnOffer() throws Exception {
+    @DisplayName("PUT /owner/offers with a valid edit body updates the offer and returns it")
+    public void editOffer_whenValidEdit_thenReturnUpdatedOfferDto() throws Exception {
 //Given
         OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
@@ -211,7 +227,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         put("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_OWNER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(expectedJson)
                 )
 //Then
@@ -222,32 +238,35 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    public void whenEditOffersOfferError_thenReturnBadRequest() throws Exception {
+    @DisplayName("PUT /owner/offers without JWT returns 401 Unauthorized")
+    public void editOffer_whenNoJwt_thenReturn401() throws Exception {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         String expectedJson = gson.toJson(offerDTO);
 //When
         mvc.perform(put("/owner/offers").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
 //Then
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
     }
 
     @Test
-    public void whenDeleteOffer_thenStatusOk() throws Exception {
+    @DisplayName("DELETE /owner/offers/{id} with a valid request returns 200")
+    public void deleteOffer_whenValidRequest_thenReturn200() throws Exception {
 //Given
         doNothing().when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
 //When
         mvc.perform(
                         delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
 //Then
                 .andExpect(status().is2xxSuccessful());
     }
 
     @Test
-    public void whenDeleteNonExistingOffer_thenReturnBadRequest() throws Exception {
+    @DisplayName("DELETE /owner/offers/{id} when service throws OfferException returns 400 with error message")
+    public void deleteOffer_whenOfferDoesNotExist_thenReturn400WithErrorMessage() throws Exception {
 //Given
         doThrow(new OfferException("Can't remove non-existing offer!"))
                 .when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
@@ -255,7 +274,7 @@ public class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
 //Then
                 .andExpect(status().isBadRequest())
@@ -265,7 +284,8 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    public void whenSearchOffer_thenReturnOffersWithinSearchedCriteria() throws Exception {
+    @DisplayName("POST /search with a matching term returns offers that satisfy the search criteria (no JWT required)")
+    public void searchOffers_whenTermMatches_thenReturnMatchingOffers() throws Exception {
 //Given
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         when(offerService.searchOffers(TEST_HOTEL_NAME)).thenReturn(offersDTO);
@@ -274,7 +294,6 @@ public class OfferApiControllerTest {
 //When
         MvcResult result = mvc.perform(
                         post("/search")
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(TEST_HOTEL_NAME)
                 )

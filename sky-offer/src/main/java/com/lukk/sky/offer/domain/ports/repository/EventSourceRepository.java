@@ -11,6 +11,6 @@ import java.util.Optional;
 public interface EventSourceRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT max(e.sequenceNumber) FROM Event e WHERE e.offerId = ?1")
-    Optional<Integer> findLastSequenceNumberByOfferId(String offerId);
+    Optional<Integer> findLastSequenceNumberByOfferId(Long offerId);
 
 }

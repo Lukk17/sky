@@ -2,9 +2,9 @@ package com.lukk.sky.offer.adapters.api;
 
 import com.google.gson.Gson;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
+import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
-import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,19 +15,24 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.Strings;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
-import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,35 +40,37 @@ import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 @RequestMapping(path = "${sky.apiPrefix}")
 public class OfferApiController {
 
+    private static final Gson GSON = new Gson();
+
     private final OfferService offerService;
     private final OfferNotificationService offerNotificationService;
 
-    @Operation(summary = "Get all offers")
+    @Operation(summary = "Get all offers (paginated)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found offers",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))})
+                            schema = @Schema(implementation = Page.class))})
     })
     @GetMapping("/offers")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<List<OfferDTO>> getAllOffers() {
-        return ResponseEntity.ok(offerService.getAllOffers());
+    public ResponseEntity<Page<OfferDTO>> getAllOffers(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(offerService.getAllOffers(pageable));
     }
 
-    @Operation(summary = "Get owned offers")
+    @Operation(summary = "Get owned offers (paginated)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found owned offers",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+                            schema = @Schema(implementation = Page.class))}),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @GetMapping("/owner/offers")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<List<OfferDTO>> getOwnedOffers(@RequestHeader Map<String, String> headers) {
-        String ownerEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<Page<OfferDTO>> getOwnedOffers(
+            @PageableDefault(size = 20) Pageable pageable) {
+        String ownerEmail = SecurityUtils.currentUserEmail();
 
-        return ResponseEntity.ok(offerService.getOwnedOffers(ownerEmail));
+        return ResponseEntity.ok(offerService.getOwnedOffers(ownerEmail, pageable));
     }
 
     @Operation(summary = "Create new offer")
@@ -71,21 +78,19 @@ public class OfferApiController {
             @ApiResponse(responseCode = "200", description = "Offer created",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @PostMapping("/owner/offers")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer,
-                                      @RequestHeader Map<String, String> headers) {
-        Gson gson = new Gson();
-        String ownerEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer) {
+        String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Adding new offer from owner:{}", ownerEmail);
 
         offer.setOwnerEmail(ownerEmail);
         OfferDTO addedOffer = offerService.addOffer(offer);
 
-        sendNotification(gson.toJson(addedOffer), ownerEmail);
+        sendNotification(GSON.toJson(addedOffer), ownerEmail);
+
         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(addedOffer);
     }
 
@@ -94,21 +99,19 @@ public class OfferApiController {
             @ApiResponse(responseCode = "200", description = "Offer edited",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @PutMapping("/owner/offers")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer,
-                                  @RequestHeader Map<String, String> headers) {
-        Gson gson = new Gson();
-        String ownerEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer) {
+        String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Editing offer with ID: {} from owner:{}", offer.getId(), ownerEmail);
 
         offer.setOwnerEmail(ownerEmail);
         OfferDTO edited = offerService.editOffer(offer);
 
-        sendNotification(gson.toJson(edited), ownerEmail);
+        sendNotification(GSON.toJson(edited), ownerEmail);
+
         return ResponseEntity.ok(edited);
     }
 
@@ -117,50 +120,30 @@ public class OfferApiController {
             @ApiResponse(responseCode = "200", description = "Offer deleted",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @DeleteMapping("/owner/offers/{offerId}")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> deleteOffer(@RequestHeader Map<String, String> headers,
-                                         @PathVariable String offerId) {
-        Gson gson = new Gson();
-        String ownerEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<?> deleteOffer(@PathVariable String offerId) {
+        String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
         offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
 
         sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
-        return ResponseEntity.ok(gson.toJson(String.format("Offer with id: %s deleted.", offerId)));
+
+        return ResponseEntity.ok(GSON.toJson(String.format("Offer with id: %s deleted.", offerId)));
     }
 
     @Operation(summary = "Search for offers")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Offers found",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = List.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
-                    content = @Content)
+                            schema = @Schema(implementation = List.class))})
     })
     @PostMapping("/search")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
     public ResponseEntity<List<OfferDTO>> search(@RequestBody String searched) {
         return ResponseEntity.ok(offerService.searchOffers(searched));
-    }
-
-    private static void printHeaders(Map<String, String> headers) {
-        StringBuilder str = new StringBuilder("Headers:");
-        headers.forEach((key, value) -> str.append("\t").append(key).append("=").append(value));
-        log.info(str.toString());
-    }
-
-    private static String getUserInfoFromHeaders(Map<String, String> headers) {
-        return headers.entrySet()
-                .stream()
-                .filter(entry -> USER_INFO_HEADERS.contains(entry.getKey().toLowerCase()))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElseThrow(() -> new OfferException("No offer owner"));
     }
 
     private void sendNotification(String payload, String owner) {

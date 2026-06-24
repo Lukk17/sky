@@ -1,9 +1,8 @@
 package com.lukk.sky.offer.adapters.notification;
 
-import com.google.gson.Gson;
+import com.lukk.sky.common.kafka.KafkaNotificationPublisher;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
-import lombok.Data;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -11,26 +10,21 @@ import org.springframework.stereotype.Service;
 import static com.lukk.sky.offer.config.Constants.KAFKA_TOPIC;
 
 /**
- * The primary implementation of the {@link OfferNotificationService} interface.
- * This implementation uses a {@link KafkaTemplate} to send the notifications.
+ * Primary implementation of the {@link OfferNotificationService}.
+ * Delegates serialisation and Kafka dispatch to {@link KafkaNotificationPublisher}.
  */
 @Service
-@Data
 @Primary
 public class OfferNotificationServicePrimary implements OfferNotificationService {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaNotificationPublisher publisher;
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation transforms the given {@link KafkaPayloadModel} into a JSON string using {@link Gson},
-     * and then sends it to a Kafka topic using a {@link KafkaTemplate}.
-     */
+    public OfferNotificationServicePrimary(KafkaTemplate<String, String> kafkaTemplate) {
+        this.publisher = new KafkaNotificationPublisher(kafkaTemplate, KAFKA_TOPIC);
+    }
+
     @Override
     public void sendMessage(KafkaPayloadModel message) {
-        Gson gson = new Gson();
-
-        kafkaTemplate.send(KAFKA_TOPIC, gson.toJson(message));
+        publisher.publish(message);
     }
 }
