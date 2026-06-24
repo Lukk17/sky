@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
@@ -39,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AutoConfigureTestDatabase
 @ActiveProfiles("test")
 @Disabled("Re-enable after Testcontainers MySQL replaces H2 and @ConfigurationProperties scanning is wired for @DataJpaTest")
+@DisplayName("MessageRepository — JPA slice tests")
 class MessageRepositoryDataJpaTest {
 
     private static final String RECEIVER = "receiver@example.com";
@@ -50,37 +54,40 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     @DisplayName("findAllByReceiverEmail returns only messages with the matching receiver")
-    void findsMessagesByReceiver() {
+    void findAllByReceiverEmail_whenReceiverHasMessages_thenReturnOnlyThoseMessages() {
         save("hello", SENDER, RECEIVER);
         save("hi back", RECEIVER, SENDER);
         save("unrelated", OTHER, SENDER);
 
-        List<Message> received = messageRepository.findAllByReceiverEmail(RECEIVER);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Message> received = messageRepository.findAllByReceiverEmail(RECEIVER, pageable);
 
-        assertEquals(1, received.size());
-        assertEquals("hello", received.get(0).getText());
-        assertEquals(SENDER, received.get(0).getSenderEmail());
+        assertEquals(1, received.getTotalElements());
+        assertEquals("hello", received.getContent().get(0).getText());
+        assertEquals(SENDER, received.getContent().get(0).getSenderEmail());
     }
 
     @Test
     @DisplayName("findAllBySenderEmail returns only messages with the matching sender")
-    void findsMessagesBySender() {
+    void findAllBySenderEmail_whenSenderHasMessages_thenReturnOnlyThoseMessages() {
         save("first", SENDER, RECEIVER);
         save("second", SENDER, OTHER);
         save("third", OTHER, RECEIVER);
 
-        List<Message> sent = messageRepository.findAllBySenderEmail(SENDER);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Message> sent = messageRepository.findAllBySenderEmail(SENDER, pageable);
 
-        assertEquals(2, sent.size());
-        assertTrue(sent.stream().allMatch(m -> m.getSenderEmail().equals(SENDER)));
+        assertEquals(2, sent.getTotalElements());
+        assertTrue(sent.getContent().stream().allMatch(m -> m.getSenderEmail().equals(SENDER)));
     }
 
     @Test
-    @DisplayName("returns empty list when no message matches receiver")
-    void emptyOnUnknownReceiver() {
+    @DisplayName("returns empty page when no message matches receiver")
+    void findAllByReceiverEmail_whenNoMessagesForReceiver_thenReturnEmptyPage() {
         save("hello", SENDER, RECEIVER);
 
-        List<Message> received = messageRepository.findAllByReceiverEmail("nobody@example.com");
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Message> received = messageRepository.findAllByReceiverEmail("nobody@example.com", pageable);
 
         assertTrue(received.isEmpty());
     }

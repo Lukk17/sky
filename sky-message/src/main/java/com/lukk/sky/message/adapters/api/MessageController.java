@@ -1,9 +1,8 @@
 package com.lukk.sky.message.adapters.api;
 
-import com.google.gson.Gson;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
-import com.lukk.sky.message.domain.exception.MessageException;
 import com.lukk.sky.message.domain.ports.service.MessageService;
+import com.lukk.sky.common.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,18 +11,23 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
-import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,14 +42,12 @@ public class MessageController {
             @ApiResponse(responseCode = "200", description = "Message sent",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @PostMapping("/messages")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message,
-                                         @RequestHeader Map<String, String> headers) {
-        String userEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message) {
+        String userEmail = SecurityUtils.currentUserEmail();
 
         message.setSenderEmail(userEmail);
         message.setCreatedTime(LocalDateTime.now().format(DATE_TIME_FORMAT));
@@ -54,38 +56,38 @@ public class MessageController {
         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(messageService.send(message));
     }
 
-    @Operation(summary = "Get received messages")
+    @Operation(summary = "Get received messages (paginated)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Messages pulled",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MessageDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+                            schema = @Schema(implementation = Page.class))}),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @GetMapping("/messages/received")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<List<MessageDTO>> getReceivedMessages(@RequestHeader Map<String, String> headers) {
-        String userEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<Page<MessageDTO>> getReceivedMessages(
+            @PageableDefault(size = 20) Pageable pageable) {
+        String userEmail = SecurityUtils.currentUserEmail();
         log.info("Getting received messages for user: {}", userEmail);
 
-        return ResponseEntity.ok(messageService.getReceivedMessages(userEmail));
+        return ResponseEntity.ok(messageService.getReceivedMessages(userEmail, pageable));
     }
 
-    @Operation(summary = "Get sent messages")
+    @Operation(summary = "Get sent messages (paginated)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Messages pulled",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MessageDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+                            schema = @Schema(implementation = Page.class))}),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @GetMapping("/messages/sent")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> getSentMessages(@RequestHeader Map<String, String> headers) {
-        String userEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<Page<MessageDTO>> getSentMessages(
+            @PageableDefault(size = 20) Pageable pageable) {
+        String userEmail = SecurityUtils.currentUserEmail();
         log.info("Getting sent messages for user: {}", userEmail);
 
-        return ResponseEntity.ok(messageService.getSentMessages(userEmail));
+        return ResponseEntity.ok(messageService.getSentMessages(userEmail, pageable));
     }
 
     @Operation(summary = "Delete message")
@@ -93,32 +95,16 @@ public class MessageController {
             @ApiResponse(responseCode = "200", description = "Message deleted",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @DeleteMapping("/messages/{messageId}")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> deleteMessage(@RequestHeader Map<String, String> headers, @PathVariable String messageId) {
-        try {
-            Gson gson = new Gson();
-            String userEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<?> deleteMessage(@PathVariable String messageId) {
+        String userEmail = SecurityUtils.currentUserEmail();
 
-            log.info("Removing message with ID: {}", messageId);
-            messageService.remove(Long.parseLong(messageId), userEmail);
+        log.info("Removing message with ID: {}", messageId);
+        messageService.remove(Long.parseLong(messageId), userEmail);
 
-            return ResponseEntity.ok("Message removed.");
-
-        } catch (MessageException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
-        }
-    }
-
-    private static String getUserInfoFromHeaders(Map<String, String> headers) {
-        return headers.entrySet()
-                .stream()
-                .filter(entry -> USER_INFO_HEADERS.contains(entry.getKey().toLowerCase()))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElseThrow(() -> new MessageException("No user for messages"));
+        return ResponseEntity.ok("Message removed.");
     }
 }

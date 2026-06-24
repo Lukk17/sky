@@ -16,8 +16,8 @@ spring:
 
   security:
     user:
-      name: XYZ
-      password: XYZ
+      name: ${LOCAL_AUTH_USER:user}
+      password: ${LOCAL_AUTH_PASSWORD:}
 
   jpa:
     hibernate:
@@ -30,8 +30,8 @@ spring:
     hikari:
       connection-timeout: 60000
       validation-timeout: 60000
-    username: root
-    password: Lukk1234
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 # expose actuator endpoints (* for all)

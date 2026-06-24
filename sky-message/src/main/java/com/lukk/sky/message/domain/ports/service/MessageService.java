@@ -1,6 +1,8 @@
 package com.lukk.sky.message.domain.ports.service;
 
 import com.lukk.sky.message.adapters.dto.MessageDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -28,18 +30,20 @@ public interface MessageService {
     void remove(Long messageId, String username);
 
     /**
-     * Retrieves the messages received by a user.
+     * Retrieves a paginated view of the messages received by a user.
      *
      * @param userEmail The email of the user.
-     * @return The list of messages received by the user.
+     * @param pageable  Pagination and sort parameters.
+     * @return A page of messages received by the user.
      */
-    List<MessageDTO> getReceivedMessages(String userEmail);
+    Page<MessageDTO> getReceivedMessages(String userEmail, Pageable pageable);
 
     /**
-     * Retrieves the messages sent by a user.
+     * Retrieves a paginated view of the messages sent by a user.
      *
      * @param userEmail The email of the user.
-     * @return The list of messages sent by the user.
+     * @param pageable  Pagination and sort parameters.
+     * @return A page of messages sent by the user.
      */
-    List<MessageDTO> getSentMessages(String userEmail);
+    Page<MessageDTO> getSentMessages(String userEmail, Pageable pageable);
 }
