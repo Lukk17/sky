@@ -1,6 +1,5 @@
 # ==================================================================================================================
 sky:
-  helloWorld: <center><h1>Welcome to Booking app.</h1></center>
   apiPrefix: /api/v1
   offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
   offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT:}
@@ -15,6 +14,9 @@ server:
   forward-headers-strategy: framework
 
 springdoc:
+  info:
+    title: sky-booking
+    version: v1
   api-docs:
     path: /v3/api-docs
   swagger-ui:
@@ -24,8 +26,16 @@ springdoc:
         name: Booking API doc
 
 spring:
+  threads:
+    virtual:
+      enabled: true
   application:
     name: sky-booking
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI}
   web:
     # location from http header
     locale-resolver: accept_header
@@ -77,12 +87,14 @@ spring:
     admin:
       auto-create: true
 
-# expose actuator endpoints (* for all)
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: "health,info,prometheus"
+  metrics:
+    tags:
+      application: ${spring.application.name}
   health:
     livenessState:
       enabled: true
@@ -92,6 +104,28 @@ management:
     health:
       probes:
         enabled: true
+
+resilience4j:
+  retry:
+    instances:
+      offerService:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.io.IOException
+        ignore-exceptions:
+          - com.lukk.sky.booking.domain.exception.BookingException
+  circuitbreaker:
+    instances:
+      offerService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
 
 logging:
   level:

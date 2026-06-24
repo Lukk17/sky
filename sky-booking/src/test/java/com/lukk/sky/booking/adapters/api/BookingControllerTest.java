@@ -7,6 +7,7 @@ import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.service.BookingService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -23,7 +26,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import reactor.core.publisher.Mono;
+
+import org.springframework.context.annotation.Import;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,20 +35,22 @@ import java.util.Map;
 
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.*;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
-import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.util.AssertionErrors.fail;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@DisplayName("BookingController unit tests (MockMvc)")
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
+@Import(com.lukk.sky.booking.TestSecurityConfig.class)
 public class BookingControllerTest {
 
     private Gson gson;
@@ -86,39 +92,40 @@ public class BookingControllerTest {
     }
 
     @Test
-    public void whenGetBooking_thenReturnBookings() throws Exception {
+    @DisplayName("getBookings returns the user's bookings as a paged response when a valid JWT is present")
+    public void getBookings_whenJwtIsPresent_thenReturnPagedBookingsJson() throws Exception {
 //Given
         List<BookingDTO> bookingsDTO = BookingAssembler.getPopulatedBookedDTOList();
-
-        when(bookingService.getBookedOffersForUser(TEST_USER_EMAIL)).thenReturn(bookingsDTO);
-
-        String expectedJson = gson.toJson(bookingsDTO);
+        Pageable pageable = PageRequest.of(0, 20);
+        when(bookingService.getBookedOffersForUser(eq(TEST_USER_EMAIL), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(bookingsDTO, pageable, bookingsDTO.size()));
 //When
-        MvcResult result = mvc.perform(
+        mvc.perform(
                         get("/user/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
 //Then
                 .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        assertEquals(expectedJson, result.getResponse().getContentAsString());
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].offerId").value(bookingsDTO.get(0).getOfferId()))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
-    public void whenGetBookingsError_thenReturnBadRequest() throws Exception {
-
+    @DisplayName("getBookings returns 401 Unauthorized when no JWT is supplied")
+    public void getBookings_whenNoJwt_thenReturn401() throws Exception {
 //When
         mvc.perform(get("/user/bookings")
                         .contentType(MediaType.APPLICATION_JSON))
 //Then
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
     }
 
     @Test
-    public void whenBookOffer_thenBookAndReturnOffer() throws Exception {
+    @DisplayName("bookOffer creates a booking and returns 201 with the booked DTO when the request is valid")
+    public void bookOffer_whenRequestIsValid_thenReturn201WithBookedDto() throws Exception {
 //Given
         BookingDTO expected = BookingAssembler.getPopulatedBookedDTO();
 
@@ -127,30 +134,27 @@ public class BookingControllerTest {
         values.put("dateToBook", TEST_DATE.toString());
 
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE.toString(), TEST_USER_EMAIL))
-                .thenReturn(Mono.just(expected));
+                .thenReturn(expected);
 
         String jsonValues = gson.toJson(values);
 //When
-        MvcResult result = mvc.perform(
+        mvc.perform(
                         post("/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                                 .content(jsonValues)
                 )
 //Then
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
-
-        ResponseEntity<BookingDTO> actual = castAsyncResultToBookingResponse(result);
-
-        assert actual != null;
-        assertTrue(actual.getStatusCode().is2xxSuccessful());
-        assertEquals(expected, actual.getBody());
-
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.offerId").value(expected.getOfferId()))
+                .andExpect(jsonPath("$.bookingUser").value(expected.getBookingUser()))
+                .andExpect(jsonPath("$.ownerEmail").value(expected.getOwnerEmail()))
+                .andExpect(jsonPath("$.bookedDate").value(expected.getBookedDate()));
     }
 
     @Test
-    public void whenNoBookingUserInHeader_thenReturnBadRequest() throws Exception {
+    @DisplayName("bookOffer returns 401 Unauthorized when no JWT is supplied")
+    public void bookOffer_whenNoJwt_thenReturn401() throws Exception {
 //Given
         Map<String, String> values = new HashMap<>();
         values.put("offerId", " ");
@@ -158,34 +162,34 @@ public class BookingControllerTest {
 
         String jsonValues = gson.toJson(values);
 //When
-        MvcResult result = mvc.perform(
+        mvc.perform(
                         post("/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonValues)
                 )
 //Then
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
-
-        assertTrue(result.getResponse().getContentAsString().contains("Field 'offerId' must not be blank"));
     }
 
     @Test
-    public void whenDeleteBooking_thenStatusOk() throws Exception {
+    @DisplayName("deleteBooking returns 200 OK when the booking exists and a valid JWT is present")
+    public void deleteBooking_whenBookingExistsAndJwtIsPresent_thenReturnOk() throws Exception {
 //Given
         when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
 //When
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header(USER_INFO_HEADERS.iterator().next(), TEST_USER_EMAIL)
+                        .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
 //Then
                 .andExpect(status().is2xxSuccessful());
     }
 
     @Test
-    public void whenDeleteBookingsError_thenReturnBadRequest() throws Exception {
+    @DisplayName("deleteBooking returns 401 Unauthorized when no JWT is supplied")
+    public void deleteBooking_whenNoJwt_thenReturn401() throws Exception {
 //Given
         when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
@@ -194,23 +198,6 @@ public class BookingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                 )
 //Then
-                .andExpect(status().isBadRequest());
-    }
-
-    private ResponseEntity<BookingDTO> castAsyncResultToBookingResponse(MvcResult result) {
-        Object actualObject = result.getAsyncResult(10);
-
-        if (actualObject instanceof ResponseEntity<?> responseEntity) {
-            if (responseEntity.getBody() instanceof BookingDTO body) {
-
-                return new ResponseEntity<>(body, responseEntity.getHeaders(), responseEntity.getStatusCode());
-
-            } else {
-                fail("Response body is not of type BookingDTO");
-            }
-        } else {
-            fail("Actual object is not of type ResponseEntity");
-        }
-        return null;
+                .andExpect(status().isUnauthorized());
     }
 }

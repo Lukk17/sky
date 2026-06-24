@@ -1,6 +1,10 @@
 package com.lukk.sky.booking;
 
-import com.lukk.sky.booking.config.propertyBind.*;
+import com.lukk.sky.booking.config.propertyBind.SpringConfigProperties;
+import com.lukk.sky.booking.config.propertyBind.SkyConfigProperties;
+import com.lukk.sky.common.config.LoggingLvlConfigProperties;
+import com.lukk.sky.common.config.ManagementConfigProperties;
+import com.lukk.sky.common.config.ServerConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -41,14 +45,12 @@ public class SkyBookingApplication {
         String actuatorOpenEndpoints = managementConfigProperties.getEndpoints().web().exposure().include();
         log.info("Actuator open endpoints:\t\t {}", actuatorOpenEndpoints.equals("*") ? "ALL" : actuatorOpenEndpoints);
 
-        String dbUrlSimplified = springConfigProperties.getDatasource().url().split("\\?")[0];
-        log.info("Database URL:\t\t\t\t {}", dbUrlSimplified);
+        String[] urlParts = springConfigProperties.getDatasource().url().split("\\?", 2);
+        log.info("Database URL:\t\t\t\t {}", urlParts[0]);
 
-        try {
-            String dbParams = springConfigProperties.getDatasource().url().split("\\?")[1];
-            log.info("Database connection params:\t\t {}", dbParams);
-
-        } catch (ArrayIndexOutOfBoundsException e) {
+        if (urlParts.length > 1) {
+            log.info("Database connection params:\t\t {}", urlParts[1]);
+        } else {
             log.info("Database has no connections parameters");
         }
 

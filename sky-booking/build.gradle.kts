@@ -11,9 +11,7 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.web)
-    // Reactive stack retained: BookingService port returns Mono<BookingDTO> and
-    // RestClientWebflux uses WebClient. Migration to RestClient is a separate change.
-    implementation(libs.spring.boot.starter.webflux)
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
 
     runtimeOnly(libs.mysql.connector.j)
     implementation(libs.flyway.core)
@@ -23,6 +21,9 @@ dependencies {
     implementation(libs.spring.kafka)
 
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
+
+    implementation(libs.resilience4j.spring.boot3)
+    implementation(libs.spring.boot.starter.aop)
 
     testImplementation(libs.spring.kafka.test)
     testImplementation(libs.spring.test)

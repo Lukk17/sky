@@ -10,9 +10,10 @@ import com.lukk.sky.booking.domain.ports.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -41,26 +42,29 @@ public class BookingServicePrimary implements BookingService {
      * <p>Logs a message when the bookings for the user are retrieved.
      */
     @Override
-    public List<BookingDTO> getBookedOffersForUser(String userEmail) {
-        log.info("Pulling bookings for user: {}", userEmail);
+    @Transactional(readOnly = true)
+    public Page<BookingDTO> getBookedOffersForUser(String userEmail, Pageable pageable) {
+        log.info("Pulling bookings for user: {} page={} size={}",
+                userEmail, pageable.getPageNumber(), pageable.getPageSize());
 
-        return bookingRepository.findAllByBookingUser(userEmail).stream()
-                .map(BookingDTO::of)
-                .toList();
+        return bookingRepository.findAllByBookingUser(userEmail, pageable).map(BookingDTO::of);
     }
 
     /**
      * {@inheritDoc}
-     * <p>Logs a message when the offer is booked and when the booking event is saved.
-     * <p>Checks if the date to book is in the future and if the offer has already been booked for that date.
+     * <p>Resolves the offer owner synchronously, validates the booking request, then
+     * saves the booking and the event atomically within the class-level transaction.
      *
-     * @throws BookingException if the date to book is not in the future or if the offer has already been booked for that date.
+     * @throws BookingException if the date to book is not in the future, the offer has
+     *                          already been booked for that date, or the offer service
+     *                          cannot be reached.
      */
     @Override
-    public Mono<BookingDTO> bookOffer(String offerId, String dateToBookUnparsed, String userEmail)
+    public BookingDTO bookOffer(String offerId, String dateToBookUnparsed, String userEmail)
             throws BookingException {
         log.info("Booking offer with ID: {} by user: {}", offerId, userEmail);
-        Mono<String> ownerEmail = restClient.requestOfferOwner(offerId);
+
+        String ownerEmail = restClient.requestOfferOwner(offerId);
 
         LocalDate dateToBook = LocalDate.parse(dateToBookUnparsed, DATE_FORMAT);
         List<Booking> bookedList = getBookingsForOffer(offerId);
@@ -68,15 +72,14 @@ public class BookingServicePrimary implements BookingService {
         checkIfAlreadyBooked(bookedList, dateToBook);
         checkIfBookingDateIsInFuture(dateToBook);
 
-        return ownerEmail
-                .flatMap(retrievedOwnerEmail -> Mono.just(
-                        addBooking(createNewBooked(offerId, userEmail, dateToBook, retrievedOwnerEmail)))
-                ).doOnNext(booking -> {
-                    log.info("Offer with ID: {} booked for date: {} by user: {}",
-                            offerId, dateToBook.format(DATE_FORMAT), userEmail);
-                    eventSourceService.saveEvent(booking, EventType.BOOKED);
-                })
-                .map(BookingDTO::of);
+        Booking saved = addBooking(createNewBooked(offerId, userEmail, dateToBook, ownerEmail));
+
+        log.info("Offer with ID: {} booked for date: {} by user: {}",
+                offerId, dateToBook.format(DATE_FORMAT), userEmail);
+
+        eventSourceService.saveEvent(saved, EventType.BOOKED);
+
+        return BookingDTO.of(saved);
     }
 
     /**
@@ -88,17 +91,18 @@ public class BookingServicePrimary implements BookingService {
      */
     @Override
     public String removeBooking(String bookingId, String userEmail) {
-        Booking booking = bookingRepository.findById(Long.parseLong(bookingId))
+        long id = Long.parseLong(bookingId);
+        Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new BookingException(String.format("No booking with ID: %s found.", bookingId)));
 
         if (booking.getBookingUser().equals(userEmail)) {
-            bookingRepository.deleteById(Long.parseLong(bookingId));
+            bookingRepository.delete(booking);
             log.info("Booking removed by user");
 
             return "Booking removed by user";
 
         } else if (booking.getOwnerEmail().equals(userEmail)) {
-            bookingRepository.deleteById(Long.parseLong(bookingId));
+            bookingRepository.delete(booking);
             log.info("Booking removed by owner");
 
             return "Booking removed by owner";
@@ -117,10 +121,8 @@ public class BookingServicePrimary implements BookingService {
     }
 
     private static void checkIfAlreadyBooked(List<Booking> bookedList, LocalDate dateToBook) throws BookingException {
-        for (Booking booked : bookedList) {
-            if (booked.getBookedDate().isEqual(dateToBook)) {
-                throw new BookingException("Offer you try to book was already booked on that date.");
-            }
+        if (bookedList.stream().anyMatch(b -> b.getBookedDate().isEqual(dateToBook))) {
+            throw new BookingException("Offer you try to book was already booked on that date.");
         }
     }
 
@@ -133,6 +135,7 @@ public class BookingServicePrimary implements BookingService {
 
     private Booking addBooking(Booking booked) {
         log.info("Saving booking to DB with data {}", booked);
+
         return bookingRepository.save(booked);
     }
 

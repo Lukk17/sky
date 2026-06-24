@@ -15,7 +15,7 @@ public class GlobalExceptionHandler extends AbstractRestExceptionHandler {
     @ExceptionHandler(BookingException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBookingExceptions(BookingException ex) {
-        log.error("{} Exception class: {}", ex.getMessage(), ex.getClass().getSimpleName());
+        log.warn("{} Exception class: {}", ex.getMessage(), ex.getClass().getSimpleName());
         return ErrorResponse.builder(ex, HttpStatus.BAD_REQUEST, ex.getMessage()).build();
     }
 }

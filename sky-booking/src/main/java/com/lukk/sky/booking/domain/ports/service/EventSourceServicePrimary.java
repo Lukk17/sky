@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 @Primary
 public class EventSourceServicePrimary implements EventSourceService {
 
+    private static final Gson GSON = new Gson();
+
     private final EventSourceRepository eventSourceRepository;
 
     /**
@@ -35,16 +37,14 @@ public class EventSourceServicePrimary implements EventSourceService {
      */
     @Override
     public void saveEvent(Booking booking, EventType eventType) {
-        Gson gson = new Gson();
-
-        int lastSequence = eventSourceRepository.findLastSequenceNumberByBookingId(String.valueOf(booking.getId()))
+        int lastSequence = eventSourceRepository.findLastSequenceNumberByBookingId(booking.getId())
                 .orElse(0);
 
         Event event = Event.builder()
                 .bookingId(booking.getId())
                 .sequenceNumber(lastSequence + 1)
                 .eventType(eventType)
-                .payload(gson.toJson(BookingDTO.of(booking)))
+                .payload(GSON.toJson(BookingDTO.of(booking)))
                 .timestamp(LocalDateTime.now())
                 .build();
 

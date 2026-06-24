@@ -4,9 +4,9 @@ import com.google.gson.Gson;
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
-import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.service.BookingService;
+import com.lukk.sky.common.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,20 +15,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.Strings;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
-import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,82 +33,65 @@ import static com.lukk.sky.common.web.WebHeaders.USER_INFO_HEADERS;
 @RequestMapping(path = "${sky.apiPrefix}")
 public class BookingController {
 
+    private static final Gson GSON = new Gson();
+
     private final BookingService bookingService;
     private final BookingNotificationService bookingNotificationService;
 
-    @Operation(summary = "Get all user's booking")
+    @Operation(summary = "Get all user's bookings (paginated)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found user bookings",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = BookingDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+                            schema = @Schema(implementation = Page.class))}),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @GetMapping("/user/bookings")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<?> getBookedOffers(@RequestHeader Map<String, String> headers) {
-        String userEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<Page<BookingDTO>> getBookedOffers(
+            @PageableDefault(size = 20) Pageable pageable) {
+        String userEmail = SecurityUtils.currentUserEmail();
+        Page<BookingDTO> bookings = bookingService.getBookedOffersForUser(userEmail, pageable);
 
-        List<BookingDTO> bookings = bookingService.getBookedOffersForUser(userEmail);
         return ResponseEntity.ok(bookings);
     }
 
     @Operation(summary = "Create new booking")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Booking created",
+            @ApiResponse(responseCode = "201", description = "Booking created",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = BookingDTO.class))}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "400", description = "Invalid booking request",
                     content = @Content)
     })
     @PostMapping("/bookings")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public Mono<ResponseEntity> bookOffer(@Valid @RequestBody BookingPayload bookingPayload,
-                                          @RequestHeader Map<String, String> headers) {
-        Gson gson = new Gson();
+    public ResponseEntity<BookingDTO> bookOffer(@Valid @RequestBody BookingPayload bookingPayload) {
         log.info("Starting to book offer with payload: {}", bookingPayload);
 
-        return Mono.fromCallable(() -> getUserInfoFromHeaders(headers))
-                .flatMap(bookingUser ->
-                        bookingService.bookOffer(bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser)
-                                .doOnSuccess(bookingDTO -> sendNotification(gson.toJson(bookingDTO), bookingUser))
-                                .map(bookingDTO -> ResponseEntity.status(HttpStatusCode.valueOf(201)).body(bookingDTO))
-                                .cast(ResponseEntity.class)
-                )
-                .doOnError(throwable -> log.info(throwable.getMessage()))
-                .onErrorResume(throwable ->
-                        Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(throwable.getMessage()))
-                );
+        String bookingUser = SecurityUtils.currentUserEmail();
+        BookingDTO bookingDTO = bookingService.bookOffer(
+                bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser);
+
+        sendNotification(GSON.toJson(bookingDTO), bookingUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookingDTO);
     }
 
     @Operation(summary = "Delete booking")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Booking deleted",
                     content = {@Content(mediaType = "application/json")}),
-            @ApiResponse(responseCode = "402", description = "No user Info",
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @DeleteMapping("/bookings/{bookingId}")
-    @CrossOrigin(origins = "${sky.crossOrigin.allowed}")
-    public ResponseEntity<String> removeBooking(@RequestHeader Map<String, String> headers,
-                                                @PathVariable String bookingId) {
-        Gson gson = new Gson();
-        String userEmail = getUserInfoFromHeaders(headers);
+    public ResponseEntity<String> removeBooking(@PathVariable String bookingId) {
+        String userEmail = SecurityUtils.currentUserEmail();
         log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
 
         String removeMessage = bookingService.removeBooking(bookingId, userEmail);
         sendNotification(removeMessage, userEmail);
 
-        return ResponseEntity.ok(gson.toJson(removeMessage));
-    }
-
-    private static String getUserInfoFromHeaders(Map<String, String> headers) {
-        return headers.entrySet()
-                .stream()
-                .filter(entry -> USER_INFO_HEADERS.contains(entry.getKey().toLowerCase()))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElseThrow(() -> new BookingException("No user info found."));
+        return ResponseEntity.ok(GSON.toJson(removeMessage));
     }
 
     private void sendNotification(String payload, String userId) {

@@ -2,7 +2,8 @@ package com.lukk.sky.booking.domain.ports.service;
 
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.exception.BookingException;
-import reactor.core.publisher.Mono;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -13,12 +14,13 @@ import java.util.List;
 public interface BookingService {
 
     /**
-     * Retrieves the offers booked by a user.
+     * Retrieves a paginated view of the offers booked by a user.
      *
      * @param userEmail The email of the user.
-     * @return The list of offers booked by the user.
+     * @param pageable  Pagination and sort parameters.
+     * @return A page of offers booked by the user.
      */
-    List<BookingDTO> getBookedOffersForUser(String userEmail);
+    Page<BookingDTO> getBookedOffersForUser(String userEmail, Pageable pageable);
 
     /**
      * Makes a booking for an offer.
@@ -29,7 +31,7 @@ public interface BookingService {
      * @return The booking.
      * @throws BookingException if the booking cannot be made.
      */
-    Mono<BookingDTO> bookOffer(String offerID, String dateToBook, String userEmail) throws BookingException;
+    BookingDTO bookOffer(String offerID, String dateToBook, String userEmail) throws BookingException;
 
     /**
      * Removes a booking.

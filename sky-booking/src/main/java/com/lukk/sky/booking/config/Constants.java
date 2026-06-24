@@ -1,12 +1,15 @@
 package com.lukk.sky.booking.config;
 
+import com.lukk.sky.common.kafka.SkyTopics;
+
 /**
- * Service-local constants. Cross-service constants (date formats, user-info headers)
- * live in com.lukk.sky.common.web — import from there.
+ * Service-local constants for sky-booking. Cross-service Kafka topic names
+ * live in {@link SkyTopics}; cross-cutting web constants live in
+ * {@code com.lukk.sky.common.web}.
  */
 public final class Constants {
 
-    public static final String KAFKA_TOPIC = "bookingTopic-1";
+    public static final String KAFKA_TOPIC = SkyTopics.BOOKING_TOPIC;
 
     private Constants() {
     }
