@@ -16,6 +16,9 @@ spring:
       name: ${LOCAL_AUTH_USER:user}
       password: ${LOCAL_AUTH_PASSWORD:}
 
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
+
   jpa:
     hibernate.ddl-auto: update
     show-sql: true
