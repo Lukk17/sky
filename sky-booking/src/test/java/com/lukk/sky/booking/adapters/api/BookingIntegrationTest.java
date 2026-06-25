@@ -14,6 +14,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +30,8 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
@@ -98,11 +101,18 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
                 BookingDTO.class);
 
 //Then
-        ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, BOOKING_TOPIC, Duration.ofSeconds(20));
-
         assertEquals(HttpStatus.CREATED, actual.getStatusCode());
 
-        assertKafkaPayload(requireNonNull(actual.getBody()), record);
+        AtomicReference<ConsumerRecord<String, String>> recordRef = new AtomicReference<>();
+        Awaitility.await()
+                .atMost(20, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    ConsumerRecord<String, String> record =
+                            KafkaTestUtils.getSingleRecord(consumer, BOOKING_TOPIC, Duration.ofSeconds(1));
+                    recordRef.set(record);
+                });
+
+        assertKafkaPayload(requireNonNull(actual.getBody()), recordRef.get());
         assertBookingFields(bookingPayload, actual.getBody());
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();

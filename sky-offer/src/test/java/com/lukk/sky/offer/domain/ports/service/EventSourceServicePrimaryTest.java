@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,8 +49,8 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent assigns sequence number 1 when no previous event exists for the offer")
     void saveEvent_whenNoExistingEventsForOffer_thenSaveWithSequenceNumber1() {
-        try (MockedStatic<LocalDateTime> localDateTimeMock = Mockito.mockStatic(LocalDateTime.class)) {
-            localDateTimeMock.when(LocalDateTime::now).thenReturn(TEST_DATE);
+        try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            instantMock.when(Instant::now).thenReturn(TEST_DATE);
 
             Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
             Event expected = getTestEvent(1, gson.toJson(offer));
@@ -75,8 +75,8 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent assigns last sequence number + 1 when previous events already exist for the offer")
     void saveEvent_whenPreviousEventsExist_thenSaveWithIncrementedSequenceNumber() {
-        try (MockedStatic<LocalDateTime> localDateTimeMock = Mockito.mockStatic(LocalDateTime.class)) {
-            localDateTimeMock.when(LocalDateTime::now).thenReturn(TEST_DATE);
+        try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            instantMock.when(Instant::now).thenReturn(TEST_DATE);
 
             Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
             Event expected = getTestEvent(3, gson.toJson(offer));

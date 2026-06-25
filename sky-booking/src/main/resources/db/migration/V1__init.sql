@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS booking_event (
     sequence_number INT         NOT NULL,
     event_type      VARCHAR(32) CHECK (event_type IN ('BOOKED', 'CANCELED', 'RESERVED')),
     payload         TEXT,
-    timestamp       TIMESTAMP(6),
+    timestamp       TIMESTAMPTZ,
     PRIMARY KEY (id)
 );

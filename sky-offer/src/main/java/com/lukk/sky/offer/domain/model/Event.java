@@ -10,7 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.Hibernate;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -43,7 +43,7 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String payload;
 
-    private LocalDateTime timestamp;
+    private Instant timestamp;
 
     @Override
     public boolean equals(Object o) {

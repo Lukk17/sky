@@ -24,7 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
@@ -97,7 +97,7 @@ public class BookingController {
     private void sendNotification(String payload, String userId) {
         KafkaPayloadModel model = new KafkaPayloadModel(
                 payload,
-                LocalDateTime.now().format(DATE_TIME_FORMAT),
+                DATE_TIME_FORMAT.format(Instant.now()),
                 userId
         );
         bookingNotificationService.sendMessage(model);

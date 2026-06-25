@@ -12,7 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -97,7 +97,7 @@ class MessageRepositoryDataJpaTest {
                 .text(text)
                 .senderEmail(sender)
                 .receiverEmail(receiver)
-                .createdTime(LocalDateTime.now())
+                .createdTime(Instant.now())
                 .build();
         messageRepository.save(message);
     }

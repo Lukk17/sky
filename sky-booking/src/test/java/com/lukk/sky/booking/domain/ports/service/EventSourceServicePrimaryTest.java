@@ -18,7 +18,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,8 +49,8 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent assigns sequence number 1 when no prior event exists for the booking")
     void saveEvent_whenNoPriorEventExists_thenSaveWithSequenceNumberOne() {
-        try (MockedStatic<LocalDateTime> localDateTimeMock = Mockito.mockStatic(LocalDateTime.class)) {
-            localDateTimeMock.when(LocalDateTime::now).thenReturn(TEST_DATE);
+        try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            instantMock.when(Instant::now).thenReturn(TEST_DATE);
 
             Booking booking = BookingAssembler.getPopulatedBooked();
             Event expected = getTestEvent(1, gson.toJson(BookingDTO.of(booking)));
@@ -75,8 +75,8 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent increments sequence number when a prior event already exists for the booking")
     void saveEvent_whenPriorEventExists_thenSaveWithIncrementedSequenceNumber() {
-        try (MockedStatic<LocalDateTime> localDateTimeMock = Mockito.mockStatic(LocalDateTime.class)) {
-            localDateTimeMock.when(LocalDateTime::now).thenReturn(TEST_DATE);
+        try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            instantMock.when(Instant::now).thenReturn(TEST_DATE);
 
             Booking booking = BookingAssembler.getPopulatedBooked();
             Event expected = getTestEvent(3, gson.toJson(BookingDTO.of(booking)));

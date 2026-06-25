@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
@@ -51,7 +51,7 @@ public class MessageController {
         String userEmail = SecurityUtils.currentUserEmail();
 
         message.setSenderEmail(userEmail);
-        message.setCreatedTime(LocalDateTime.now().format(DATE_TIME_FORMAT));
+        message.setCreatedTime(DATE_TIME_FORMAT.format(Instant.now()));
         log.info("Sending message from {} to {}", userEmail, message.getReceiverEmail());
 
         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(messageService.send(message));

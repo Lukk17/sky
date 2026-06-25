@@ -11,7 +11,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.Hibernate;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -31,7 +31,7 @@ public class Message {
     @Column(columnDefinition = "TEXT")
     private String text;
 
-    private LocalDateTime createdTime;
+    private Instant createdTime;
 
     private boolean isRead;
 

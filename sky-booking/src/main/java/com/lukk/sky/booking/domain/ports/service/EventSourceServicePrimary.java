@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Service
 @Slf4j
@@ -40,7 +40,7 @@ public class EventSourceServicePrimary implements EventSourceService {
                 .sequenceNumber(lastSequence + 1)
                 .eventType(eventType)
                 .payload(GSON.toJson(BookingDTO.of(booking)))
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
 
         eventSourceRepository.save(event);

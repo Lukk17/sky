@@ -18,6 +18,6 @@ CREATE TABLE IF NOT EXISTS offer_event (
     sequence_number INT         NOT NULL,
     event_type      VARCHAR(32) CHECK (event_type IN ('OFFER_CREATED', 'OFFER_UPDATED', 'OFFER_DELETED')),
     payload         TEXT,
-    timestamp       TIMESTAMP(6),
+    timestamp       TIMESTAMPTZ,
     PRIMARY KEY (id)
 );

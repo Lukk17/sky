@@ -9,9 +9,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
+import static com.lukk.sky.common.web.DateTimeConstants.DISPLAY_ZONE;
 
 @Builder
 @Data
@@ -39,7 +40,7 @@ public class MessageDTO {
                 .text(message.getText())
                 .receiverEmail(message.getReceiverEmail())
                 .senderEmail(message.getSenderEmail())
-                .createdTime(message.getCreatedTime().format(DATE_TIME_FORMAT))
+                .createdTime(DATE_TIME_FORMAT.format(message.getCreatedTime()))
                 .build();
     }
 
@@ -48,7 +49,7 @@ public class MessageDTO {
                 .text(this.getText())
                 .receiverEmail(this.getReceiverEmail())
                 .senderEmail(this.getSenderEmail())
-                .createdTime(LocalDateTime.parse(this.getCreatedTime(), DATE_TIME_FORMAT))
+                .createdTime(DATE_TIME_FORMAT.parse(this.getCreatedTime(), Instant::from))
                 .build();
     }
 }

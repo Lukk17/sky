@@ -36,7 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -267,7 +267,7 @@ public class OfferApiController {
 
         KafkaPayloadModel model = new KafkaPayloadModel(
                 payload,
-                LocalDateTime.now().format(DATE_TIME_FORMAT),
+                DATE_TIME_FORMAT.format(Instant.now()),
                 owner
         );
         offerNotificationService.sendMessage(model);

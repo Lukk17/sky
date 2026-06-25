@@ -3,7 +3,7 @@ package com.lukk.sky.message.domain.model;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,7 +14,7 @@ class MessageEqualsHashCodeTest {
         return Message.builder()
                 .id(id)
                 .text("Hello")
-                .createdTime(LocalDateTime.of(2025, 1, 1, 12, 0))
+                .createdTime(Instant.parse("2025-01-01T11:00:00Z"))
                 .isRead(false)
                 .receiverEmail("receiver@example.com")
                 .senderEmail("sender@example.com")
