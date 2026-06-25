@@ -46,7 +46,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,7 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
 @Import({com.lukk.sky.offer.TestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class, com.lukk.sky.offer.TestS3Config.class})
-public class OfferApiControllerTest {
+class OfferApiControllerTest {
 
     private static final byte[] VALID_JPEG_BYTES = {
             (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0,
@@ -88,7 +90,7 @@ public class OfferApiControllerTest {
 
     private final String API_PREFIX;
 
-    public OfferApiControllerTest(@Value("${sky.apiPrefix}") String apiPrefix) {
+    OfferApiControllerTest(@Value("${sky.apiPrefix}") String apiPrefix) {
         this.API_PREFIX = apiPrefix;
     }
 
@@ -109,7 +111,7 @@ public class OfferApiControllerTest {
     }
 
     @BeforeEach
-    public void beforeAll() {
+    void beforeAll() {
         gson = new GsonBuilder()
                 .enableComplexMapKeySerialization()
                 .serializeNulls()
@@ -120,17 +122,15 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("getAllOffers_whenOffersExist_thenReturnPagedOffers")
-    public void getAllOffers_whenOffersExist_thenReturnPagedOffers() throws Exception {
-//Given
+    void getAllOffers_whenOffersExist_thenReturnPagedOffers() throws Exception {
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         Pageable pageable = PageRequest.of(0, 20);
         when(offerService.getAllOffers(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
-//When
+
         mvc.perform(
                         get("/offers")
                                 .contentType(MediaType.APPLICATION_JSON))
-//Then
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].hotelName").value(offersDTO.get(0).getHotelName()))
@@ -139,19 +139,17 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("getOwnedOffers_whenUserHasOffers_thenReturnPagedOwnedOffers")
-    public void getOwnedOffers_whenUserHasOffers_thenReturnPagedOwnedOffers() throws Exception {
-//Given
+    void getOwnedOffers_whenUserHasOffers_thenReturnPagedOwnedOffers() throws Exception {
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         Pageable pageable = PageRequest.of(0, 20);
         when(offerService.getOwnedOffers(eq(TEST_USER_EMAIL), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
-//When
+
         mvc.perform(
                         get("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
-//Then
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].hotelName").value(offersDTO.get(0).getHotelName()))
@@ -160,30 +158,26 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("getOwnedOffers_whenNoJwt_thenReturn401")
-    public void getOwnedOffers_whenNoJwt_thenReturn401() throws Exception {
-//When
+    void getOwnedOffers_whenNoJwt_thenReturn401() throws Exception {
         mvc.perform(get("/owner/offers").contentType(MediaType.APPLICATION_JSON))
-//Then
                 .andExpect(status().isUnauthorized())
                 .andReturn();
     }
 
     @Test
     @DisplayName("addOffer_whenValidOffer_thenReturnCreatedOfferDto")
-    public void addOffer_whenValidOffer_thenReturnCreatedOfferDto() throws Exception {
-//Given
+    void addOffer_whenValidOffer_thenReturnCreatedOfferDto() throws Exception {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
 
         when(offerService.addOffer(offerDTO)).thenReturn(offerDTO);
 
         String expectedJson = gson.toJson(offerDTO);
-//When
+
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(expectedJson))
-//Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
@@ -192,20 +186,18 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("addOffer_whenOfferAlreadyExists_thenReturn400WithErrorMessage")
-    public void addOffer_whenOfferAlreadyExists_thenReturn400WithErrorMessage() throws Exception {
-//Given
+    void addOffer_whenOfferAlreadyExists_thenReturn400WithErrorMessage() throws Exception {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         doThrow(new OfferException("Offer with given ID already exist!"))
                 .when(offerService).addOffer(offerDTO);
 
         String expectedJson = gson.toJson(offerDTO);
-//When
+
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(expectedJson))
-//Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
@@ -214,19 +206,17 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("addOffer_whenOwnerEmailInvalid_thenReturn400WithValidationMessage")
-    public void addOffer_whenOwnerEmailInvalid_thenReturn400WithValidationMessage() throws Exception {
-//Given
+    void addOffer_whenOwnerEmailInvalid_thenReturn400WithValidationMessage() throws Exception {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         offerDTO.setOwnerEmail(" ");
 
         String expectedJson = gson.toJson(offerDTO);
-//When
+
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(expectedJson))
-//Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
@@ -237,22 +227,20 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("editOffer_whenValidEdit_thenReturnUpdatedOfferDto")
-    public void editOffer_whenValidEdit_thenReturnUpdatedOfferDto() throws Exception {
-//Given
+    void editOffer_whenValidEdit_thenReturnUpdatedOfferDto() throws Exception {
         OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         when(offerService.editOffer(offerEditDTO)).thenReturn(offerDTO);
 
         String requestJson = gson.toJson(offerEditDTO);
         String expectedResponseJson = gson.toJson(offerDTO);
-//When
+
         MvcResult result = mvc.perform(
                         put("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                                 .content(requestJson)
                 )
-//Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
@@ -261,44 +249,39 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("editOffer_whenNoJwt_thenReturn401")
-    public void editOffer_whenNoJwt_thenReturn401() throws Exception {
+    void editOffer_whenNoJwt_thenReturn401() throws Exception {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         String expectedJson = gson.toJson(offerDTO);
-//When
+
         mvc.perform(put("/owner/offers").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
-//Then
                 .andExpect(status().isUnauthorized())
                 .andReturn();
     }
 
     @Test
     @DisplayName("deleteOffer_whenValidRequest_thenReturn200")
-    public void deleteOffer_whenValidRequest_thenReturn200() throws Exception {
-//Given
+    void deleteOffer_whenValidRequest_thenReturn200() throws Exception {
         doNothing().when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
-//When
+
         mvc.perform(
                         delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
-//Then
                 .andExpect(status().is2xxSuccessful());
     }
 
     @Test
     @DisplayName("deleteOffer_whenOfferDoesNotExist_thenReturn404WithErrorMessage")
-    public void deleteOffer_whenOfferDoesNotExist_thenReturn404WithErrorMessage() throws Exception {
-//Given
+    void deleteOffer_whenOfferDoesNotExist_thenReturn404WithErrorMessage() throws Exception {
         doThrow(new OfferNotFoundException("Can't remove non-existing offer!"))
                 .when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
-//When
+
         MvcResult result = mvc.perform(
                         delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
-//Then
                 .andExpect(status().isNotFound())
                 .andReturn();
 
@@ -307,32 +290,28 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("deleteOffer_whenOfferIdIsNotNumeric_thenReturn400")
-    public void deleteOffer_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
-//When
+    void deleteOffer_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
         mvc.perform(
                         delete("/owner/offers/not-a-number")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
-//Then
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("search_whenTermMatches_thenReturnPagedMatchingOffers")
-    public void search_whenTermMatches_thenReturnPagedMatchingOffers() throws Exception {
-//Given
+    void search_whenTermMatches_thenReturnPagedMatchingOffers() throws Exception {
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         Pageable pageable = PageRequest.of(0, 20);
         when(offerService.searchOffers(eq(TEST_HOTEL_NAME), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
-//When
+
         mvc.perform(
                         post("/search")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(TEST_HOTEL_NAME)
                 )
-//Then
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.totalElements").value(2));
@@ -340,29 +319,25 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("search_whenTermIsBlank_thenReturn400")
-    public void search_whenTermIsBlank_thenReturn400() throws Exception {
-//When
+    void search_whenTermIsBlank_thenReturn400() throws Exception {
         mvc.perform(
                         post("/search")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("   ")
                 )
-//Then
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("search_whenTermExceeds100Chars_thenReturn400")
-    public void search_whenTermExceeds100Chars_thenReturn400() throws Exception {
-//Given
+    void search_whenTermExceeds100Chars_thenReturn400() throws Exception {
         String tooLong = "a".repeat(101);
-//When
+
         MvcResult result = mvc.perform(
                         post("/search")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(tooLong)
                 )
-//Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
@@ -371,8 +346,7 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("uploadPhoto_whenValidPng_thenReturnUpdatedOfferDtoWithPhotoUrl")
-    public void uploadPhoto_whenValidPng_thenReturnUpdatedOfferDtoWithPhotoUrl() throws Exception {
-//Given
+    void uploadPhoto_whenValidPng_thenReturnUpdatedOfferDtoWithPhotoUrl() throws Exception {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         offerDTO.setPhotoPath("offers/test-uuid-hotel.png");
         offerDTO.setPhotoUrl("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.png?X-Amz-Signature=sig");
@@ -389,13 +363,12 @@ public class OfferApiControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "hotel.png", "image/png", VALID_PNG_BYTES
         );
-//When
+
         mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                 )
-//Then
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.photoPath").value("offers/test-uuid-hotel.png"))
                 .andExpect(jsonPath("$.photoUrl").value("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.png?X-Amz-Signature=sig"));
@@ -403,18 +376,16 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("uploadPhoto_whenFileIsEmpty_thenReturn400")
-    public void uploadPhoto_whenFileIsEmpty_thenReturn400() throws Exception {
-//Given
+    void uploadPhoto_whenFileIsEmpty_thenReturn400() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "hotel.jpg", "image/jpeg", new byte[0]
         );
-//When
+
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                 )
-//Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
@@ -423,18 +394,16 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("uploadPhoto_whenMagicBytesDoNotMatchDeclaredType_thenReturn400")
-    public void uploadPhoto_whenMagicBytesDoNotMatchDeclaredType_thenReturn400() throws Exception {
-//Given
+    void uploadPhoto_whenMagicBytesDoNotMatchDeclaredType_thenReturn400() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "hotel.jpg", "image/jpeg", INVALID_MAGIC_BYTES
         );
-//When
+
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                 )
-//Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
@@ -443,19 +412,17 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("uploadPhoto_whenDisallowedFileType_thenReturn400")
-    public void uploadPhoto_whenDisallowedFileType_thenReturn400() throws Exception {
-//Given
+    void uploadPhoto_whenDisallowedFileType_thenReturn400() throws Exception {
         byte[] pdfBytes = {0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, (byte) 0xC3, (byte) 0xA4};
         MockMultipartFile file = new MockMultipartFile(
                 "file", "document.pdf", "application/pdf", pdfBytes
         );
-//When
+
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                 )
-//Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
@@ -464,24 +431,21 @@ public class OfferApiControllerTest {
 
     @Test
     @DisplayName("uploadPhoto_whenNoJwt_thenReturn401")
-    public void uploadPhoto_whenNoJwt_thenReturn401() throws Exception {
-//Given
+    void uploadPhoto_whenNoJwt_thenReturn401() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "hotel.jpg", "image/jpeg", VALID_JPEG_BYTES
         );
-//When
+
         mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                 )
-//Then
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("uploadPhoto_whenNotOwner_thenReturn400")
-    public void uploadPhoto_whenNotOwner_thenReturn400() throws Exception {
-//Given
+    void uploadPhoto_whenNotOwner_thenReturn400() throws Exception {
         doThrow(new OfferException("You can only upload photos for your own offers."))
                 .when(offerService).uploadPhoto(
                         eq(TEST_DEFAULT_OFFER_ID),
@@ -495,13 +459,12 @@ public class OfferApiControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "hotel.jpg", "image/jpeg", VALID_JPEG_BYTES
         );
-//When
+
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
                 )
-//Then
                 .andExpect(status().isBadRequest())
                 .andReturn();
 

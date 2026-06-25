@@ -15,18 +15,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Auto-configuration that supplies a {@link JwtDecoder} for any web service that depends on
- * sky-common and adds {@code spring-boot-starter-oauth2-resource-server} to its classpath.
- *
- * <p>{@code @ConditionalOnMissingBean(JwtDecoder.class)} lets a test's
- * {@code @TestConfiguration} provide a stub decoder without triggering the OIDC discovery
- * HTTP call that {@link NimbusJwtDecoder#withIssuerLocation} makes at build time.
- *
- * <p>Audience validation is opt-in: set {@code OAUTH2_AUDIENCE} to a non-blank value to
- * enable the {@link AudienceValidator}. Leave the environment variable unset (or blank) to
- * skip audience validation, which keeps existing deployments working without changes.
- */
 @AutoConfiguration
 @ConditionalOnWebApplication
 public class ResourceServerJwtAutoConfiguration {

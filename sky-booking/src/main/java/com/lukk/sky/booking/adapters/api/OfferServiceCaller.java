@@ -13,23 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-/**
- * Spring-managed component that performs the single outbound HTTP call to the offer service.
- *
- * <p>Keeping the Resilience4j annotations here (not on {@link OfferRestClient}) is required
- * because Resilience4j uses Spring AOP proxies: the annotated method must be invoked
- * <em>through</em> the Spring proxy, i.e. via a call on a different bean. A method annotated
- * inside the same class and called via {@code this.method()} bypasses the proxy entirely and
- * the annotations have no effect.
- *
- * <p>Annotation chain: {@code @Retry} is outer, {@code @CircuitBreaker} is inner. When a 5xx
- * triggers a {@link ResourceAccessException} inside the circuit breaker, the circuit breaker
- * records the failure and rethrows — the retry sees a retryable exception and repeats. When
- * the circuit transitions to OPEN, Resilience4j throws {@link CallNotPermittedException} before
- * invoking the method at all; the fallback matches that specific type and converts it to a
- * {@link BookingException} so callers receive a fast, typed failure instead of a raw library
- * exception.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -69,11 +52,6 @@ public class OfferServiceCaller {
                 .body(String.class);
     }
 
-    /**
-     * Called only when the circuit breaker is OPEN and rejects the request without calling the
-     * underlying method. Throws a {@link BookingException} so the caller receives a typed failure
-     * message rather than the library-internal {@link CallNotPermittedException}.
-     */
     @SuppressWarnings("unused")
     public String fallback(String url, String offerId, CallNotPermittedException ex) {
         log.warn("Offer service circuit breaker OPEN — failing fast for offerId={}", offerId);

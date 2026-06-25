@@ -20,7 +20,9 @@ import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBooke
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @DisplayName("BookingPersister unit tests")
 @ActiveProfiles("test")
@@ -38,15 +40,12 @@ class BookingPersisterTest {
 
     @Test
     @DisplayName("saveAndPublish persists the booking and publishes the BOOKED event when no conflict exists")
-    public void saveAndPublish_whenNoConflict_thenPersistAndPublishEvent() {
-        // Given
+    void saveAndPublish_whenNoConflict_thenPersistAndPublishEvent() {
         Booking booking = getPopulatedBooked();
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
 
-        // When
         Booking result = bookingPersister.saveAndPublish(booking, List.of(), TEST_DATE);
 
-        // Then
         verify(bookingRepository).save(booking);
         verify(eventSourceService).saveEvent(booking, EventType.BOOKED);
         assertEquals(booking, result);
@@ -54,12 +53,10 @@ class BookingPersisterTest {
 
     @Test
     @DisplayName("saveAndPublish throws BookingException when the offer is already booked on that date")
-    public void saveAndPublish_whenOfferAlreadyBookedOnDate_thenThrowBookingException() {
-        // Given
+    void saveAndPublish_whenOfferAlreadyBookedOnDate_thenThrowBookingException() {
         Booking existing = getPopulatedBooked();
         Booking newBooking = BookingAssembler.getPopulatedBooked();
 
-        // When / Then
         assertThrows(BookingException.class,
                 () -> bookingPersister.saveAndPublish(newBooking, List.of(existing), TEST_DATE));
 
@@ -69,8 +66,7 @@ class BookingPersisterTest {
 
     @Test
     @DisplayName("saveAndPublish allows booking when existing bookings are for different dates")
-    public void saveAndPublish_whenExistingBookingsAreForDifferentDates_thenPersistSuccessfully() {
-        // Given
+    void saveAndPublish_whenExistingBookingsAreForDifferentDates_thenPersistSuccessfully() {
         Booking existingOnDifferentDate = Booking.builder()
                 .id(99L)
                 .offerId("101")
@@ -81,10 +77,8 @@ class BookingPersisterTest {
         Booking newBooking = getPopulatedBooked();
         when(bookingRepository.save(any(Booking.class))).thenReturn(newBooking);
 
-        // When
         Booking result = bookingPersister.saveAndPublish(newBooking, List.of(existingOnDifferentDate), TEST_DATE);
 
-        // Then
         verify(bookingRepository).save(newBooking);
         verify(eventSourceService).saveEvent(newBooking, EventType.BOOKED);
         assertEquals(newBooking, result);

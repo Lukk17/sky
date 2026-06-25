@@ -7,13 +7,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 
-/**
- * Validates that a JWT's {@code aud} claim contains the expected audience value.
- *
- * <p>Instantiate only when a non-blank audience is configured; omitting the
- * validator when no audience is expected avoids breaking existing deployments
- * that do not set {@code OAUTH2_AUDIENCE}.
- */
 public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
 
     private static final String AUDIENCE_CLAIM = "aud";

@@ -16,13 +16,6 @@ import static com.lukk.sky.notify.config.Constants.CONSUMER_GROUP_ID;
 import static com.lukk.sky.notify.config.Constants.KAFKA_BOOKING_TOPIC;
 import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
 
-/**
- * Kafka inbound adapters for sky-notify. Each listener delegates to
- * {@link NotificationTransmissionService} and acks only after the side-effect
- * succeeds. Unhandled exceptions bubble to the container's DefaultErrorHandler,
- * which retries via FixedBackOff and ultimately routes to {@code <topic>.DLT}
- * (see {@code KafkaConsumerConfig}).
- */
 @Component
 @Slf4j
 @RequiredArgsConstructor

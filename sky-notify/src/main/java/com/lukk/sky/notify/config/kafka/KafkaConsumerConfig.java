@@ -25,29 +25,6 @@ import org.springframework.util.backoff.FixedBackOff;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * sky-notify consumer wiring.
- *
- * <p>Reliability posture:
- * <ul>
- *   <li>{@code enable.auto.commit=false} + {@code AckMode.MANUAL_IMMEDIATE} —
- *       listeners ack only after the WebSocket emission succeeds.</li>
- *   <li>{@code DefaultErrorHandler} with {@link FixedBackOff} (3 retries, 1s
- *       apart) and a {@link DeadLetterPublishingRecoverer} routing failures to
- *       {@code <topic>.DLT}.</li>
- *   <li>Non-retryable exceptions ({@link com.google.gson.JsonSyntaxException},
- *       {@link com.google.gson.JsonParseException},
- *       {@link IllegalArgumentException}) route to DLT on first failure rather
- *       than burning the retry budget on a poison pill. The notify path
- *       deserializes with Gson, so Gson's parse exceptions are the poison-pill
- *       signal.</li>
- *   <li>{@code auto.offset.reset=earliest} so a restart doesn't silently skip
- *       events produced while sky-notify was down.</li>
- * </ul>
- *
- * <p>DLT topics ({@code bookingTopic-1.DLT}, {@code offerTopic-1.DLT}) must
- * exist in the broker; the Kafka Helm chart provisions them.
- */
 @EnableKafka
 @Configuration
 public class KafkaConsumerConfig {
@@ -74,10 +51,6 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(consumerConfigs());
     }
 
-    /**
-     * DLT publisher uses a dedicated producer (acks=all, idempotent) so the
-     * error path itself is durable.
-     */
     @Bean
     public ProducerFactory<String, String> dltProducerFactory() {
         Map<String, Object> props = new HashMap<>();

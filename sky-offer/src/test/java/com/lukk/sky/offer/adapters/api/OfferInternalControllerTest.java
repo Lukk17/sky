@@ -46,15 +46,12 @@ class OfferInternalControllerTest {
     @Test
     @DisplayName("GET /api/internal/v1/owner/offer/{id} returns the owner email when the offer exists")
     public void getOfferOwner_whenOfferExists_thenReturnOwnerEmail() throws Exception {
-//Given
         when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
                 .thenReturn(TEST_OWNER_EMAIL);
-//When
         MvcResult result = mvc.perform(
                         get("/api/internal/v1/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
-//Then
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
@@ -64,16 +61,13 @@ class OfferInternalControllerTest {
     @Test
     @DisplayName("GET /api/internal/v1/owner/offer/{id} returns 404 with error message when offer does not exist")
     public void getOfferOwner_whenOfferDoesNotExist_thenReturn404WithErrorMessage() throws Exception {
-//Given
         String expectedErrorMessage = "Offer is not existing.";
         when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
                 .thenThrow(new OfferNotFoundException(expectedErrorMessage));
-//When
         MvcResult result = mvc.perform(
                         get("/api/internal/v1/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
-//Then
                 .andExpect(status().isNotFound())
                 .andReturn();
 
@@ -83,23 +77,19 @@ class OfferInternalControllerTest {
     @Test
     @DisplayName("GET /api/internal/v1/owner/offer/{id} returns 400 when offerId is not a valid number")
     public void getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
-//When
         mvc.perform(
                         get("/api/internal/v1/owner/offer/{offerId}", "not-a-number")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
-//Then
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("GET /api/internal/v1/owner/offer/{id} returns 401 Unauthorized when no JWT is supplied")
     public void getOfferOwner_whenNoJwt_thenReturn401() throws Exception {
-//When
         mvc.perform(
                         get("/api/internal/v1/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON))
-//Then
                 .andExpect(status().isUnauthorized());
     }
 }

@@ -58,15 +58,12 @@ class KafkaNotificationPublisherTest {
     @Test
     @DisplayName("publish_sendsJsonToCorrectTopic_whenPayloadIsValid")
     void publish_sendsJsonToCorrectTopic_whenPayloadIsValid() {
-        // Given
         KafkaPayloadModel payload = new KafkaPayloadModel("hello", "2024-01-01T00:00:00", "user@example.com");
         when(kafkaTemplate.send(anyString(), anyString()))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        // When
         publisher.publish(payload);
 
-        // Then
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
         verify(kafkaTemplate).send(topicCaptor.capture(), messageCaptor.capture());
@@ -83,17 +80,14 @@ class KafkaNotificationPublisherTest {
     @Test
     @DisplayName("publish_isStateless_betweenCalls")
     void publish_isStateless_betweenCalls() {
-        // Given
         KafkaPayloadModel first = new KafkaPayloadModel("first", "2024-01-01T00:00:00", "a@b.com");
         KafkaPayloadModel second = new KafkaPayloadModel("second", "2024-01-02T00:00:00", "c@d.com");
         when(kafkaTemplate.send(anyString(), anyString()))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        // When
         publisher.publish(first);
         publisher.publish(second);
 
-        // Then
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
         verify(kafkaTemplate, times(2)).send(anyString(), messageCaptor.capture());
 
@@ -104,18 +98,15 @@ class KafkaNotificationPublisherTest {
     @Test
     @DisplayName("publish_logsWarnAndDoesNotThrow_whenSendFutureFails")
     void publish_logsWarnAndDoesNotThrow_whenSendFutureFails() {
-        // Given
         KafkaPayloadModel payload = new KafkaPayloadModel("data", "2024-01-01T00:00:00", "x@y.com");
         CompletableFuture<SendResult<String, String>> failed =
                 CompletableFuture.failedFuture(new RuntimeException("broker unavailable"));
         when(kafkaTemplate.send(anyString(), anyString())).thenReturn(failed);
 
-        // When
         assertThatCode(() -> publisher.publish(payload))
                 .as("publish must not propagate the future failure to the caller")
                 .doesNotThrowAnyException();
 
-        // Then
         List<ILoggingEvent> warnEvents = logAppender.list.stream()
                 .filter(e -> e.getLevel() == Level.WARN)
                 .toList();

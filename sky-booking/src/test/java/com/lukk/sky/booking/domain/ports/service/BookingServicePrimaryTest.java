@@ -22,7 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.*;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedList;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedDTOList;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBooked;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedDTO;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DATE;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DEFAULT_BOOKED_ID;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,12 +35,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @DisplayName("BookingServicePrimary unit tests")
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
-public class BookingServicePrimaryTest {
+class BookingServicePrimaryTest {
 
     @Mock
     BookingRepository bookingRepository;
@@ -51,8 +59,7 @@ public class BookingServicePrimaryTest {
 
     @Test
     @DisplayName("getBookedOffersForUser returns both DTOs in a page when user has two bookings")
-    public void getBookedOffersForUser_whenUserHasTwoBookings_thenReturnBothDtosInPage() {
-        // Given
+    void getBookedOffersForUser_whenUserHasTwoBookings_thenReturnBothDtosInPage() {
         List<Booking> bookings = getPopulatedBookedList();
         List<BookingDTO> expected = getPopulatedBookedDTOList();
         Pageable pageable = PageRequest.of(0, 20);
@@ -60,10 +67,8 @@ public class BookingServicePrimaryTest {
         when(bookingRepository.findAllByBookingUser(TEST_USER_EMAIL, pageable))
                 .thenReturn(new PageImpl<>(bookings, pageable, bookings.size()));
 
-        // When
         Page<BookingDTO> actual = bookingService.getBookedOffersForUser(TEST_USER_EMAIL, pageable);
 
-        // Then
         assertEquals(2, actual.getTotalElements());
         expected.get(0).setId(actual.getContent().get(0).getId());
         expected.get(1).setId(actual.getContent().get(1).getId());
@@ -72,19 +77,16 @@ public class BookingServicePrimaryTest {
 
     @Test
     @DisplayName("bookOffer persists booking, publishes event, and resolves owner when offer and date are valid")
-    public void bookOffer_whenValidOfferAndDate_thenPersistAndPublishEventAndResolveOwner() {
-        // Given
+    void bookOffer_whenValidOfferAndDate_thenPersistAndPublishEventAndResolveOwner() {
         Booking booking = getPopulatedBooked();
         BookingDTO bookingDTO = getPopulatedBookedDTO();
 
         when(restClient.requestOfferOwner(booking.getOfferId())).thenReturn(TEST_OWNER_EMAIL);
         when(bookingPersister.saveAndPublish(any(), any(), any())).thenReturn(booking);
 
-        // When
         BookingDTO actual = bookingService.bookOffer(booking.getOfferId(), TEST_DATE.toString(),
                 booking.getBookingUser());
 
-        // Then
         verify(restClient).requestOfferOwner(booking.getOfferId());
         verify(bookingPersister).saveAndPublish(any(), any(), eq(TEST_DATE));
         bookingDTO.setId(actual.getId());
@@ -93,17 +95,14 @@ public class BookingServicePrimaryTest {
 
     @Test
     @DisplayName("bookOffer resolves owner before the transactional boundary so the REST call runs without a DB connection")
-    public void bookOffer_whenCalled_thenRestCallPrecedesPersisterCall() {
-        // Given
+    void bookOffer_whenCalled_thenRestCallPrecedesPersisterCall() {
         Booking booking = getPopulatedBooked();
 
         when(restClient.requestOfferOwner(booking.getOfferId())).thenReturn(TEST_OWNER_EMAIL);
         when(bookingPersister.saveAndPublish(any(), any(), any())).thenReturn(booking);
 
-        // When
         bookingService.bookOffer(booking.getOfferId(), TEST_DATE.toString(), booking.getBookingUser());
 
-        // Then
         org.mockito.InOrder order = inOrder(restClient, bookingPersister);
         order.verify(restClient).requestOfferOwner(booking.getOfferId());
         order.verify(bookingPersister).saveAndPublish(any(), any(), any());
@@ -111,47 +110,38 @@ public class BookingServicePrimaryTest {
 
     @Test
     @DisplayName("getBookedOffersForUser returns empty page when user has no bookings")
-    public void getBookedOffersForUser_whenNoBookingsExist_thenReturnEmptyPage() {
-        // Given
+    void getBookedOffersForUser_whenNoBookingsExist_thenReturnEmptyPage() {
         Pageable pageable = PageRequest.of(0, 20);
 
         when(bookingRepository.findAllByBookingUser(TEST_USER_EMAIL, pageable))
                 .thenReturn(new PageImpl<>(new ArrayList<>(), pageable, 0));
 
-        // When
         Page<BookingDTO> actual = bookingService.getBookedOffersForUser(TEST_USER_EMAIL, pageable);
 
-        // Then
         assertEquals(0, actual.getTotalElements());
         assertTrue(actual.getContent().isEmpty());
     }
 
     @Test
     @DisplayName("bookOffer propagates BookingException from the persister when the offer is already booked on that date")
-    public void bookOffer_whenOfferAlreadyBookedOnDate_thenPropagateBookingException() {
-        // Given
+    void bookOffer_whenOfferAlreadyBookedOnDate_thenPropagateBookingException() {
         Booking booking = getPopulatedBooked();
         when(restClient.requestOfferOwner(booking.getOfferId())).thenReturn(TEST_OWNER_EMAIL);
         when(bookingPersister.saveAndPublish(any(), any(), any()))
                 .thenThrow(new com.lukk.sky.booking.domain.exception.BookingException("already booked"));
 
-        // Then
         assertThrows(com.lukk.sky.booking.domain.exception.BookingException.class, () ->
-                // When
                 bookingService.bookOffer(booking.getOfferId(), TEST_DATE.toString(), booking.getBookingUser())
         );
     }
 
     @Test
     @DisplayName("bookOffer throws BookingException when the requested date is in the past")
-    public void bookOffer_whenDateIsInPast_thenThrowBookingException() {
-        // Given
+    void bookOffer_whenDateIsInPast_thenThrowBookingException() {
         Booking booking = getPopulatedBooked();
         when(restClient.requestOfferOwner(booking.getOfferId())).thenReturn(TEST_OWNER_EMAIL);
 
-        // Then
         assertThrows(BookingException.class, () ->
-                // When
                 bookingService.bookOffer(booking.getOfferId(), LocalDate.of(1201, 6, 20).toString(),
                         booking.getBookingUser())
         );
@@ -159,59 +149,47 @@ public class BookingServicePrimaryTest {
 
     @Test
     @DisplayName("removeBooking deletes the booking and returns confirmation when called by the booking user")
-    public void removeBooking_whenCalledByBookingUser_thenDeleteAndReturnMessage() {
-        // Given
+    void removeBooking_whenCalledByBookingUser_thenDeleteAndReturnMessage() {
         String expected = "Booking removed by user";
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
-        // When
         String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL);
 
-        // Then
         verify(bookingRepository, times(1)).delete(booking);
         assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("removeBooking deletes the booking and returns confirmation when called by the offer owner")
-    public void removeBooking_whenCalledByOwner_thenDeleteAndReturnMessage() {
-        // Given
+    void removeBooking_whenCalledByOwner_thenDeleteAndReturnMessage() {
         String expected = "Booking removed by owner";
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
-        // When
         String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_OWNER_EMAIL);
 
-        // Then
         verify(bookingRepository, times(1)).delete(booking);
         assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("removeBooking throws BookingException when called by a user who is neither the booker nor the owner")
-    public void removeBooking_whenCalledByUnrelatedUser_thenThrowBookingException() {
-        // Given
+    void removeBooking_whenCalledByUnrelatedUser_thenThrowBookingException() {
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
-        // Then
         assertThrows(BookingException.class, () ->
-                // When
                 bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), "other@user.com")
         );
     }
 
     @Test
     @DisplayName("removeBooking throws BookingException when the booking does not exist")
-    public void removeBooking_whenBookingDoesNotExist_thenThrowBookingException() {
-        // Given
+    void removeBooking_whenBookingDoesNotExist_thenThrowBookingException() {
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.empty());
 
-        // Then
         assertThrows(BookingException.class, () ->
-                // When
                 bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL)
         );
     }

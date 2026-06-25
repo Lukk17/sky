@@ -18,26 +18,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Repository slice test for {@link MessageRepository}. Template for the wider
- * repository-test backfill called for in the test-modernization change.
- *
- * <p><b>Currently disabled.</b> Two blockers must be resolved first:
- * <ul>
- *   <li>The H2 in-memory DB does not accept Hibernate's MySQL DDL options
- *       ({@code engine=InnoDB}). Switching to Testcontainers MySQL fixes this
- *       and removes the dialect divergence between tests and prod.</li>
- *   <li>{@code @DataJpaTest} loads a narrow slice that does not include
- *       custom @ConfigurationProperties beans
- *       ({@code SpringConfigProperties}); the application main class injects
- *       one. Resolve by either narrowing the test to a single
- *       {@code @ContextConfiguration} or moving the property class to a
- *       conditional auto-config.</li>
- * </ul>
- *
- * The assertions below are sound and form the spec for the eventual passing
- * version once the two infrastructure blockers above are fixed.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase
 @ActiveProfiles("test")

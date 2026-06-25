@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Booking API integration tests")
 @Import({WebClientTestConfig.class, TestSecurityConfig.class})
-public class BookingIntegrationTest extends AbstractIntegrationTest {
+class BookingIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record TestPage<T>(List<T> content, long totalElements) {}
@@ -62,9 +62,7 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
     private TestRestTemplate restTemplate;
 
     @BeforeEach
-    public void setUp() {
-        // Unique group per test so each test only sees the record it produces —
-        // never a record left on bookingTopic-1 by a previous test.
+    void setUp() {
         consumer = consumerFactory.createConsumer("skyGroup-" + System.nanoTime(), "0");
         consumer.subscribe(Collections.singletonList(BOOKING_TOPIC));
 
@@ -73,34 +71,31 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
             consumer.poll(Duration.ofMillis(100));
         }
         consumer.seekToEnd(consumer.assignment());
-        // Force offset resolution now so the next poll starts exactly at the current end.
         consumer.assignment().forEach(consumer::position);
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         consumer.close();
         clearDatabase();
     }
 
     @Test
     @DisplayName("createBooking persists the booking, publishes a Kafka event, and calls the offer service")
-    public void createBooking_whenRequestIsValid_thenPersistAndPublishKafkaEvent() throws InterruptedException {
-//Given
+    void createBooking_whenRequestIsValid_thenPersistAndPublishKafkaEvent() throws InterruptedException {
         BookingPayload bookingPayload = BookingAssembler.getBookingPayload();
 
         mockWebServer.enqueue(new MockResponse().setBody(TEST_OWNER_EMAIL_2).setResponseCode(200));
 
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<BookingPayload> request = new HttpEntity<>(bookingPayload, headers);
-//When
+
         ResponseEntity<BookingDTO> actual = restTemplate.exchange(
                 "/api/v1/bookings",
                 HttpMethod.POST,
                 request,
                 BookingDTO.class);
 
-//Then
         assertEquals(HttpStatus.CREATED, actual.getStatusCode());
 
         AtomicReference<ConsumerRecord<String, String>> recordRef = new AtomicReference<>();
@@ -121,19 +116,17 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("getAllBookings returns all bookings for the user in paged response when bookings exist")
-    public void getAllBookings_whenBookingsExistInDatabase_thenReturnAllBookings() {
-//Given
+    void getAllBookings_whenBookingsExistInDatabase_thenReturnAllBookings() {
         List<Booking> bookings = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
-//When
+
         ResponseEntity<TestPage<BookingDTO>> actual = restTemplate.exchange(
                 "/api/v1/user/bookings",
                 HttpMethod.GET,
                 request,
                 new ParameterizedTypeReference<TestPage<BookingDTO>>() {});
 
-//Then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
 
         List<BookingDTO> content = requireNonNull(actual.getBody()).content();
@@ -145,19 +138,18 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("deleteBooking removes the booking and returns 204 No Content when the booking exists")
-    public void deleteBooking_whenBookingExists_thenRemoveAndReturn204() {
-//Given
+    void deleteBooking_whenBookingExists_thenRemoveAndReturn204() {
         Long bookingId = populateDatabase().getId();
 
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
-//When
+
         ResponseEntity<Void> actual = restTemplate.exchange(
                 "/api/v1/bookings/" + bookingId,
                 HttpMethod.DELETE,
                 request,
                 Void.class);
-//Then
+
         ResponseEntity<TestPage<BookingDTO>> savedBookings = restTemplate.exchange(
                 "/api/v1/user/bookings",
                 HttpMethod.GET,
@@ -169,9 +161,6 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
     }
 
     private Booking populateDatabase() {
-        // Null the assembler's hardcoded id so save() does an INSERT and Hibernate
-        // picks up the IDENTITY-assigned value rather than treating id=1 as a detached
-        // entity to merge (latent flakiness this test had under different test orderings).
         Booking booking = BookingAssembler.getPopulatedBooked();
         booking.setId(null);
         return bookingRepository.save(booking);
@@ -190,8 +179,6 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
 
     private static HttpHeaders createTestHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        // base64url so the stub JwtDecoder (TestSecurityConfig) decodes it back to the email claim;
-        // a raw email contains '@', which is outside the RFC 6750 Bearer-token charset.
         headers.setBearerAuth(java.util.Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(TEST_USER_EMAIL.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         return headers;

@@ -11,27 +11,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
-/**
- * Servlet filter that ensures every request carries a correlation ID.
- *
- * <p>If the incoming request contains an {@code X-Correlation-Id} header the value is
- * reused; otherwise a random UUID is generated. The ID is stored in SLF4J {@link MDC}
- * under the key {@code correlationId} so every log line within the request scope
- * includes it automatically (configure your logback pattern with {@code %X{correlationId}}).
- * The same value is echoed back on the response via the same header.
- *
- * <p>The MDC entry is cleared in a {@code finally} block so pooled/virtual threads
- * never carry a stale value to the next request.
- *
- * <p>Registered automatically via {@link CorrelationIdAutoConfiguration} for all
- * {@code @ConditionalOnWebApplication} Spring Boot services that include sky-common
- * on their classpath. No per-service wiring is required.
- *
- * <p>TODO: when OpenTelemetry tracing is introduced, the OTel span context will provide
- * the trace/span ID. At that point this filter can either be removed in favour of the
- * OTel bridge or kept to populate the {@code X-Correlation-Id} response header from the
- * OTel {@code TraceId} so callers can correlate by the same key they already use.
- */
+// TODO: when OpenTelemetry tracing is introduced, the OTel span context will provide
+// the trace/span ID. At that point this filter can either be removed in favour of the
+// OTel bridge or kept to populate the X-Correlation-Id response header from the
+// OTel TraceId so callers can correlate by the same key they already use.
 @Slf4j
 public class CorrelationIdFilter extends OncePerRequestFilter {
 

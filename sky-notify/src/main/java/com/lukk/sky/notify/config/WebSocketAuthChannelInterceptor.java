@@ -20,20 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
-/**
- * Validates the JWT carried in the STOMP {@code CONNECT} frame's {@code Authorization}
- * header. On success, the resolved {@link Authentication} is attached to the message
- * so {@link org.springframework.messaging.simp.SimpMessagingTemplate#convertAndSendToUser}
- * can address per-user destinations.
- *
- * <p>Failure modes:
- * <ul>
- *   <li>Missing or non-Bearer Authorization → {@link BadCredentialsException} (STOMP ERROR).</li>
- *   <li>Invalid / expired / wrong-issuer JWT → {@link BadCredentialsException}.</li>
- * </ul>
- *
- * @see AuthenticationManager (unused by design — we want a hard fail rather than chained authn)
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j

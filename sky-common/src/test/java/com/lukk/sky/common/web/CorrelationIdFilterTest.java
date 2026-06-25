@@ -69,7 +69,6 @@ class CorrelationIdFilterTest {
         request.addHeader(CORRELATION_ID_HEADER, incoming);
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        // Capture the MDC value from inside the chain execution using a Filter delegate.
         String[] capturedMdc = new String[1];
         Filter mdcCapture = new Filter() {
             @Override

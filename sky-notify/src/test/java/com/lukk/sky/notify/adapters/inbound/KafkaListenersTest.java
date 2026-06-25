@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 @DisplayName("KafkaListeners — inbound Kafka adapter acknowledgement behaviour")
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
-public class KafkaListenersTest {
+class KafkaListenersTest {
 
     public static final String TEST_PARTITION = "1";
     public static final String TEST_OFFSET = "0";
@@ -43,7 +43,7 @@ public class KafkaListenersTest {
 
     @Test
     @DisplayName("offerListener acknowledges the message when notifyClient succeeds")
-    public void offerListener_whenNotifySucceeds_thenAcknowledge() {
+    void offerListener_whenNotifySucceeds_thenAcknowledge() {
         KafkaPayloadModel payload = new KafkaPayloadModel("offer-data", TEST_DATE.toString(), "user@test.com");
         String offerMessage = GSON.toJson(payload);
 
@@ -57,7 +57,7 @@ public class KafkaListenersTest {
 
     @Test
     @DisplayName("bookingListener acknowledges the message when notifyClient succeeds")
-    public void bookingListener_whenNotifySucceeds_thenAcknowledge() {
+    void bookingListener_whenNotifySucceeds_thenAcknowledge() {
         KafkaPayloadModel payload = new KafkaPayloadModel("booking-data", TEST_DATE.toString(), "user@test.com");
         String bookingMessage = GSON.toJson(payload);
 
@@ -71,7 +71,7 @@ public class KafkaListenersTest {
 
     @Test
     @DisplayName("offerListener does not acknowledge when notifyClient throws a RuntimeException")
-    public void offerListener_whenNotifyThrows_thenDoNotAcknowledge() {
+    void offerListener_whenNotifyThrows_thenDoNotAcknowledge() {
         KafkaPayloadModel payload = new KafkaPayloadModel("boom", TEST_DATE.toString(), "user@test.com");
         String offerMessage = GSON.toJson(payload);
 
@@ -84,8 +84,6 @@ public class KafkaListenersTest {
             kafkaListeners.offerListener(offerMessage, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                     TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);
         } catch (RuntimeException expected) {
-            // The container's DefaultErrorHandler is what actually retries + routes to DLT;
-            // here we only verify the listener itself never acked the failed message.
         }
         verify(acknowledgment, never()).acknowledge();
     }

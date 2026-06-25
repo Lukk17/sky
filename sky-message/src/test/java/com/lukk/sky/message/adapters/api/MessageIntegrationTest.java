@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Message API — full-stack integration tests")
 @Import(TestSecurityConfig.class)
-public class MessageIntegrationTest extends AbstractIntegrationTest {
+class MessageIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record TestPage<T>(List<T> content, long totalElements) {}
@@ -38,51 +38,45 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
     private TestRestTemplate restTemplate;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         clearDatabase();
     }
 
     @Test
     @DisplayName("POST /api/v1/messages with valid payload persists and returns 201 with message fields")
-    public void sendMessage_whenValidPayload_thenPersistAndReturn201() {
-        // Given
+    void sendMessage_whenValidPayload_thenPersistAndReturn201() {
         MessageDTO messageDTO = MessageAssembler.getMessageDTO();
 
         HttpHeaders headers = createTestHttpHeaders(SENDER_EMAIL);
         HttpEntity<MessageDTO> request = new HttpEntity<>(messageDTO, headers);
 
-        // When
         ResponseEntity<MessageDTO> actual = restTemplate.exchange(
                 "/api/v1/messages",
                 HttpMethod.POST,
                 request,
                 MessageDTO.class);
 
-        // Then
         assertEquals(HttpStatus.CREATED, actual.getStatusCode());
         assertMessageFields(messageDTO, requireNonNull(actual.getBody()));
     }
 
     @Test
     @DisplayName("GET /api/v1/messages/received returns paged messages addressed to the authenticated user")
-    public void getReceivedMessages_whenUserHasMessages_thenReturnAll() {
-        // Given
+    void getReceivedMessages_whenUserHasMessages_thenReturnAll() {
         List<Message> messages = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders(RECEIVER_EMAIL);
         HttpEntity<?> request = new HttpEntity<>(headers);
 
-        // When
         ResponseEntity<TestPage<MessageDTO>> actual = restTemplate.exchange(
                 "/api/v1/messages/received",
                 HttpMethod.GET,
                 request,
                 new ParameterizedTypeReference<TestPage<MessageDTO>>() {});
 
-        // Then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         List<MessageDTO> content = requireNonNull(actual.getBody()).content();
         assertEquals(2, content.size());
@@ -95,20 +89,17 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("GET /api/v1/messages/sent returns paged messages sent by the authenticated user")
-    public void getSentMessages_whenUserHasMessages_thenReturnAll() {
-        // Given
+    void getSentMessages_whenUserHasMessages_thenReturnAll() {
         List<Message> messages = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders(SENDER_EMAIL);
         HttpEntity<?> request = new HttpEntity<>(headers);
 
-        // When
         ResponseEntity<TestPage<MessageDTO>> actual = restTemplate.exchange(
                 "/api/v1/messages/sent",
                 HttpMethod.GET,
                 request,
                 new ParameterizedTypeReference<TestPage<MessageDTO>>() {});
 
-        // Then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         List<MessageDTO> content = requireNonNull(actual.getBody()).content();
         assertEquals(2, content.size());
@@ -121,20 +112,17 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("DELETE /api/v1/messages/{id} by receiver removes the message and returns 204 No Content")
-    public void deleteMessage_whenCalledByReceiver_thenRemoveAndReturn204() {
-        // Given
+    void deleteMessage_whenCalledByReceiver_thenRemoveAndReturn204() {
         List<Message> messages = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders(RECEIVER_EMAIL);
         HttpEntity<?> request = new HttpEntity<>(headers);
 
-        // When
         ResponseEntity<Void> actual = restTemplate.exchange(
                 "/api/v1/messages/" + messages.get(0).getId(),
                 HttpMethod.DELETE,
                 request,
                 Void.class);
-        //
-        // Then
+
         ResponseEntity<TestPage<MessageDTO>> savedMessages = restTemplate.exchange(
                 "/api/v1/messages/received",
                 HttpMethod.GET,
@@ -146,8 +134,6 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
     }
 
     private List<Message> populateDatabaseWithMany() {
-        // Null the assembler-hardcoded ids so saveAll() takes the INSERT path on
-        // IDENTITY columns rather than treating fixed ids as detached entities.
         List<Message> messages = MessageAssembler.getMessages();
         messages.forEach(m -> m.setId(null));
         return messageRepository.saveAll(messages);
@@ -159,8 +145,6 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
 
     private static HttpHeaders createTestHttpHeaders(String user) {
         HttpHeaders headers = new HttpHeaders();
-        // base64url so the stub JwtDecoder (TestSecurityConfig) decodes it back to the email claim;
-        // a raw email contains '@', which is outside the RFC 6750 Bearer-token charset.
         headers.setBearerAuth(java.util.Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(user.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         return headers;

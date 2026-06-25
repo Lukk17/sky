@@ -10,10 +10,6 @@ import org.springframework.stereotype.Service;
 
 import static com.lukk.sky.booking.config.Constants.KAFKA_TOPIC;
 
-/**
- * Primary implementation of the {@link BookingNotificationService}.
- * Delegates serialisation and Kafka dispatch to {@link KafkaNotificationPublisher}.
- */
 @Service
 @Primary
 public class BookingNotificationServicePrimary implements BookingNotificationService {

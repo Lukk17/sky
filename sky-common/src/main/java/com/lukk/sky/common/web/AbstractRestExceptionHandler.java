@@ -13,16 +13,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Shared base for per-service @RestControllerAdvice classes.
- *
- * Extends ResponseEntityExceptionHandler so that our override of
- * handleMethodArgumentNotValid takes priority over the auto-configured
- * ProblemDetailsExceptionHandler registered by spring.mvc.problemdetails.enabled.
- *
- * Concrete service handlers extend this and add @ExceptionHandler methods for their
- * own service-specific exception types (BookingException, OfferException, MessageException).
- */
 @Slf4j
 public abstract class AbstractRestExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -41,7 +31,7 @@ public abstract class AbstractRestExceptionHandler extends ResponseEntityExcepti
         ProblemDetail body = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
         body.setProperty("field-errors", fieldErrors);
 
-        log.error("Validation error in: {} with: {}", ex.getParameter(), fieldErrors);
+        log.warn("Validation error in: {} with: {}", ex.getParameter(), fieldErrors);
 
         return ResponseEntity.badRequest().body(body);
     }
