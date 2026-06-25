@@ -9,4 +9,4 @@ VALUES
     (3, 'Thank you! Looking forward to the stay.', now(), false, 'owner@sky.dev', 'user@sky.dev')
 ON CONFLICT (id) DO NOTHING;
 
-SELECT setval(pg_get_serial_sequence('message', 'id'), (SELECT MAX(id) FROM message));
+SELECT setval(pg_get_serial_sequence('message', 'id'), COALESCE((SELECT MAX(id) FROM message), 1), (SELECT COUNT(*) FROM message) > 0);

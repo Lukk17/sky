@@ -31,6 +31,7 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Long bookingId;
 
     private int sequenceNumber;
@@ -38,7 +39,6 @@ public class Event {
     @Enumerated(EnumType.STRING)
     private EventType eventType;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String payload;
 

@@ -9,6 +9,8 @@ spring:
           issuer-uri: http://localhost/test-issuer
   flyway:
     enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate

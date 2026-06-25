@@ -9,7 +9,7 @@ VALUES
     (2, '2', '2027-08-20', 'user@sky.dev', 'owner@sky.dev')
 ON CONFLICT (id) DO NOTHING;
 
-SELECT setval(pg_get_serial_sequence('booking', 'id'), (SELECT MAX(id) FROM booking));
+SELECT setval(pg_get_serial_sequence('booking', 'id'), COALESCE((SELECT MAX(id) FROM booking), 1), (SELECT COUNT(*) FROM booking) > 0);
 
 INSERT INTO booking_event (id, booking_id, sequence_number, event_type, payload, timestamp)
 VALUES
@@ -17,4 +17,4 @@ VALUES
     (2, 2, 1, 'BOOKED', '{"bookingId":2,"offerId":"2","bookingUser":"user@sky.dev","ownerEmail":"owner@sky.dev","bookedDate":"2027-08-20"}', now())
 ON CONFLICT (id) DO NOTHING;
 
-SELECT setval(pg_get_serial_sequence('booking_event', 'id'), (SELECT MAX(id) FROM booking_event));
+SELECT setval(pg_get_serial_sequence('booking_event', 'id'), COALESCE((SELECT MAX(id) FROM booking_event), 1), (SELECT COUNT(*) FROM booking_event) > 0);

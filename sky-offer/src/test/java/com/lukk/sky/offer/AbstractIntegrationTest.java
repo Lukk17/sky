@@ -28,8 +28,7 @@ public abstract class AbstractIntegrationTest {
     @Container
     @ServiceConnection
     protected static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
-                    .withReuse(true);
+            new PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"));
 
     @Container
     @ServiceConnection

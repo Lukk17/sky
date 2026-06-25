@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @ToString(of = {"id", "hotelName", "ownerEmail", "city"})
-@Table(name = "offer", indexes = @Index(name = "idx_offer_owner_email", columnList = "owner_email"))
+@Table(name = "offer")
 public class Offer {
 
     @Id

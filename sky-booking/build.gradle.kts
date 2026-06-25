@@ -14,7 +14,7 @@ dependencies {
     implementation(libs.spring.boot.starter.oauth2.resource.server)
 
     runtimeOnly(libs.postgresql)
-    implementation(libs.flyway.core)
+    implementation(libs.spring.boot.starter.flyway)
     runtimeOnly(libs.flyway.database.postgresql)
 
     implementation(libs.gson)

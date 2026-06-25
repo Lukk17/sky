@@ -20,10 +20,7 @@ import java.time.LocalDateTime;
 @Builder
 @ToString(of = {"id", "senderEmail", "receiverEmail"})
 @Entity
-@Table(name = "message", indexes = {
-    @Index(name = "idx_message_receiver_email", columnList = "receiver_email"),
-    @Index(name = "idx_message_sender_email", columnList = "sender_email")
-})
+@Table(name = "message")
 public class Message {
 
     @Id
@@ -31,7 +28,6 @@ public class Message {
     private Long id;
 
     @NotBlank
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String text;
 

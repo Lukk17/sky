@@ -12,11 +12,11 @@ spring:
           issuer-uri: http://localhost/test-issuer
   flyway:
     enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
   jpa:
-    # `update` lets Hibernate create the schema against the Testcontainers Postgres
-    # without requiring a pre-existing Flyway baseline in the fresh container.
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
   kafka:
     # bootstrap-servers wired by @ServiceConnection on the Testcontainers Kafka.

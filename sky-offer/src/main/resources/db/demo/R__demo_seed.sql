@@ -9,7 +9,7 @@ VALUES
     (3, 'Miami Ocean Resort', 'Luxury resort on Miami Beach with ocean views and pool access.', 'Late check-out available', 950.00, 'owner@sky.dev', 4, 'Miami', 'USA', 'https://images.pexels.com/photos/1179156/pexels-photo-1179156.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260')
 ON CONFLICT (id) DO NOTHING;
 
-SELECT setval(pg_get_serial_sequence('offer', 'id'), (SELECT MAX(id) FROM offer));
+SELECT setval(pg_get_serial_sequence('offer', 'id'), COALESCE((SELECT MAX(id) FROM offer), 1), (SELECT COUNT(*) FROM offer) > 0);
 
 INSERT INTO offer_event (id, offer_id, sequence_number, event_type, payload, timestamp)
 VALUES
@@ -18,4 +18,4 @@ VALUES
     (3, 3, 1, 'OFFER_CREATED', '{"id":3,"hotelName":"Miami Ocean Resort","ownerEmail":"owner@sky.dev","city":"Miami","country":"USA","price":950.00}', now())
 ON CONFLICT (id) DO NOTHING;
 
-SELECT setval(pg_get_serial_sequence('offer_event', 'id'), (SELECT MAX(id) FROM offer_event));
+SELECT setval(pg_get_serial_sequence('offer_event', 'id'), COALESCE((SELECT MAX(id) FROM offer_event), 1), (SELECT COUNT(*) FROM offer_event) > 0);

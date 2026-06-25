@@ -21,13 +21,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 @Entity
-@Table(
-    name = "booking",
-    indexes = {
-        @Index(name = "idx_booking_booking_user", columnList = "booking_user"),
-        @Index(name = "idx_booking_offer_id", columnList = "offer_id")
-    }
-)
+@Table(name = "booking")
 @Getter
 @Setter
 @Builder

@@ -73,6 +73,7 @@ spring-boot-jdbc-test = { module = "org.springframework.boot:spring-boot-jdbc-te
 postgresql = { module = "org.postgresql:postgresql" }
 gson = { module = "com.google.code.gson:gson" }
 h2 = { module = "com.h2database:h2" }
+spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
 flyway-core = { module = "org.flywaydb:flyway-core" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 

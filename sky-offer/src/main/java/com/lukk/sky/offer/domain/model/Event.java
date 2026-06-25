@@ -40,7 +40,6 @@ public class Event {
     @Enumerated(EnumType.STRING)
     private EventType eventType;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String payload;
 
