@@ -7,16 +7,16 @@ import com.lukk.sky.booking.domain.model.Event;
 import com.lukk.sky.booking.domain.model.EventType;
 import com.lukk.sky.booking.domain.ports.repository.EventSourceRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 
-/**
- * Primary implementation of the {@link EventSourceService}.
- * It uses {@link EventSourceRepository} to perform operations on the database.
- */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Primary
 public class EventSourceServicePrimary implements EventSourceService {
@@ -25,18 +25,13 @@ public class EventSourceServicePrimary implements EventSourceService {
 
     private final EventSourceRepository eventSourceRepository;
 
-    /**
-     * {@inheritDoc}
-     * <p>This implementation does more than just save an event:
-     * <ul>
-     *     <li>It uses Gson to convert the booking to JSON format for the payload of the event.</li>
-     *     <li>It retrieves the last sequence number associated with the booking's ID and increments it for the event's sequence number.</li>
-     *     <li>It sets the current time for the event's timestamp.</li>
-     * </ul>
-     * The resulting event is then saved to the repository.
-     */
     @Override
+    @Transactional
     public void saveEvent(Booking booking, EventType eventType) {
+        Assert.notNull(booking.getId(), "Booking id must not be null when saving an event");
+
+        eventSourceRepository.lockBookingEventStream(booking.getId());
+
         int lastSequence = eventSourceRepository.findLastSequenceNumberByBookingId(booking.getId())
                 .orElse(0);
 

@@ -3,6 +3,7 @@ package com.lukk.sky.booking.domain.ports.repository;
 import com.lukk.sky.booking.domain.model.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -12,4 +13,7 @@ public interface EventSourceRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT max(e.sequenceNumber) FROM Event e WHERE e.bookingId = ?1")
     Optional<Integer> findLastSequenceNumberByBookingId(Long bookingId);
+
+    @Query(value = "SELECT pg_advisory_xact_lock(:bookingId)", nativeQuery = true)
+    void lockBookingEventStream(@Param("bookingId") long bookingId);
 }

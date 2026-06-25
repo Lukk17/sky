@@ -9,13 +9,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 
-/**
- * The primary implementation of the {@link EventSourceService} interface.
- * This implementation uses an {@link EventSourceRepository} to persist events.
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -26,15 +24,13 @@ public class EventSourceServicePrimary implements EventSourceService {
 
     private final EventSourceRepository eventSourceRepository;
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The event is saved with the next sequence number for the given offer,
-     * along with the current timestamp. The offer is serialized to JSON format
-     * and saved as the event payload.
-     */
     @Override
+    @Transactional
     public void saveEvent(Offer offer, EventType eventType) {
+        Assert.notNull(offer.getId(), "Offer id must not be null when saving an event");
+
+        eventSourceRepository.lockOfferEventStream(offer.getId());
+
         int lastSequence = eventSourceRepository.findLastSequenceNumberByOfferId(offer.getId())
                 .orElse(0);
 
