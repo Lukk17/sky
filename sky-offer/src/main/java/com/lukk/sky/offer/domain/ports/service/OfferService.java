@@ -22,7 +22,7 @@ public interface OfferService {
 
     OfferDTO editOffer(OfferEditDTO offerEditDTO);
 
-    String findOfferOwner(String offerId);
+    String findOfferOwner(Long offerId);
 
     OfferDTO uploadPhoto(Long offerId, String ownerEmail, InputStream content, long contentLength,
                          String validatedContentType, String filename);

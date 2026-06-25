@@ -304,6 +304,19 @@ public class OfferApiControllerTest {
     }
 
     @Test
+    @DisplayName("deleteOffer_whenOfferIdIsNotNumeric_thenReturn400")
+    public void deleteOffer_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
+//When
+        mvc.perform(
+                        delete("/owner/offers/not-a-number")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                )
+//Then
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("search_whenTermMatches_thenReturnPagedMatchingOffers")
     public void search_whenTermMatches_thenReturnPagedMatchingOffers() throws Exception {
 //Given

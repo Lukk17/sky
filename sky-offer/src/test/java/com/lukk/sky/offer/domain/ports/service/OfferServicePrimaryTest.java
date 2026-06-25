@@ -7,6 +7,7 @@ import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
 import com.lukk.sky.offer.domain.ports.storage.PhotoStorage;
+import com.lukk.sky.offer.domain.model.EventType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -264,16 +265,20 @@ public class OfferServicePrimaryTest {
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         OfferEditDTO input = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        ArgumentCaptor<Offer> eventCaptor = ArgumentCaptor.forClass(Offer.class);
 
         when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
         when(offerRepository.save(any())).thenReturn(offer);
-        doNothing().when(eventSourceService).saveEvent(any(), any());
+        doNothing().when(eventSourceService).saveEvent(eventCaptor.capture(), any());
 
         //When
         OfferDTO actual = offerService.editOffer(input);
 
         //Then
         assertEquals(expected, actual);
+        verify(eventSourceService).saveEvent(any(Offer.class), eq(EventType.OFFER_UPDATED));
+        assertEquals(offer.getId(), eventCaptor.getValue().getId());
+        assertEquals(offer.getOwnerEmail(), eventCaptor.getValue().getOwnerEmail());
     }
 
     @Test
@@ -305,7 +310,7 @@ public class OfferServicePrimaryTest {
         when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
 
         //When
-        String actual = offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID.toString());
+        String actual = offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID);
 
         //Then
         assertEquals(TEST_OWNER_EMAIL, actual);
@@ -321,7 +326,7 @@ public class OfferServicePrimaryTest {
         assertThrows(OfferException.class, () -> {
 
             //When
-            offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID.toString());
+            offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID);
         });
     }
 

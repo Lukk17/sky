@@ -46,7 +46,7 @@ class OfferInternalControllerTest {
     @DisplayName("GET /api/internal/owner/offer/{id} returns the owner email when the offer exists")
     public void getOfferOwner_whenOfferExists_thenReturnOwnerEmail() throws Exception {
 //Given
-        when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID.toString()))
+        when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
                 .thenReturn(TEST_OWNER_EMAIL);
 //When
         MvcResult result = mvc.perform(
@@ -65,7 +65,7 @@ class OfferInternalControllerTest {
     public void getOfferOwner_whenOfferDoesNotExist_thenReturn400WithErrorMessage() throws Exception {
 //Given
         String expectedErrorMessage = "Offer is not existing.";
-        when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID.toString()))
+        when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
                 .thenThrow(new OfferException(expectedErrorMessage));
 //When
         MvcResult result = mvc.perform(
@@ -77,6 +77,18 @@ class OfferInternalControllerTest {
                 .andReturn();
 
         assertTrue(result.getResponse().getContentAsString().contains(expectedErrorMessage));
+    }
+
+    @Test
+    @DisplayName("GET /api/internal/owner/offer/{id} returns 400 when offerId is not a valid number")
+    public void getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
+//When
+        mvc.perform(
+                        get("/api/internal/owner/offer/{offerId}", "not-a-number")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
+//Then
+                .andExpect(status().isBadRequest());
     }
 
     @Test

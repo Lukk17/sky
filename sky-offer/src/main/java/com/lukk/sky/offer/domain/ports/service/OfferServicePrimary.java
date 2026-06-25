@@ -91,21 +91,19 @@ public class OfferServicePrimary implements OfferService {
                 .findById(offerEditDTO.getId())
                 .orElseThrow(() -> new OfferException("Offer not found."));
 
-        dbOffer = offerRepository.save(offerEditDTO.mergeWithDomain(dbOffer).toDomain());
+        Offer savedOffer = offerRepository.save(offerEditDTO.mergeWithDomain(dbOffer).toDomain());
 
-        log.info("Offer with ID: {} edited.", dbOffer.getId());
+        log.info("Offer with ID: {} edited.", savedOffer.getId());
+        eventSourceService.saveEvent(savedOffer, EventType.OFFER_UPDATED);
 
-        offerEditDTO.setId(dbOffer.getId());
-        eventSourceService.saveEvent(offerEditDTO.toDomain(), EventType.OFFER_UPDATED);
-
-        return withPresignedUrl(OfferDTO.of(dbOffer));
+        return withPresignedUrl(OfferDTO.of(savedOffer));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public String findOfferOwner(String offerId) {
+    public String findOfferOwner(Long offerId) {
         String ownerEmail = offerRepository
-                .findById(Long.parseLong(offerId))
+                .findById(offerId)
                 .map(Offer::getOwnerEmail)
                 .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
 

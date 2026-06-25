@@ -145,11 +145,11 @@ public class OfferApiController {
                     content = @Content)
     })
     @DeleteMapping("/owner/offers/{offerId}")
-    public ResponseEntity<?> deleteOffer(@PathVariable String offerId) {
+    public ResponseEntity<?> deleteOffer(@PathVariable Long offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
-        offerService.deleteOffer(Long.parseLong(offerId), ownerEmail);
+        offerService.deleteOffer(offerId, ownerEmail);
 
         sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
 
