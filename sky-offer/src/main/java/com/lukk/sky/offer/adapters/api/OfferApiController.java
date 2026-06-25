@@ -3,6 +3,7 @@ package com.lukk.sky.offer.adapters.api;
 import com.google.gson.Gson;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.common.security.SecurityUtils;
+import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +42,8 @@ import java.util.Map;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
+@Tag(name = "Offers", description = "Offer lifecycle — browse, create, edit, delete, and search flight/booking offers.")
+@ApiCommonErrorResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -82,9 +86,7 @@ public class OfferApiController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found owned offers",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))}),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content)
+                            schema = @Schema(implementation = Page.class))})
     })
     @GetMapping("/owner/offers")
     public ResponseEntity<Page<OfferDTO>> getOwnedOffers(
@@ -98,11 +100,7 @@ public class OfferApiController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Offer created",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "400", description = "Offer with given ID already exists",
-                    content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content)
+                            schema = @Schema(implementation = OfferDTO.class))})
     })
     @PostMapping("/owner/offers")
     public ResponseEntity<OfferDTO> addOffer(@Valid @RequestBody OfferDTO offer) {
@@ -122,8 +120,6 @@ public class OfferApiController {
             @ApiResponse(responseCode = "200", description = "Offer edited",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content),
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
@@ -143,8 +139,6 @@ public class OfferApiController {
     @Operation(summary = "Delete offer")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Offer deleted",
-                    content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content),
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
@@ -190,12 +184,7 @@ public class OfferApiController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Photo uploaded; updated offer returned with photoUrl",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "400",
-                    description = "Empty file, unsupported image type, or caller is not the owner",
-                    content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content)
+                            schema = @Schema(implementation = OfferDTO.class))})
     })
     @PostMapping(value = "/owner/offers/{offerId}/photo", consumes = "multipart/form-data")
     public ResponseEntity<OfferDTO> uploadPhoto(

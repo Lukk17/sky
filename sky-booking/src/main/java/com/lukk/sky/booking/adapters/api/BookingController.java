@@ -7,11 +7,13 @@ import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.service.BookingService;
 import com.lukk.sky.common.security.SecurityUtils;
+import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,8 @@ import java.util.List;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
+@Tag(name = "Bookings", description = "Booking lifecycle — create, list, and cancel bookings placed against offers.")
+@ApiCommonErrorResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -42,9 +46,7 @@ public class BookingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found user bookings",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))}),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content)
+                            schema = @Schema(implementation = Page.class))})
     })
     @GetMapping("/user/bookings")
     public ResponseEntity<Page<BookingDTO>> getBookedOffers(
@@ -59,9 +61,7 @@ public class BookingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Booking created",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = BookingDTO.class))}),
-            @ApiResponse(responseCode = "400", description = "Invalid booking request",
-                    content = @Content)
+                            schema = @Schema(implementation = BookingDTO.class))})
     })
     @PostMapping("/bookings")
     public ResponseEntity<BookingDTO> bookOffer(@Valid @RequestBody BookingPayload bookingPayload) {
@@ -79,8 +79,6 @@ public class BookingController {
     @Operation(summary = "Delete booking")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Booking deleted",
-                    content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content),
             @ApiResponse(responseCode = "404", description = "Booking not found",
                     content = @Content)

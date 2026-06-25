@@ -42,6 +42,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-autoconfigure")
     testImplementation(libs.spring.boot.starter.oauth2.resource.server)
     testImplementation(libs.gson)
+    testImplementation(libs.springdoc.openapi.starter.webmvc.ui)
     // junit-platform-launcher must be on the test runtime classpath so the engine and
     // launcher versions align. spring-boot-starter-test pulls it transitively for the
     // service modules; sky-common doesn't use that starter, so we add it directly.

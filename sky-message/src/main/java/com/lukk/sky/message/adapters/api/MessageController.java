@@ -1,5 +1,6 @@
 package com.lukk.sky.message.adapters.api;
 
+import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.ports.service.MessageService;
 import com.lukk.sky.common.security.SecurityUtils;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,8 @@ import java.time.LocalDateTime;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
+@Tag(name = "Messages", description = "Messaging — send, retrieve, and delete user-to-user messages.")
+@ApiCommonErrorResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -38,11 +42,9 @@ public class MessageController {
 
     @Operation(summary = "Send message")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Message sent",
+            @ApiResponse(responseCode = "201", description = "Message sent",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MessageDTO.class))}),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content)
+                            schema = @Schema(implementation = MessageDTO.class))})
     })
     @PostMapping("/messages")
     public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message) {
@@ -59,9 +61,7 @@ public class MessageController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Messages pulled",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))}),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content)
+                            schema = @Schema(implementation = Page.class))})
     })
     @GetMapping("/messages/received")
     public ResponseEntity<Page<MessageDTO>> getReceivedMessages(
@@ -76,9 +76,7 @@ public class MessageController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Messages pulled",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))}),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
-                    content = @Content)
+                            schema = @Schema(implementation = Page.class))})
     })
     @GetMapping("/messages/sent")
     public ResponseEntity<Page<MessageDTO>> getSentMessages(
@@ -92,8 +90,6 @@ public class MessageController {
     @Operation(summary = "Delete message")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Message deleted",
-                    content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content),
             @ApiResponse(responseCode = "404", description = "Message not found",
                     content = @Content)
