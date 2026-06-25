@@ -36,6 +36,8 @@ spring:
     locale-resolver: accept_header
   mvc:
     dispatch-options-request: true
+    problemdetails:
+      enabled: true
   flyway:
     enabled: true
     baseline-on-migrate: true

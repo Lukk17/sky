@@ -106,7 +106,7 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
         assertBookingFields(bookingPayload, actual.getBody());
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals(String.format("/api/internal/owner/offer/%s", bookingPayload.offerId()), recordedRequest.getPath());
+        assertEquals(String.format("/api/internal/v1/owner/offer/%s", bookingPayload.offerId()), recordedRequest.getPath());
     }
 
     @Test
@@ -134,19 +134,19 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("deleteBooking removes the booking and returns confirmation when the booking exists")
-    public void deleteBooking_whenBookingExists_thenRemoveAndReturnConfirmation() {
+    @DisplayName("deleteBooking removes the booking and returns 204 No Content when the booking exists")
+    public void deleteBooking_whenBookingExists_thenRemoveAndReturn204() {
 //Given
         Long bookingId = populateDatabase().getId();
 
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
 //When
-        ResponseEntity<String> actual = restTemplate.exchange(
+        ResponseEntity<Void> actual = restTemplate.exchange(
                 "/api/v1/bookings/" + bookingId,
                 HttpMethod.DELETE,
                 request,
-                String.class);
+                Void.class);
 //Then
         ResponseEntity<TestPage<BookingDTO>> savedBookings = restTemplate.exchange(
                 "/api/v1/user/bookings",
@@ -154,8 +154,7 @@ public class BookingIntegrationTest extends AbstractIntegrationTest {
                 request,
                 new ParameterizedTypeReference<TestPage<BookingDTO>>() {});
 
-        assertEquals(HttpStatus.OK, actual.getStatusCode());
-        assertTrue(requireNonNull(actual.getBody()).contains("Booking removed by user"));
+        assertEquals(HttpStatus.NO_CONTENT, actual.getStatusCode());
         assertEquals(0, requireNonNull(savedBookings.getBody()).content().size());
     }
 

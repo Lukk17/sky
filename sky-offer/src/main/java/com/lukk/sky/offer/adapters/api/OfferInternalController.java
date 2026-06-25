@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/internal")
+@RequestMapping("/api/internal/v1")
 @RequiredArgsConstructor
 @Slf4j
 public class OfferInternalController {

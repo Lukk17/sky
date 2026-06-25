@@ -3,6 +3,7 @@ package com.lukk.sky.offer.domain.ports.service;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
@@ -53,7 +54,7 @@ public class OfferServicePrimary implements OfferService {
     @Override
     public void deleteOffer(Long offerID, String userEmail) throws OfferException {
         Offer offerToDelete = offerRepository.findById(offerID)
-                .orElseThrow(() -> new OfferException("Can't remove non-existing offer!"));
+                .orElseThrow(() -> new OfferNotFoundException("Can't remove non-existing offer!"));
 
         if (offerToDelete.getOwnerEmail().equals(userEmail)) {
             offerRepository.delete(offerToDelete);
@@ -89,7 +90,7 @@ public class OfferServicePrimary implements OfferService {
     public OfferDTO editOffer(OfferEditDTO offerEditDTO) {
         Offer dbOffer = offerRepository
                 .findById(offerEditDTO.getId())
-                .orElseThrow(() -> new OfferException("Offer not found."));
+                .orElseThrow(() -> new OfferNotFoundException("Offer not found."));
 
         Offer savedOffer = offerRepository.save(offerEditDTO.mergeWithDomain(dbOffer).toDomain());
 
@@ -105,7 +106,7 @@ public class OfferServicePrimary implements OfferService {
         String ownerEmail = offerRepository
                 .findById(offerId)
                 .map(Offer::getOwnerEmail)
-                .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
+                .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId)));
 
         log.info("Found owner with ID:{} of offer with ID: {}", ownerEmail, offerId);
 
@@ -116,7 +117,7 @@ public class OfferServicePrimary implements OfferService {
     public OfferDTO uploadPhoto(Long offerId, String ownerEmail, InputStream content, long contentLength,
                                 String validatedContentType, String filename) {
         Offer offer = offerRepository.findById(offerId)
-                .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
+                .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId)));
 
         if (!offer.getOwnerEmail().equals(ownerEmail)) {
             throw new OfferException("You can only upload photos for your own offers.");

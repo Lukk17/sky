@@ -1,5 +1,7 @@
 package com.lukk.sky.notify.adapters.inbound;
 
+import com.google.gson.Gson;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.notify.domain.service.NotificationTransmissionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,14 +39,18 @@ public class KafkaListenersTest {
     @InjectMocks
     KafkaListeners kafkaListeners;
 
+    private static final Gson GSON = new Gson();
+
     @Test
     @DisplayName("offerListener acknowledges the message when notifyClient succeeds")
     public void offerListener_whenNotifySucceeds_thenAcknowledge() {
-        String offerMessage = "This is an offer message.";
+        KafkaPayloadModel payload = new KafkaPayloadModel("offer-data", TEST_DATE.toString(), "user@test.com");
+        String offerMessage = GSON.toJson(payload);
+
         kafkaListeners.offerListener(offerMessage, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);
 
-        verify(notificationTransmissionService).notifyClient(offerMessage, TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
         verify(acknowledgment).acknowledge();
     }
@@ -52,11 +58,13 @@ public class KafkaListenersTest {
     @Test
     @DisplayName("bookingListener acknowledges the message when notifyClient succeeds")
     public void bookingListener_whenNotifySucceeds_thenAcknowledge() {
-        String bookingMessage = "This is a booking message.";
+        KafkaPayloadModel payload = new KafkaPayloadModel("booking-data", TEST_DATE.toString(), "user@test.com");
+        String bookingMessage = GSON.toJson(payload);
+
         kafkaListeners.bookingListener(bookingMessage, TEST_PARTITION, KAFKA_BOOKING_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);
 
-        verify(notificationTransmissionService).notifyClient(bookingMessage, TEST_PARTITION, KAFKA_BOOKING_TOPIC,
+        verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, KAFKA_BOOKING_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
         verify(acknowledgment).acknowledge();
     }
@@ -64,10 +72,12 @@ public class KafkaListenersTest {
     @Test
     @DisplayName("offerListener does not acknowledge when notifyClient throws a RuntimeException")
     public void offerListener_whenNotifyThrows_thenDoNotAcknowledge() {
-        String offerMessage = "boom";
+        KafkaPayloadModel payload = new KafkaPayloadModel("boom", TEST_DATE.toString(), "user@test.com");
+        String offerMessage = GSON.toJson(payload);
+
         doThrow(new RuntimeException("ws failed"))
                 .when(notificationTransmissionService)
-                .notifyClient(offerMessage, TEST_PARTITION, KAFKA_OFFER_TOPIC,
+                .notifyClient(payload, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                         TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
 
         try {

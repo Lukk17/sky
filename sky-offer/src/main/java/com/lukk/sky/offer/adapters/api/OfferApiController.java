@@ -43,7 +43,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping(path = "${sky.apiPrefix}")
+@RequestMapping(path = "${sky.apiPrefix}", version = "1")
 public class OfferApiController {
 
     private static final Gson GSON = new Gson();
@@ -96,14 +96,16 @@ public class OfferApiController {
 
     @Operation(summary = "Create new offer")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Offer created",
+            @ApiResponse(responseCode = "201", description = "Offer created",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "400", description = "Offer with given ID already exists",
+                    content = @Content),
             @ApiResponse(responseCode = "401", description = "Not authenticated",
                     content = @Content)
     })
     @PostMapping("/owner/offers")
-    public ResponseEntity<?> addOffer(@Valid @RequestBody OfferDTO offer) {
+    public ResponseEntity<OfferDTO> addOffer(@Valid @RequestBody OfferDTO offer) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Adding new offer from owner:{}", ownerEmail);
 
@@ -121,10 +123,12 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
             @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
     @PutMapping("/owner/offers")
-    public ResponseEntity<?> edit(@Valid @RequestBody OfferEditDTO offer) {
+    public ResponseEntity<OfferDTO> edit(@Valid @RequestBody OfferEditDTO offer) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Editing offer with ID: {} from owner:{}", offer.getId(), ownerEmail);
 
@@ -138,14 +142,15 @@ public class OfferApiController {
 
     @Operation(summary = "Delete offer")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Offer deleted",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "204", description = "Offer deleted",
+                    content = @Content),
             @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
     @DeleteMapping("/owner/offers/{offerId}")
-    public ResponseEntity<?> deleteOffer(@PathVariable Long offerId) {
+    public ResponseEntity<Void> deleteOffer(@PathVariable Long offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
@@ -153,7 +158,7 @@ public class OfferApiController {
 
         sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
 
-        return ResponseEntity.ok(GSON.toJson(String.format("Offer with id: %s deleted.", offerId)));
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Search for offers (paginated)")

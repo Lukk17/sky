@@ -149,8 +149,9 @@ public class MessageControllerTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        assertTrue(result.getResponse().getContentAsString()
-                .contains("Field 'receiverEmail' must be a well-formed email address"));
+        String body = result.getResponse().getContentAsString();
+        assertTrue(body.contains("receiverEmail"));
+        assertTrue(body.contains("field-errors"));
     }
 
     @Test

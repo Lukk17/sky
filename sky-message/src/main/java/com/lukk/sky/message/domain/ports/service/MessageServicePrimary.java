@@ -2,6 +2,7 @@ package com.lukk.sky.message.domain.ports.service;
 
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.exception.MessageException;
+import com.lukk.sky.message.domain.exception.MessageNotFoundException;
 import com.lukk.sky.message.domain.model.Message;
 import com.lukk.sky.message.domain.ports.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class MessageServicePrimary implements MessageService {
     @Override
     public void remove(Long messageId, String userId) {
         Message message = messageRepo.findById(messageId)
-                .orElseThrow(() -> new MessageException("Message with ID: " + messageId + " not found."));
+                .orElseThrow(() -> new MessageNotFoundException("Message with ID: " + messageId + " not found."));
 
         if (message.getReceiverEmail().equals(userId)
                 || message.getSenderEmail().equals(userId)) {

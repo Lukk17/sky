@@ -1,6 +1,7 @@
 package com.lukk.sky.offer.adapters.api;
 
 import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,14 +44,14 @@ class OfferInternalControllerTest {
     private OfferService offerService;
 
     @Test
-    @DisplayName("GET /api/internal/owner/offer/{id} returns the owner email when the offer exists")
+    @DisplayName("GET /api/internal/v1/owner/offer/{id} returns the owner email when the offer exists")
     public void getOfferOwner_whenOfferExists_thenReturnOwnerEmail() throws Exception {
 //Given
         when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
                 .thenReturn(TEST_OWNER_EMAIL);
 //When
         MvcResult result = mvc.perform(
-                        get("/api/internal/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
+                        get("/api/internal/v1/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
 //Then
@@ -61,30 +62,30 @@ class OfferInternalControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/internal/owner/offer/{id} returns 400 with error message when offer does not exist")
-    public void getOfferOwner_whenOfferDoesNotExist_thenReturn400WithErrorMessage() throws Exception {
+    @DisplayName("GET /api/internal/v1/owner/offer/{id} returns 404 with error message when offer does not exist")
+    public void getOfferOwner_whenOfferDoesNotExist_thenReturn404WithErrorMessage() throws Exception {
 //Given
         String expectedErrorMessage = "Offer is not existing.";
         when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
-                .thenThrow(new OfferException(expectedErrorMessage));
+                .thenThrow(new OfferNotFoundException(expectedErrorMessage));
 //When
         MvcResult result = mvc.perform(
-                        get("/api/internal/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
+                        get("/api/internal/v1/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
 //Then
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andReturn();
 
         assertTrue(result.getResponse().getContentAsString().contains(expectedErrorMessage));
     }
 
     @Test
-    @DisplayName("GET /api/internal/owner/offer/{id} returns 400 when offerId is not a valid number")
+    @DisplayName("GET /api/internal/v1/owner/offer/{id} returns 400 when offerId is not a valid number")
     public void getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
 //When
         mvc.perform(
-                        get("/api/internal/owner/offer/{offerId}", "not-a-number")
+                        get("/api/internal/v1/owner/offer/{offerId}", "not-a-number")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
 //Then
@@ -92,11 +93,11 @@ class OfferInternalControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/internal/owner/offer/{id} returns 401 Unauthorized when no JWT is supplied")
+    @DisplayName("GET /api/internal/v1/owner/offer/{id} returns 401 Unauthorized when no JWT is supplied")
     public void getOfferOwner_whenNoJwt_thenReturn401() throws Exception {
 //When
         mvc.perform(
-                        get("/api/internal/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
+                        get("/api/internal/v1/owner/offer/{offerId}", TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON))
 //Then
                 .andExpect(status().isUnauthorized());

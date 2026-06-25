@@ -30,7 +30,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping(path = "${sky.apiPrefix}")
+@RequestMapping(path = "${sky.apiPrefix}", version = "1")
 public class BookingController {
 
     private static final Gson GSON = new Gson();
@@ -78,20 +78,22 @@ public class BookingController {
 
     @Operation(summary = "Delete booking")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Booking deleted",
-                    content = {@Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "204", description = "Booking deleted",
+                    content = @Content),
             @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Booking not found",
                     content = @Content)
     })
     @DeleteMapping("/bookings/{bookingId}")
-    public ResponseEntity<String> removeBooking(@PathVariable String bookingId) {
+    public ResponseEntity<Void> removeBooking(@PathVariable String bookingId) {
         String userEmail = SecurityUtils.currentUserEmail();
         log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
 
         String removeMessage = bookingService.removeBooking(bookingId, userEmail);
         sendNotification(removeMessage, userEmail);
 
-        return ResponseEntity.ok(GSON.toJson(removeMessage));
+        return ResponseEntity.noContent().build();
     }
 
     private void sendNotification(String payload, String userId) {

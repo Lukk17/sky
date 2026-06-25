@@ -25,14 +25,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping(path = "${sky.apiPrefix}")
+@RequestMapping(path = "${sky.apiPrefix}", version = "1")
 public class MessageController {
 
     private final MessageService messageService;
@@ -92,19 +91,20 @@ public class MessageController {
 
     @Operation(summary = "Delete message")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Message deleted",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MessageDTO.class))}),
+            @ApiResponse(responseCode = "204", description = "Message deleted",
+                    content = @Content),
             @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Message not found",
                     content = @Content)
     })
     @DeleteMapping("/messages/{messageId}")
-    public ResponseEntity<?> deleteMessage(@PathVariable String messageId) {
+    public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
         String userEmail = SecurityUtils.currentUserEmail();
 
         log.info("Removing message with ID: {}", messageId);
         messageService.remove(Long.parseLong(messageId), userEmail);
 
-        return ResponseEntity.ok("Message removed.");
+        return ResponseEntity.noContent().build();
     }
 }

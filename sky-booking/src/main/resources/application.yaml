@@ -3,7 +3,7 @@ sky:
   apiPrefix: /api/v1
   offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
   offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT:}
-  offerOwnerEndpoint: api/internal/owner/offer
+  offerOwnerEndpoint: api/internal/v1/owner/offer
   crossOrigin:
     allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com}
 
@@ -42,6 +42,8 @@ spring:
   mvc:
     # for option request handling
     dispatch-options-request: true
+    problemdetails:
+      enabled: true
   flyway:
     enabled: true
     baseline-on-migrate: true

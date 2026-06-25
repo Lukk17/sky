@@ -12,6 +12,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class GlobalExceptionHandler extends AbstractRestExceptionHandler {
 
+    @ExceptionHandler(BookingNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleBookingNotFound(BookingNotFoundException ex) {
+        log.warn("{} Exception class: {}", ex.getMessage(), ex.getClass().getSimpleName());
+        return ErrorResponse.builder(ex, HttpStatus.NOT_FOUND, ex.getMessage()).build();
+    }
+
     @ExceptionHandler(BookingException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBookingExceptions(BookingException ex) {

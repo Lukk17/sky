@@ -1,36 +1,48 @@
 package com.lukk.sky.common.web;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.ErrorResponse;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.Optional;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Shared base for per-service @RestControllerAdvice classes.
  *
- * Concrete service handlers extend this and add @ExceptionHandler methods for their own
- * service-specific exception types (BookingException, OfferException, MessageException).
- * The validation handler is shared because every service uses the same field-error format.
+ * Extends ResponseEntityExceptionHandler so that our override of
+ * handleMethodArgumentNotValid takes priority over the auto-configured
+ * ProblemDetailsExceptionHandler registered by spring.mvc.problemdetails.enabled.
+ *
+ * Concrete service handlers extend this and add @ExceptionHandler methods for their
+ * own service-specific exception types (BookingException, OfferException, MessageException).
  */
 @Slf4j
-public abstract class AbstractRestExceptionHandler {
+public abstract class AbstractRestExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidationExceptions(MethodArgumentNotValidException ex) {
-        StringBuilder str = new StringBuilder();
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(fieldError ->
-                str.append(String.format("Field '%s' %s",
-                                fieldError.getField(),
-                                Optional.ofNullable(fieldError.getDefaultMessage()).orElse("")))
-                        .append("; ")
+                fieldErrors.put(fieldError.getField(), fieldError.getDefaultMessage())
         );
-        String errorMessage = str.toString().strip();
-        log.error("Validation error in: {} with: {}", ex.getParameter(), errorMessage);
-        return ErrorResponse.builder(ex, HttpStatus.BAD_REQUEST, errorMessage).build();
+
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
+        body.setProperty("field-errors", fieldErrors);
+
+        log.error("Validation error in: {} with: {}", ex.getParameter(), fieldErrors);
+
+        return ResponseEntity.badRequest().body(body);
     }
 }

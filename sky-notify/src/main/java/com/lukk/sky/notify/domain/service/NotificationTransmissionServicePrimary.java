@@ -27,19 +27,18 @@ public class NotificationTransmissionServicePrimary implements NotificationTrans
     private final NotificationPublisherPrimary notificationPublisherPrimary;
 
     @Override
-    public void notifyClient(String message, String partition, String topic, String groupId, String timestamp, String offset) {
-        KafkaPayloadModel payloadModel = GSON.fromJson(message, KafkaPayloadModel.class);
-        if (payloadModel == null || payloadModel.userInfo() == null || payloadModel.userInfo().isBlank()) {
+    public void notifyClient(KafkaPayloadModel payload, String partition, String topic, String groupId, String timestamp, String offset) {
+        if (payload == null || payload.userInfo() == null || payload.userInfo().isBlank()) {
             log.warn("Dropping Kafka message with missing userInfo (topic={}, offset={})", topic, offset);
 
             return;
         }
 
         String websocketPayloadJson = GSON.toJson(new WebsocketPayloadModel(
-                payloadModel, partition, topic, groupId, timestamp, offset));
+                payload, partition, topic, groupId, timestamp, offset));
 
-        notificationPublisherPrimary.publish(payloadModel.userInfo(), websocketPayloadJson);
+        notificationPublisherPrimary.publish(payload.userInfo(), websocketPayloadJson);
         log.info("Notification routed to user='{}' (topic={}, offset={})",
-                payloadModel.userInfo(), topic, offset);
+                payload.userInfo(), topic, offset);
     }
 }

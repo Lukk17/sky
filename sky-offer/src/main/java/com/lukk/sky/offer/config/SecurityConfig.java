@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/offers", "/api/v1/offers/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/search").permitAll()
                         .requestMatchers("/api/v1/owner/**").authenticated()
-                        .requestMatchers("/api/internal/**").authenticated()
+                        .requestMatchers("/api/internal/v1/**").authenticated()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(rs -> rs.jwt(jwt -> {
                 }))

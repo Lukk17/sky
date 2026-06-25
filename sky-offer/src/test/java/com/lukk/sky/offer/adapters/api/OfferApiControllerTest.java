@@ -6,6 +6,7 @@ import com.lukk.sky.offer.Assemblers.OfferAssembler;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.service.OfferService;
 import org.junit.jupiter.api.BeforeEach;
@@ -229,8 +230,9 @@ public class OfferApiControllerTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        assertTrue(result.getResponse().getContentAsString()
-                .contains("Field 'ownerEmail' must be a well-formed email address"));
+        String body = result.getResponse().getContentAsString();
+        assertTrue(body.contains("ownerEmail"));
+        assertTrue(body.contains("field-errors"));
     }
 
     @Test
@@ -285,10 +287,10 @@ public class OfferApiControllerTest {
     }
 
     @Test
-    @DisplayName("deleteOffer_whenOfferDoesNotExist_thenReturn400WithErrorMessage")
-    public void deleteOffer_whenOfferDoesNotExist_thenReturn400WithErrorMessage() throws Exception {
+    @DisplayName("deleteOffer_whenOfferDoesNotExist_thenReturn404WithErrorMessage")
+    public void deleteOffer_whenOfferDoesNotExist_thenReturn404WithErrorMessage() throws Exception {
 //Given
-        doThrow(new OfferException("Can't remove non-existing offer!"))
+        doThrow(new OfferNotFoundException("Can't remove non-existing offer!"))
                 .when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
 //When
         MvcResult result = mvc.perform(
@@ -297,7 +299,7 @@ public class OfferApiControllerTest {
                                 .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
                 )
 //Then
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andReturn();
 
         assertTrue(result.getResponse().getContentAsString().contains("Can't remove non-existing offer!"));

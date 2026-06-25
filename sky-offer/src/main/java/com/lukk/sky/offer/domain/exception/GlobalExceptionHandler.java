@@ -12,6 +12,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class GlobalExceptionHandler extends AbstractRestExceptionHandler {
 
+    @ExceptionHandler(OfferNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleOfferNotFound(OfferNotFoundException ex) {
+        log.warn("{} Exception class: {}", ex.getMessage(), ex.getClass().getSimpleName());
+        return ErrorResponse.builder(ex, HttpStatus.NOT_FOUND, ex.getMessage()).build();
+    }
+
     @ExceptionHandler(OfferException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleOfferExceptions(OfferException ex) {

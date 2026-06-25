@@ -56,6 +56,8 @@ spring:
   mvc:
     # for option request handling
     dispatch-options-request: true
+    problemdetails:
+      enabled: true
   flyway:
     enabled: true
     baseline-on-migrate: true

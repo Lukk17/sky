@@ -3,6 +3,7 @@ package com.lukk.sky.booking.domain.ports.service;
 
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.exception.BookingException;
+import com.lukk.sky.booking.domain.exception.BookingNotFoundException;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.ports.api.RestClient;
 import com.lukk.sky.booking.domain.ports.repository.BookingRepository;
@@ -64,7 +65,7 @@ public class BookingServicePrimary implements BookingService {
     public String removeBooking(String bookingId, String userEmail) {
         long id = Long.parseLong(bookingId);
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new BookingException(String.format("No booking with ID: %s found.", bookingId)));
+                .orElseThrow(() -> new BookingNotFoundException(String.format("No booking with ID: %s found.", bookingId)));
 
         if (booking.getBookingUser().equals(userEmail)) {
             bookingRepository.delete(booking);

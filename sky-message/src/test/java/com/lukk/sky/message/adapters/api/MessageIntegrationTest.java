@@ -120,19 +120,19 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/v1/messages/{id} by receiver removes the message and returns 200 with confirmation")
-    public void deleteMessage_whenCalledByReceiver_thenRemoveAndReturn200() {
+    @DisplayName("DELETE /api/v1/messages/{id} by receiver removes the message and returns 204 No Content")
+    public void deleteMessage_whenCalledByReceiver_thenRemoveAndReturn204() {
         // Given
         List<Message> messages = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders(RECEIVER_EMAIL);
         HttpEntity<?> request = new HttpEntity<>(headers);
 
         // When
-        ResponseEntity<String> actual = restTemplate.exchange(
+        ResponseEntity<Void> actual = restTemplate.exchange(
                 "/api/v1/messages/" + messages.get(0).getId(),
                 HttpMethod.DELETE,
                 request,
-                String.class);
+                Void.class);
         //
         // Then
         ResponseEntity<TestPage<MessageDTO>> savedMessages = restTemplate.exchange(
@@ -141,8 +141,7 @@ public class MessageIntegrationTest extends AbstractIntegrationTest {
                 request,
                 new ParameterizedTypeReference<TestPage<MessageDTO>>() {});
 
-        assertEquals(HttpStatus.OK, actual.getStatusCode());
-        assertEquals("Message removed.", actual.getBody());
+        assertEquals(HttpStatus.NO_CONTENT, actual.getStatusCode());
         assertEquals(1, requireNonNull(savedMessages.getBody()).content().size());
     }
 
