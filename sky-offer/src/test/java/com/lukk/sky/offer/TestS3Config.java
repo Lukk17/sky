@@ -7,16 +7,10 @@ import org.springframework.context.annotation.Primary;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
+import java.io.InputStream;
+
 import static org.mockito.Mockito.mock;
 
-/**
- * Test-profile stub: replaces all MinIO/S3 beans so tests run without a real MinIO instance.
- *
- * <p>S3Client and S3Presigner are bare Mockito mocks (not wired to any endpoint) so
- * BucketInitializer does not attempt a real TCP connection on startup.  PhotoStorage is
- * a no-op stub that returns a fixed URL, which lets the existing integration tests
- * assert offer fields without hitting S3.
- */
 @TestConfiguration
 public class TestS3Config {
 
@@ -37,7 +31,7 @@ public class TestS3Config {
     public PhotoStorage testPhotoStorage() {
         return new PhotoStorage() {
             @Override
-            public String upload(byte[] content, String contentType, String filename) {
+            public String upload(InputStream content, long contentLength, String contentType, String filename) {
                 return "offers/test-uuid-" + filename;
             }
 
@@ -46,6 +40,7 @@ public class TestS3Config {
                 if (key == null || key.isBlank()) {
                     return null;
                 }
+
                 return "http://localhost:9000/sky-offers-test/" + key + "?X-Amz-Signature=test";
             }
         };

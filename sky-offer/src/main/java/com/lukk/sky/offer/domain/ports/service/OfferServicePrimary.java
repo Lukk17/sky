@@ -15,13 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.io.InputStream;
 
-/**
- * This is the primary implementation of the {@link OfferService} interface.
- * It uses an {@link OfferRepository} to interact with the database.
- * It also logs operations and generates events using {@link EventSourceService}.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -33,27 +28,14 @@ public class OfferServicePrimary implements OfferService {
     private final EventSourceService eventSourceService;
     private final PhotoStorage photoStorage;
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation retrieves a page of offers from the database using an {@link OfferRepository},
-     * transforms them into {@link OfferDTO}s and returns a {@link Page}.
-     */
     @Override
     @Transactional(readOnly = true)
     public Page<OfferDTO> getAllOffers(Pageable pageable) {
         log.info("Pulling all offers page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
+
         return offerRepository.findAll(pageable).map(offer -> withPresignedUrl(OfferDTO.of(offer)));
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation saves the given offer into the database using an {@link OfferRepository}.
-     * After successful save, it logs the operation and creates an event of type {@link EventType#OFFER_CREATED}.
-     *
-     * @throws OfferException if an offer with the same ID already exists in the database
-     */
     @Override
     public OfferDTO addOffer(OfferDTO offerDTO) throws OfferException {
         if (offerDTO.getId() != null && offerRepository.existsById(offerDTO.getId())) {
@@ -68,14 +50,6 @@ public class OfferServicePrimary implements OfferService {
         return withPresignedUrl(OfferDTO.of(savedOffer));
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation removes the offer with the given ID from the database,
-     * logs the operation and generates an event of type {@link EventType#OFFER_DELETED}.
-     *
-     * @throws OfferException if the offer does not exist or the user is not the owner of the offer
-     */
     @Override
     public void deleteOffer(Long offerID, String userEmail) throws OfferException {
         Offer offerToDelete = offerRepository.findById(offerID)
@@ -92,12 +66,6 @@ public class OfferServicePrimary implements OfferService {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation retrieves a page of offers from the database belonging to the given owner email,
-     * transforms them into {@link OfferDTO}s and returns a {@link Page}.
-     */
     @Override
     @Transactional(readOnly = true)
     public Page<OfferDTO> getOwnedOffers(String ownerEmail, Pageable pageable) {
@@ -108,33 +76,15 @@ public class OfferServicePrimary implements OfferService {
                 .map(offer -> withPresignedUrl(OfferDTO.of(offer)));
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation searches for offers that match the given criteria,
-     * transforms them into {@link OfferDTO}s and returns them as a list.
-     * The search is delegated to the database via a case-insensitive LIKE query
-     * across hotelName, city, country, and ownerEmail.
-     */
     @Override
     @Transactional(readOnly = true)
-    public List<OfferDTO> searchOffers(String searched) {
+    public Page<OfferDTO> searchOffers(String searched, Pageable pageable) {
         log.info("Searching offers for: {}", searched);
 
-        return offerRepository.searchByTerm(searched).stream()
-                .map(OfferDTO::of)
-                .map(this::withPresignedUrl)
-                .toList();
+        return offerRepository.searchByTerm(searched, pageable)
+                .map(offer -> withPresignedUrl(OfferDTO.of(offer)));
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation edits the offer in the database with the details from the given {@link OfferDTO},
-     * logs the operation and creates an event of type {@link EventType#OFFER_UPDATED}.
-     *
-     * @throws OfferException if the offer to be edited does not exist in the database
-     */
     @Override
     public OfferDTO editOffer(OfferEditDTO offerEditDTO) {
         Offer dbOffer = offerRepository
@@ -151,13 +101,6 @@ public class OfferServicePrimary implements OfferService {
         return withPresignedUrl(OfferDTO.of(dbOffer));
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation finds the owner of the offer with the given ID and returns their email.
-     *
-     * @throws OfferException if the offer does not exist in the database
-     */
     @Override
     @Transactional(readOnly = true)
     public String findOfferOwner(String offerId) {
@@ -172,7 +115,8 @@ public class OfferServicePrimary implements OfferService {
     }
 
     @Override
-    public OfferDTO uploadPhoto(Long offerId, String ownerEmail, byte[] content, String contentType, String filename) {
+    public OfferDTO uploadPhoto(Long offerId, String ownerEmail, InputStream content, long contentLength,
+                                String validatedContentType, String filename) {
         Offer offer = offerRepository.findById(offerId)
                 .orElseThrow(() -> new OfferException(String.format("Offer with ID: %s not exist.", offerId)));
 
@@ -180,7 +124,7 @@ public class OfferServicePrimary implements OfferService {
             throw new OfferException("You can only upload photos for your own offers.");
         }
 
-        String key = photoStorage.upload(content, contentType, filename);
+        String key = photoStorage.upload(content, contentLength, validatedContentType, filename);
         offer.setPhotoPath(key);
         Offer saved = offerRepository.save(offer);
 
@@ -192,6 +136,7 @@ public class OfferServicePrimary implements OfferService {
     private OfferDTO withPresignedUrl(OfferDTO dto) {
         String url = photoStorage.presignedUrl(dto.getPhotoPath());
         dto.setPhotoUrl(url);
+
         return dto;
     }
 }

@@ -20,7 +20,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Optional;
 
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.*;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.*;
@@ -28,6 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @DisplayName("OfferServicePrimary — unit tests for the core offer service business logic")
@@ -48,7 +54,7 @@ public class OfferServicePrimaryTest {
     OfferServicePrimary offerService;
 
     @Test
-    @DisplayName("getAllOffers returns mapped OfferDTO page when offers are present in the repository")
+    @DisplayName("getAllOffers_whenOffersExist_thenReturnMappedOfferDtoPage")
     public void getAllOffers_whenOffersExist_thenReturnMappedOfferDtoPage() {
         //Given
         List<Offer> offers = OfferAssembler.getPopulatedOffers();
@@ -66,7 +72,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("getAllOffers returns an empty page when no offers have been saved")
+    @DisplayName("getAllOffers_whenNoOffersSaved_thenReturnEmptyPage")
     public void getAllOffers_whenNoOffersSaved_thenReturnEmptyPage() {
         //Given
         Pageable pageable = PageRequest.of(0, 20);
@@ -81,14 +87,12 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("addOffer saves the offer to the repository and returns the persisted OfferDTO")
+    @DisplayName("addOffer_whenValidOfferDto_thenSaveAndReturnOfferDto")
     public void addOffer_whenValidOfferDto_thenSaveAndReturnOfferDto() throws OfferException {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
 
-        // any() because offer ID is skipped in DTO converter (as repository will assign it when saving to DB)
-        // due to that offer sent to repo by service don't have ID field and is not same as this offer
         when(offerRepository.save(any())).thenReturn(offer);
         doNothing().when(eventSourceService).saveEvent(any(), any());
 
@@ -100,8 +104,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    // This scenario should not happen
-    @DisplayName("addOffer throws OfferException when an offer with the same ID already exists")
+    @DisplayName("addOffer_whenOfferWithIdAlreadyExists_thenThrowOfferException")
     public void addOffer_whenOfferWithIdAlreadyExists_thenThrowOfferException() throws OfferException {
         //Given
         OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
@@ -117,7 +120,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("deleteOffer removes the offer from the repository when it exists and the requester is the owner")
+    @DisplayName("deleteOffer_whenOfferExistsAndOwnerMatches_thenDeleteFromRepository")
     public void deleteOffer_whenOfferExistsAndOwnerMatches_thenDeleteFromRepository() {
         //Given
         Offer expected = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
@@ -135,7 +138,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("deleteOffer throws OfferException when the offer does not exist in the repository")
+    @DisplayName("deleteOffer_whenOfferDoesNotExist_thenThrowOfferException")
     public void deleteOffer_whenOfferDoesNotExist_thenThrowOfferException() {
         //Given
         Offer expected = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
@@ -151,7 +154,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("deleteOffer throws OfferException when the requester email does not match the offer owner")
+    @DisplayName("deleteOffer_whenRequesterIsNotOwner_thenThrowOfferException")
     public void deleteOffer_whenRequesterIsNotOwner_thenThrowOfferException() {
         //Given
         Offer expected = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
@@ -167,7 +170,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("getOwnedOffers returns mapped OfferDTO page for offers belonging to the given user")
+    @DisplayName("getOwnedOffers_whenUserHasOffers_thenReturnMappedOfferDtoPage")
     public void getOwnedOffers_whenUserHasOffers_thenReturnMappedOfferDtoPage() {
         //Given
         List<Offer> offers = getPopulatedOffers();
@@ -186,7 +189,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("getOwnedOffers returns an empty page when the user owns no offers")
+    @DisplayName("getOwnedOffers_whenUserHasNoOffers_thenReturnEmptyPage")
     public void getOwnedOffers_whenUserHasNoOffers_thenReturnEmptyPage() {
         //Given
         Pageable pageable = PageRequest.of(0, 20);
@@ -202,38 +205,60 @@ public class OfferServicePrimaryTest {
         assertTrue(actual.getContent().isEmpty());
     }
 
-    // problem with JUnit Vintage - not seeing other test when run parametrized...
-//    @ParameterizedTest
-//    @CsvSource({"testHotelName,2", "testUser@user,2", "testCity,2", "testCountry,2"})
     @Test
-    @DisplayName("searchOffers delegates to searchByTerm and returns matching offers for hotel name, owner email, city, and country")
-    public void searchOffers_whenSearchTermMatchesOfferFields_thenReturnMatchingOffers() {
-        // The id-substring case ("99" → 1) is intentionally omitted: that behaviour relied on
-        // in-memory String.valueOf(id).contains(term) filtering which is replaced by a DB LIKE
-        // query across text columns only.
-        Map<String, Integer> map = new HashMap<>();
-        map.put("testHotelName", 2);
-        map.put("test@owner.com", 2);
-        map.put("testCity", 2);
-        map.put("testCountry", 2);
-
+    @DisplayName("searchOffers_whenTermMatchesHotelCityCountry_thenReturnMatchingPagedOffers")
+    public void searchOffers_whenTermMatchesHotelCityCountry_thenReturnMatchingPagedOffers() {
+        //Given
         List<Offer> twoMatches = OfferAssembler.getPopulatedOffers();
+        Pageable pageable = PageRequest.of(0, 20);
 
-        map.forEach((input, expected) -> {
+        when(offerRepository.searchByTerm(eq("testHotelName"), eq(pageable)))
+                .thenReturn(new PageImpl<>(twoMatches, pageable, twoMatches.size()));
 
-//Given
-            when(offerRepository.searchByTerm(input)).thenReturn(twoMatches);
+        //When
+        Page<OfferDTO> actual = offerService.searchOffers("testHotelName", pageable);
 
-//When
-            List<OfferDTO> actual = offerService.searchOffers(input);
-
-//Then
-            assertEquals(expected, actual.size());
-        });
+        //Then
+        assertEquals(2, actual.getTotalElements());
     }
 
     @Test
-    @DisplayName("editOffer updates fields, saves to the repository, and returns the updated OfferDTO")
+    @DisplayName("searchOffers_whenTermMatchesOwnerEmailOnly_thenReturnEmptyPage")
+    public void searchOffers_whenTermMatchesOwnerEmailOnly_thenReturnEmptyPage() {
+        //Given
+        Pageable pageable = PageRequest.of(0, 20);
+
+        when(offerRepository.searchByTerm(eq(TEST_OWNER_EMAIL), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        //When
+        Page<OfferDTO> actual = offerService.searchOffers(TEST_OWNER_EMAIL, pageable);
+
+        //Then
+        assertEquals(0, actual.getTotalElements());
+        assertTrue(actual.getContent().isEmpty());
+    }
+
+    @Test
+    @DisplayName("searchOffers_whenPageSizeIsSmall_thenReturnOnlyPageSizeResults")
+    public void searchOffers_whenPageSizeIsSmall_thenReturnOnlyPageSizeResults() {
+        //Given
+        Pageable pageable = PageRequest.of(0, 1);
+        List<Offer> oneResult = List.of(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
+
+        when(offerRepository.searchByTerm(eq("testHotelName"), eq(pageable)))
+                .thenReturn(new PageImpl<>(oneResult, pageable, 2));
+
+        //When
+        Page<OfferDTO> actual = offerService.searchOffers("testHotelName", pageable);
+
+        //Then
+        assertEquals(1, actual.getContent().size());
+        assertEquals(2, actual.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("editOffer_whenOfferExists_thenSaveAndReturnUpdatedOfferDto")
     public void editOffer_whenOfferExists_thenSaveAndReturnUpdatedOfferDto() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
@@ -252,7 +277,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("editOffer throws OfferException when the edit DTO has no ID and the offer is not found")
+    @DisplayName("editOffer_whenOfferIdIsNull_thenThrowOfferException")
     public void editOffer_whenOfferIdIsNull_thenThrowOfferException() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
@@ -272,11 +297,10 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("findOfferOwner returns the owner email when the offer exists in the repository")
+    @DisplayName("findOfferOwner_whenOfferExists_thenReturnOwnerEmail")
     public void findOfferOwner_whenOfferExists_thenReturnOwnerEmail() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-        OfferDTO expected = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
 
         when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
 
@@ -288,7 +312,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("findOfferOwner throws OfferException when no offer with the given ID exists")
+    @DisplayName("findOfferOwner_whenOfferDoesNotExist_thenThrowOfferException")
     public void findOfferOwner_whenOfferDoesNotExist_thenThrowOfferException() {
         //Given
         when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.empty());
@@ -302,7 +326,7 @@ public class OfferServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("uploadPhoto stores the photo key on the offer and returns updated OfferDTO when caller is the owner")
+    @DisplayName("uploadPhoto_whenCallerIsOwner_thenSetPhotoPathAndReturnUpdatedDto")
     public void uploadPhoto_whenCallerIsOwner_thenSetPhotoPathAndReturnUpdatedDto() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
@@ -311,44 +335,48 @@ public class OfferServicePrimaryTest {
 
         when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.of(offer));
         when(offerRepository.save(any())).thenReturn(offer);
-        when(photoStorage.upload(any(byte[].class), eq("image/jpeg"), eq("hotel.jpg")))
+        when(photoStorage.upload(any(InputStream.class), anyLong(), eq("image/jpeg"), eq("hotel.jpg")))
                 .thenReturn(expectedKey);
         when(photoStorage.presignedUrl(expectedKey)).thenReturn(expectedUrl);
 
+        InputStream stream = new ByteArrayInputStream("bytes".getBytes());
+
         //When
         OfferDTO actual = offerService.uploadPhoto(
-                TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL, "bytes".getBytes(), "image/jpeg", "hotel.jpg"
+                TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL, stream, 5L, "image/jpeg", "hotel.jpg"
         );
 
         //Then
         assertEquals(expectedKey, actual.getPhotoPath());
         assertEquals(expectedUrl, actual.getPhotoUrl());
-        verify(photoStorage).upload(any(byte[].class), eq("image/jpeg"), eq("hotel.jpg"));
+        verify(photoStorage).upload(any(InputStream.class), anyLong(), eq("image/jpeg"), eq("hotel.jpg"));
         verify(offerRepository).save(any(Offer.class));
     }
 
     @Test
-    @DisplayName("uploadPhoto throws OfferException when the offer does not exist")
+    @DisplayName("uploadPhoto_whenOfferDoesNotExist_thenThrowOfferException")
     public void uploadPhoto_whenOfferDoesNotExist_thenThrowOfferException() {
         //Given
         when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.empty());
+        InputStream stream = new ByteArrayInputStream(new byte[0]);
 
         //Then
         assertThrows(OfferException.class, () ->
-                offerService.uploadPhoto(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL, new byte[0], "image/jpeg", "f.jpg")
+                offerService.uploadPhoto(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL, stream, 0L, "image/jpeg", "f.jpg")
         );
     }
 
     @Test
-    @DisplayName("uploadPhoto throws OfferException when the caller is not the offer owner")
+    @DisplayName("uploadPhoto_whenCallerIsNotOwner_thenThrowOfferException")
     public void uploadPhoto_whenCallerIsNotOwner_thenThrowOfferException() {
         //Given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         when(offerRepository.findById(TEST_DEFAULT_OFFER_ID)).thenReturn(Optional.of(offer));
+        InputStream stream = new ByteArrayInputStream(new byte[0]);
 
         //Then
         assertThrows(OfferException.class, () ->
-                offerService.uploadPhoto(TEST_DEFAULT_OFFER_ID, SECOND_TEST_USER_EMAIL, new byte[0], "image/jpeg", "f.jpg")
+                offerService.uploadPhoto(TEST_DEFAULT_OFFER_ID, SECOND_TEST_USER_EMAIL, stream, 0L, "image/jpeg", "f.jpg")
         );
     }
 }
