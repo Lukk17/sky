@@ -3,12 +3,14 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 
-./k8s/secret/docker-cred.yaml
-./k8s/secret/secrets.yaml
-./k8s/secret/sealed-private.key
-./k8s/secret/ssl/dev-ssl-cert.csr
-./k8s/secret/ssl/dev-ssl-cert.key
-./k8s/secret/ssl/dev-ssl-cert.yaml
+# Kubernetes secrets and sealed-secret key material (never commit)
+/k8s/secret/docker-cred.yaml
+/k8s/secret/secrets.yaml
+/k8s/secret/sealed-private.key
+/k8s/secret/sealed-public.crt
+/k8s/secret/ssl/dev-ssl-cert.csr
+/k8s/secret/ssl/dev-ssl-cert.key
+/k8s/secret/ssl/dev-ssl-cert.yaml
 
 
 # User-specific stuff
@@ -85,8 +87,3 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
-
-/k8s/secret/secrets.yaml
-/k8s/secret/sealed-public.crt
-/k8s/secret/sealed-private.key
-/k8s/secret/docker-cred.yaml

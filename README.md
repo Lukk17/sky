@@ -267,17 +267,9 @@ In this mode the gateway handles the OIDC login flow and forwards the bearer tok
 
 ### DB setup
 
-Flyway runs automatically on startup and applies the `V1__init.sql` migration for each service.
-
-To seed initial data after first start:
-
-```bash
-mysql -u <user> -p sky < config/script/sql_commands/sql_offers_insert.sql
-```
-
-```bash
-mysql -u <user> -p sky < config/script/sql_commands/sql_messages_insert.sql
-```
+Flyway runs automatically on startup and applies the versioned migrations (`V1`, `V2`) for each stateful service
+against PostgreSQL. No manual seeding is needed: when a service runs under the `local` Spring profile, Flyway also
+applies the repeatable `R__demo_seed.sql` from `db/demo`, which inserts the demo offers and messages idempotently.
 
 ---
 

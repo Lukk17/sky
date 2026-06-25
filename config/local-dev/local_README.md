@@ -11,7 +11,7 @@
 
 ### Part 3. Running with Docker
 - [Running app in Docker](#running-app-in-docker)
-- [Adding MySQL server to docker](#adding-mysql-server-to-docker)
+- [Adding PostgreSQL server to docker](#adding-postgresql-server-to-docker)
 
 ### Part 4. Extras
 - [Troubleshooting](#troubleshooting)
@@ -151,7 +151,7 @@ it will prompt for password
 ### Run deployment script:
 `services-deploy.sh`
 
-mysql, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage, etc.
+postgres, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage, etc.
 
 
 ---------------------------------
@@ -341,29 +341,30 @@ docker network rm sky-net
 
 ---------------------------------
 
-## Adding MySQL server to docker
+## Adding PostgreSQL server to docker
 
-For every microservice that needs its one database MySQL DB image should be created in docker.   
-Mysql image can be added to docker-compose.yaml, for example, sky-offer DB image should look like:
+For every microservice that needs its own database a PostgreSQL DB image should be created in docker.
+A postgres image can be added to docker-compose.yaml, for example, sky-offer DB image should look like:
 
 ```yaml
-  mysql-sky_offer:
-    image: 'mysql:latest'
+  postgres-sky_offer:
+    image: 'postgres:16'
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=XXX
-      - MYSQL_DATABASE=sky_offer
+      - POSTGRES_DB=sky
+      - POSTGRES_USER=XXX
+      - POSTGRES_PASSWORD=XXX
     ports:
-      - 3307:3306
-    expose:
-      - 3306
+      - 5432:5432
 ```
 
-In microservice docker-compose.yaml description dependency to right MySQL image needs to be added:
+The JDBC URL for connecting a service to this container is `jdbc:postgresql://host.docker.internal:5432/sky`.
+
+In microservice docker-compose.yaml description dependency to right PostgreSQL image needs to be added:
 
 ```yaml
     depends_on:
-      - mysql-sky_offer
+      - postgres-sky_offer
 ```
 
 
@@ -406,8 +407,8 @@ minikube ssh docker pull <imageName>
 ```
 examples:
 ```shell
-minikube ssh docker pull mysql
-minikube ssh docker pull quay.io/keycloak/keycloak:19.0.3
+minikube ssh docker pull postgres:16
+minikube ssh docker pull quay.io/keycloak/keycloak:26.2.5
 minikube ssh docker pull lukk17/sky-offer
 minikube ssh docker pull lukk17/sky-message
 ```
@@ -450,8 +451,8 @@ spec:
 
 examples:
 ```shell
-minikube image load mysql
-minikube image load quay.io/keycloak/keycloak:19.0.3
+minikube image load postgres:16
+minikube image load quay.io/keycloak/keycloak:26.2.5
 minikube image load lukk17/sky-offer
 minikube image load lukk17/sky-message
 ```
