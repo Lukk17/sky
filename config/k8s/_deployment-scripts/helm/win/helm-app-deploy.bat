@@ -16,6 +16,10 @@ kubectl apply -f .\config\k8s\secret\sealed\sealed-secrets.yaml
 kubectl apply -f .\config\k8s\secret\sealed\sealed-docker-cred.yaml
 kubectl apply -f .\config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
 
+:: Sync the canonical realm into the chart. config\keycloak\sky-realm.json is the
+:: single source of truth; the chart copy is generated here and is gitignored.
+copy /Y .\config\keycloak\sky-realm.json .\config\k8s\helm\infra\keycloak\files\sky-realm.json
+
 :: Keycloak backing postgres, then Keycloak itself
 helm install keycloak .\config\k8s\helm\infra\keycloak\ ^
   -f .\config\k8s\helm\infra\keycloak\values.yaml ^

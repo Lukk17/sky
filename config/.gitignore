@@ -3,6 +3,9 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 
+# Generated at deploy time from the canonical config/keycloak/sky-realm.json
+/k8s/helm/infra/keycloak/files/sky-realm.json
+
 # Kubernetes secrets and sealed-secret key material (never commit)
 /k8s/secret/docker-cred.yaml
 /k8s/secret/secrets.yaml

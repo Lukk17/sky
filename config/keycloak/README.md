@@ -1,8 +1,10 @@
 # Keycloak realm (realm-as-code)
 
-`sky-realm.json` is the source of truth for the `sky` Keycloak realm. It is imported
-into the running Keycloak locally and mounted into the Keycloak Helm chart in the
-cluster, so the realm comes up pre-configured.
+`sky-realm.json` is the single source of truth for the `sky` Keycloak realm. It is imported
+into the running Keycloak locally and, for the cluster, synced into the Keycloak Helm chart at
+deploy time (the `helm-app-deploy` script copies it to `config/k8s/helm/infra/keycloak/files/`,
+which is gitignored), so the realm comes up pre-configured. Edit only this file; never edit the
+generated chart copy.
 
 ### What it defines
 

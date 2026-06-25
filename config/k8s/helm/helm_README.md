@@ -156,8 +156,15 @@ python3 -c "import os,base64; print(base64.b64encode(os.urandom(32)).decode())"
 
 ### 3. Keycloak
 
-Keycloak 26.x runs with a dedicated backing PostgreSQL (managed inside the same Helm chart — do not share the app DB).
-The `sky` realm is pre-imported from `config/keycloak/sky-realm.json` via `--import-realm` on first boot.
+Keycloak 26.x runs with a dedicated backing PostgreSQL (managed inside the same Helm chart, do not share the app DB).
+The `sky` realm is pre-imported via `--import-realm` on first boot. The canonical realm file is
+`config/keycloak/sky-realm.json`; the `helm-app-deploy` script syncs it into this chart's `files/sky-realm.json`
+(gitignored) before installing, so there is only one committed copy. If you run `helm install`/`helm template` for this
+chart by hand, copy the realm in first:
+
+```shell
+cp ./config/keycloak/sky-realm.json ./config/k8s/helm/infra/keycloak/files/sky-realm.json
+```
 
 Install (production overlay swaps the TLS secret name):
 
