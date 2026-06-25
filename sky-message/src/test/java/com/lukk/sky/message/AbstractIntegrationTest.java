@@ -1,5 +1,6 @@
 package com.lukk.sky.message;
 
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
@@ -16,6 +17,7 @@ import org.testcontainers.utility.DockerImageName;
  * that treats the bearer token value as the {@code email} claim.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 @Testcontainers
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)

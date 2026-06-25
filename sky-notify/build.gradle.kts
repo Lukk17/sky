@@ -23,7 +23,7 @@ dependencies {
     implementation("org.springframework.security:spring-security-messaging")
 
     implementation(libs.gson)
-    implementation(libs.spring.kafka)
+    implementation(libs.spring.boot.starter.kafka)
 
     testImplementation(libs.spring.kafka.test)
     testImplementation(libs.testcontainers.kafka)

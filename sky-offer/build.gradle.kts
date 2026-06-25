@@ -18,7 +18,7 @@ dependencies {
     runtimeOnly(libs.flyway.database.postgresql)
 
     implementation(libs.gson)
-    implementation(libs.spring.kafka)
+    implementation(libs.spring.boot.starter.kafka)
 
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
@@ -27,6 +27,9 @@ dependencies {
     implementation(libs.awssdk.s3)
 
     testImplementation(libs.spring.kafka.test)
+    testImplementation(libs.spring.boot.webmvc.test)
+    testImplementation(libs.spring.boot.resttestclient)
+    testImplementation(libs.spring.boot.restclient)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.kafka)
 

@@ -11,8 +11,8 @@ description = "sky-gateway"
 
 dependencyManagement {
     imports {
-        // Spring Cloud 2024.0.x targets Spring Boot 3.4/3.5. Importing the BOM after the
-        // Spring Boot BOM (already imported by the convention plugin) lets SC manage its own
+        // Spring Cloud 2025.1.x (Oakwood) targets Spring Boot 4.0.x. Importing the BOM after
+        // the Spring Boot BOM (already imported by the convention plugin) lets SC manage its own
         // versions while Spring Boot manages the shared ones.
         mavenBom(libs.spring.cloud.dependencies.get().toString())
     }
@@ -20,7 +20,7 @@ dependencyManagement {
 
 dependencies {
     // Core gateway — reactive HTTP proxy + route predicates + filters (WebFlux/Netty).
-    implementation(libs.spring.cloud.starter.gateway)
+    implementation(libs.spring.cloud.starter.gateway.server.webflux)
 
     // OAuth2 client: optional `secure` profile wires token-relay to upstream services.
     // Kept optional here so the gateway starts cleanly with no Keycloak instance running.

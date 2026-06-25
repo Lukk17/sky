@@ -5,6 +5,7 @@ import com.lukk.sky.message.domain.model.Message;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Builder
 @Data
+@AllArgsConstructor
 public class MessageDTO {
 
     private Long id;

@@ -11,9 +11,9 @@ plugins {
 // convention plugins cannot use the `libs` identifier directly the way build.gradle.kts can.
 val libs = the<LibrariesForLibs>()
 
-// Force the Testcontainers version from the catalog over the Spring Boot 3.5.4 BOM, which
-// otherwise pins 1.21.3. TC 1.x cannot complete the Docker Engine 29+ /info handshake
-// (HTTP 400); TC 2.x is required. Drop this block once the Spring Boot 4 BOM manages 2.x.
+// Force the Testcontainers version from the catalog. Spring Boot 4 BOM manages 2.x by default,
+// but the explicit force here ensures the catalog pin (2.0.5) is authoritative regardless of
+// what any future BOM bump would pull in.
 configurations.configureEach {
     resolutionStrategy.eachDependency {
         if (requested.group == "org.testcontainers") {

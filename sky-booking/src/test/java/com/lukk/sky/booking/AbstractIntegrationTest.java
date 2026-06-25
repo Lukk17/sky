@@ -1,5 +1,6 @@
 package com.lukk.sky.booking;
 
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
@@ -22,6 +23,7 @@ import org.testcontainers.utility.DockerImageName;
  * authenticate by calling {@code headers.setBearerAuth(email)}.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 @Testcontainers
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
