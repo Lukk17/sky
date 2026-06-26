@@ -9,12 +9,12 @@ COPY gradle ./gradle
 COPY buildSrc ./buildSrc
 COPY sky-common ./sky-common
 COPY sky-notify ./sky-notify
-RUN gradle :sky-notify:bootJar --no-daemon -x test \
+RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-notify:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-notify/build/libs/sky-notify.jar \
         extract --layers --launcher --destination sky-notify/build/extracted
 
 # ===============> RUN STAGE <===============
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 RUN addgroup -S sky && adduser -S sky -G sky
 USER sky
 WORKDIR /app

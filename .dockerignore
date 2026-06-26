@@ -1,0 +1,13 @@
+**/build/
+**/.gradle/
+.gradle/
+.git/
+.github/
+.idea/
+.vscode/
+*.iml
+**/*.log
+config/docker/certs/
+openspec/
+docs/
+**/.DS_Store

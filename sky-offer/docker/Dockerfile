@@ -9,12 +9,12 @@ COPY gradle ./gradle
 COPY buildSrc ./buildSrc
 COPY sky-common ./sky-common
 COPY sky-offer ./sky-offer
-RUN gradle :sky-offer:bootJar --no-daemon -x test \
+RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-offer:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-offer/build/libs/sky-offer.jar \
         extract --layers --launcher --destination sky-offer/build/extracted
 
 # ===============> RUN STAGE <===============
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 RUN addgroup -S sky && adduser -S sky -G sky
 USER sky
 WORKDIR /app
