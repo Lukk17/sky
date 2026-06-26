@@ -8,7 +8,11 @@ import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -28,6 +32,12 @@ public class OfferServiceCaller {
         RestClient.RequestHeadersSpec<?> spec = restClient.get().uri(url);
         if (correlationId != null) {
             spec = spec.header(CorrelationIdFilter.CORRELATION_ID_HEADER, correlationId);
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
+            spec = spec.header(HttpHeaders.AUTHORIZATION,
+                    "Bearer " + jwtAuthentication.getToken().getTokenValue());
         }
 
         return spec
