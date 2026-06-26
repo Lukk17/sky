@@ -1,6 +1,9 @@
 package com.lukk.sky.booking.adapters.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-public record BookingPayload(@NotBlank String offerId, @NotBlank String dateToBook) {
+import java.util.UUID;
+
+public record BookingPayload(@NotNull UUID offerId, @NotBlank String dateToBook) {
 }

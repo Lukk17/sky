@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 import static com.lukk.sky.common.web.DateTimeConstants.DISPLAY_ZONE;
@@ -19,7 +20,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DISPLAY_ZONE;
 @AllArgsConstructor
 public class MessageDTO {
 
-    private Long id;
+    private UUID id;
 
     @Size(max = 65000)
     private String text;
@@ -41,6 +42,7 @@ public class MessageDTO {
                 .receiverEmail(message.getReceiverEmail())
                 .senderEmail(message.getSenderEmail())
                 .createdTime(DATE_TIME_FORMAT.format(message.getCreatedTime()))
+                .read(message.isRead())
                 .build();
     }
 

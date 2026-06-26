@@ -25,6 +25,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.getPopulatedOffer;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.getPopulatedOffersDTO;
@@ -106,7 +107,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     void getOwnedOffers_whenOwnerHasMultipleOffers_thenReturnOnlyOwnersOffers() {
         populateDatabase();
 
-        Offer offer = getPopulatedOffer(2L);
+        Offer offer = getPopulatedOffer(UUID.randomUUID());
         offer.setId(null);
         offer.setOwnerEmail(TEST_OWNER_EMAIL_2);
         offerRepository.save(offer);
@@ -148,7 +149,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/offers/{id}/owner returns the owner email for an existing offer")
     void getOfferOwner_whenOfferExists_thenReturnOwnerEmail() {
-        long offerId = populateDatabase().getId();
+        UUID offerId = populateDatabase().getId();
 
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
@@ -166,7 +167,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("PUT /api/v1/owner/offers updates the offer, returns 200, and publishes a Kafka event")
     void updateOffer_whenOwnerEditsOffer_thenReturn200AndPublishKafkaEvent() {
-        long offerId = populateDatabase().getId();
+        UUID offerId = populateDatabase().getId();
 
         OfferEditDTO updatedOffer = OfferEditDTO.of(OfferAssembler.getPopulatedOffer(offerId));
         updatedOffer.setHotelName(UPDATED_NAME);
@@ -190,7 +191,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("DELETE /api/v1/owner/offers/{id} removes the offer and publishes a Kafka event")
     void deleteOffer_whenOwnerDeletesOffer_thenOfferRemovedAndKafkaEventPublished() {
-        long offerId = populateDatabase().getId();
+        UUID offerId = populateDatabase().getId();
 
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
@@ -230,7 +231,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     }
 
     private Offer populateDatabase() {
-        Offer offer = getPopulatedOffer(2L);
+        Offer offer = getPopulatedOffer(UUID.randomUUID());
         offer.setId(null);
         offerRepository.save(offer);
 

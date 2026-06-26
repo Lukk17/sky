@@ -30,6 +30,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -139,7 +140,7 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("deleteBooking removes the booking and returns 204 No Content when the booking exists")
     void deleteBooking_whenBookingExists_thenRemoveAndReturn204() {
-        Long bookingId = populateDatabase().getId();
+        UUID bookingId = populateDatabase().getId();
 
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
@@ -201,7 +202,7 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     private static void assertKafkaPayload(BookingDTO actual, ConsumerRecord<String, String> record) {
         assertTrue(record.value().contains(actual.getBookedDate()));
         assertTrue(record.value().contains(actual.getBookingUser()));
-        assertTrue(record.value().contains(actual.getOfferId()));
+        assertTrue(record.value().contains(actual.getOfferId().toString()));
         assertTrue(record.value().contains(actual.getOwnerEmail()));
     }
 }

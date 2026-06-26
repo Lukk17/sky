@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Primary implementation of the {@link MessageService}.
@@ -49,7 +50,7 @@ public class MessageServicePrimary implements MessageService {
      * Logs a message when the message is successfully deleted.
      */
     @Override
-    public void remove(Long messageId, String userId) {
+    public void remove(UUID messageId, String userId) {
         Message message = messageRepo.findById(messageId)
                 .orElseThrow(() -> new MessageNotFoundException("Message with ID: " + messageId + " not found."));
 

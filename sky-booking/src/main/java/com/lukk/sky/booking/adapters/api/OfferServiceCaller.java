@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
+import java.util.UUID;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -26,7 +28,7 @@ public class OfferServiceCaller {
 
     @Retry(name = "offerService")
     @CircuitBreaker(name = "offerService", fallbackMethod = "fallback")
-    public String callOfferService(String url, String offerId) {
+    public String callOfferService(String url, UUID offerId) {
         String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
 
         RestClient.RequestHeadersSpec<?> spec = restClient.get().uri(url);
@@ -63,7 +65,7 @@ public class OfferServiceCaller {
     }
 
     @SuppressWarnings("unused")
-    public String fallback(String url, String offerId, CallNotPermittedException ex) {
+    public String fallback(String url, UUID offerId, CallNotPermittedException ex) {
         log.warn("Offer service circuit breaker OPEN — failing fast for offerId={}", offerId);
         throw new BookingException("Offer service unavailable for offerId=" + offerId);
     }

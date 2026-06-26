@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
@@ -100,11 +101,11 @@ public class MessageController {
     })
     @IsUser
     @DeleteMapping("/messages/{messageId}")
-    public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
+    public ResponseEntity<Void> deleteMessage(@PathVariable UUID messageId) {
         String userEmail = SecurityUtils.currentUserEmail();
 
         log.info("Removing message with ID: {}", messageId);
-        messageService.remove(Long.parseLong(messageId), userEmail);
+        messageService.remove(messageId, userEmail);
 
         return ResponseEntity.noContent().build();
     }

@@ -4,13 +4,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Offer — equals and hashCode contract (Hibernate-safe, id-based)")
 class OfferEqualsHashCodeTest {
 
-    private Offer buildOffer(Long id) {
+    private static final UUID ID_A = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID ID_B = UUID.fromString("00000000-0000-0000-0000-000000000002");
+
+    private Offer buildOffer(UUID id) {
         return Offer.builder()
                 .id(id)
                 .hotelName("Hotel")
@@ -25,7 +29,7 @@ class OfferEqualsHashCodeTest {
     @Test
     @DisplayName("equals_whenSameInstance_thenReturnTrue")
     void equals_whenSameInstance_thenReturnTrue() {
-        Offer offer = buildOffer(1L);
+        Offer offer = buildOffer(ID_A);
 
         assertEquals(offer, offer);
     }
@@ -33,8 +37,8 @@ class OfferEqualsHashCodeTest {
     @Test
     @DisplayName("equals_whenBothHaveSameId_thenReturnTrue")
     void equals_whenBothHaveSameId_thenReturnTrue() {
-        Offer a = buildOffer(1L);
-        Offer b = buildOffer(1L);
+        Offer a = buildOffer(ID_A);
+        Offer b = buildOffer(ID_A);
 
         assertEquals(a, b);
     }
@@ -42,8 +46,8 @@ class OfferEqualsHashCodeTest {
     @Test
     @DisplayName("equals_whenIdsDiffer_thenReturnFalse")
     void equals_whenIdsDiffer_thenReturnFalse() {
-        Offer a = buildOffer(1L);
-        Offer b = buildOffer(2L);
+        Offer a = buildOffer(ID_A);
+        Offer b = buildOffer(ID_B);
 
         assertNotEquals(a, b);
     }
@@ -51,7 +55,7 @@ class OfferEqualsHashCodeTest {
     @Test
     @DisplayName("equals_whenOneIdIsNull_thenReturnFalse")
     void equals_whenOneIdIsNull_thenReturnFalse() {
-        Offer withId = buildOffer(1L);
+        Offer withId = buildOffer(ID_A);
         Offer withoutId = buildOffer(null);
 
         assertNotEquals(withId, withoutId);
@@ -61,7 +65,7 @@ class OfferEqualsHashCodeTest {
     @Test
     @DisplayName("equals_whenComparedToNull_thenReturnFalse")
     void equals_whenComparedToNull_thenReturnFalse() {
-        Offer offer = buildOffer(1L);
+        Offer offer = buildOffer(ID_A);
 
         assertNotEquals(null, offer);
     }
@@ -69,8 +73,8 @@ class OfferEqualsHashCodeTest {
     @Test
     @DisplayName("hashCode_whenEqualOffers_thenSameHashCode")
     void hashCode_whenEqualOffers_thenSameHashCode() {
-        Offer a = buildOffer(1L);
-        Offer b = buildOffer(1L);
+        Offer a = buildOffer(ID_A);
+        Offer b = buildOffer(ID_A);
 
         assertEquals(a.hashCode(), b.hashCode());
     }

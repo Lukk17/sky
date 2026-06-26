@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service interface for managing messages.
@@ -27,7 +28,7 @@ public interface MessageService {
      * @param username  The username of the user making the request.
      * @throws IllegalArgumentException if either {@code messageId} or {@code username} is {@code null}.
      */
-    void remove(Long messageId, String username);
+    void remove(UUID messageId, String username);
 
     /**
      * Retrieves a paginated view of the messages received by a user.

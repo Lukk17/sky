@@ -8,13 +8,14 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Objects;
+import java.util.UUID;
 
 @Builder
 @Data
 @AllArgsConstructor
 public class OfferDTO {
 
-    private Long id;
+    private UUID id;
 
     @NotBlank
     private String hotelName;

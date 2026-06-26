@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_FORMAT;
 
@@ -40,7 +41,7 @@ public class BookingServicePrimary implements BookingService {
     }
 
     @Override
-    public BookingDTO bookOffer(String offerId, String dateToBookUnparsed, String userEmail)
+    public BookingDTO bookOffer(UUID offerId, String dateToBookUnparsed, String userEmail)
             throws BookingException {
         log.info("Booking offer with ID: {} by user: {}", offerId, userEmail);
 
@@ -62,9 +63,8 @@ public class BookingServicePrimary implements BookingService {
 
     @Override
     @Transactional
-    public String removeBooking(String bookingId, String userEmail) {
-        long id = Long.parseLong(bookingId);
-        Booking booking = bookingRepository.findById(id)
+    public String removeBooking(UUID bookingId, String userEmail) {
+        Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(String.format("No booking with ID: %s found.", bookingId)));
 
         if (booking.getBookingUser().equals(userEmail)) {
@@ -86,7 +86,7 @@ public class BookingServicePrimary implements BookingService {
         }
     }
 
-    private List<Booking> getBookingsForOffer(String offerId) {
+    private List<Booking> getBookingsForOffer(UUID offerId) {
         log.info("Getting bookings for offer with ID: {}", offerId);
 
         return bookingRepository.findAllByOfferId(offerId);
@@ -99,7 +99,7 @@ public class BookingServicePrimary implements BookingService {
         }
     }
 
-    private Booking createNewBooked(String offerId, String bookingUser, LocalDate dateToBook, String ownerEmail) {
+    private Booking createNewBooked(UUID offerId, String bookingUser, LocalDate dateToBook, String ownerEmail) {
         return Booking.builder()
                 .offerId(offerId)
                 .bookedDate(dateToBook)

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +53,7 @@ public class OfferServicePrimary implements OfferService {
     }
 
     @Override
-    public void deleteOffer(Long offerID, String userEmail) throws OfferException {
+    public void deleteOffer(UUID offerID, String userEmail) throws OfferException {
         Offer offerToDelete = offerRepository.findById(offerID)
                 .orElseThrow(() -> new OfferNotFoundException("Can't remove non-existing offer!"));
 
@@ -102,7 +103,7 @@ public class OfferServicePrimary implements OfferService {
 
     @Override
     @Transactional(readOnly = true)
-    public String findOfferOwner(Long offerId) {
+    public String findOfferOwner(UUID offerId) {
         String ownerEmail = offerRepository
                 .findById(offerId)
                 .map(Offer::getOwnerEmail)
@@ -114,7 +115,7 @@ public class OfferServicePrimary implements OfferService {
     }
 
     @Override
-    public OfferDTO uploadPhoto(Long offerId, String ownerEmail, InputStream content, long contentLength,
+    public OfferDTO uploadPhoto(UUID offerId, String ownerEmail, InputStream content, long contentLength,
                                 String validatedContentType, String filename) {
         Offer offer = offerRepository.findById(offerId)
                 .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId)));

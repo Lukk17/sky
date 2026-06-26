@@ -68,8 +68,8 @@ class BookingPersisterTest {
     @DisplayName("saveAndPublish allows booking when existing bookings are for different dates")
     void saveAndPublish_whenExistingBookingsAreForDifferentDates_thenPersistSuccessfully() {
         Booking existingOnDifferentDate = Booking.builder()
-                .id(99L)
-                .offerId("101")
+                .id(java.util.UUID.randomUUID())
+                .offerId(java.util.UUID.randomUUID())
                 .bookedDate(TEST_DATE.minusDays(1))
                 .bookingUser("other@user.com")
                 .ownerEmail("owner@test.com")

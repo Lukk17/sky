@@ -128,8 +128,10 @@ class EventSourceServicePrimaryTest {
 
         eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
 
+        long expectedLockKey = TEST_DEFAULT_OFFER_ID.getMostSignificantBits() ^ TEST_DEFAULT_OFFER_ID.getLeastSignificantBits();
+
         InOrder inOrder = inOrder(eventSourceRepository);
-        inOrder.verify(eventSourceRepository).lockOfferEventStream(TEST_DEFAULT_OFFER_ID);
+        inOrder.verify(eventSourceRepository).lockOfferEventStream(expectedLockKey);
         inOrder.verify(eventSourceRepository).findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID);
         inOrder.verify(eventSourceRepository).save(any(Event.class));
     }

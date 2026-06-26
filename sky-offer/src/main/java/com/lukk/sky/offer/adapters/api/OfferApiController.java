@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
@@ -149,7 +150,7 @@ public class OfferApiController {
     })
     @IsUser
     @DeleteMapping("/owner/offers/{offerId}")
-    public ResponseEntity<Void> deleteOffer(@PathVariable Long offerId) {
+    public ResponseEntity<Void> deleteOffer(@PathVariable UUID offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
@@ -193,7 +194,7 @@ public class OfferApiController {
                     content = @Content)
     })
     @GetMapping("/offers/{offerId}/owner")
-    public ResponseEntity<String> getOfferOwner(@PathVariable Long offerId) {
+    public ResponseEntity<String> getOfferOwner(@PathVariable UUID offerId) {
         log.info("Trying to find owner of offer with ID: {}", offerId);
         String ownerEmail = offerService.findOfferOwner(offerId);
 
@@ -209,7 +210,7 @@ public class OfferApiController {
     @IsUser
     @PostMapping(value = "/owner/offers/{offerId}/photo", consumes = "multipart/form-data")
     public ResponseEntity<OfferDTO> uploadPhoto(
-            @PathVariable Long offerId,
+            @PathVariable UUID offerId,
             @RequestParam("file") MultipartFile file) throws IOException {
 
         if (file.isEmpty()) {

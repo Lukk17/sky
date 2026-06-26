@@ -19,6 +19,7 @@ import org.hibernate.Hibernate;
 
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Table(name = "booking")
@@ -31,11 +32,11 @@ import java.util.Objects;
 public class Booking {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    @NotBlank
-    private String offerId;
+    @NotNull
+    private UUID offerId;
 
     @NotNull
     private LocalDate bookedDate;

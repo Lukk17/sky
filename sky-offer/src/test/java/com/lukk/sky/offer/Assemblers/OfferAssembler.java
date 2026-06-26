@@ -6,6 +6,7 @@ import com.lukk.sky.offer.domain.model.Offer;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 
@@ -19,17 +20,18 @@ public class OfferAssembler {
     public static BigDecimal TEST_PRICE = BigDecimal.valueOf(20);
     public static Long TEST_ROOM_CAPACITY = 5L;
 
-    public static Long TEST_DEFAULT_OFFER_ID = 1L;
+    public static UUID TEST_DEFAULT_OFFER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static UUID TEST_DEFAULT_OFFER_ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
 
     public static List<Offer> getPopulatedOffers() {
         return List.of(
                 getPopulatedOffer(TEST_DEFAULT_OFFER_ID),
-                getPopulatedOffer(2L)
+                getPopulatedOffer(TEST_DEFAULT_OFFER_ID_2)
         );
     }
 
-    public static Offer getPopulatedOffer(Long id) {
+    public static Offer getPopulatedOffer(UUID id) {
         return Offer.builder()
                 .hotelName(TEST_HOTEL_NAME)
                 .ownerEmail(TEST_OWNER_EMAIL)
@@ -44,7 +46,7 @@ public class OfferAssembler {
                 .build();
     }
 
-    public static Offer getEmptyOffer(Long id) {
+    public static Offer getEmptyOffer(UUID id) {
         return Offer.builder()
                 .hotelName("")
                 .ownerEmail("")
@@ -64,11 +66,11 @@ public class OfferAssembler {
 
         return List.of(
                 getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID),
-                getPopulatedOfferDTO(2L)
+                getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID_2)
         );
     }
 
-    public static OfferDTO getPopulatedOfferDTO(Long id) {
+    public static OfferDTO getPopulatedOfferDTO(UUID id) {
         return OfferDTO.builder()
                 .hotelName(TEST_HOTEL_NAME)
                 .city(TEST_CITY)
@@ -83,7 +85,7 @@ public class OfferAssembler {
                 .build();
     }
 
-    public static OfferEditDTO getPopulatedOfferEditDTO(Long id) {
+    public static OfferEditDTO getPopulatedOfferEditDTO(UUID id) {
         return OfferEditDTO.builder()
                 .hotelName(TEST_HOTEL_NAME)
                 .city(TEST_CITY)

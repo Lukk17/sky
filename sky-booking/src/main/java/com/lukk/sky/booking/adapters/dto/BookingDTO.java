@@ -3,21 +3,23 @@ package com.lukk.sky.booking.adapters.dto;
 import com.lukk.sky.booking.domain.model.Booking;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Builder
 @Data
 @AllArgsConstructor
 public class BookingDTO {
 
-    private Long id;
+    private UUID id;
 
-    @NotBlank
-    private String offerId;
+    @NotNull
+    private UUID offerId;
 
     @NotBlank
     private String bookedDate;

@@ -128,8 +128,10 @@ class EventSourceServicePrimaryTest {
 
         eventSourceServicePrimary.saveEvent(booking, TEST_EVENT_TYPE);
 
+        long expectedLockKey = TEST_DEFAULT_BOOKED_ID.getMostSignificantBits() ^ TEST_DEFAULT_BOOKED_ID.getLeastSignificantBits();
+
         InOrder inOrder = inOrder(eventSourceRepository);
-        inOrder.verify(eventSourceRepository).lockBookingEventStream(TEST_DEFAULT_BOOKED_ID);
+        inOrder.verify(eventSourceRepository).lockBookingEventStream(expectedLockKey);
         inOrder.verify(eventSourceRepository).findLastSequenceNumberByBookingId(TEST_DEFAULT_BOOKED_ID);
         inOrder.verify(eventSourceRepository).save(any(Event.class));
     }
@@ -138,7 +140,7 @@ class EventSourceServicePrimaryTest {
     @DisplayName("saveEvent throws IllegalArgumentException and persists nothing when the booking id is null")
     void saveEvent_whenBookingIdIsNull_thenThrowIllegalArgumentException() {
         Booking booking = Booking.builder()
-                .offerId("101")
+                .offerId(java.util.UUID.randomUUID())
                 .bookingUser("user@test.com")
                 .ownerEmail("owner@test.com")
                 .build();

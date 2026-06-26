@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
@@ -88,7 +89,7 @@ public class BookingController {
     })
     @IsUser
     @DeleteMapping("/bookings/{bookingId}")
-    public ResponseEntity<Void> removeBooking(@PathVariable String bookingId) {
+    public ResponseEntity<Void> removeBooking(@PathVariable UUID bookingId) {
         String userEmail = SecurityUtils.currentUserEmail();
         log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
 

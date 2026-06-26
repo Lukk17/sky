@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service interface for managing bookings.
@@ -31,7 +32,7 @@ public interface BookingService {
      * @return The booking.
      * @throws BookingException if the booking cannot be made.
      */
-    BookingDTO bookOffer(String offerID, String dateToBook, String userEmail) throws BookingException;
+    BookingDTO bookOffer(UUID offerID, String dateToBook, String userEmail) throws BookingException;
 
     /**
      * Removes a booking.
@@ -40,5 +41,5 @@ public interface BookingService {
      * @param userEmail The email of the user making the request.
      * @return A confirmation message.
      */
-    String removeBooking(String bookingId, String userEmail);
+    String removeBooking(UUID bookingId, String userEmail);
 }

@@ -154,7 +154,7 @@ class BookingServicePrimaryTest {
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
-        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL);
+        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL);
 
         verify(bookingRepository, times(1)).delete(booking);
         assertEquals(expected, actual);
@@ -167,7 +167,7 @@ class BookingServicePrimaryTest {
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
-        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_OWNER_EMAIL);
+        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_OWNER_EMAIL);
 
         verify(bookingRepository, times(1)).delete(booking);
         assertEquals(expected, actual);
@@ -180,7 +180,7 @@ class BookingServicePrimaryTest {
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
         assertThrows(BookingException.class, () ->
-                bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), "other@user.com")
+                bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, "other@user.com")
         );
     }
 
@@ -190,7 +190,7 @@ class BookingServicePrimaryTest {
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.empty());
 
         assertThrows(BookingException.class, () ->
-                bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL)
+                bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL)
         );
     }
 }

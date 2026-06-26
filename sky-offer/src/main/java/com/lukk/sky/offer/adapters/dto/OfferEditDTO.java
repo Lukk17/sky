@@ -11,6 +11,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Objects;
+import java.util.UUID;
 
 @Builder
 @Data
@@ -18,7 +19,7 @@ import java.util.Objects;
 public class OfferEditDTO {
 
     @NotNull
-    private Long id;
+    private UUID id;
 
     private String hotelName;
 

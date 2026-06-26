@@ -112,7 +112,7 @@ class BookingControllerTest {
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].offerId").value(bookingsDTO.get(0).getOfferId()))
+                .andExpect(jsonPath("$.content[0].offerId").value(bookingsDTO.get(0).getOfferId().toString()))
                 .andExpect(jsonPath("$.totalElements").value(2));
     }
 
@@ -141,8 +141,8 @@ class BookingControllerTest {
     void bookOffer_whenRequestIsValid_thenReturn201WithBookedDto() throws Exception {
         BookingDTO expected = BookingAssembler.getPopulatedBookedDTO();
 
-        Map<String, String> values = new HashMap<>();
-        values.put("offerId", TEST_DEFAULT_OFFER_ID);
+        Map<String, Object> values = new HashMap<>();
+        values.put("offerId", TEST_DEFAULT_OFFER_ID.toString());
         values.put("dateToBook", TEST_DATE.toString());
 
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE.toString(), TEST_USER_EMAIL))
@@ -157,7 +157,7 @@ class BookingControllerTest {
                                 .content(jsonValues)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.offerId").value(expected.getOfferId()))
+                .andExpect(jsonPath("$.offerId").value(expected.getOfferId().toString()))
                 .andExpect(jsonPath("$.bookingUser").value(expected.getBookingUser()))
                 .andExpect(jsonPath("$.ownerEmail").value(expected.getOwnerEmail()))
                 .andExpect(jsonPath("$.bookedDate").value(expected.getBookedDate()));
@@ -184,7 +184,7 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 200 OK when the booking exists and a valid JWT is present")
     void deleteBooking_whenBookingExistsAndJwtIsPresent_thenReturnOk() throws Exception {
-        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
+        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
 
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
@@ -197,7 +197,7 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 401 Unauthorized when no JWT is supplied")
     void deleteBooking_whenNoJwt_thenReturn401() throws Exception {
-        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID.toString(), TEST_USER_EMAIL))
+        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
 
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))

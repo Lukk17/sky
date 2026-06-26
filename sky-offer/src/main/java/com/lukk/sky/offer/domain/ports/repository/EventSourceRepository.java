@@ -7,12 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface EventSourceRepository extends JpaRepository<Event, Long> {
+public interface EventSourceRepository extends JpaRepository<Event, UUID> {
 
     @Query("SELECT max(e.sequenceNumber) FROM Event e WHERE e.offerId = ?1")
-    Optional<Integer> findLastSequenceNumberByOfferId(Long offerId);
+    Optional<Integer> findLastSequenceNumberByOfferId(UUID offerId);
 
     @Query(value = "SELECT pg_advisory_xact_lock(:offerId)", nativeQuery = true)
     void lockOfferEventStream(@Param("offerId") long offerId);

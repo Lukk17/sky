@@ -11,6 +11,7 @@ import lombok.ToString;
 import org.hibernate.Hibernate;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -29,11 +30,11 @@ import java.time.Instant;
 public class Event {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @NotNull
-    private Long offerId;
+    private UUID offerId;
 
     private int sequenceNumber;
 

@@ -30,7 +30,8 @@ public class EventSourceServicePrimary implements EventSourceService {
     public void saveEvent(Booking booking, EventType eventType) {
         Assert.notNull(booking.getId(), "Booking id must not be null when saving an event");
 
-        eventSourceRepository.lockBookingEventStream(booking.getId());
+        long lockKey = booking.getId().getMostSignificantBits() ^ booking.getId().getLeastSignificantBits();
+        eventSourceRepository.lockBookingEventStream(lockKey);
 
         int lastSequence = eventSourceRepository.findLastSequenceNumberByBookingId(booking.getId())
                 .orElse(0);

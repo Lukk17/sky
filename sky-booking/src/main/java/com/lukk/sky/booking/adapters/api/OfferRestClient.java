@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 
+import java.util.UUID;
+
 /**
  * Synchronous implementation of {@link RestClient} that calls the offer service.
  *
@@ -34,7 +36,7 @@ public class OfferRestClient implements RestClient {
     private final RequestUriStrategy requestUriStrategy;
 
     @Override
-    public String requestOfferOwner(String offerId) {
+    public String requestOfferOwner(UUID offerId) {
         String endpoint = String.format("%s/%s/owner",
                 skyConfigProperties.getOfferOwnerEndpoint(),
                 offerId

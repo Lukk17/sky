@@ -22,6 +22,7 @@ import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -91,7 +92,7 @@ class OfferServiceCallerResilienceTest {
 
         assertThrows(
                 ResourceAccessException.class,
-                () -> offerServiceCaller.callOfferService(url, "42")
+                () -> offerServiceCaller.callOfferService(url, UUID.randomUUID())
         );
 
         assertEquals(3, mockWebServer.getRequestCount() - requestCountBaseline);
@@ -103,14 +104,15 @@ class OfferServiceCallerResilienceTest {
     void callOfferService_whenServerReturns404_thenDoesNotRetryAndThrowsBookingException() {
         mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
+        UUID testOfferId = UUID.fromString("00000000-0000-0000-0000-000000000099");
         String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/99/owner";
 
         BookingException ex = assertThrows(
                 BookingException.class,
-                () -> offerServiceCaller.callOfferService(url, "99")
+                () -> offerServiceCaller.callOfferService(url, testOfferId)
         );
 
-        assertEquals("Offer not found for offerId=99", ex.getMessage());
+        assertEquals("Offer not found for offerId=" + testOfferId, ex.getMessage());
         assertEquals(1, mockWebServer.getRequestCount() - requestCountBaseline);
     }
 
@@ -125,7 +127,7 @@ class OfferServiceCallerResilienceTest {
         );
 
         String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/1/owner";
-        String owner = offerServiceCaller.callOfferService(url, "1");
+        String owner = offerServiceCaller.callOfferService(url, UUID.randomUUID());
 
         assertEquals("owner@example.com", owner);
         assertEquals(1, mockWebServer.getRequestCount() - requestCountBaseline);

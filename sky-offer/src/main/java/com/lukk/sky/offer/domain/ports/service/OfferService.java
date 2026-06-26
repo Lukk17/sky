@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.io.InputStream;
+import java.util.UUID;
 
 public interface OfferService {
 
@@ -14,7 +15,7 @@ public interface OfferService {
 
     OfferDTO addOffer(OfferDTO offer) throws OfferException;
 
-    void deleteOffer(Long id, String userEmail);
+    void deleteOffer(UUID id, String userEmail);
 
     Page<OfferDTO> getOwnedOffers(String ownerEmail, Pageable pageable);
 
@@ -22,8 +23,8 @@ public interface OfferService {
 
     OfferDTO editOffer(OfferEditDTO offerEditDTO);
 
-    String findOfferOwner(Long offerId);
+    String findOfferOwner(UUID offerId);
 
-    OfferDTO uploadPhoto(Long offerId, String ownerEmail, InputStream content, long contentLength,
+    OfferDTO uploadPhoto(UUID offerId, String ownerEmail, InputStream content, long contentLength,
                          String validatedContentType, String filename);
 }
