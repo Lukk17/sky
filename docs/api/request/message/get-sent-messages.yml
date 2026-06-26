@@ -6,8 +6,6 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/msg/api/messages/sent?page=0&size=20"
-  auth:
-    type: none
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"

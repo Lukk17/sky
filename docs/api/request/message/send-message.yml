@@ -6,8 +6,6 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/msg/api/messages"
-  auth:
-    type: none
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"
@@ -24,6 +22,12 @@ http:
       }
 
 runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201 && res.body && res.body.id !== undefined) {
+          bru.setVar("messageId", res.body.id);
+        }
   assertions:
     - expression: res.status
       operator: eq

@@ -25,40 +25,56 @@ The collection has two environments in [request/environments/](request/environme
 | `local` | `http://localhost:8080` (Spring Cloud Gateway) |
 | `prod` | `https://skycloud.luksarna.com` |
 
-Both environments have a `bearerToken` variable that you fill in before running protected
-requests. See the next section for how to mint one.
+Both environments also define a `keycloakUrl` (the realm issuer host) plus the realm client and user
+credentials, and a `bearerToken`. You do not fill `bearerToken` by hand: the `auth/get-token.yml` request
+mints a token and saves it there automatically. See the next section.
 
 ---
 
-### Minting a Keycloak token
+### Authentication and the self-driving run
 
-The Sky services are Keycloak JWT resource servers. Every token is issued by the realm at
-`https://keycloak.luksarna.com/realms/sky`. Use the password grant for interactive testing:
+The Sky services are Keycloak JWT resource servers. Tokens are issued by the `sky` realm at the host in the
+`keycloakUrl` environment variable (`http://localhost:8080` locally, `https://keycloak.luksarna.com` in prod).
+
+The collection is self-driving: you never copy a token or an id by hand.
+
+1. `auth/get-token.yml` (seq 1) runs the Keycloak password grant and, in a post-response script, saves the
+   returned `access_token` into the `bearerToken` environment variable. Every other request sends
+   `Authorization: Bearer {{bearerToken}}`, so once this request has run they are all authenticated.
+2. `offer/create-offer.yml` saves the new offer id into the runtime variable `offerId`; the owner lookup, photo
+   upload, edit and the final delete all reference `{{offerId}}`. `booking/create-booking.yml` saves `bookingId`
+   for its delete, and `message/send-message.yml` saves `messageId` for its delete.
+3. `offer/upload-photo.yml` posts the 1x1 image at [request/sample.png](request/sample.png) as
+   `multipart/form-data` under the `file` field, the part name the controller expects.
+
+Run the whole collection in dependency order with the Bruno CLI. The `seq` on each request and on each folder
+makes the run flow as: get token, then offer create, reads, owner lookup, photo upload and edit, then booking
+create, read and delete, then message send, read and delete, and finally the offer delete as teardown.
 
 ```bash
-curl -s -X POST \
-  "https://keycloak.luksarna.com/realms/sky/protocol/openid-connect/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=password" \
-  -d "client_id=<your-client-id>" \
-  -d "username=<user@example.com>" \
-  -d "password=<password>"
+bru run -r --env local
 ```
 
-Copy the `access_token` from the JSON response and paste it into the `bearerToken`
-environment variable inside Bruno. Tokens are short-lived (typically 5 minutes). When you
-receive a `401`, re-run the curl above to get a fresh token.
+Switch `--env local` to `--env prod` for the deployed stack. Before a prod run, fill `keycloakClientSecret`,
+`keycloakUsername` and `keycloakPassword` in [request/environments/prod.yml](request/environments/prod.yml); the
+local environment already carries the dev realm credentials taken from `config/keycloak/sky-realm.json`.
 
-For automated scripts or CI, use the client-credentials grant instead:
+In the Bruno desktop app, select the `local` environment, run `auth/get-token.yml` once, then run any other
+request; the saved `bearerToken` and the chained ids are reused for the rest of the session.
+
+If you prefer to mint a token by hand, for example to inspect its claims, use the password grant directly:
 
 ```bash
-curl -s -X POST \
-  "https://keycloak.luksarna.com/realms/sky/protocol/openid-connect/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=client_credentials" \
-  -d "client_id=<client-id>" \
-  -d "client_secret=<client-secret>"
+curl -s -X POST "http://localhost:8080/realms/sky/protocol/openid-connect/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=password" -d "client_id=sky-backend" -d "client_secret=dev-only-change-in-prod" -d "username=owner" -d "password=owner"
 ```
+
+For automated scripts or CI without a user, use the client-credentials grant instead:
+
+```bash
+curl -s -X POST "http://localhost:8080/realms/sky/protocol/openid-connect/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials" -d "client_id=<client-id>" -d "client_secret=<client-secret>"
+```
+
+Tokens are short-lived (typically 5 minutes); re-run `auth/get-token.yml` (or the curl above) when you get a `401`.
 
 ---
 

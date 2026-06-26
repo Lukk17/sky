@@ -1,0 +1,31 @@
+info:
+  name: Upload Offer Photo
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/offer/api/owner/offers/{{offerId}}/photo"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - sample.png
+        contentType: image/png
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.id
+      operator: isDefined
+    - expression: res.body.photoUrl
+      operator: isDefined

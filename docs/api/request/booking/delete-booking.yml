@@ -5,9 +5,7 @@ info:
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/booking/api/bookings/1"
-  auth:
-    type: none
+  url: "{{baseUrl}}/booking/api/bookings/{{bookingId}}"
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"

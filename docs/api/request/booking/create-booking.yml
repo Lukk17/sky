@@ -1,13 +1,11 @@
 info:
   name: Create Booking
   type: http
-  seq: 2
+  seq: 1
 
 http:
   method: POST
   url: "{{baseUrl}}/booking/api/bookings"
-  auth:
-    type: none
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"
@@ -19,11 +17,17 @@ http:
     type: json
     data: |-
       {
-        "offerId": "42",
-        "dateToBook": "2024-08-15"
+        "offerId": "{{offerId}}",
+        "dateToBook": "2027-08-15"
       }
 
 runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201 && res.body && res.body.id !== undefined) {
+          bru.setVar("bookingId", res.body.id);
+        }
   assertions:
     - expression: res.status
       operator: eq

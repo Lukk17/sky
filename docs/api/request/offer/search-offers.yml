@@ -1,13 +1,11 @@
 info:
   name: Search Offers (public)
   type: http
-  seq: 2
+  seq: 3
 
 http:
   method: POST
   url: "{{baseUrl}}/offer/api/search"
-  auth:
-    type: none
   headers:
     - name: Content-Type
       value: text/plain

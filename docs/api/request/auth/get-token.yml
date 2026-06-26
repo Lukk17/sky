@@ -1,0 +1,40 @@
+info:
+  name: Get Token (Keycloak)
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{keycloakUrl}}/realms/sky/protocol/openid-connect/token"
+  headers:
+    - name: Content-Type
+      value: application/x-www-form-urlencoded
+    - name: Accept
+      value: application/json
+  body:
+    type: form-urlencoded
+    data:
+      - name: grant_type
+        value: password
+      - name: client_id
+        value: "{{keycloakClientId}}"
+      - name: client_secret
+        value: "{{keycloakClientSecret}}"
+      - name: username
+        value: "{{keycloakUsername}}"
+      - name: password
+        value: "{{keycloakPassword}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200 && res.body && res.body.access_token) {
+          bru.setEnvVar("bearerToken", res.body.access_token);
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.access_token
+      operator: isDefined

@@ -1,13 +1,11 @@
 info:
   name: Edit Offer
   type: http
-  seq: 5
+  seq: 7
 
 http:
   method: PUT
   url: "{{baseUrl}}/offer/api/owner/offers"
-  auth:
-    type: none
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"
@@ -19,7 +17,7 @@ http:
     type: json
     data: |-
       {
-        "id": 42,
+        "id": {{offerId}},
         "hotelName": "Grand Hotel Paris (Renovated)",
         "description": "Freshly renovated rooms with panoramic city views.",
         "comment": "Breakfast and spa access included.",
