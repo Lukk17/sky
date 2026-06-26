@@ -42,3 +42,21 @@ runtime:
       operator: isDefined
     - expression: res.body.hotelName
       operator: isDefined
+    - expression: res.body.hotelName
+      operator: eq
+      value: "Grand Hotel Paris"
+    - expression: res.body.city
+      operator: eq
+      value: "Paris"
+    - expression: res.body.country
+      operator: eq
+      value: "France"
+    - expression: res.body.roomCapacity
+      operator: eq
+      value: "2"
+    - expression: res.body.price
+      operator: eq
+      value: "249.99"
+    - expression: res.body.ownerEmail
+      operator: eq
+      value: "lukk@sky.dev"

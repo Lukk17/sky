@@ -29,3 +29,9 @@ runtime:
       operator: isDefined
     - expression: res.body.photoUrl
       operator: isDefined
+    - expression: res.body.photoUrl
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.ownerEmail
+      operator: eq
+      value: "lukk@sky.dev"

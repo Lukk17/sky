@@ -35,3 +35,12 @@ runtime:
       value: "200"
     - expression: res.body.id
       operator: isDefined
+    - expression: res.body.hotelName
+      operator: eq
+      value: "Grand Hotel Paris (Renovated)"
+    - expression: res.body.price
+      operator: eq
+      value: "299.99"
+    - expression: res.body.ownerEmail
+      operator: eq
+      value: "lukk@sky.dev"

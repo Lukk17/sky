@@ -38,3 +38,6 @@ runtime:
       value: "200"
     - expression: res.body.access_token
       operator: isDefined
+    - expression: res.body.token_type
+      operator: eq
+      value: "Bearer"

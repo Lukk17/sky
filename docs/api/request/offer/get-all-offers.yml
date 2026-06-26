@@ -19,3 +19,9 @@ runtime:
       operator: isDefined
     - expression: res.body.totalElements
       operator: isDefined
+    - expression: res.body.totalElements
+      operator: gte
+      value: "1"
+    - expression: res.body.content.length
+      operator: gte
+      value: "1"

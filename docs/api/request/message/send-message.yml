@@ -38,3 +38,9 @@ runtime:
       operator: isDefined
     - expression: res.body.receiverEmail
       operator: isDefined
+    - expression: res.body.senderEmail
+      operator: eq
+      value: "lukk@sky.dev"
+    - expression: res.body.receiverEmail
+      operator: eq
+      value: "owner@example.com"
