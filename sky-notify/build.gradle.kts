@@ -1,12 +1,11 @@
 plugins {
     id("sky.spring-service-conventions")
+    id("sky.kafka-conventions")
 }
 
 version = "1.0.2"
 description = "sky-notify"
 
-// Convention extension: annotationProcessor → compileOnly so Lombok + the configuration
-// processor cooperate cleanly (originally lived in sky-notify's old build script).
 configurations {
     compileOnly {
         extendsFrom(configurations.annotationProcessor.get())
@@ -23,8 +22,6 @@ dependencies {
     implementation("org.springframework.security:spring-security-messaging")
 
     implementation(libs.gson)
-    implementation(libs.spring.boot.starter.kafka)
 
-    testImplementation(libs.spring.kafka.test)
     testImplementation(libs.testcontainers.kafka)
 }
