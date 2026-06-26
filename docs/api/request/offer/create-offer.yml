@@ -1,0 +1,40 @@
+info:
+  name: Create Offer
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/offer/api/owner/offers"
+  auth:
+    type: none
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "hotelName": "Grand Hotel Paris",
+        "description": "A luxury hotel in the heart of Paris, steps from the Eiffel Tower.",
+        "comment": "Breakfast included.",
+        "price": 249.99,
+        "roomCapacity": 2,
+        "city": "Paris",
+        "country": "France",
+        "photoPath": "/images/grand-hotel-paris.jpg"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.id
+      operator: isDefined
+    - expression: res.body.hotelName
+      operator: isDefined

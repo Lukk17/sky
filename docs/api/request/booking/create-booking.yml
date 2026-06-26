@@ -1,0 +1,38 @@
+info:
+  name: Create Booking
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/booking/api/bookings"
+  auth:
+    type: none
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "offerId": "42",
+        "dateToBook": "2024-08-15"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.id
+      operator: isDefined
+    - expression: res.body.offerId
+      operator: isDefined
+    - expression: res.body.bookedDate
+      operator: isDefined
+    - expression: res.body.bookingUser
+      operator: isDefined

@@ -1,0 +1,39 @@
+info:
+  name: Edit Offer
+  type: http
+  seq: 5
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/offer/api/owner/offers"
+  auth:
+    type: none
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "id": 42,
+        "hotelName": "Grand Hotel Paris (Renovated)",
+        "description": "Freshly renovated rooms with panoramic city views.",
+        "comment": "Breakfast and spa access included.",
+        "price": 299.99,
+        "roomCapacity": 2,
+        "city": "Paris",
+        "country": "France",
+        "photoPath": "/images/grand-hotel-paris-new.jpg"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.id
+      operator: isDefined

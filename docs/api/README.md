@@ -2,7 +2,7 @@
 
 Two sets of artefacts live here:
 
-- [request/](request/) — Bruno collection for hands-on HTTP testing
+- [request/](request/) — Bruno collection (OpenCollection YAML) for hands-on HTTP testing
 - [openapi/](openapi/) — OpenAPI 3.1 specs for code generation and formal reference
 
 ---
@@ -12,6 +12,11 @@ Two sets of artefacts live here:
 [Bruno](https://www.usebruno.com/) is a Git-native API client. The collection lives in
 [request/](request/) and can be opened from Bruno's "Open Collection" dialog by pointing
 at that folder.
+
+The collection uses the [OpenCollection YAML](https://docs.usebruno.com/opencollection-yaml/overview)
+format (`.yml` request and environment files, with [request/opencollection.yml](request/opencollection.yml)
+as the collection root), which is the default format in Bruno v3.1 and later. It replaces the
+legacy single-file `.bru` format; both still open in Bruno if you are on an older release.
 
 The collection has two environments in [request/environments/](request/environments/):
 

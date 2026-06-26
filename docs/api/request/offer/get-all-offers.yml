@@ -1,0 +1,23 @@
+info:
+  name: Get All Offers (public)
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/offer/api/offers?page=0&size=20"
+  auth:
+    type: none
+  headers:
+    - name: Accept
+      value: application/json
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.content
+      operator: isDefined
+    - expression: res.body.totalElements
+      operator: isDefined
