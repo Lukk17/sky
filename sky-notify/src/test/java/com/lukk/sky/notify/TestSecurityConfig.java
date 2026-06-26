@@ -8,13 +8,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 
-/**
- * Test-profile stub: provides a {@link JwtDecoder} bean so context-load smoke tests
- * succeed without a real Auth0 issuer reachable. Any actual STOMP CONNECT against this
- * decoder will fail loudly — auth-path behaviour belongs in
- * dedicated unit tests against {@code WebSocketAuthChannelInterceptor}, not in the
- * full @SpringBootTest context load.
- */
+import java.util.List;
+import java.util.Map;
+
 @TestConfiguration
 @Profile("test")
 public class TestSecurityConfig {
@@ -22,8 +18,16 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public JwtDecoder testJwtDecoder() {
-        return (token) -> {
-            throw new JwtException("test-profile JwtDecoder: no real validation configured");
+        return token -> {
+            if (token == null || token.isBlank()) {
+                throw new JwtException("test-profile JwtDecoder: missing token");
+            }
+
+            return Jwt.withTokenValue(token)
+                    .header("alg", "none")
+                    .claim("sub", "test-user")
+                    .claim("realm_access", Map.of("roles", List.of("user", "admin")))
+                    .build();
         };
     }
 }

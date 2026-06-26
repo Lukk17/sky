@@ -44,6 +44,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -106,12 +108,23 @@ class BookingControllerTest {
         mvc.perform(
                         get("/user/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].offerId").value(bookingsDTO.get(0).getOfferId()))
                 .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    @DisplayName("getBookings_whenJwtHasNoRole_thenReturn403")
+    void getBookings_whenJwtHasNoRole_thenReturn403() throws Exception {
+        mvc.perform(
+                        get("/user/bookings")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                )
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -140,7 +153,7 @@ class BookingControllerTest {
         mvc.perform(
                         post("/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(jsonValues)
                 )
                 .andExpect(status().isCreated())
@@ -176,7 +189,7 @@ class BookingControllerTest {
 
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                        .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful());
     }

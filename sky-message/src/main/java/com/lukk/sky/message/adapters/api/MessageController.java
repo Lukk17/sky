@@ -3,6 +3,7 @@ package com.lukk.sky.message.adapters.api;
 import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.ports.service.MessageService;
+import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -46,6 +47,7 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))})
     })
+    @IsUser
     @PostMapping("/messages")
     public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message) {
         String userEmail = SecurityUtils.currentUserEmail();
@@ -63,6 +65,7 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class))})
     })
+    @IsUser
     @GetMapping("/messages/received")
     public ResponseEntity<Page<MessageDTO>> getReceivedMessages(
             @PageableDefault(size = 20) Pageable pageable) {
@@ -78,6 +81,7 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class))})
     })
+    @IsUser
     @GetMapping("/messages/sent")
     public ResponseEntity<Page<MessageDTO>> getSentMessages(
             @PageableDefault(size = 20) Pageable pageable) {
@@ -94,6 +98,7 @@ public class MessageController {
             @ApiResponse(responseCode = "404", description = "Message not found",
                     content = @Content)
     })
+    @IsUser
     @DeleteMapping("/messages/{messageId}")
     public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
         String userEmail = SecurityUtils.currentUserEmail();

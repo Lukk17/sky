@@ -49,6 +49,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -148,12 +150,23 @@ class OfferApiControllerTest {
         mvc.perform(
                         get("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].hotelName").value(offersDTO.get(0).getHotelName()))
                 .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    @DisplayName("getOwnedOffers_whenJwtHasNoRole_thenReturn403")
+    void getOwnedOffers_whenJwtHasNoRole_thenReturn403() throws Exception {
+        mvc.perform(
+                        get("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                )
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -176,7 +189,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(expectedJson))
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
@@ -196,7 +209,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(expectedJson))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -215,7 +228,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(expectedJson))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -238,7 +251,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         put("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(requestJson)
                 )
                 .andExpect(status().is2xxSuccessful())
@@ -266,7 +279,7 @@ class OfferApiControllerTest {
         mvc.perform(
                         delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful());
     }
@@ -280,7 +293,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -294,7 +307,7 @@ class OfferApiControllerTest {
         mvc.perform(
                         delete("/owner/offers/not-a-number")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().isBadRequest());
     }
@@ -367,7 +380,7 @@ class OfferApiControllerTest {
         mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.photoPath").value("offers/test-uuid-hotel.png"))
@@ -384,7 +397,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -402,7 +415,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -421,7 +434,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -463,7 +476,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().isBadRequest())
                 .andReturn();

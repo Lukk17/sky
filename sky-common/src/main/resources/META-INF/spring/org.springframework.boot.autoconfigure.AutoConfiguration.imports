@@ -1,6 +1,7 @@
 com.lukk.sky.common.web.CorrelationIdAutoConfiguration
 com.lukk.sky.common.web.ApiVersioningAutoConfiguration
 com.lukk.sky.common.security.ResourceServerJwtAutoConfiguration
+com.lukk.sky.common.security.MethodSecurityAutoConfiguration
 com.lukk.sky.common.swagger.SwaggerAutoConfiguration
 com.lukk.sky.common.swagger.OpenApiSecurityAutoConfiguration
 com.lukk.sky.common.config.CommonConfigPropertiesAutoConfiguration

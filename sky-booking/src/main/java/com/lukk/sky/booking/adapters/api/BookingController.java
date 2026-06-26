@@ -6,6 +6,7 @@ import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.service.BookingService;
+import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +49,7 @@ public class BookingController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class))})
     })
+    @IsUser
     @GetMapping("/user/bookings")
     public ResponseEntity<Page<BookingDTO>> getBookedOffers(
             @PageableDefault(size = 20) Pageable pageable) {
@@ -63,6 +65,7 @@ public class BookingController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = BookingDTO.class))})
     })
+    @IsUser
     @PostMapping("/bookings")
     public ResponseEntity<BookingDTO> bookOffer(@Valid @RequestBody BookingPayload bookingPayload) {
         log.info("Starting to book offer with payload: {}", bookingPayload);
@@ -83,6 +86,7 @@ public class BookingController {
             @ApiResponse(responseCode = "404", description = "Booking not found",
                     content = @Content)
     })
+    @IsUser
     @DeleteMapping("/bookings/{bookingId}")
     public ResponseEntity<Void> removeBooking(@PathVariable String bookingId) {
         String userEmail = SecurityUtils.currentUserEmail();

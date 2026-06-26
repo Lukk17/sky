@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,5 +37,14 @@ public class ResourceServerJwtAutoConfiguration {
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(validators));
 
         return decoder;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(JwtAuthenticationConverter.class)
+    public JwtAuthenticationConverter keycloakJwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(new KeycloakRealmRoleConverter());
+
+        return converter;
     }
 }

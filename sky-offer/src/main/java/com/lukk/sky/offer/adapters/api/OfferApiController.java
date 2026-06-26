@@ -3,6 +3,7 @@ package com.lukk.sky.offer.adapters.api;
 import com.google.gson.Gson;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.common.security.SecurityUtils;
+import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
@@ -88,6 +89,7 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class))})
     })
+    @IsUser
     @GetMapping("/owner/offers")
     public ResponseEntity<Page<OfferDTO>> getOwnedOffers(
             @PageableDefault(size = 20, sort = "id") Pageable pageable) {
@@ -102,6 +104,7 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))})
     })
+    @IsUser
     @PostMapping("/owner/offers")
     public ResponseEntity<OfferDTO> addOffer(@Valid @RequestBody OfferDTO offer) {
         String ownerEmail = SecurityUtils.currentUserEmail();
@@ -123,6 +126,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @IsUser
     @PutMapping("/owner/offers")
     public ResponseEntity<OfferDTO> edit(@Valid @RequestBody OfferEditDTO offer) {
         String ownerEmail = SecurityUtils.currentUserEmail();
@@ -143,6 +147,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @IsUser
     @DeleteMapping("/owner/offers/{offerId}")
     public ResponseEntity<Void> deleteOffer(@PathVariable Long offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
@@ -186,6 +191,7 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))})
     })
+    @IsUser
     @PostMapping(value = "/owner/offers/{offerId}/photo", consumes = "multipart/form-data")
     public ResponseEntity<OfferDTO> uploadPhoto(
             @PathVariable Long offerId,

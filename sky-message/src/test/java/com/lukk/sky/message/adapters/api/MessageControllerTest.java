@@ -40,6 +40,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -98,7 +100,7 @@ class MessageControllerTest {
         MvcResult result = mvc.perform(
                         post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(expectedJson)
                 )
                 .andExpect(status().is2xxSuccessful())
@@ -141,7 +143,7 @@ class MessageControllerTest {
         MvcResult result = mvc.perform(
                         post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(expectedJson)
                 )
                 .andExpect(status().isBadRequest())
@@ -163,7 +165,7 @@ class MessageControllerTest {
         mvc.perform(
                         get("/messages/received")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", RECEIVER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", RECEIVER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
@@ -194,7 +196,7 @@ class MessageControllerTest {
         mvc.perform(
                         get("/messages/sent")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
@@ -219,7 +221,7 @@ class MessageControllerTest {
         mvc.perform(
                         delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", RECEIVER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", RECEIVER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful());
     }
@@ -233,7 +235,7 @@ class MessageControllerTest {
         mvc.perform(
                         delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)))
+                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                                 .content(expectedJson)
                 )
                 .andExpect(status().is2xxSuccessful());
@@ -251,5 +253,22 @@ class MessageControllerTest {
                                 .content(expectedJson)
                 )
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("POST /messages with JWT that has no role returns 403 Forbidden")
+    void sendMessage_whenJwtHasNoRole_thenReturn403() throws Exception {
+        MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
+        when(messageService.send(any())).thenReturn(messageDTO);
+
+        String expectedJson = gson.toJson(messageDTO);
+
+        mvc.perform(
+                        post("/messages")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)))
+                                .content(expectedJson)
+                )
+                .andExpect(status().isForbidden());
     }
 }
