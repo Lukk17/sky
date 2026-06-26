@@ -5,7 +5,7 @@ sky-gateway:
   notify-uri: ${NOTIFY_URI:http://localhost:5554}
 
 server:
-  port: ${GATEWAY_PORT:8080}
+  port: ${GATEWAY_PORT:5777}
 
 spring:
   application:
@@ -24,33 +24,35 @@ spring:
   # network (e.g. BOOKING_URI=http://sky-booking:5555).
   cloud:
     gateway:
-      routes:
-        - id: booking-route
-          uri: ${sky-gateway.booking-uri}
-          predicates:
-            - Path=/booking/api/**
-          filters:
-            - RewritePath=/booking/api/(?<seg>.*), /api/v1/${seg}
+      server:
+        webflux:
+          routes:
+            - id: booking-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/api/**
+              filters:
+                - RewritePath=/booking/api/(?<seg>.*), /api/v1/${seg}
 
-        - id: offer-route
-          uri: ${sky-gateway.offer-uri}
-          predicates:
-            - Path=/offer/api/**
-          filters:
-            - RewritePath=/offer/api/(?<seg>.*), /api/v1/${seg}
+            - id: offer-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/api/**
+              filters:
+                - RewritePath=/offer/api/(?<seg>.*), /api/v1/${seg}
 
-        - id: message-route
-          uri: ${sky-gateway.message-uri}
-          predicates:
-            - Path=/msg/api/**
-          filters:
-            - RewritePath=/msg/api/(?<seg>.*), /api/v1/${seg}
+            - id: message-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/api/**
+              filters:
+                - RewritePath=/msg/api/(?<seg>.*), /api/v1/${seg}
 
-        - id: notify-route
-          uri: ${sky-gateway.notify-uri}
-          predicates:
-            - Path=/notify/**
-          # No rewrite — sky-notify exposes WebSocket paths at /notify/... natively.
+            - id: notify-route
+              uri: ${sky-gateway.notify-uri}
+              predicates:
+                - Path=/notify/**
+              # No rewrite — sky-notify exposes WebSocket paths at /notify/... natively.
 
 management:
   endpoints:
@@ -107,34 +109,36 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
   cloud:
     gateway:
-      routes:
-        - id: booking-route
-          uri: ${sky-gateway.booking-uri}
-          predicates:
-            - Path=/booking/api/**
-          filters:
-            - RewritePath=/booking/api/(?<seg>.*), /api/v1/${seg}
-            - TokenRelay=
+      server:
+        webflux:
+          routes:
+            - id: booking-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/api/**
+              filters:
+                - RewritePath=/booking/api/(?<seg>.*), /api/v1/${seg}
+                - TokenRelay=
 
-        - id: offer-route
-          uri: ${sky-gateway.offer-uri}
-          predicates:
-            - Path=/offer/api/**
-          filters:
-            - RewritePath=/offer/api/(?<seg>.*), /api/v1/${seg}
-            - TokenRelay=
+            - id: offer-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/api/**
+              filters:
+                - RewritePath=/offer/api/(?<seg>.*), /api/v1/${seg}
+                - TokenRelay=
 
-        - id: message-route
-          uri: ${sky-gateway.message-uri}
-          predicates:
-            - Path=/msg/api/**
-          filters:
-            - RewritePath=/msg/api/(?<seg>.*), /api/v1/${seg}
-            - TokenRelay=
+            - id: message-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/api/**
+              filters:
+                - RewritePath=/msg/api/(?<seg>.*), /api/v1/${seg}
+                - TokenRelay=
 
-        - id: notify-route
-          uri: ${sky-gateway.notify-uri}
-          predicates:
-            - Path=/notify/**
-          filters:
-            - TokenRelay=
+            - id: notify-route
+              uri: ${sky-gateway.notify-uri}
+              predicates:
+                - Path=/notify/**
+              filters:
+                - TokenRelay=

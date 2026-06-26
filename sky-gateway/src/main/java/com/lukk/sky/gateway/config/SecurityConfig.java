@@ -8,22 +8,39 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 /**
- * Security configuration activated only under the {@code secure} Spring profile.
+ * Reactive security for the gateway, selected by Spring profile.
  *
- * When the {@code secure} profile is inactive (the default for local development),
- * no SecurityWebFilterChain bean is registered and Spring Security's auto-configuration
- * permits all traffic — developers can call the gateway without a running Keycloak instance.
+ * <p>Without an explicit {@link SecurityWebFilterChain}, Spring Boot's reactive security
+ * auto-configuration secures every exchange (HTTP Basic plus default CSRF), so an unauthenticated
+ * proxy request is rejected with 401, and a state-changing request with 403. The gateway is a
+ * reverse proxy, not an authentication boundary in either mode, so each profile registers its own
+ * chain explicitly rather than relying on the default.
  *
- * When the {@code secure} profile is active, every request must be authenticated via the
- * Keycloak OIDC login flow and the TokenRelay filter forwards the bearer token downstream.
+ * <p>Default profile (local development): all exchanges are permitted and CSRF is disabled. The
+ * gateway forwards the inbound {@code Authorization} header untouched to the downstream services,
+ * which validate the bearer token themselves as OAuth2 resource servers.
+ *
+ * <p>{@code secure} profile: every request must complete the Keycloak OIDC login flow and the
+ * TokenRelay filter forwards the obtained bearer token downstream; actuator stays open for probes.
  */
 @Configuration
 @EnableWebFluxSecurity
-@Profile("secure")
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+    @Profile("!secure")
+    public SecurityWebFilterChain permitAllSecurityWebFilterChain(ServerHttpSecurity http) {
+        http
+            .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
+            .csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+            .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
+        return http.build();
+    }
+
+    @Bean
+    @Profile("secure")
+    public SecurityWebFilterChain oidcSecurityWebFilterChain(ServerHttpSecurity http) {
         http
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers("/actuator/**").permitAll()
