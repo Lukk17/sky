@@ -2,7 +2,7 @@
 #   docker build -f sky-gateway/docker/Dockerfile -t sky-gateway:latest .
 
 # ===============> BUILD STAGE <===============
-FROM gradle:8.14.3-jdk21 AS build
+FROM gradle:9-jdk25 AS build
 WORKDIR /workspace
 COPY settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle

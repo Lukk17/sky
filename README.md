@@ -27,7 +27,7 @@ notification endpoint. Authentication is handled by a self-hosted Keycloak 26 in
 
 ### Quick start
 
-Prerequisites: JDK 21 or any JDK capable of running the Gradle daemon (the build toolchain auto-downloads JDK 25 via
+Prerequisites: JDK 25 (the Gradle 9 daemon runs on it, and the build toolchain auto-downloads JDK 25 via
 the [Foojay resolver](https://github.com/gradle/foojay-toolchains)), Docker, and a running PostgreSQL instance at
 `localhost:5432/sky`. See [config/local-dev/local_README.md](config/local-dev/local_README.md) for full local setup.
 
@@ -205,7 +205,7 @@ Per-module detail, conventions, and data story live in each module's own AGENTS.
 
 | Layer | Technology |
 |---|---|
-| Runtime | Java 25 (toolchain auto-resolved), Gradle daemon on JDK 21 |
+| Runtime | Java 25 (toolchain auto-resolved), Gradle 9 daemon on JDK 25 |
 | Framework | Spring Boot 4.0.7, Spring Framework 7 |
 | Web | Spring Web (MVC services), Spring WebFlux (sky-gateway, sky-booking) |
 | Persistence | Spring Data JPA, PostgreSQL 16, Flyway 11 (BOM-managed) |
