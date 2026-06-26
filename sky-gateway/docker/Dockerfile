@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-gateway:bootJar -
 
 # ===============> RUN STAGE <===============
 FROM eclipse-temurin:25-jre-alpine AS runtime
-RUN addgroup -S sky && adduser -S sky -G sky
+RUN addgroup -S -g 1000 sky && adduser -S -u 1000 sky -G sky
 USER sky
 WORKDIR /app
 COPY --from=build --chown=sky:sky /workspace/sky-gateway/build/extracted/dependencies/ ./
