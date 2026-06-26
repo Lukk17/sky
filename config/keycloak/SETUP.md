@@ -162,6 +162,33 @@ docker exec keycloak /opt/keycloak/bin/kcadm.sh create realms \
 
 ---
 
+### Import via the admin console (GUI)
+
+For a click-through import instead of the terminal:
+
+1. Open the admin console at https://keycloak.test:9443/admin and sign in with admin / admin.
+2. Open the realm dropdown in the top-left (it shows the current realm, usually "master") and click
+   Create realm.
+3. Under Resource file, click Browse and select config/keycloak/sky-realm.json from this repo.
+4. The realm name fills in as "sky" from the file. Click Create.
+5. The realm, the sky-backend client, the admin and user roles, and the demo users (including lukk)
+   are created from the file. Verify under Realm settings, Clients, Realm roles, and Users.
+
+To re-import over an existing realm, delete it first under Realm settings, Action, Delete realm, then
+repeat. There is no in-place overwrite in the console.
+
+---
+
+### Note: the k3d in-cluster Keycloak imports automatically
+
+The above (REST, kcadm, or GUI) is for your host Keycloak used by Docker Compose. The k3d cluster does
+not need any of it: its Keycloak chart ships the realm as a ConfigMap mounted at
+`/opt/keycloak/data/import` and starts Keycloak with `--import-realm`, so the sky realm and the lukk
+user are imported on pod startup. The chart's copy of the realm is
+`config/k8s/helm/infra/keycloak/files/sky-realm.json`. See config/k8s/local_README.md for the k3d flow.
+
+---
+
 ### Verify the realm
 
 Confirm the sky realm exists and is enabled:

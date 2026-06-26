@@ -241,6 +241,13 @@ Expected: `"issuer":"http://keycloak.127.0.0.1.nip.io/realms/sky"`
 
 ### 10. Run the Bruno collection
 
+Use the `k3d` environment, not `local`. The cluster runs its own Keycloak with issuer
+`http://keycloak.127.0.0.1.nip.io/realms/sky`, while `--env local` mints tokens from your host
+Keycloak (`https://keycloak.test:9443/...`). A token from the wrong issuer is rejected by the
+cluster services, so `--env local` against k3d gives a valid token but 401 on every authenticated
+call. The public endpoints (get-all-offers, search) still pass, which is the tell-tale sign you
+used the wrong environment.
+
 ```bash
 cd docs/api/request
 bru run -r --env k3d --insecure
