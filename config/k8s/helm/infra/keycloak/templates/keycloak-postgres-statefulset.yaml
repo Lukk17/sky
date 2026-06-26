@@ -49,13 +49,8 @@ spec:
             periodSeconds: 30
             failureThreshold: 3
           readinessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
-                - -d
-                - $(POSTGRES_DB)
+            tcpSocket:
+              port: {{ .Values.postgres.service.port }}
             initialDelaySeconds: 0
             periodSeconds: 10
             failureThreshold: 3

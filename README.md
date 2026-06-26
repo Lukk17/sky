@@ -416,6 +416,7 @@ before cutting a GitHub release.
 | [docs/api/request/](docs/api/request/) | Bruno API collection (hands-on HTTP testing) |
 | [docs/api/openapi/](docs/api/openapi/) | OpenAPI 3.1 specs for sky-booking, sky-offer, sky-message |
 | [config/k8s/helm/helm_README.md](config/k8s/helm/helm_README.md) | Helm chart install, upgrade, and troubleshooting |
+| [config/k8s/local_README.md](config/k8s/local_README.md) | Local k3d cluster: full in-cluster stack bring-up and verification |
 | [config/local-dev/local_README.md](config/local-dev/local_README.md) | Local dev: Gradle, Docker Compose, Minikube |
 | [config/keycloak/README.md](config/keycloak/README.md) | Keycloak realm-as-code: import, token minting, demo users |
 | [config/keycloak/SETUP.md](config/keycloak/SETUP.md) | Keycloak local setup runbook: realm import, cert trust, user management |

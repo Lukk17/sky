@@ -11,6 +11,29 @@ inside the cluster so services can reach Keycloak for OIDC discovery.
 
 ---
 
+### Architecture, what actually runs
+
+k3d runs the whole Kubernetes cluster as exactly two Docker containers, regardless of how many
+applications you deploy:
+
+- `k3d-sky-server-0`, the single k3s node. Every pod (the four services plus Postgres, MinIO,
+  Kafka, Keycloak, and Keycloak's own Postgres) runs inside this one container as a containerd
+  container, not as a Docker container. `docker ps` does not show them; `kubectl get pods` does.
+- `k3d-sky-serverlb`, a small proxy. It is not a second Kubernetes server. It is the load
+  balancer that forwards host port 5777 into the cluster's nginx-ingress on port 80.
+
+So you do not run two Docker containers per app. You run two Docker containers for the entire
+cluster, and the nine sky pods live inside the server node. The name "serverlb" is k3d's, it
+means "load balancer in front of the server", not "a second server".
+
+The full first-time bring-up is slow because it does three heavy things: building the four
+service images (Gradle compiles inside Docker, minutes each), the first cluster create (k3d
+pulls the k3s image), and starting nine pods (each Spring Boot service needs about 25 seconds).
+None of that repeats while iterating. To redeploy one changed service, rebuild just its image,
+`k3d image import` it, and `kubectl rollout restart deploy/<name>`, which takes about a minute.
+
+---
+
 ### Prerequisites
 
 - k3d >= 5 (`k3d version`)
@@ -154,25 +177,6 @@ kubectl wait pod -l component=minio --for=condition=Ready --timeout=120s
 kubectl wait statefulset/kafka-service --for=condition=Available=true --timeout=120s
 ```
 
-Fix the Postgres readiness probe (the exec pg_isready probe does not work in the k8s exec
-context; switch to tcpSocket which is consistent with startup and liveness):
-
-```bash
-kubectl patch statefulset postgres-deployment --type='json' \
-  -p='[{"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe","value":{"tcpSocket":{"port":5432},"initialDelaySeconds":0,"periodSeconds":10,"failureThreshold":3}}]'
-
-kubectl patch statefulset keycloak-postgres --type='json' \
-  -p='[{"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe","value":{"tcpSocket":{"port":5432},"initialDelaySeconds":0,"periodSeconds":10,"failureThreshold":3}}]'
-```
-
-Delete the pods so the patched spec takes effect:
-
-```bash
-kubectl delete pod postgres-deployment-0 keycloak-postgres-0
-kubectl wait pod -l component=postgres --for=condition=Ready --timeout=90s
-kubectl wait pod -l component=keycloak-postgres --for=condition=Ready --timeout=90s
-```
-
 ---
 
 ### 8. Deploy service charts
@@ -210,7 +214,7 @@ Check all pods are 1/1 Running:
 kubectl get pods
 ```
 
-Expected output (8 pods, all 1/1):
+Expected output (nine sky pods, all 1/1, plus the ingress-nginx controller in its own namespace):
 
 ```
 kafka-service-0                  1/1 Running
@@ -293,11 +297,11 @@ k3d cluster delete sky
 
 ### Known issues and design notes
 
-1. Postgres readiness probe: the Helm charts use `exec: pg_isready -U $(POSTGRES_USER)` but
-   Kubernetes does not expand env vars in probe exec commands; `$(POSTGRES_USER)` is passed
-   literally and `pg_isready` without a resolvable Unix socket path returns exit code 3
-   ("no attempt"). The tcpSocket patch in step 7 works around this permanently for the local
-   cluster. The chart templates should be updated to use `tcpSocket` as a follow-up.
+1. Postgres readiness probe: an earlier version of the charts used `exec: pg_isready -U
+   $(POSTGRES_USER)`, but Kubernetes does not expand env vars in probe exec commands, so
+   `$(POSTGRES_USER)` was passed literally and the probe failed. Both the app Postgres and the
+   Keycloak Postgres readiness probes now use `tcpSocket` in the chart templates, consistent
+   with their startup and liveness probes, so no runtime patch is needed.
 
 2. Keycloak ingress class: the keycloak chart uses the deprecated `kubernetes.io/ingress.class`
    annotation. This was patched to `spec.ingressClassName: nginx` in the template at
@@ -317,6 +321,8 @@ k3d cluster delete sky
    `values-local.yaml` for every affected ingress section. The ingress templates were updated
    to skip nil-valued annotations so the null override takes effect.
 
-6. Image non-numeric user: the `sky-*:e2e` images use a named user `sky`. Kubernetes requires
-   a numeric UID when `runAsNonRoot: true` is set. The deployment templates were updated to
-   add `runAsUser: 1000` alongside `runAsNonRoot: true`.
+6. Image user UID: Kubernetes requires a numeric UID when `runAsNonRoot: true` is set, and the
+   deployment templates set `runAsUser: 1000`. The Dockerfiles pin the `sky` runtime user to a
+   fixed UID and GID of 1000 (`adduser -S -u 1000 sky`), so the container's user matches the
+   `runAsUser` value deterministically across rebuilds rather than relying on the base image's
+   auto-assigned UID.
