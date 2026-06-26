@@ -17,7 +17,7 @@ http:
     type: json
     data: |-
       {
-        "id": {{offerId}},
+        "id": "{{offerId}}",
         "hotelName": "Grand Hotel Paris (Renovated)",
         "description": "Freshly renovated rooms with panoramic city views.",
         "comment": "Breakfast and spa access included.",
