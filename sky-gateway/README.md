@@ -3,7 +3,7 @@
 Spring Cloud Gateway (2024.0.3) local-development edge proxy for the Sky platform.
 
 In production, routing and authentication are handled by `nginx-ingress` + `oauth2-proxy` on GKE. This module
-provides equivalent path-rewriting on `http://localhost:8080` when the stack runs via docker-compose, so developers do
+provides equivalent path-rewriting on `http://localhost:5777` when the stack runs via docker-compose, so developers do
 not need to know each service port.
 
 ---
@@ -56,7 +56,7 @@ Required environment variables:
 docker compose -f config/docker/docker-compose.yaml up
 ```
 
-The gateway starts on port 8080. Individual service ports (5552–5555) remain exposed.
+The gateway starts on port 5777. Individual service ports (5552 to 5555) remain exposed.
 
 ---
 
@@ -67,7 +67,7 @@ All tuneable settings are in `src/main/resources/application.yaml`. The `secure`
 
 | Property / env var | Default | Purpose |
 |---|---|---|
-| `GATEWAY_PORT` | `8080` | Gateway listen port |
+| `GATEWAY_PORT` | `5777` | Gateway listen port |
 | `BOOKING_URI` | `http://localhost:5555` | sky-booking upstream |
 | `OFFER_URI` | `http://localhost:5552` | sky-offer upstream |
 | `MESSAGE_URI` | `http://localhost:5553` | sky-message upstream |
@@ -83,4 +83,4 @@ All tuneable settings are in `src/main/resources/application.yaml`. The `secure`
 The production GKE stack uses `nginx-ingress` rewrite annotations and `oauth2-proxy` for authentication. Neither is
 practical to run locally without Minikube. `sky-gateway` gives developers the same URL surface
 (`/booking/api/…`, `/offer/api/…`, `/msg/api/…`, `/notify/…`) without Kubernetes, so frontend integration tests and
-Postman collections work against `http://localhost:8080` regardless of the environment.
+Postman collections work against `http://localhost:5777` regardless of the environment.

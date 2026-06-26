@@ -27,15 +27,21 @@ cert-trust runbook see config/keycloak/SETUP.md.
 - [Accessing app](#accessing-app)
 - [Services deployment](#services-deployment)
 
-### Part 2. Running with Gradle
+### Part 2. Running on k3d
+- [Create the cluster](#create-the-cluster)
+- [Ingress controller](#ingress-controller)
+- [Deploy the platform](#deploy-the-platform)
+- [Delete the cluster](#delete-the-cluster)
+
+### Part 3. Running with Gradle
 - [Kafka install and run](#kafka-install-and-run)
 - [Build and Run with Gradle](#build-and-run-with-gradle)
 
-### Part 3. Running with Docker
+### Part 4. Running with Docker
 - [Running app in Docker](#running-app-in-docker)
 - [Adding PostgreSQL server to docker](#adding-postgresql-server-to-docker)
 
-### Part 4. Extras
+### Part 5. Extras
 - [Troubleshooting](#troubleshooting)
 - [Clearing](#clearing)
 
@@ -175,6 +181,59 @@ it will prompt for password
 
 postgres, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage, etc.
 
+
+---------------------------------
+
+## Running on k3d
+
+[k3d](https://k3d.io) runs a k3s Kubernetes cluster inside Docker. It is lighter than Minikube and publishes host
+ports straight onto the in-cluster load balancer, which is how the platform is reached from the host.
+
+### Create the cluster
+
+The load balancer is published on host port 5777 (forwarded to the in-cluster ingress on port 80), so the platform
+answers at `http://localhost:5777`, the same host port as the local Docker Compose gateway.
+
+```shell
+k3d cluster create sky -p "5777:80@loadbalancer"
+```
+
+To give the cluster more agents:
+
+```shell
+k3d cluster create sky -p "5777:80@loadbalancer" --servers 1 --agents 2
+```
+
+### Ingress controller
+
+k3d enables Traefik by default on the load balancer. The production stack uses nginx-ingress, so to match it create
+the cluster with Traefik disabled and install nginx-ingress yourself:
+
+```shell
+k3d cluster create sky -p "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
+```
+
+```shell
+helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
+```
+
+### Deploy the platform
+
+Build the service images first, then import them into the cluster so the pods do not pull from a registry. Import the
+image names and tags the Helm charts reference (see config/k8s/helm/helm_README.md):
+
+```shell
+k3d image import lukk17/sky-offer lukk17/sky-booking lukk17/sky-message lukk17/sky-notify -c sky
+```
+
+Install the Helm charts in the order documented in config/k8s/helm/helm_README.md. Once the ingress and services are
+up, the platform answers on the host at `http://localhost:5777/offer/api/...`.
+
+### Delete the cluster
+
+```shell
+k3d cluster delete sky
+```
 
 ---------------------------------
 

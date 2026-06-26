@@ -12,8 +12,8 @@ info:
     the authentication guide at `docs/api/README.md` for how to mint a token.
 
 servers:
-  - url: http://localhost:8080/booking/api
-    description: Local via Spring Cloud Gateway (sky-gateway on port 8080)
+  - url: http://localhost:5777/booking/api
+    description: Local via Spring Cloud Gateway (sky-gateway on port 5777)
   - url: https://skycloud.luksarna.com/booking/api
     description: Production (GCP via nginx-ingress)
 

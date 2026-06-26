@@ -22,7 +22,7 @@ The collection has two environments in [request/environments/](request/environme
 
 | Environment | `baseUrl` |
 |---|---|
-| `local` | `http://localhost:8080` (Spring Cloud Gateway) |
+| `local` | `http://localhost:5777` (Spring Cloud Gateway) |
 | `prod` | `https://skycloud.luksarna.com` |
 
 Both environments also define a `keycloakUrl` (the realm issuer host) plus the realm client and user
@@ -34,7 +34,7 @@ mints a token and saves it there automatically. See the next section.
 ### Authentication and the self-driving run
 
 The Sky services are Keycloak JWT resource servers. Tokens are issued by the `sky` realm at the host in the
-`keycloakUrl` environment variable (`http://localhost:8080` locally, `https://keycloak.luksarna.com` in prod).
+`keycloakUrl` environment variable (`https://keycloak.test:9443` locally, `https://keycloak.luksarna.com` in prod).
 
 The collection is self-driving: you never copy a token or an id by hand.
 
@@ -65,13 +65,13 @@ request; the saved `bearerToken` and the chained ids are reused for the rest of 
 If you prefer to mint a token by hand, for example to inspect its claims, use the password grant directly:
 
 ```bash
-curl -s -X POST "http://localhost:8080/realms/sky/protocol/openid-connect/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=password" -d "client_id=sky-backend" -d "client_secret=dev-only-change-in-prod" -d "username=owner" -d "password=owner"
+curl -s -X POST "https://keycloak.test:9443/realms/sky/protocol/openid-connect/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=password" -d "client_id=sky-backend" -d "client_secret=dev-only-change-in-prod" -d "username=owner" -d "password=owner"
 ```
 
 For automated scripts or CI without a user, use the client-credentials grant instead:
 
 ```bash
-curl -s -X POST "http://localhost:8080/realms/sky/protocol/openid-connect/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials" -d "client_id=<client-id>" -d "client_secret=<client-secret>"
+curl -s -X POST "https://keycloak.test:9443/realms/sky/protocol/openid-connect/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials" -d "client_id=<client-id>" -d "client_secret=<client-secret>"
 ```
 
 Tokens are short-lived (typically 5 minutes); re-run `auth/get-token.yml` (or the curl above) when you get a `401`.
@@ -80,7 +80,7 @@ Tokens are short-lived (typically 5 minutes); re-run `auth/get-token.yml` (or th
 
 ### Gateway routing
 
-Locally, sky-gateway (port 8080) strips the service prefix and rewrites the path before
+Locally, sky-gateway (port 5777) strips the service prefix and rewrites the path before
 forwarding to the downstream service. Production uses the same mapping via nginx-ingress.
 
 | Gateway prefix | Downstream service | Direct port |

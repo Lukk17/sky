@@ -52,7 +52,7 @@ docker compose -f config/docker/docker-compose.yaml up
 docker compose -f config/docker/docker-compose.yaml up
 ```
 
-The gateway is then reachable at `http://localhost:8080`. Individual service ports remain exposed so you can call them
+The gateway is then reachable at `http://localhost:5777`. Individual service ports remain exposed so you can call them
 directly during development.
 
 Run a single service with the `local` Spring profile (switches to basic-auth security and local datasource URLs):
@@ -93,7 +93,7 @@ graph TB
         MINIO["MinIO\n(S3-compatible)"]
     end
 
-    LOCAL["sky-gateway\n:8080\n(local dev only)"]
+    LOCAL["sky-gateway\n:5777\n(local dev only)"]
 
     FE -- "HTTPS REST + STOMP/WS" --> NGINX
     NGINX -- "authenticated paths" --> GW
@@ -142,7 +142,7 @@ Each service uses hexagonal (ports-and-adapters) architecture: `domain/model` an
 `adapters/api`, `adapters/notification`, and `adapters/inbound`/`adapters/outbound` hold the I/O. ArchUnit tests
 enforce the dependency direction and fail the build if any adapter imports a domain type in reverse.
 
-For local development, `sky-gateway` (Spring Cloud Gateway 5, WebFlux/Netty) runs on port 8080 and mirrors the
+For local development, `sky-gateway` (Spring Cloud Gateway 5, WebFlux/Netty) runs on port 5777 and mirrors the
 production nginx path-rewrite rules, so you do not need to call each service port directly. In production, the
 equivalent routing is handled by nginx-ingress in the GKE cluster; `sky-gateway` is not deployed there.
 
@@ -189,7 +189,7 @@ sequenceDiagram
 | [sky-offer](sky-offer/) | 5552 | Offer CRUD: add, edit, delete, search; photo upload to MinIO |
 | [sky-message](sky-message/) | 5553 | User-to-user messaging: send, receive, delete |
 | [sky-notify](sky-notify/) | 5554 | Push notifications: consumes Kafka events, pushes over WebSocket |
-| [sky-gateway](sky-gateway/) | 8080 | Local-dev edge proxy: path rewriting, optional Keycloak TokenRelay |
+| [sky-gateway](sky-gateway/) | 5777 | Local-dev edge proxy: path rewriting, optional Keycloak TokenRelay |
 | [sky-common](sky-common/) | n/a | Shared library: wire types, Kafka auto-config, web utilities |
 
 Per-module detail, conventions, and data story live in each module's own AGENTS.md:
@@ -276,7 +276,7 @@ The three stateful services (`sky-offer`, `sky-booking`, `sky-message`) share th
 | `SPRING_DEBUG` | `INFO` | Spring log level |
 | `SHOW_SQL_QUERIES` | `false` | Log Hibernate SQL |
 | `ACCESS_CONTROL_ALLOW_ORIGIN` | `https://skycloud.luksarna.com` | CORS allowed origin |
-| `OAUTH2_ISSUER_URI` | (required) | OIDC issuer URI, e.g. `http://localhost:8080/realms/sky` |
+| `OAUTH2_ISSUER_URI` | (required) | OIDC issuer URI, e.g. `https://keycloak.test:9443/realms/sky` |
 | `OAUTH2_AUDIENCE` | (optional) | When set to `sky-backend`, enforces the audience claim |
 
 `sky-notify` requires `OAUTH2_ISSUER_URI` and `KAFKA_ADDRESS`/`KAFKA_PORT` but has no database variables.
@@ -289,7 +289,7 @@ The three stateful services (`sky-offer`, `sky-booking`, `sky-message`) share th
 | `OFFER_URI` | `http://localhost:5552` | Upstream URL for sky-offer |
 | `MESSAGE_URI` | `http://localhost:5553` | Upstream URL for sky-message |
 | `NOTIFY_URI` | `http://localhost:5554` | Upstream URL for sky-notify |
-| `GATEWAY_PORT` | `8080` | Port the gateway listens on |
+| `GATEWAY_PORT` | `5777` | Port the gateway listens on |
 
 Start the gateway with `SPRING_PROFILES_ACTIVE=secure` to enable the Keycloak OIDC login flow and TokenRelay filter.
 This requires `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID`, and `KEYCLOAK_CLIENT_SECRET`.

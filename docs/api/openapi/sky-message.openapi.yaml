@@ -12,8 +12,8 @@ info:
     (e.g. `"14:30:00 15.08.2024"`), which is the pattern defined in `DateTimeConstants`.
 
 servers:
-  - url: http://localhost:8080/msg/api
-    description: Local via Spring Cloud Gateway (sky-gateway on port 8080)
+  - url: http://localhost:5777/msg/api
+    description: Local via Spring Cloud Gateway (sky-gateway on port 5777)
   - url: https://skycloud.luksarna.com/msg/api
     description: Production (GCP via nginx-ingress)
 

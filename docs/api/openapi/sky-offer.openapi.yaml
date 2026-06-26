@@ -19,8 +19,8 @@ info:
     and reachable through the standard gateway route.
 
 servers:
-  - url: http://localhost:8080/offer/api
-    description: Local via Spring Cloud Gateway (sky-gateway on port 8080)
+  - url: http://localhost:5777/offer/api
+    description: Local via Spring Cloud Gateway (sky-gateway on port 5777)
   - url: https://skycloud.luksarna.com/offer/api
     description: Production (GCP via nginx-ingress)
 
