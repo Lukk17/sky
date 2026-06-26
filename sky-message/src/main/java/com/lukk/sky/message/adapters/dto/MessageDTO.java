@@ -32,7 +32,7 @@ public class MessageDTO {
     private String senderEmail;
 
     private String createdTime;
-    private boolean read;
+    private Boolean read;
 
     public static MessageDTO of(Message message) {
         return MessageDTO.builder()
