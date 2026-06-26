@@ -14,18 +14,15 @@ info:
     All other endpoints require a valid Keycloak bearer JWT. The `email` claim identifies
     the owner; it is never sent in the request body for write operations.
 
-    The internal endpoint (`/api/internal/owner/offer/{offerId}`) is a service-to-service
-    path consumed by sky-booking. It is authenticated but not intended for direct client use.
+    The `GET /offers/{offerId}/owner` endpoint is a service-to-service path consumed by
+    sky-booking to resolve the offer owner when creating a booking. It is authenticated
+    and reachable through the standard gateway route.
 
 servers:
   - url: http://localhost:8080/offer/api
-    description: Local via Spring Cloud Gateway (sky-gateway on port 8080) — public + owner endpoints only
+    description: Local via Spring Cloud Gateway (sky-gateway on port 8080)
   - url: https://skycloud.luksarna.com/offer/api
-    description: Production (GCP via nginx-ingress) — public + owner endpoints only
-  - url: http://localhost:5552
-    description: >
-      Direct service URL (local). Required for the /api/internal/** endpoint, which is NOT
-      routed through the gateway. sky-booking calls this address directly.
+    description: Production (GCP via nginx-ingress)
 
 components:
   securitySchemes:
@@ -510,24 +507,14 @@ paths:
         "401":
           description: Missing or invalid bearer token.
 
-  /internal/owner/offer/{offerId}:
+  /offers/{offerId}/owner:
     get:
       operationId: getOfferOwner
-      summary: Get the owner email for an offer (internal, service-to-service)
+      summary: Get the owner email for an offer
       description: >
-        Service-to-service endpoint consumed by sky-booking to resolve the offer owner's
-        email when creating a booking. Requires authentication. Not intended for direct
-        client use.
-
-        **Routing note:** `OfferInternalController` is mounted at the hardcoded path
-        `/api/internal` (not at `${sky.apiPrefix}` = `/api/v1`), so this endpoint is
-        NOT reachable through the gateway route `/offer/api/**`. sky-booking calls it
-        directly on the service address (`http://sky-offer-service:5552/api/internal/owner/offer/{offerId}`).
-        In production this path is not exposed to the public internet via nginx-ingress.
-
-        The `offerId` is the string representation of the numeric offer ID.
-        Returns 400 when the offer does not exist or has no owner information: the
-        service throws `OfferException`, which the global handler maps to 400 Bad Request.
+        Returns the owner email for the given offer ID. Used by sky-booking as a
+        service-to-service call when creating a booking. Requires a valid bearer JWT.
+        The `offerId` path parameter is parsed as `Long` internally.
       security:
         - bearerAuth: []
       parameters:
@@ -535,9 +522,10 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          description: ID of the offer whose owner to look up.
-          example: "42"
+            type: integer
+            format: int64
+          description: Numeric ID of the offer whose owner to look up.
+          example: 42
       responses:
         "200":
           description: Owner email returned as a plain string.
@@ -547,6 +535,6 @@ paths:
                 type: string
               example: "owner@example.com"
         "400":
-          description: Offer not found or has no owner information.
+          description: Non-numeric offerId or other bad request.
         "401":
           description: Missing or invalid bearer token.

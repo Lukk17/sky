@@ -358,6 +358,58 @@ class OfferApiControllerTest {
     }
 
     @Test
+    @DisplayName("getOfferOwner_whenOfferExists_thenReturnOwnerEmail")
+    void getOfferOwner_whenOfferExists_thenReturnOwnerEmail() throws Exception {
+        when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
+                .thenReturn(TEST_OWNER_EMAIL);
+
+        MvcResult result = mvc.perform(
+                        get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
+
+        assertEquals(TEST_OWNER_EMAIL, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    @DisplayName("getOfferOwner_whenOfferDoesNotExist_thenReturn404WithErrorMessage")
+    void getOfferOwner_whenOfferDoesNotExist_thenReturn404WithErrorMessage() throws Exception {
+        String expectedErrorMessage = "Offer is not existing.";
+        when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
+                .thenThrow(new OfferNotFoundException(expectedErrorMessage));
+
+        MvcResult result = mvc.perform(
+                        get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        assertTrue(result.getResponse().getContentAsString().contains(expectedErrorMessage));
+    }
+
+    @Test
+    @DisplayName("getOfferOwner_whenNoJwt_thenReturn401")
+    void getOfferOwner_whenNoJwt_thenReturn401() throws Exception {
+        mvc.perform(
+                        get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400")
+    void getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
+        mvc.perform(
+                        get("/offers/not-a-number/owner")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("uploadPhoto_whenValidPng_thenReturnUpdatedOfferDtoWithPhotoUrl")
     void uploadPhoto_whenValidPng_thenReturnUpdatedOfferDtoWithPhotoUrl() throws Exception {
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);

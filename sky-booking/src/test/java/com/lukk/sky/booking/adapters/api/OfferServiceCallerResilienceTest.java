@@ -87,7 +87,7 @@ class OfferServiceCallerResilienceTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(503));
         mockWebServer.enqueue(new MockResponse().setResponseCode(503));
 
-        String url = "http://localhost:" + mockWebServer.getPort() + "/api/internal/owner/offer/42";
+        String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/42/owner";
 
         assertThrows(
                 ResourceAccessException.class,
@@ -103,7 +103,7 @@ class OfferServiceCallerResilienceTest {
     void callOfferService_whenServerReturns404_thenDoesNotRetryAndThrowsBookingException() {
         mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
-        String url = "http://localhost:" + mockWebServer.getPort() + "/api/internal/owner/offer/99";
+        String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/99/owner";
 
         BookingException ex = assertThrows(
                 BookingException.class,
@@ -124,7 +124,7 @@ class OfferServiceCallerResilienceTest {
                         .setResponseCode(200)
         );
 
-        String url = "http://localhost:" + mockWebServer.getPort() + "/api/internal/owner/offer/1";
+        String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/1/owner";
         String owner = offerServiceCaller.callOfferService(url, "1");
 
         assertEquals("owner@example.com", owner);

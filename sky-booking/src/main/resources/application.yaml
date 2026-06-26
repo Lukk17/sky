@@ -3,7 +3,7 @@ sky:
   apiPrefix: /api/v1
   offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
   offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT:}
-  offerOwnerEndpoint: api/internal/v1/owner/offer
+  offerOwnerEndpoint: api/v1/offers
   crossOrigin:
     allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com}
 

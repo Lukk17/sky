@@ -185,6 +185,21 @@ public class OfferApiController {
         return ResponseEntity.ok(offerService.searchOffers(searched, pageable));
     }
 
+    @Operation(summary = "Get the owner email for an offer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Owner email returned",
+                    content = {@Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "404", description = "Offer not found",
+                    content = @Content)
+    })
+    @GetMapping("/offers/{offerId}/owner")
+    public ResponseEntity<String> getOfferOwner(@PathVariable Long offerId) {
+        log.info("Trying to find owner of offer with ID: {}", offerId);
+        String ownerEmail = offerService.findOfferOwner(offerId);
+
+        return ResponseEntity.ok(ownerEmail);
+    }
+
     @Operation(summary = "Upload a photo for an offer (owner only)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Photo uploaded; updated offer returned with photoUrl",

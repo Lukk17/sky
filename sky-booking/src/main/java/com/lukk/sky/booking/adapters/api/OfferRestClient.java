@@ -35,7 +35,7 @@ public class OfferRestClient implements RestClient {
 
     @Override
     public String requestOfferOwner(String offerId) {
-        String endpoint = String.format("%s/%s",
+        String endpoint = String.format("%s/%s/owner",
                 skyConfigProperties.getOfferOwnerEndpoint(),
                 offerId
         );

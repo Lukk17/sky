@@ -25,10 +25,10 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/offers/*/owner").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/offers", "/api/v1/offers/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/search").permitAll()
                         .requestMatchers("/api/v1/owner/**").authenticated()
-                        .requestMatchers("/api/internal/v1/**").authenticated()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
                 .build();

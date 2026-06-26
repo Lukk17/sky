@@ -4,7 +4,7 @@
 sky:
   offerServiceHostname: http://localhost
   offerServiceHostPort: 5552
-  offerOwnerEndpoint: api/internal/owner/offer
+  offerOwnerEndpoint: api/v1/offers
 
 server:
   port: 5555

@@ -146,7 +146,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /api/internal/v1/owner/offer/{id} returns the owner email for an existing offer")
+    @DisplayName("GET /api/v1/offers/{id}/owner returns the owner email for an existing offer")
     void getOfferOwner_whenOfferExists_thenReturnOwnerEmail() {
         long offerId = populateDatabase().getId();
 
@@ -154,7 +154,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
         HttpEntity<?> request = new HttpEntity<>(headers);
 
         ResponseEntity<String> actual = restTemplate.exchange(
-                "/api/internal/v1/owner/offer/" + offerId,
+                "/api/v1/offers/" + offerId + "/owner",
                 HttpMethod.GET,
                 request,
                 String.class);
