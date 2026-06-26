@@ -11,9 +11,9 @@ for lukk@sky.dev and tears down both the booking and the seeded offer.
 
 ## What this will verify
 
-- POST `/offer/api/owner/offers` returns HTTP 201 with a server-assigned numeric `id` and `ownerEmail` equal to
+- POST `/offer/api/owner/offers` returns HTTP 201 with a server-assigned UUID `id` and `ownerEmail` equal to
   `lukk@sky.dev` (the offer this flow books against).
-- POST `/booking/api/bookings` with `{offerId, dateToBook}` returns HTTP 201 with a server-assigned numeric `id`,
+- POST `/booking/api/bookings` with `{offerId, dateToBook}` returns HTTP 201 with a server-assigned UUID `id`,
   the booked `offerId`, a `bookedDate`, and `bookingUser` equal to `lukk@sky.dev`.
 - GET `/booking/api/user/bookings` returns HTTP 200 and the created booking appears in the user's page (persisted
   state in Postgres `sky.booking`).

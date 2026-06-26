@@ -10,36 +10,26 @@ under Additional tasks I did.
 
 ### Prerequisites
 
-- [ ] curl is installed (`curl --version` exits 0).
-- [ ] jq is installed (`jq --version` prints a version).
-- [ ] Gateway reachable: public offers endpoint returns 200.
-- [ ] Keycloak token obtained and exported as `$TOKEN`.
-- [ ] `$TOKEN` is a well-formed JWT (`token-ok`).
+- [ ] Bruno CLI is installed (`bru --version` prints a version, exits 0).
+- [ ] Gateway reachable: `/actuator/health` returns 200.
 
 ### Reset state
 
-- [ ] Canary bookings from prior runs removed (matched by `bookedDate` 2027-08-15).
-- [ ] Canary offers from prior runs removed from the owner's collection.
+- [ ] None. The run creates its own data and deletes it in the teardown requests (self-cleaning, re-runnable).
 
 ### Run
 
-- [ ] Step 1: create canary offer, captured `OFFER_ID` (HTTP 201).
-- [ ] Step 2: create booking against the offer, captured `BOOKING_ID` (HTTP 201).
-- [ ] Step 3: list user bookings, booking present (HTTP 200).
-- [ ] Step 4: resolve offer owner (HTTP 200).
-- [ ] Step 5: delete booking (HTTP 204).
-- [ ] Step 6: list user bookings, booking absent.
-- [ ] Step 7: delete seeded offer (HTTP 204).
+- [ ] Single Bruno run: `cd docs/api/request && bru run auth offer booking teardown/delete-booking.yml teardown/delete-offer.yml --env local --insecure`.
 
 ### Expected
 
-- [ ] Step 1 returns HTTP 201 with numeric `id` and `ownerEmail` `lukk@sky.dev`.
-- [ ] Step 2 returns HTTP 201 with numeric `id`, `offerId` equal to `OFFER_ID`, a `bookedDate` carrying `2027-08-15`, and `bookingUser` `lukk@sky.dev`.
-- [ ] Step 3 prints `1` (booking present in the user's page in `sky.booking`).
-- [ ] Step 4 returns HTTP 200 with body `lukk@sky.dev`.
-- [ ] Step 5 returns HTTP 204.
-- [ ] Step 6 prints `0` (booking removed from `sky.booking`).
-- [ ] Step 7 returns HTTP 204 (seeded offer removed from `sky.offer`).
+- [ ] Run summary reports Status PASS, all requests passed, all assertions passed: 52/52.
+- [ ] Seeded offer returns HTTP 201 with UUID `id` and `ownerEmail` `lukk@sky.dev`.
+- [ ] Offer folder photo upload returns the presigned `photoUrl` (contains `X-Amz-Algorithm`).
+- [ ] Booking returns HTTP 201 with UUID `id`, `offerId` equal to `OFFER_ID`, a `bookedDate` carrying `2027-08-15`, and `bookingUser` `lukk@sky.dev` (Kafka event consumed by sky-notify).
+- [ ] User bookings page returns the booking (Postgres `sky.booking`).
+- [ ] Owner lookup returns HTTP 200 with body `lukk@sky.dev`.
+- [ ] Teardown deletes return HTTP 204, removing the booking from `sky.booking` and the seeded offer from `sky.offer`.
 
 ### Verdict
 

@@ -12,7 +12,7 @@ canary offer through public search.
 
 ## What this will verify
 
-- POST `/offer/api/owner/offers` returns HTTP 201 with a server-assigned numeric `id`, `ownerEmail` equal to
+- POST `/offer/api/owner/offers` returns HTTP 201 with a server-assigned UUID `id`, `ownerEmail` equal to
   `lukk@sky.dev`, and the submitted `hotelName`, `city`, `country`, `price`, and `roomCapacity` echoed.
 - GET `/offer/api/offers` (public) returns HTTP 200 with a paginated body (`content` array and numeric
   `totalElements`).
@@ -20,7 +20,7 @@ canary offer through public search.
   (retrieval by `hotelName` LIKE).
 - GET `/offer/api/owner/offers` returns HTTP 200 and the created offer appears in the owner's page.
 - GET `/offer/api/offers/{id}/owner` returns HTTP 200 with body `lukk@sky.dev`.
-- POST `/offer/api/owner/offers/{id}/photo` (multipart) returns HTTP 200 with a numeric `id` and a non-empty
+- POST `/offer/api/owner/offers/{id}/photo` (multipart) returns HTTP 200 with a UUID `id` and a non-empty
   `photoUrl` presigned URL pointing at the `sky-offers` object store (persisted state in MinIO and `offer_photo`).
 - PUT `/offer/api/owner/offers` returns HTTP 200; a follow-up read reflects the edited `hotelName` and `price`.
 - DELETE `/offer/api/owner/offers/{id}` returns HTTP 204 and the offer no longer appears in the owner's page

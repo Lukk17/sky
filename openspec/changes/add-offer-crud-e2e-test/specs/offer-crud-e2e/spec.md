@@ -13,7 +13,7 @@ upload the canary fixture `e2e/fixtures/offer-photo.png` and MUST NOT assert on 
 
 - **WHEN** the runner creates a canary offer as lukk@sky.dev, searches for it, attaches the canary photo, edits it,
   and deletes it
-- **THEN** the create returns HTTP 201 with a numeric `id` and `ownerEmail` `lukk@sky.dev`, public search returns
+- **THEN** the create returns HTTP 201 with a UUID `id` and `ownerEmail` `lukk@sky.dev`, public search returns
   the same offer by `hotelName`, the owner lookup returns `lukk@sky.dev`, the photo upload returns HTTP 200 with a
   non-empty presigned `photoUrl`, the edit returns HTTP 200 and is reflected on a follow-up read, the delete returns
   HTTP 204, and the offer no longer appears in the owner's page

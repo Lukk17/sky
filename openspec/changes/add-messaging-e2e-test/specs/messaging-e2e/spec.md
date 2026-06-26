@@ -11,6 +11,6 @@ The runbook MUST NOT assert on log substrings.
 #### Scenario: Send then delete a message round-trips
 
 - **WHEN** the runner sends a canary message as lukk@sky.dev and then deletes it by id
-- **THEN** the create call returns HTTP 201 with a server-assigned numeric `id` and `senderEmail` equal to
+- **THEN** the create call returns HTTP 201 with a server-assigned UUID `id` and `senderEmail` equal to
   `lukk@sky.dev`, the message appears once in the sender's sent page matched by `id` and canary `text`, the delete
   returns HTTP 204, and a follow-up listing shows the message is no longer in the sender's sent page

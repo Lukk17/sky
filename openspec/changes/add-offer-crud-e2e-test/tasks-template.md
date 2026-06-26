@@ -10,42 +10,28 @@ under Additional tasks I did.
 
 ### Prerequisites
 
-- [ ] curl is installed (`curl --version` exits 0).
-- [ ] jq is installed (`jq --version` prints a version).
-- [ ] Gateway reachable: public offers endpoint returns 200.
-- [ ] Fixture present: `e2e/fixtures/offer-photo.png` shows PNG magic bytes.
-- [ ] Keycloak token obtained and exported as `$TOKEN`.
-- [ ] `$TOKEN` is a well-formed JWT (`token-ok`).
+- [ ] Bruno CLI is installed (`bru --version` prints a version, exits 0).
+- [ ] Gateway reachable: `/actuator/health` returns 200.
 
 ### Reset state
 
-- [ ] Canary offers from prior runs removed from the owner's collection (with their photos).
+- [ ] None. The run creates its own data and deletes it in the teardown requests (self-cleaning, re-runnable).
 
 ### Run
 
-- [ ] Step 1: create canary offer, captured `OFFER_ID` (HTTP 201).
-- [ ] Step 2: list all offers, public (HTTP 200).
-- [ ] Step 3: search canary token, offer returned (HTTP 200).
-- [ ] Step 4: list owner offers, offer present (HTTP 200).
-- [ ] Step 5: resolve offer owner (HTTP 200).
-- [ ] Step 6: upload canary photo (HTTP 200).
-- [ ] Step 7: edit offer (HTTP 200).
-- [ ] Step 8: read owner page, edit reflected (HTTP 200).
-- [ ] Step 9: delete offer (HTTP 204).
-- [ ] Step 10: read owner page, offer absent.
+- [ ] Single Bruno run: `cd docs/api/request && bru run auth offer teardown/delete-offer.yml --env local --insecure`.
 
 ### Expected
 
-- [ ] Step 1 returns HTTP 201 with numeric `id`, `ownerEmail` `lukk@sky.dev`, and the submitted `hotelName`, `city`, `country`, `roomCapacity`, and `price`.
-- [ ] Step 2 returns HTTP 200 with a `content` array and numeric `totalElements`.
-- [ ] Step 3 returns HTTP 200 and prints exactly one object whose `id` equals `OFFER_ID` and whose `hotelName` is the canary name.
-- [ ] Step 4 prints `1` (offer present in the owner's page).
-- [ ] Step 5 returns HTTP 200 with body `lukk@sky.dev`.
-- [ ] Step 6 returns HTTP 200 with numeric `id` and a non-empty presigned `photoUrl` referencing the `sky-offers` store.
-- [ ] Step 7 returns HTTP 200.
-- [ ] Step 8 prints `hotelName` `SKY-E2E-OFFER-CANARY Hotel 7F3A (Renovated)` and `price` `299.99`.
-- [ ] Step 9 returns HTTP 204.
-- [ ] Step 10 prints `0` (offer and photo removed from `sky.offer` / `sky.offer_photo` and `sky-offers`).
+- [ ] Run summary reports Status PASS, all requests passed, all assertions passed: 39/39.
+- [ ] Created offer returns HTTP 201 with UUID `id`, `ownerEmail` `lukk@sky.dev`, and the submitted `hotelName`, `city`, `country`, `roomCapacity`, and `price`.
+- [ ] Public offer list returns HTTP 200 with a `content` array and numeric `totalElements`.
+- [ ] Search returns the offer by `hotelName` LIKE.
+- [ ] Owner page returns the offer (Postgres `sky.offer`).
+- [ ] Owner lookup returns HTTP 200 with body `lukk@sky.dev`.
+- [ ] Photo upload returns HTTP 200 with UUID `id` and a non-empty presigned `photoUrl` referencing the `sky-offers` store (MinIO and `offer_photo`).
+- [ ] Edit returns HTTP 200 and a follow-up read reflects the renamed `hotelName` and reprice.
+- [ ] Teardown delete returns HTTP 204 (removal from `sky.offer` / `sky.offer_photo` and `sky-offers`).
 
 ### Verdict
 

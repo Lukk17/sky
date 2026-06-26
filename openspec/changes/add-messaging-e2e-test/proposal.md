@@ -11,7 +11,7 @@ sender identity resolves from the Keycloak token and that a deleted message actu
 
 ## What this will verify
 
-- POST `/msg/api/messages` with a valid Bearer token returns HTTP 201 and a body carrying a server-assigned numeric
+- POST `/msg/api/messages` with a valid Bearer token returns HTTP 201 and a body carrying a server-assigned UUID
   `id`, `senderEmail` equal to `lukk@sky.dev`, the submitted `receiverEmail`, and the submitted canary `text`.
 - GET `/msg/api/messages/received` returns HTTP 200 with a paginated body (a `content` array and a numeric
   `totalElements`).
