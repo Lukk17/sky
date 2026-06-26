@@ -1,8 +1,14 @@
 name: sky
 
-# Postgres, Keycloak, and MinIO are provided externally (localstack / host install).
-# Only Kafka and the four application services are managed here.
+# Postgres, Keycloak, and MinIO are provided externally (local-dev stack / host install).
+# Only Kafka and the application services are managed here.
 # Default datasource host: host.docker.internal:5432 (host Postgres reachable from container).
+#
+# The four JWT-validating services (offer, booking, message, notify) trust the local Keycloak
+# self-signed certificate via a mounted PKCS12 truststore (certs/sky-truststore.p12, password
+# "changeit" — a local-only, non-secret value). Generate it before "docker compose up" — see
+# config/keycloak/SETUP.md. The gateway does not validate JWTs in the default profile, so it
+# needs no truststore.
 
 services:
 
@@ -50,17 +56,22 @@ services:
         condition: service_healthy
     extra_hosts:
       - "keycloak.test:host-gateway"
+    volumes:
+      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
       POSTGRES_USER: ${POSTGRES_USER:-sky_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sky_pass}
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
+      OFFER_SERVICE_HOSTNAME: http://sky-offer
+      OFFER_SERVICE_HOST_PORT: "5552"
       OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
       SPRING_PROFILES_ACTIVE: default
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
       HIBERNATE_DEBUG: WARN
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5555/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -83,6 +94,8 @@ services:
         condition: service_healthy
     extra_hosts:
       - "keycloak.test:host-gateway"
+    volumes:
+      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
       POSTGRES_USER: ${POSTGRES_USER:-sky_user}
@@ -97,6 +110,7 @@ services:
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
       HIBERNATE_DEBUG: WARN
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5552/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -116,6 +130,8 @@ services:
       - "5553:5553"
     extra_hosts:
       - "keycloak.test:host-gateway"
+    volumes:
+      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
       POSTGRES_USER: ${POSTGRES_USER:-sky_user}
@@ -125,6 +141,7 @@ services:
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
       HIBERNATE_DEBUG: WARN
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5553/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -147,12 +164,15 @@ services:
         condition: service_healthy
     extra_hosts:
       - "keycloak.test:host-gateway"
+    volumes:
+      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
     environment:
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
       OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
       SPRING_PROFILES_ACTIVE: default
       SPRING_DEBUG: INFO
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5554/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -169,7 +189,7 @@ services:
     networks:
       - sky-network
     ports:
-      - "8080:8080"
+      - "5777:5777"
     depends_on:
       sky-booking:
         condition: service_healthy
@@ -188,7 +208,7 @@ services:
       SPRING_DEBUG: INFO
       GATEWAY_DEBUG: INFO
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5777/actuator/health/readiness || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 8

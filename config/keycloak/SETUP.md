@@ -392,9 +392,7 @@ Step 1: Extract the certificate from Keycloak.
 PowerShell:
 
 ```powershell
-$cert = [System.Net.Security.SslStream]
-openssl s_client -connect keycloak.test:9443 -showcerts </dev/null 2>/dev/null | `
-  openssl x509 -outform PEM -out keycloak-local.crt
+'' | openssl s_client -connect keycloak.test:9443 -showcerts 2>$null | openssl x509 -outform PEM -out keycloak-local.crt
 ```
 
 Unix:
@@ -491,6 +489,50 @@ sudo keytool -importcert -noprompt \
 ```
 
 After this, services started with that JDK trust the certificate without extra JVM arguments.
+
+#### Approach C: Generate the truststore for the Docker Compose e2e stack
+
+The `config/docker/docker-compose.yaml` stack mounts a PKCS12 truststore into the four JWT-validating
+services (offer, booking, message, notify) at `/certs/sky-truststore.p12` and points the JVM at it via
+`JAVA_TOOL_OPTIONS`. Generate that file at `config/docker/certs/sky-truststore.p12` before running
+`docker compose up`. The store password is `changeit`, a local-only non-secret value. The file is
+git-ignored because it is derived from your local Keycloak certificate.
+
+Run from the repository root.
+
+PowerShell:
+
+```powershell
+'' | openssl s_client -connect keycloak.test:9443 -showcerts 2>$null | openssl x509 -outform PEM -out keycloak-local.crt
+```
+
+```powershell
+keytool -importcert -noprompt -alias keycloak-local -file keycloak-local.crt -keystore config\docker\certs\sky-truststore.p12 -storetype PKCS12 -storepass changeit
+```
+
+Unix:
+
+```bash
+openssl s_client -connect keycloak.test:9443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM -out keycloak-local.crt
+```
+
+```bash
+keytool -importcert -noprompt -alias keycloak-local -file keycloak-local.crt -keystore config/docker/certs/sky-truststore.p12 -storetype PKCS12 -storepass changeit
+```
+
+Then build and start the stack from the repository root.
+
+PowerShell:
+
+```powershell
+docker compose -f config/docker/docker-compose.yaml up --build -d
+```
+
+Unix:
+
+```bash
+docker compose -f config/docker/docker-compose.yaml up --build -d
+```
 
 ---
 
