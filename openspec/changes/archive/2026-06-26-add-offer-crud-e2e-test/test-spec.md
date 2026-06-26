@@ -38,7 +38,7 @@ Expect `200`.
 
 ## Reset state
 
-None. The run below creates its own data and deletes it in the teardown requests, so it is self-cleaning and
+None. The run below creates its own data and deletes it in the cleanup requests, so it is self-cleaning and
 re-runnable.
 
 ## Run
@@ -46,11 +46,11 @@ re-runnable.
 One step: a single Bruno invocation from the collection directory.
 
 ```bash
-cd docs/api/request && bru run auth offer teardown/delete-offer.yml --env local --insecure
+cd docs/api/request && bru run auth offer cleanup/delete-offer.yml --env local --insecure
 ```
 
 The auth folder mints the token, the offer folder runs the create/read/assert requests (including the photo upload)
-with IDs chained automatically by the collection's scripts, and the teardown request deletes what was created. Bruno
+with IDs chained automatically by the collection's scripts, and the cleanup request deletes what was created. Bruno
 evaluates every assertion in each request.
 
 ## Expected
@@ -63,7 +63,7 @@ returns HTTP 200 with a `content` array and a numeric `totalElements`; the searc
 LIKE; the owner page returns the offer (persisted to Postgres `sky.offer`); the owner lookup returns HTTP 200 with
 body `lukk@sky.dev`; the photo upload returns HTTP 200 with a UUID `id` and a non-empty presigned `photoUrl`
 referencing the `sky-offers` object store (MinIO and `offer_photo`); the edit returns HTTP 200 and a follow-up read
-reflects the renamed `hotelName` and reprice; and the teardown delete returns HTTP 204 (persisted-state removal in
+reflects the renamed `hotelName` and reprice; and the cleanup delete returns HTTP 204 (persisted-state removal in
 Postgres `sky.offer` / `sky.offer_photo` and the `sky-offers` bucket).
 
 ## Fixtures

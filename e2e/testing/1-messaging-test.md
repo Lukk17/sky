@@ -33,7 +33,7 @@ Expect `200`.
 
 ## Reset state
 
-None. The run below creates its own data and deletes it in the teardown requests, so it is self-cleaning and
+None. The run below creates its own data and deletes it in the cleanup requests, so it is self-cleaning and
 re-runnable.
 
 ## Run
@@ -41,11 +41,11 @@ re-runnable.
 One step: a single Bruno invocation from the collection directory.
 
 ```bash
-cd docs/api/request && bru run auth message teardown/delete-message.yml --env local --insecure
+cd docs/api/request && bru run auth message cleanup/delete-message.yml --env local --insecure
 ```
 
 The auth folder mints the token, the message folder runs the create/read/assert requests with IDs chained
-automatically by the collection's scripts, and the teardown request deletes what was created. Bruno evaluates every
+automatically by the collection's scripts, and the cleanup request deletes what was created. Bruno evaluates every
 assertion in each request.
 
 ## Expected
@@ -55,7 +55,7 @@ The run summary reports Status PASS with all requests passed and all assertions 
 The assertion groups cover: the sent message returns HTTP 201 with a UUID `id`, `senderEmail` equal to
 `lukk@sky.dev`, the submitted `receiverEmail`, and the canary `text`; the received page returns HTTP 200 with a
 `content` array and a numeric `totalElements`; the sent page returns HTTP 200 with the created message present in
-Postgres `sky.message`; and the teardown delete returns HTTP 204.
+Postgres `sky.message`; and the cleanup delete returns HTTP 204.
 
 ## Fixtures
 

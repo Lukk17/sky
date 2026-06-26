@@ -12,7 +12,7 @@
   internally).
 - DELETE `/booking/api/bookings/{bookingId}` returns HTTP 204 and the booking no longer appears in the user's page
   (persisted-state removal).
-- DELETE `/offer/api/owner/offers/{offerId}` returns HTTP 204 (teardown of the seeded offer).
+- DELETE `/offer/api/owner/offers/{offerId}` returns HTTP 204 (cleanup of the seeded offer).
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ Expect `200`.
 
 ## Reset state
 
-None. The run below creates its own data and deletes it in the teardown requests, so it is self-cleaning and
+None. The run below creates its own data and deletes it in the cleanup requests, so it is self-cleaning and
 re-runnable.
 
 ## Run
@@ -44,11 +44,11 @@ re-runnable.
 One step: a single Bruno invocation from the collection directory.
 
 ```bash
-cd docs/api/request && bru run auth offer booking teardown/delete-booking.yml teardown/delete-offer.yml --env local --insecure
+cd docs/api/request && bru run auth offer booking cleanup/delete-booking.yml cleanup/delete-offer.yml --env local --insecure
 ```
 
 The auth folder mints the token, the offer and booking folders run the create/read/assert requests with IDs chained
-automatically by the collection's scripts, and the teardown requests delete the booking and then the seeded offer.
+automatically by the collection's scripts, and the cleanup requests delete the booking and then the seeded offer.
 Bruno evaluates every assertion in each request.
 
 ## Expected
@@ -60,7 +60,7 @@ The assertion groups cover: the seeded offer returns HTTP 201 with a UUID `id` a
 `X-Amz-Algorithm`) is part of the run; the booking returns HTTP 201 with a UUID `id`, the booked `offerId`, a
 `bookedDate` carrying `2027-08-15`, and `bookingUser` equal to `lukk@sky.dev` (and a Kafka event consumed by
 sky-notify); the user bookings page returns the booking (persisted to Postgres `sky.booking`); the owner lookup
-returns HTTP 200 with body `lukk@sky.dev`; and the two teardown deletes return HTTP 204, removing the booking from
+returns HTTP 200 with body `lukk@sky.dev`; and the two cleanup deletes return HTTP 204, removing the booking from
 Postgres `sky.booking` and the seeded offer from Postgres `sky.offer`.
 
 ## Fixtures

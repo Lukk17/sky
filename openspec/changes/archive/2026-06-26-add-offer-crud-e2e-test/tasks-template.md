@@ -15,11 +15,11 @@ under Additional tasks I did.
 
 ### Reset state
 
-- [ ] None. The run creates its own data and deletes it in the teardown requests (self-cleaning, re-runnable).
+- [ ] None. The run creates its own data and deletes it in the cleanup requests (self-cleaning, re-runnable).
 
 ### Run
 
-- [ ] Single Bruno run: `cd docs/api/request && bru run auth offer teardown/delete-offer.yml --env local --insecure`.
+- [ ] Single Bruno run: `cd docs/api/request && bru run auth offer cleanup/delete-offer.yml --env local --insecure`.
 
 ### Expected
 

@@ -21,7 +21,7 @@ for lukk@sky.dev and tears down both the booking and the seeded offer.
   internally).
 - DELETE `/booking/api/bookings/{bookingId}` returns HTTP 204 and the booking no longer appears in the user's page
   (persisted-state removal).
-- DELETE `/offer/api/owner/offers/{offerId}` returns HTTP 204 (teardown of the seeded offer).
+- DELETE `/offer/api/owner/offers/{offerId}` returns HTTP 204 (cleanup of the seeded offer).
 
 ## Setup cost class
 
@@ -53,7 +53,7 @@ produces Kafka events as a side effect, so it is the most expensive test in the 
 - Token: `docs/api/request/auth/get-token.yml`, or the equivalent curl shown in the spec.
 - Flow: `docs/api/request/offer/create-offer.yml`, `docs/api/request/booking/create-booking.yml`,
   `get-user-bookings.yml`, `docs/api/request/offer/get-offer-owner.yml`, `booking/delete-booking.yml`, and
-  `offer-teardown/delete-offer.yml`. The spec drives the same endpoints with self-contained curl through the gateway.
+  `offer-cleanup/delete-offer.yml`. The spec drives the same endpoints with self-contained curl through the gateway.
 
 ## Number assignment
 

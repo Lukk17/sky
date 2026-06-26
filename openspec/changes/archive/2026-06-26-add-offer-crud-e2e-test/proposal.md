@@ -55,7 +55,7 @@ reset than the messaging test and runs after it.
 
 - Token: `docs/api/request/auth/get-token.yml`, or the equivalent curl shown in the spec.
 - Flow: `docs/api/request/offer/create-offer.yml`, `get-all-offers.yml`, `search-offers.yml`, `get-owned-offers.yml`,
-  `get-offer-owner.yml`, `upload-photo.yml`, `edit-offer.yml`, and `offer-teardown/delete-offer.yml`. The spec drives
+  `get-offer-owner.yml`, `upload-photo.yml`, `edit-offer.yml`, and `offer-cleanup/delete-offer.yml`. The spec drives
   the same endpoints with self-contained curl through the gateway.
 
 ## Number assignment
