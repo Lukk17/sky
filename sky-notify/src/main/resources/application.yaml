@@ -34,7 +34,7 @@ spring:
           # JwtDecoder built from this value. Provider-neutral env var name so the
           # same property name works whether we point at Keycloak, Auth0, or any
           # other OIDC IdP.
-          issuer-uri: ${OAUTH2_ISSUER_URI}
+          issuer-uri: ${OAUTH2_ISSUER_URI:https://keycloak.test:9443/realms/sky}
 
 # expose actuator endpoints (* for all)
 management:

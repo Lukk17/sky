@@ -48,12 +48,15 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "keycloak.test:host-gateway"
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
       POSTGRES_USER: ${POSTGRES_USER:-sky_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sky_pass}
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
       SPRING_PROFILES_ACTIVE: default
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
@@ -78,12 +81,18 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "keycloak.test:host-gateway"
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
       POSTGRES_USER: ${POSTGRES_USER:-sky_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sky_pass}
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://host.docker.internal:9070}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-admin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-password}
       SPRING_PROFILES_ACTIVE: default
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
@@ -105,10 +114,13 @@ services:
       - sky-network
     ports:
       - "5553:5553"
+    extra_hosts:
+      - "keycloak.test:host-gateway"
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
       POSTGRES_USER: ${POSTGRES_USER:-sky_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sky_pass}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
       SPRING_PROFILES_ACTIVE: default
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
@@ -133,10 +145,12 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "keycloak.test:host-gateway"
     environment:
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
-      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://skycloud.luksarna.com/}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
       SPRING_PROFILES_ACTIVE: default
       SPRING_DEBUG: INFO
     healthcheck:

@@ -170,7 +170,7 @@ sequenceDiagram
     KC-->>OP: session valid
     OP-->>NG: 200 + x-auth-request-email
     NG->>BK: POST /api/v1/bookings (Authorization + x-auth-request-email forwarded)
-    BK->>OF: GET /api/internal/v1/owner/offer/{id} (verify offer ownership)
+    BK->>OF: GET /api/v1/offers/{id}/owner (verify offer ownership)
     OF-->>BK: 200 owner email
     BK->>BK: validate + persist booking (PostgreSQL via JPA/Flyway)
     BK->>KF: produce BookingCreated event
@@ -305,6 +305,43 @@ Gateway route table (mirrors the production nginx rewrite rules):
 
 ---
 
+### Local development
+
+The local stack targets these endpoints and credentials. All values listed here are
+local-development-only, non-secret, intentionally committed values for the local Docker stack.
+Real environments inject secrets via Kubernetes sealed-secrets and environment variables; none of
+the values below appear in any production system.
+
+| Service | URL | Credentials |
+|---|---|---|
+| Keycloak admin console | https://keycloak.test:9443 | admin / admin |
+| Keycloak sky realm | https://keycloak.test:9443/realms/sky | issuer URI for services |
+| Keycloak client | sky-backend | secret: dev-only-change-in-prod |
+| Demo user: owner | realm sky | username owner, password owner, role user |
+| Demo user: user | realm sky | username user, password user, role user |
+| Demo user: lukk | realm sky | username lukk, password test1234, role admin |
+| PostgreSQL | localhost:5432 | database sky, user sky_user, password sky_pass |
+| MinIO | http://localhost:9070 | access key admin, secret key password |
+| Kafka | localhost:9092 | no auth, managed by Docker Compose |
+
+`keycloak.test` must resolve to `127.0.0.1` in the hosts file (`/etc/hosts` or
+`C:\Windows\System32\drivers\etc\hosts`). The four services default to
+`OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky` when the variable is not set, so a bare
+`./gradlew :sky-offer:bootRun` against the local stack works without exporting any variable.
+
+Keycloak uses a self-signed TLS certificate. The JVM rejects it by default. Either import the cert
+into a local truststore and pass `-Djavax.net.ssl.trustStore=...` at startup, or import it into the
+JDK cacerts store. The full step-by-step procedure, including `openssl` and `keytool` commands with
+both PowerShell and Unix variants, is in
+config/keycloak/SETUP.md.
+
+For the full Keycloak realm import runbook, see
+config/keycloak/SETUP.md.
+For Docker Compose and Minikube setup, see
+config/local-dev/local_README.md.
+
+---
+
 ### Testing
 
 Run all tests from the repo root:
@@ -381,6 +418,7 @@ before cutting a GitHub release.
 | [config/k8s/helm/helm_README.md](config/k8s/helm/helm_README.md) | Helm chart install, upgrade, and troubleshooting |
 | [config/local-dev/local_README.md](config/local-dev/local_README.md) | Local dev: Gradle, Docker Compose, Minikube |
 | [config/keycloak/README.md](config/keycloak/README.md) | Keycloak realm-as-code: import, token minting, demo users |
+| [config/keycloak/SETUP.md](config/keycloak/SETUP.md) | Keycloak local setup runbook: realm import, cert trust, user management |
 | [sky-gateway/README.md](sky-gateway/README.md) | Gateway route table and secure profile setup |
 
 ---

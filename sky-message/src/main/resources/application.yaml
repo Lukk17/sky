@@ -31,7 +31,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${OAUTH2_ISSUER_URI}
+          issuer-uri: ${OAUTH2_ISSUER_URI:https://keycloak.test:9443/realms/sky}
   web:
     locale-resolver: accept_header
   mvc:

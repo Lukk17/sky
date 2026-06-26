@@ -1,5 +1,27 @@
 # Local running
 
+---
+
+### Local development endpoints and credentials
+
+These are local-development-only, non-secret, intentionally committed values for the local Docker
+stack. Real environments inject secrets via Kubernetes sealed-secrets; none of the values below
+exist in any production system.
+
+| Service | URL | Credentials |
+|---|---|---|
+| Keycloak | https://keycloak.test:9443 | admin / admin (console), realm sky |
+| Keycloak realm users | https://keycloak.test:9443/realms/sky | owner/owner, user/user, lukk/test1234 |
+| Keycloak client | sky-backend | secret: dev-only-change-in-prod |
+| PostgreSQL | localhost:5432 | database sky, user sky_user, password sky_pass |
+| MinIO | http://localhost:9070 | access key admin, secret key password |
+| Kafka | localhost:9092 | no auth (Docker Compose managed) |
+
+`keycloak.test` must resolve to `127.0.0.1` in the hosts file. For the full Keycloak import and
+cert-trust runbook see config/keycloak/SETUP.md.
+
+---
+
 ### Part 1. Running on Minikube
 - [Minikube setup](#minikube-setup)
 - [Accessing app](#accessing-app)
