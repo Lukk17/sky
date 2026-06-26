@@ -1,11 +1,11 @@
 info:
-  name: Delete Booking
+  name: Delete Message
   type: http
-  seq: 3
+  seq: 2
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/booking/api/bookings/{{bookingId}}"
+  url: "{{baseUrl}}/msg/api/messages/{{messageId}}"
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"
