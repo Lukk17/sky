@@ -1,0 +1,27 @@
+# k3d local cluster environment.
+# Cluster: k3d-sky, host port 5777 → ingress port 80.
+# Keycloak hostname uses nip.io so the host resolves it to 127.0.0.1
+# without requiring a hosts file entry. CoreDNS inside the cluster
+# routes that hostname to the nginx-ingress ClusterIP so services
+# can reach Keycloak for JWKS validation.
+#
+# Run the collection with:
+#   bru run -r --env k3d --insecure
+# from the docs/api/request directory.
+name: k3d
+variables:
+  - name: baseUrl
+    value: http://localhost:5777
+  - name: keycloakUrl
+    value: http://keycloak.127.0.0.1.nip.io:5777
+  - name: keycloakClientId
+    value: sky-backend
+  - name: keycloakClientSecret
+    value: dev-only-change-in-prod
+  - name: keycloakUsername
+    value: lukk
+  - name: keycloakPassword
+    value: test1234
+  - name: bearerToken
+    value: ""
+    secret: true

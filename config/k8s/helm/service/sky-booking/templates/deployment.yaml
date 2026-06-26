@@ -23,6 +23,7 @@ spec:
       {{- end }}
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
       volumes:
         - name: tmp
           emptyDir: {}
@@ -91,16 +92,6 @@ spec:
               value: "{{ .Values.deployment.env.hibernate.debug }}"
             - name: SHOW_SQL_QUERIES
               value: "{{ .Values.deployment.env.hibernate.showSqlQueries }}"
-            - name: SPRING_SECURITY_USER
-              valueFrom:
-                secretKeyRef:
-                  key: {{ .Values.deployment.env.spring.securityUser }}
-                  name: "{{ .Values.secret.name }}"
-            - name: SPRING_SECURITY_PASS
-              valueFrom:
-                secretKeyRef:
-                  key: {{ .Values.deployment.env.spring.securityPass }}
-                  name: "{{ .Values.secret.name }}"
             - name: OAUTH2_ISSUER_URI
               value: "{{ .Values.oauth2.issuerUri }}"
             - name: OAUTH2_AUDIENCE

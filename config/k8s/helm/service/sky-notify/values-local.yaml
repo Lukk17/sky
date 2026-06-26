@@ -1,0 +1,10 @@
+deployment:
+  image:
+    repository: "sky-notify"
+    pullPolicy: "Never"
+    tag: "e2e"
+
+imagePullSecrets: []
+
+oauth2:
+  issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"

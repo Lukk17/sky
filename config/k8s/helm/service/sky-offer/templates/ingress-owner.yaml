@@ -6,7 +6,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
   {{- range $key, $value := .Values.ingress.serviceOwner.annotations }}
+{{- if $value }}
     {{ $key }}: {{ $value | quote }}
+  {{- end}}
   {{- end}}
 spec:
   ingressClassName: {{ .Values.ingress.serviceOwner.controller }}
