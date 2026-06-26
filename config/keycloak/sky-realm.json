@@ -80,6 +80,18 @@
         { "type": "password", "value": "user", "temporary": false }
       ],
       "realmRoles": ["user"]
+    },
+    {
+      "username": "lukk",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "lukk@sky.dev",
+      "firstName": "Lukk",
+      "lastName": "Sarna",
+      "credentials": [
+        { "type": "password", "value": "test1234", "temporary": false }
+      ],
+      "realmRoles": ["admin", "user"]
     }
   ]
 }
