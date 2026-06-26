@@ -92,3 +92,7 @@ local.properties
 .classpath
 
 
+
+# e2e capability test run records (kept ephemeral; README stays tracked).
+e2e/testing/runs/*.md
+!e2e/testing/runs/README.md
