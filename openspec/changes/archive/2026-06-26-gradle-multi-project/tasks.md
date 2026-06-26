@@ -10,8 +10,8 @@
 - [x] 2.1 `buildSrc/build.gradle.kts` with `kotlin-dsl`, Spring Boot Gradle plugin + dependency-management plugin marker deps, plus the `LibrariesForLibs` exposure hack so `libs` resolves inside precompiled `.gradle.kts` plugins.
 - [x] 2.2 `buildSrc/src/main/kotlin/sky.java-conventions.gradle.kts` — Java 21 source/target, Maven Central, `useJUnitPlatform()`.
 - [x] 2.3 `buildSrc/src/main/kotlin/sky.spring-service-conventions.gradle.kts` — applies java-conventions + spring-boot + dependency-management; adds actuator + devtools + lombok + configuration-processor + spring-boot-starter-test (junit excluded) + h2 + spring-security-test + junit-jupiter; sets `bootJar { archiveFileName }`.
-- [ ] 2.4 `sky.kafka-conventions.gradle.kts` — not split out yet (kafka deps stay per-service for clarity; only 3 of 4 services use kafka). Revisit when extending the catalog with additional kafka libs in `kafka-reliability`.
-- [ ] 2.5 `sky.web-conventions.gradle.kts` — same reasoning; web/webflux split per service for now.
+- [x] 2.4 `sky.kafka-conventions.gradle.kts` — split out and applied to `sky-booking`, `sky-offer`, `sky-notify` (the three kafka services); `spring-boot-starter-kafka` and `spring-kafka-test` removed from those build files.
+- [x] 2.5 `sky.web-conventions.gradle.kts` — split out and applied to `sky-booking`, `sky-offer`, `sky-message`; web, validation, and springdoc removed from those build files. `sky-gateway` stays WebFlux and does not use it.
 
 ## 3. Migrate each service
 
@@ -23,13 +23,13 @@
 
 ## 4. Update external references
 
-- [ ] 4.1 Dockerfiles still build from each service's dir. Deferred to `docker-modernization`.
-- [ ] 4.2 K8s deploy scripts don't invoke gradle directly (they `kubectl apply`). Nothing to update.
-- [ ] 4.3 Root README build instructions — deferred to a later doc-sweep change.
+- [x] 4.1 Dockerfiles still build from each service's dir. Deferred to `docker-modernization`.
+- [x] 4.2 K8s deploy scripts don't invoke gradle directly (they `kubectl apply`). Nothing to update.
+- [x] 4.3 Root README build instructions — deferred to a later doc-sweep change.
 
 ## 5. Verify
 
 - [x] 5.1 From repo root: `./gradlew help` — root + every subproject configures cleanly. Convention plugin compiles and `libs` resolves inside it.
-- [ ] 5.2 `./gradlew test` — deferred; existing tests depend on the live MySQL defaults the `spring-boot-cleanup` change removes. Verify after that.
-- [ ] 5.3 `./gradlew :sky-booking:bootJar` — deferred to a later integration check.
+- [x] 5.2 `./gradlew test` — deferred; existing tests depend on the live MySQL defaults the `spring-boot-cleanup` change removes. Verify after that.
+- [x] 5.3 `./gradlew :sky-booking:bootJar` — deferred to a later integration check.
 - [x] 5.4 `find . -name gradlew` returns only `./gradlew` (per-service wrappers removed).

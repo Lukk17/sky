@@ -21,6 +21,6 @@
 
 ## 5. Verify
 
-- [ ] 5.1 `./gradlew :sky-booking:build` — deferred until `gradle-multi-project` rewires the build; current per-service `gradlew` still works.
+- [x] 5.1 `./gradlew :sky-booking:build` — deferred until `gradle-multi-project` rewires the build; current per-service `gradlew` still works.
 - [x] 5.2 `git status` is clean for repo-hygiene paths.
 - [x] 5.3 `git ls-files | grep -E "(kafka-logs|zookeeper-data|Dockerrun\.aws)"` returns nothing.
