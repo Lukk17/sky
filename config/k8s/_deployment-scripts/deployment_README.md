@@ -429,7 +429,7 @@ to
    * GitHub: https://github.com/settings/developers
      need to create new oauth app with new address as `Homepage URL`  
    <br>
-3. Update Postman envs
+3. Update Bruno envs
 ----------------------
 
 ## 8. Clearing

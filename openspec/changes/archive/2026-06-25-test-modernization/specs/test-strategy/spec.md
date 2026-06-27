@@ -29,8 +29,8 @@ A JaCoCo coverage verification task MUST run as part of `./gradlew build`, faili
 - **THEN** `./gradlew build` fails with a JaCoCo coverage-verification error and a per-package breakdown
 
 ### Requirement: E2E tests run automatically in CI
-The Postman collection MUST be runnable via Newman in CI against a freshly-deployed stack (docker-compose or kind), failing the pipeline on any assertion failure.
+The Bruno collection MUST be runnable via the Bruno CLI in CI against a freshly-deployed stack (docker-compose or kind), failing the pipeline on any assertion failure.
 
 #### Scenario: A regression breaks an end-to-end flow
-- **WHEN** a code change breaks the booking-creation flow such that the Postman test for `POST /api/bookings` fails
-- **THEN** the CI Newman job exits non-zero and the PR check fails
+- **WHEN** a code change breaks the booking-creation flow such that the Bruno test for `POST /api/bookings` fails
+- **THEN** the CI Bruno run exits non-zero and the PR check fails

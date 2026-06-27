@@ -4,9 +4,9 @@ Spring Boot microservices backend for a flight and offer booking platform.
 
 ![Java 25](https://img.shields.io/badge/Java-25-blue?logo=openjdk)
 ![Spring Boot 4.0.7](https://img.shields.io/badge/Spring%20Boot-4.0.7-6db33f?logo=springboot)
-![Gradle](https://img.shields.io/badge/build-Gradle%20Kotlin%20DSL-02303A?logo=gradle)
-![CI](https://img.shields.io/github/actions/workflow/status/Lukk17/sky/ci.yaml?label=CI)
-![Deployed on GCP](https://img.shields.io/badge/deployed-GCP%20GKE-4285F4?logo=googlecloud)
+![Gradle 9](https://img.shields.io/badge/build-Gradle%209%20Kotlin%20DSL-02303A?logo=gradle)
+![Auth OAuth2 / OIDC](https://img.shields.io/badge/auth-OAuth2%20%2F%20OIDC%20(Keycloak)-orange?logo=keycloak)
+![Deploy Kubernetes or Compose](https://img.shields.io/badge/deploy-Kubernetes%20%7C%20Docker%20Compose-326ce5?logo=kubernetes)
 
 ---
 
@@ -17,11 +17,13 @@ offers (with photo storage in MinIO), bookings, user-to-user messaging, real-tim
 local-development gateway routing. A sixth module, [sky-common](sky-common/), is a shared library of wire types and
 Spring auto-configurations that the services build on.
 
-The whole platform runs as Helm charts on Google Kubernetes Engine at
-[https://skycloud.luksarna.com](https://skycloud.luksarna.com). The
+The platform deploys two ways from the same images: as Helm charts to any Kubernetes cluster (Google Kubernetes Engine
+is the production target at [https://skycloud.luksarna.com](https://skycloud.luksarna.com), and a local k3d or minikube
+cluster is the dev target), or locally through the Spring Cloud Gateway in front of a Docker Compose stack. The
 [Sky-View](https://github.com/Lukk17/sky-view) Angular frontend consumes the REST API and connects to the WebSocket
-notification endpoint. Authentication is handled by a self-hosted Keycloak 26 instance at
-[https://keycloak.luksarna.com](https://keycloak.luksarna.com).
+notification endpoint. Authentication is OAuth2 / OIDC through Keycloak: a self-hosted instance at
+[https://keycloak.luksarna.com](https://keycloak.luksarna.com) for the production target, and a local Keycloak for
+development.
 
 ---
 

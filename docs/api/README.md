@@ -18,12 +18,18 @@ format (`.yml` request and environment files, with [request/opencollection.yml](
 as the collection root), which is the default format in Bruno v3.1 and later. It replaces the
 legacy single-file `.bru` format; both still open in Bruno if you are on an older release.
 
-The collection has two environments in [request/environments/](request/environments/):
+The collection has three environments in [request/environments/](request/environments/):
 
-| Environment | `baseUrl` |
-|---|---|
-| `local` | `http://localhost:5777` (Spring Cloud Gateway) |
-| `prod` | `https://skycloud.luksarna.com` |
+| Environment | `baseUrl` | Target |
+|---|---|---|
+| `local` | `http://localhost:5777` (Spring Cloud Gateway) | the local Docker Compose stack |
+| `k8s` | `http://localhost:5777` (cluster ingress) | a local in-cluster deployment (k3d, minikube, kind) |
+| `prod` | `https://skycloud.luksarna.com` | the deployed GKE stack |
+
+The `local` and `k8s` environments share the same `baseUrl` but differ in `keycloakUrl`: `local`
+mints tokens from the host Keycloak, while `k8s` mints them from the cluster's own Keycloak. Using
+the wrong one gives a valid token but a 401 on every authenticated call, since the issuer will not
+match. See [config/k8s/local_README.md](../../config/k8s/local_README.md) for the cluster runbook.
 
 Both environments also define a `keycloakUrl` (the realm issuer host) plus the realm client and user
 credentials, and a `bearerToken`. You do not fill `bearerToken` by hand: the `auth/get-token.yml` request
@@ -47,20 +53,42 @@ The collection is self-driving: you never copy a token or an id by hand.
 3. `offer/upload-photo.yml` posts the 1x1 image at [request/sample.png](request/sample.png) as
    `multipart/form-data` under the `file` field, the part name the controller expects.
 
-Run the whole collection in dependency order with the Bruno CLI. The `seq` on each request and on each folder
-makes the run flow as: get token, then offer create, reads, owner lookup, photo upload and edit, then booking
-create, read and delete, then message send, read and delete, and finally the offer delete as teardown.
+The collection runs in dependency order. The `seq` on each request and on each folder makes the run flow as:
+get token, then offer create, reads, owner lookup, photo upload and edit, then booking create, read and delete,
+then message send, read and delete, and finally the offer delete as teardown.
+
+---
+
+### Run from the Bruno desktop app (GUI)
+
+This is the normal way to use the collection day to day. The terminal path below is mainly for automation, AI
+agents, and the OpenSpec e2e runbooks.
+
+1. Open Bruno, choose "Open Collection", and point it at [request/](request/).
+2. In the environment selector (top right), pick `local`, `k8s`, or `prod`.
+3. To run single requests, run `auth/get-token.yml` once, then run any other request. The saved `bearerToken`
+   and the chained ids (`offerId`, `bookingId`, `messageId`) are reused for the rest of the session.
+4. To run the whole flow, open the Collection Runner (right-click the collection, then "Run"). It executes in
+   folder and request `seq` order, so it finishes with the `cleanup/` folder as teardown. The GUI Runner follows
+   that tree order and does not let you reorder requests ad hoc, which is exactly why teardown lives in its own
+   ordered `cleanup/` folder rather than being interleaved with the create and read requests.
+
+---
+
+### Run from the terminal (CLI)
 
 ```bash
 bru run -r --env local
 ```
 
-Switch `--env local` to `--env prod` for the deployed stack. Before a prod run, fill `keycloakClientSecret`,
-`keycloakUsername` and `keycloakPassword` in [request/environments/prod.yml](request/environments/prod.yml); the
-local environment already carries the dev realm credentials taken from `config/keycloak/sky-realm.json`.
+Switch `--env local` to `--env k8s` for a local in-cluster deployment, or `--env prod` for the deployed stack.
+Before a prod run, fill `keycloakClientSecret`, `keycloakUsername` and `keycloakPassword` in
+[request/environments/prod.yml](request/environments/prod.yml); the `local` and `k8s` environments already carry
+the dev realm credentials taken from `config/keycloak/sky-realm.json`.
 
-In the Bruno desktop app, select the `local` environment, run `auth/get-token.yml` once, then run any other
-request; the saved `bearerToken` and the chained ids are reused for the rest of the session.
+---
+
+### Mint a token by hand
 
 If you prefer to mint a token by hand, for example to inspect its claims, use the password grant directly:
 

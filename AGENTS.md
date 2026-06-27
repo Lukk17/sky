@@ -58,7 +58,7 @@ Use multiline prompts when you need to include logs or detailed context with a c
 - `sky-message` (port 5553) — user-to-user messaging
 - `sky-notify` (port 5554) — push notifications to clients
 
-Shared build configuration lives in the `buildSrc/` convention plugins (`sky.java-conventions`, `sky.java-library-conventions`, `sky.spring-service-conventions`) with all versions pinned in the `gradle/libs.versions.toml` version catalogue. Helm charts, local-dev compose, deployment scripts, and a Postman E2E collection live under `config/`.
+Shared build configuration lives in the `buildSrc/` convention plugins (`sky.java-conventions`, `sky.java-library-conventions`, `sky.spring-service-conventions`) with all versions pinned in the `gradle/libs.versions.toml` version catalogue. Helm charts, local-dev compose, and deployment scripts live under `config/`; the Bruno API collection lives under `docs/api/request/`.
 
 A fifth module, `sky-common`, is a shared library (not a deployable service): it holds wire types, Spring auto-configurations, and web utilities consumed by the four services. Each module also carries its own `AGENTS.md` with module-local detail — see [Module guides](#module-guides) below.
 
@@ -73,7 +73,7 @@ A fifth module, `sky-common`, is a shared library (not a deployable service): it
 - **Packaging**: one fat `bootJar` per service, containerized via per-module `docker/Dockerfile`, deployed as Helm charts under `config/k8s/helm/` (per-service charts, plus `oauth2-proxy`, MySQL, Kafka, and sealed-secrets infra charts).
 - **Build**: single composite Gradle build — one root `gradlew`, modules wired in `settings.gradle.kts`, shared config in `buildSrc/` convention plugins, versions in `gradle/libs.versions.toml`. The build runs on Gradle 9 with the daemon on JDK 25 (pinned in `gradle/gradle-daemon-jvm.properties`), and the Java 25 compile toolchain is auto-resolved via the Foojay plugin; the catalogue targets Java 25 / Spring Boot 4.
 - **Active work**: branch `feature/spring-boot-4-and-arch-cleanup` (current) — Spring Boot 4 / JDK 25 readiness and architecture cleanup; see `openspec/changes/` for in-flight proposals.
-- **Testing**: JUnit 5 + Spring Boot Test, `spring-kafka-test`, `okhttp3 mockwebserver`, Spring Security Test, Testcontainers, H2 for repository tests, `archunit` for architecture rules. E2E lives in `config/postman-collection/`.
+- **Testing**: JUnit 5 + Spring Boot Test, `spring-kafka-test`, `okhttp3 mockwebserver`, Spring Security Test, Testcontainers, H2 for repository tests, `archunit` for architecture rules. E2E lives in `e2e/` (OpenSpec runbooks driven through the Bruno collection in `docs/api/request/`).
 - **Constraints**: monorepo with shared `group = com.lukk`; one root `gradlew` for the whole composite build; versions are pinned centrally in `gradle/libs.versions.toml` — bump there, not per-module.
 
 ## Required opening move

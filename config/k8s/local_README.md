@@ -62,8 +62,21 @@ k3d cluster create sky --port "5777:80@loadbalancer" --k3s-arg "--disable=traefi
 
 ### 2. Import local Docker images into k3d
 
+The cluster's k3s node has its own containerd image store, separate from host Docker, so locally
+built images must be copied in. Use `--mode direct`, which streams the images straight into the node
+and never creates the `k3d-tools` helper container:
+
 ```bash
-k3d image import sky-offer:e2e sky-booking:e2e sky-message:e2e sky-notify:e2e -c sky
+k3d image import --mode direct sky-offer:e2e sky-booking:e2e sky-message:e2e sky-notify:e2e -c sky
+```
+
+Without `--mode direct`, k3d spins up a short-lived `k3d-sky-tools` helper container to do the copy.
+It is meant to be removed automatically after the import, but an interrupted or repeated import can
+leave it running. It is harmless (just an image loader, not a cluster node), and you can remove a
+lingering one at any time:
+
+```bash
+docker rm -f k3d-sky-tools
 ```
 
 ---
@@ -241,25 +254,28 @@ Expected: `"issuer":"http://keycloak.127.0.0.1.nip.io/realms/sky"`
 
 ### 10. Run the Bruno collection
 
-Use the `k3d` environment, not `local`. The cluster runs its own Keycloak with issuer
+Use the `k8s` environment, not `local`. The cluster runs its own Keycloak with issuer
 `http://keycloak.127.0.0.1.nip.io/realms/sky`, while `--env local` mints tokens from your host
 Keycloak (`https://keycloak.test:9443/...`). A token from the wrong issuer is rejected by the
-cluster services, so `--env local` against k3d gives a valid token but 401 on every authenticated
-call. The public endpoints (get-all-offers, search) still pass, which is the tell-tale sign you
-used the wrong environment.
+cluster services, so `--env local` against the cluster gives a valid token but 401 on every
+authenticated call. The public endpoints (get-all-offers, search) still pass, which is the
+tell-tale sign you used the wrong environment.
 
 ```bash
 cd docs/api/request
-bru run -r --env k3d --insecure
+bru run -r --env k8s --insecure
 ```
 
 Expected result: 16/16 requests pass, 66/66 assertions green.
 
 ---
 
-### Bruno k3d environment
+### Bruno k8s environment
 
-The environment file is at `docs/api/request/environments/k3d.yml`:
+The environment file is at `docs/api/request/environments/k8s.yml`. It is named `k8s` rather than
+`k3d` because the same environment works against any Kubernetes distro (k3d, minikube, kind) as long
+as that distro's ingress is exposed at `localhost:5777` and its Keycloak issues the same nip.io
+issuer. The values are:
 
 - `baseUrl`: `http://localhost:5777`
 - `keycloakUrl`: `http://keycloak.127.0.0.1.nip.io:5777`
@@ -279,6 +295,27 @@ The environment file is at `docs/api/request/environments/k3d.yml`:
 | Keycloak admin | admin | admin |
 | Keycloak realm user | lukk | test1234 |
 | Keycloak client secret | sky-backend | dev-only-change-in-prod |
+
+---
+
+### Stop and start the cluster
+
+You do not need to tear down and rebuild to pause work. One command stops every cluster container
+(the k3s node and the load balancer) together, and one starts them again with all deployed charts
+and data intact. This is the single on/off switch for the whole stack:
+
+```bash
+k3d cluster stop sky
+```
+
+```bash
+k3d cluster start sky
+```
+
+Note: Docker Desktop will not show the k3d containers as one grouped stack with a single toggle,
+because k3d does not tag them as a Compose project and labelling them as one would fight k3d's own
+lifecycle management. The `k3d cluster stop` and `k3d cluster start` commands above are the
+equivalent single control.
 
 ---
 

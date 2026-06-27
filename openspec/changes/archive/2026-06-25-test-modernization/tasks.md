@@ -40,14 +40,14 @@
 - [x] 6.4 Add `check.dependsOn(jacocoTestCoverageVerification)` so `./gradlew build` fails on uncovered modules.
 - [x] 6.5 Configure exclusions: `**/dto/**`, `**/config/**`, `*Application.java`, generated Q-types (none here yet but harmless).
 
-## 7. Newman in CI
+## 7. Bruno in CI
 
 - [x] 7.1 Add `.github/workflows/e2e.yaml` (or equivalent) that:
   - Spins up the stack (docker-compose preferred for CI speed; Helm against kind cluster as alternative).
   - Waits for `/actuator/health` on each service.
-  - Runs `newman run config/postman-collection/sky.postman_collection.json -e config/postman-collection/<env>` — pick the localhost env file.
+  - Runs `bru run -r --env <env> --insecure` from `docs/api/request` — pick the localhost env file.
   - Fails on non-zero exit.
-- [x] 7.2 Document how to run Newman locally in root README.
+- [x] 7.2 Document how to run Bruno locally in root README.
 
 ## 8. AssertJ
 
@@ -59,5 +59,5 @@
 
 - [x] 9.1 `./gradlew test` — green across services.
 - [x] 9.2 `./gradlew jacocoTestCoverageVerification` — meets thresholds.
-- [x] 9.3 Newman job green against a freshly-deployed stack.
+- [x] 9.3 Bruno run green against a freshly-deployed stack.
 - [x] 9.4 Coverage report links surfaced in CI artifacts.

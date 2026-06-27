@@ -18,7 +18,7 @@ Three small but durable cleanups to the REST API:
   - sky-message: `/api/message` → `/api/messages` for the singular endpoints (POST + DELETE align with the existing `/api/messages/received|sent`).
 - **Update** sky-booking's `OfferRestClient` (renamed in `spring-boot-cleanup`) to call `/api/internal/owner/offers/{id}` once sky-offer's internal route consolidates under v1.
 - **Document** API versioning convention in root `AGENTS.md` ## Architecture (likely 2 lines: header name, supported versions).
-- **Update** Postman collection paths.
+- **Update** Bruno collection paths.
 - **Update** Swagger UI auto-generated docs — versioning shows up in springdoc once configured.
 
 ## Capabilities
@@ -31,8 +31,8 @@ Three small but durable cleanups to the REST API:
 
 ## Impact
 
-- **Touched files**: every controller in booking, offer, message gets a version annotation; some controllers get path edits for plural-noun consistency. New `ApiVersionConfig` per service (or shared via `sky-common`). Postman collection JSON updated. sky-booking's REST client updated.
-- **External client breaking change**: sky-view (frontend) and Postman collection. Coordinate with sky-view if it pins old paths. Postman is in-repo; updated in the same commit.
+- **Touched files**: every controller in booking, offer, message gets a version annotation; some controllers get path edits for plural-noun consistency. New `ApiVersionConfig` per service (or shared via `sky-common`). Bruno collection updated. sky-booking's REST client updated.
+- **External client breaking change**: sky-view (frontend) and Bruno collection. Coordinate with sky-view if it pins old paths. Bruno is in-repo; updated in the same commit.
 - **Backwards compatibility**: optional. Spring Framework 7 versioning allows multiple `@RequestMapping(version = "1")` and `(version = "2")` on different methods, so a future v2 can ship alongside v1 with no code duplication. Out of scope here — there's only v1 today.
-- **Risk**: low-medium. Path renames are mechanical; missing one breaks a client. Postman E2E catches most.
+- **Risk**: low-medium. Path renames are mechanical; missing one breaks a client. Bruno E2E catches most.
 - **Dependency order**: depends on `spring-boot-4-migration` (Spring Framework 7 ships there). Also coordinates with `hexagonal-enforcement-archunit` (which already moved the internal controller's route prefix). Should be the last change in the sequence to give the cleanest "where we landed" snapshot.

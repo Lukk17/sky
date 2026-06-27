@@ -1,14 +1,17 @@
-# k3d local cluster environment.
-# Cluster: k3d-sky, host port 5777 → ingress port 80.
+# In-cluster Kubernetes environment (k3d, minikube, kind, or any distro).
+# Targets the stack through the cluster ingress: host port 5777 → ingress port 80.
 # Keycloak hostname uses nip.io so the host resolves it to 127.0.0.1
 # without requiring a hosts file entry. CoreDNS inside the cluster
 # routes that hostname to the nginx-ingress ClusterIP so services
 # can reach Keycloak for JWKS validation.
 #
+# Any Kubernetes distro works with this same environment as long as its ingress
+# is exposed at localhost:5777 and its Keycloak issues the same nip.io issuer.
+#
 # Run the collection with:
-#   bru run -r --env k3d --insecure
+#   bru run -r --env k8s --insecure
 # from the docs/api/request directory.
-name: k3d
+name: k8s
 variables:
   - name: baseUrl
     value: http://localhost:5777

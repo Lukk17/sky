@@ -37,4 +37,4 @@
 - [x] 7.1 Integration tests pass against new schemas (in CI: Testcontainers per service spins up MySQL with the three schemas).
 - [x] 7.2 `SHOW DATABASES` in prod shows only `sky_booking`, `sky_offer`, `sky_message` (and system DBs); `sky` is gone.
 - [x] 7.3 Each service's `/actuator/health/db` reports UP.
-- [x] 7.4 Postman E2E run is green.
+- [x] 7.4 Bruno E2E run is green.

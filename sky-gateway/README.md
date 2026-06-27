@@ -83,4 +83,4 @@ All tuneable settings are in `src/main/resources/application.yaml`. The `secure`
 The production GKE stack uses `nginx-ingress` rewrite annotations and `oauth2-proxy` for authentication. Neither is
 practical to run locally without Minikube. `sky-gateway` gives developers the same URL surface
 (`/booking/api/…`, `/offer/api/…`, `/msg/api/…`, `/notify/…`) without Kubernetes, so frontend integration tests and
-Postman collections work against `http://localhost:5777` regardless of the environment.
+the Bruno collection work against `http://localhost:5777` regardless of the environment.

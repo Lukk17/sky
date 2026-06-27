@@ -35,5 +35,5 @@
 - [x] 6.1 `./gradlew bootRun` per service starts on JDK 25 with Spring Boot 4 banner.
 - [x] 6.2 No `deprecation` warnings in compile output (or only intentionally-deferred ones).
 - [x] 6.3 Helm deploy: pull new images, all pods reach Ready.
-- [x] 6.4 Postman/Newman E2E green.
+- [x] 6.4 Bruno E2E green.
 - [x] 6.5 Update root `AGENTS.md` ## Architecture section: Spring Boot 4, Java 25.

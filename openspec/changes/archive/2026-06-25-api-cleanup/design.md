@@ -33,7 +33,7 @@ Versioning before there's a v2 looks premature, but adding the *mechanism* now i
 ## Risks / Trade-offs
 
 - **Frontend (sky-view) breakage**: every renamed path breaks until sky-view ships the new paths + header. Coordinate. Mitigation: a temporary `@RequestMapping` alias on the old path during the transition deploy, removable after. Or coordinate the deploys.
-- **Postman collection regeneration**: low-tech sync issue. Done in-repo.
+- **Bruno collection regeneration**: low-tech sync issue. Done in-repo.
 - **Default version behavior**: if a client forgets the header, they get v1 — fine while v1 is the only one. When v2 ships, decide whether default flips. Likely yes (newest-supported = default).
-- **Hello endpoint removal**: anyone using `/api/home` as a health check should be told to use `/actuator/health/readiness`. Update Postman + docs.
+- **Hello endpoint removal**: anyone using `/api/home` as a health check should be told to use `/actuator/health/readiness`. Update Bruno + docs.
 - **Coupling with `hexagonal-enforcement-archunit`**: that change moved `OfferInternalController` to `/api/internal/...`; this change adds versioning. Two consecutive edits to the same controller. Acceptable; the sequence is clear.

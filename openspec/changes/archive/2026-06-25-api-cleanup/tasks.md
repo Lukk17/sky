@@ -37,13 +37,13 @@
 
 ## 6. Documentation & artifacts
 
-- [x] 6.1 Update `config/postman-collection/sky.postman_collection.json` paths and add `X-API-Version: 1` header in collection-level defaults.
+- [x] 6.1 Update the Bruno collection paths at `docs/api/request` and add `X-API-Version: 1` header in collection-level defaults.
 - [x] 6.2 Update root `README.md` API section (if any) and `AGENTS.md` ## Architecture.
 - [x] 6.3 Note breaking change for sky-view frontend; coordinate.
 
 ## 7. Verify
 
 - [x] 7.1 `./gradlew test` green.
-- [x] 7.2 Newman against the updated collection — green.
+- [x] 7.2 Bruno run against the updated collection — green.
 - [x] 7.3 Smoke locally: hit each new path with `X-API-Version: 1` — works. Hit old singular path — 404.
 - [x] 7.4 Swagger UI shows v1 grouping.

@@ -310,7 +310,7 @@ When moving from one hostname to another (e.g. `sky.luksarna.com` to `skycloud.l
 2. Update `nginx.ingress.kubernetes.io/auth-url` and `auth-signin` annotations in every service `values.yaml`.
 3. Update `redirect-url` in `oauth2-proxy/values.yaml`.
 4. Update Keycloak: add the new hostname to Allowed Redirect URIs for the `sky` client at `https://keycloak.luksarna.com/admin`.
-5. Update Postman environments.
+5. Update the Bruno environments in `docs/api/request/environments/`.
 
 ---
 
