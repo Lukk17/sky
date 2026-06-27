@@ -15,7 +15,8 @@ services. `version = "1.0.2"`.
   report). Depends on `:sky-common`.
 - **Hexagonal layout** (`com.lukk.sky.booking`):
   - `domain/model`, `domain/ports`, `domain/exception` — the core; `BookingService` is exposed as a port.
-  - `adapters/api` — REST controllers; `adapters/dto` — wire DTOs; `adapters/notification` — outbound notification.
+  - `adapters/inbound/api` — REST controllers; `adapters/dto` — wire DTOs; `adapters/outbound/rest` — the
+    outbound offer-service client, caller, and URI strategy; `adapters/outbound/notification` — outbound notification.
   - `config`, `config/kafka`, `config/propertyBind` — Spring wiring and bound properties.
 - **Reactive stack**: this service keeps WebFlux. `BookingService` returns `Mono<BookingDTO>` and a `RestClientWebflux`
   uses `WebClient` for inter-service calls. Migrating from `WebClient` to `RestClient` is a separate, deliberate change —

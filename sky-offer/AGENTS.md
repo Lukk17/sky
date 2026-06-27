@@ -15,7 +15,8 @@ independently-deployable services. `version = "1.0.2"`.
   report). Depends on `:sky-common`.
 - **Hexagonal layout** (`com.lukk.sky.offer`):
   - `domain/model`, `domain/ports`, `domain/exception` — the core.
-  - `adapters/api` — REST controllers; `adapters/dto` — wire DTOs; `adapters/notification` — outbound notification.
+  - `adapters/inbound/api` — REST controllers; `adapters/dto` — wire DTOs; `adapters/outbound/notification` —
+    outbound notification; `adapters/outbound/storage` — the S3 photo storage adapter.
   - `config`, `config/kafka`, `config/propertyBind` — Spring wiring and bound properties.
 - **MVC stack**: plain Spring Web (`spring-boot-starter-web`); no WebFlux here (unlike `sky-booking`).
 - **Persistence**: MySQL (`mysql-connector-j`, runtime) against the shared `sky` schema, schema versioned with Flyway

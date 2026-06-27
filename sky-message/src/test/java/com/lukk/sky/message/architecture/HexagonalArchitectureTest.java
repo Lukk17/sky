@@ -46,12 +46,12 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("Controllers live under adapters.api")
-    void controllers_whenInspected_thenResideInAdaptersApiPackage() {
+    @DisplayName("Controllers live under adapters.inbound.api")
+    void controllers_whenInspected_thenResideInAdaptersInboundApiPackage() {
         classes()
                 .that().areAnnotatedWith("org.springframework.web.bind.annotation.RestController")
                 .or().areAnnotatedWith("org.springframework.stereotype.Controller")
-                .should().resideInAPackage("..adapters.api..")
+                .should().resideInAPackage("..adapters.inbound.api..")
                 .check(classes);
     }
 

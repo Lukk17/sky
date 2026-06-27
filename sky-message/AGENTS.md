@@ -14,7 +14,7 @@ exposes REST under the `/api/v1` prefix, and is one of the four independently-de
   report). Depends on `:sky-common`.
 - **Hexagonal layout** (`com.lukk.sky.message`):
   - `domain/model`, `domain/ports`, `domain/exception` — the core.
-  - `adapters/api` — REST controllers; `adapters/dto` — wire DTOs.
+  - `adapters/inbound/api` — REST controllers; `adapters/dto` — wire DTOs.
   - `config`, `config/propertyBind` — Spring wiring and bound properties.
 - **MVC stack**: plain Spring Web (`spring-boot-starter-web`).
 - **No Kafka**: unlike the other three services, `sky-message` does **not** depend on `spring-kafka`. It has no
