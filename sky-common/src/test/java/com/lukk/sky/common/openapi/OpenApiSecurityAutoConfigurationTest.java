@@ -1,4 +1,4 @@
-package com.lukk.sky.common.swagger;
+package com.lukk.sky.common.openapi;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
@@ -6,7 +6,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static com.lukk.sky.common.swagger.OpenApiSecurityAutoConfiguration.BEARER_AUTH_SCHEME;
+import static com.lukk.sky.common.openapi.OpenApiSecurityAutoConfiguration.BEARER_AUTH_SCHEME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("OpenApiSecurityAutoConfiguration")

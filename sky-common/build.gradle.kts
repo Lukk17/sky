@@ -24,7 +24,7 @@ dependencies {
     compileOnly(libs.gson)
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
 
-    // SpringDoc (for SwaggerAutoConfiguration). compileOnly so sky-notify, which has no
+    // SpringDoc (for OpenApiAutoConfiguration). compileOnly so sky-notify, which has no
     // Swagger UI, is not forced to pull springdoc onto its classpath.
     compileOnly(libs.springdoc.openapi.starter.webmvc.ui)
 

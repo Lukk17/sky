@@ -1,10 +1,10 @@
 package com.lukk.sky.message.adapters.api;
 
-import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
-import com.lukk.sky.message.adapters.dto.MessageDTO;
-import com.lukk.sky.message.domain.ports.service.MessageService;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
+import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
+import com.lukk.sky.message.adapters.dto.MessageDTO;
+import com.lukk.sky.message.domain.ports.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

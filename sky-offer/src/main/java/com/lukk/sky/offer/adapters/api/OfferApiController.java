@@ -2,9 +2,9 @@ package com.lukk.sky.offer.adapters.api;
 
 import com.google.gson.Gson;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
-import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.security.IsUser;
-import com.lukk.sky.common.swagger.ApiCommonErrorResponses;
+import com.lukk.sky.common.security.SecurityUtils;
+import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
@@ -62,12 +61,6 @@ public class OfferApiController {
     private static final byte[] GIF_MAGIC = {0x47, 0x49, 0x46, 0x38};
     private static final byte[] WEBP_RIFF = {0x52, 0x49, 0x46, 0x46};
     private static final byte[] WEBP_MARKER = {0x57, 0x45, 0x42, 0x50};
-
-    private static final Map<String, byte[]> ALLOWED_PREFIXES = Map.of(
-            "image/jpeg", JPEG_MAGIC,
-            "image/png", PNG_MAGIC,
-            "image/gif", GIF_MAGIC
-    );
 
     private final OfferService offerService;
     private final OfferNotificationService offerNotificationService;

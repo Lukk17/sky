@@ -1,4 +1,4 @@
-package com.lukk.sky.common.swagger;
+package com.lukk.sky.common.openapi;
 
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
 @ConditionalOnClass(GroupedOpenApi.class)
-public class SwaggerAutoConfiguration {
+public class OpenApiAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(GroupedOpenApi.class)
