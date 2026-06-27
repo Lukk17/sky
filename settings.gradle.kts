@@ -7,13 +7,14 @@ plugins {
 
 rootProject.name = "sky"
 
-include(
-    ":sky-common",
-    ":sky-booking",
-    ":sky-offer",
-    ":sky-message",
-    ":sky-notify",
-    ":sky-gateway"
-)
+listOf(
+    "sky-common",
+    "sky-booking",
+    "sky-offer",
+    "sky-message",
+    "sky-notify",
+    "sky-gateway"
+).filter { rootDir.resolve(it).isDirectory }
+    .forEach { include(":$it") }
 
 // The version catalog is auto-discovered at gradle/libs.versions.toml by Gradle.
