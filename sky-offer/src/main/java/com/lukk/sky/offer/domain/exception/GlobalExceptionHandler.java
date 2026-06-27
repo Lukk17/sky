@@ -15,14 +15,14 @@ public class GlobalExceptionHandler extends AbstractRestExceptionHandler {
     @ExceptionHandler(OfferNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleOfferNotFound(OfferNotFoundException ex) {
-        log.warn("{} Exception class: {}", ex.getMessage(), ex.getClass().getSimpleName());
+        log.warn("offer_not_found message={} exceptionType={}", ex.getMessage(), ex.getClass().getSimpleName());
         return ErrorResponse.builder(ex, HttpStatus.NOT_FOUND, ex.getMessage()).build();
     }
 
     @ExceptionHandler(OfferException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleOfferExceptions(OfferException ex) {
-        log.warn("{} Exception class: {}", ex.getMessage(), ex.getClass().getSimpleName());
+        log.warn("offer_error message={} exceptionType={}", ex.getMessage(), ex.getClass().getSimpleName());
         return ErrorResponse.builder(ex, HttpStatus.BAD_REQUEST, ex.getMessage()).build();
     }
 }

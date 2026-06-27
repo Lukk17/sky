@@ -2,7 +2,7 @@
 sky:
   apiPrefix: /api/v1
   crossOrigin:
-    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com}
+    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com,http://localhost:5777,http://localhost:4200,http://localhost:5553}
 
 # SPRING setup
 server:

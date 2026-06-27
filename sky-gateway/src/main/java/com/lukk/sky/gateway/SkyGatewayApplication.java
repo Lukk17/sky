@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @Slf4j
 public class SkyGatewayApplication {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         log.info(">>>>>>>>>> Sky Gateway start <<<<<<<<<<");
         SpringApplication.run(SkyGatewayApplication.class, args);
     }

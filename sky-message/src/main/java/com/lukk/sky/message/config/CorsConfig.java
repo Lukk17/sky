@@ -10,16 +10,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    private final String allowedOrigin;
+    private final String allowedOrigins;
 
-    public CorsConfig(@Value("${sky.crossOrigin.allowed}") String allowedOrigin) {
-        this.allowedOrigin = allowedOrigin;
+    public CorsConfig(@Value("${sky.crossOrigin.allowed}") String allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigin)
+                .allowedOrigins(allowedOrigins.split("\\s*,\\s*"))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
     }
 }

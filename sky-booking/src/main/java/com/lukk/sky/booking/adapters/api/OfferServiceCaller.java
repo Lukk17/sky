@@ -64,7 +64,6 @@ public class OfferServiceCaller {
                 .body(String.class);
     }
 
-    @SuppressWarnings("unused")
     public String fallback(String url, UUID offerId, CallNotPermittedException ex) {
         log.warn("Offer service circuit breaker OPEN — failing fast for offerId={}", offerId);
         throw new BookingException("Offer service unavailable for offerId=" + offerId);

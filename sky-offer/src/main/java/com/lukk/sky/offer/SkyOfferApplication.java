@@ -1,9 +1,9 @@
 package com.lukk.sky.offer;
 
-import com.lukk.sky.offer.config.propertyBind.SpringConfigProperties;
 import com.lukk.sky.common.config.LoggingLvlConfigProperties;
 import com.lukk.sky.common.config.ManagementConfigProperties;
 import com.lukk.sky.common.config.ServerConfigProperties;
+import com.lukk.sky.offer.config.propertyBind.SpringConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +30,7 @@ public class SkyOfferApplication {
     @Value("${sky.crossOrigin.allowed}")
     private String allowedCrossOrigin;
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         log.info(">>>>>>>>>> Offer App start <<<<<<<<<<");
         SpringApplication.run(SkyOfferApplication.class, args);
     }

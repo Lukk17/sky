@@ -8,7 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Builder
@@ -41,12 +40,4 @@ public class BookingDTO {
                 .build();
     }
 
-    public Booking toDomain() {
-        return Booking.builder()
-                .offerId(this.getOfferId())
-                .bookedDate(LocalDate.parse(this.getBookedDate()))
-                .bookingUser(this.getBookingUser())
-                .ownerEmail(this.getOwnerEmail())
-                .build();
-    }
 }

@@ -46,22 +46,6 @@ public class OfferAssembler {
                 .build();
     }
 
-    public static Offer getEmptyOffer(UUID id) {
-        return Offer.builder()
-                .hotelName("")
-                .ownerEmail("")
-                .city("")
-                .comment("")
-                .country("")
-                .description("")
-                .photoPath("")
-                .id(id)
-                .roomCapacity(1L)
-                .price(BigDecimal.valueOf(1))
-                .build();
-    }
-
-
     public static List<OfferDTO> getPopulatedOffersDTO() {
 
         return List.of(
