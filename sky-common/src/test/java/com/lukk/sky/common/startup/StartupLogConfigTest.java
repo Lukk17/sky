@@ -251,4 +251,42 @@ class StartupLogConfigTest {
         // then
         assertThat(result).contains("JSON");
     }
+
+    @Test
+    void buildStartupLog_inKubernetes_showsPodAndNamespace() {
+        // given
+        MockEnvironment env = new MockEnvironment()
+                .withProperty("spring.application.name", "test-app")
+                .withProperty("server.port", "8080")
+                .withProperty("KUBERNETES_SERVICE_HOST", "10.43.0.1")
+                .withProperty("POD_NAME", "sky-offer-deployment-abc123")
+                .withProperty("POD_NAMESPACE", "default");
+        StartupLogConfig config = new StartupLogConfig(env);
+
+        // when
+        String result = config.buildStartupLog();
+
+        // then
+        assertThat(result).contains("Runtime:");
+        assertThat(result).contains("Mode:      Kubernetes");
+        assertThat(result).contains("Pod:       sky-offer-deployment-abc123");
+        assertThat(result).contains("Namespace: default");
+    }
+
+    @Test
+    void buildStartupLog_outsideKubernetes_showsStandaloneMode() {
+        // given
+        MockEnvironment env = new MockEnvironment()
+                .withProperty("spring.application.name", "test-app")
+                .withProperty("server.port", "8080");
+        StartupLogConfig config = new StartupLogConfig(env);
+
+        // when
+        String result = config.buildStartupLog();
+
+        // then
+        assertThat(result).contains("Runtime:");
+        assertThat(result).contains("standalone / Docker Compose");
+        assertThat(result).doesNotContain("Mode:      Kubernetes");
+    }
 }

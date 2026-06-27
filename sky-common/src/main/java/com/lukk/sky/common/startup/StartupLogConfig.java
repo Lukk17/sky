@@ -67,6 +67,8 @@ public class StartupLogConfig {
         sb.append("      Hostname:  ").append(hostnameUrl).append('\n');
         sb.append('\n');
         sb.append("    Profile(s): ").append(formatProfiles()).append('\n');
+        sb.append('\n');
+        sb.append(buildRuntimeBlock());
 
         String oauth2Block = buildOAuth2Block();
         if (!oauth2Block.isEmpty()) {
@@ -129,6 +131,25 @@ public class StartupLogConfig {
             log.debug("Could not load {}: {}", BANNER_RESOURCE, e.getMessage());
             return "";
         }
+    }
+
+    private String buildRuntimeBlock() {
+        String host = localHostName();
+        boolean inKubernetes = env.containsProperty("KUBERNETES_SERVICE_HOST");
+
+        if (!inKubernetes) {
+            return "    Runtime:\n"
+                    + "      Mode:      standalone / Docker Compose (Spring Cloud Gateway front, no service registry)\n"
+                    + "      Container: " + host + "\n";
+        }
+
+        String pod = env.getProperty("POD_NAME", env.getProperty("HOSTNAME", host));
+        String namespace = env.getProperty("POD_NAMESPACE", "(expose POD_NAMESPACE via the downward API to show)");
+
+        return "    Runtime:\n"
+                + "      Mode:      Kubernetes (nginx ingress front, no service registry)\n"
+                + "      Pod:       " + pod + "\n"
+                + "      Namespace: " + namespace + "\n";
     }
 
     private String buildOAuth2Block() {
