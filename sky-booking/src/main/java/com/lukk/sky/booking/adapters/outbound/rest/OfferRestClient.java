@@ -2,8 +2,8 @@ package com.lukk.sky.booking.adapters.outbound.rest;
 
 import com.lukk.sky.booking.config.propertyBind.SkyConfigProperties;
 import com.lukk.sky.booking.domain.exception.BookingException;
-import com.lukk.sky.booking.domain.ports.api.RequestUriStrategy;
-import com.lukk.sky.booking.domain.ports.api.RestClient;
+import com.lukk.sky.booking.domain.ports.outbound.RequestUriStrategy;
+import com.lukk.sky.booking.domain.ports.outbound.RestClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;

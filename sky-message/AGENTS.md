@@ -13,7 +13,10 @@ exposes REST under the `/api/v1` prefix, and is one of the four independently-de
 - **Build plugin**: `sky.spring-service-conventions` (Spring Boot app, fat `bootJar` named `sky-message.jar`, JaCoCo
   report). Depends on `:sky-common`.
 - **Hexagonal layout** (`com.lukk.sky.message`):
-  - `domain/model`, `domain/ports`, `domain/exception` — the core.
+  - `domain/model`, `domain/exception` — core model and domain exceptions.
+  - `domain/ports/inbound` — driving port interfaces called by controllers (`MessageService`).
+  - `domain/ports/outbound` — driven port interfaces implemented by infrastructure adapters (`MessageRepository`).
+  - `domain/service` — domain service implementations (`MessageServicePrimary`).
   - `adapters/inbound/api` — REST controllers; `adapters/dto` — wire DTOs.
   - `config`, `config/propertyBind` — Spring wiring and bound properties.
 - **MVC stack**: plain Spring Web (`spring-boot-starter-web`).
@@ -32,4 +35,6 @@ Inherits the convention test stack (Spring Boot Test, Spring Security Test, JUni
 ## Conventions
 
 - Bump dependency versions in the root `gradle/libs.versions.toml`, never here.
-- Keep the hexagonal direction: adapters depend inward on `domain/ports`, never the reverse — ArchUnit enforces this.
+- Keep the hexagonal direction: adapters depend inward on `domain/ports/inbound` and `domain/ports/outbound`;
+  `domain/service` implementations depend on those port interfaces. Adapters must never import from `domain/service`
+  directly — ArchUnit enforces this.

@@ -14,7 +14,12 @@ independently-deployable services. `version = "1.0.2"`.
 - **Build plugin**: `sky.spring-service-conventions` (Spring Boot app, fat `bootJar` named `sky-offer.jar`, JaCoCo
   report). Depends on `:sky-common`.
 - **Hexagonal layout** (`com.lukk.sky.offer`):
-  - `domain/model`, `domain/ports`, `domain/exception` — the core.
+  - `domain/model`, `domain/exception` — core model and domain exceptions.
+  - `domain/ports/inbound` — driving port interfaces called by controllers (`OfferService`).
+  - `domain/ports/outbound` — driven port interfaces implemented by infrastructure adapters (`OfferRepository`,
+    `EventSourceRepository`, `OfferNotificationService`, `PhotoStorage`).
+  - `domain/service` — domain service implementations (`OfferServicePrimary`, `EventSourceService`,
+    `EventSourceServicePrimary`).
   - `adapters/inbound/api` — REST controllers; `adapters/dto` — wire DTOs; `adapters/outbound/notification` —
     outbound notification; `adapters/outbound/storage` — the S3 photo storage adapter.
   - `config`, `config/kafka`, `config/propertyBind` — Spring wiring and bound properties.
@@ -32,4 +37,6 @@ Inherits the convention test stack (Spring Boot Test, Spring Security Test, JUni
 ## Conventions
 
 - Bump dependency versions in the root `gradle/libs.versions.toml`, never here.
-- Keep the hexagonal direction: adapters depend inward on `domain/ports`, never the reverse — ArchUnit enforces this.
+- Keep the hexagonal direction: adapters depend inward on `domain/ports/inbound` and `domain/ports/outbound`;
+  `domain/service` implementations depend on those port interfaces. Adapters must never import from `domain/service`
+  directly — ArchUnit enforces this.

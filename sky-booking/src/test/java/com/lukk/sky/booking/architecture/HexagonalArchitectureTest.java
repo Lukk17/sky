@@ -16,7 +16,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *
  * <p>Known tech-debt the rules deliberately tolerate (track in follow-up changes):
  * <ul>
- *   <li>{@code domain.ports.service.*} imports {@code adapters.dto.BookingDTO} —
+ *   <li>{@code domain.service.*} imports {@code adapters.dto.BookingDTO} —
  *       DTOs should split into request/response (adapter) vs command/result (domain).</li>
  * </ul>
  */
@@ -75,13 +75,13 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("Repositories live under domain.ports.repository")
-    void repositories_whenImplementingJpaRepository_thenResideInDomainPortsRepository() {
+    @DisplayName("Repositories live under domain.ports.outbound")
+    void repositories_whenImplementingJpaRepository_thenResideInDomainPortsOutbound() {
         classes()
                 .that().areAssignableTo("org.springframework.data.jpa.repository.JpaRepository")
                 .or().haveSimpleNameEndingWith("Repository")
                 .and().areInterfaces()
-                .should().resideInAPackage("..domain.ports.repository..")
+                .should().resideInAPackage("..domain.ports.outbound..")
                 .check(classes);
     }
 }

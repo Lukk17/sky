@@ -6,7 +6,7 @@ import com.lukk.sky.message.Assemblers.MessageAssembler;
 import com.lukk.sky.message.TestSecurityConfig;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.model.Message;
-import com.lukk.sky.message.domain.ports.repository.MessageRepository;
+import com.lukk.sky.message.domain.ports.outbound.MessageRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

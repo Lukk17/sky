@@ -1,6 +1,6 @@
 package com.lukk.sky.booking.adapters.outbound.notification;
 
-import com.lukk.sky.booking.domain.ports.notification.BookingNotificationService;
+import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.common.kafka.KafkaNotificationPublisher;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import org.springframework.context.annotation.Primary;

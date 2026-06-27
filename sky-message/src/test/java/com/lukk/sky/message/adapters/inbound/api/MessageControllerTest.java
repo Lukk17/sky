@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lukk.sky.message.Assemblers.MessageAssembler;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
-import com.lukk.sky.message.domain.ports.service.MessageService;
+import com.lukk.sky.message.domain.ports.inbound.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

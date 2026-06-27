@@ -65,13 +65,13 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("Repositories live under domain.ports.repository")
-    void repositories_whenInspected_thenResideInDomainPortsRepositoryPackage() {
+    @DisplayName("Repositories live under domain.ports.outbound")
+    void repositories_whenInspected_thenResideInDomainPortsOutboundPackage() {
         classes()
                 .that().areAssignableTo("org.springframework.data.jpa.repository.JpaRepository")
                 .or().haveSimpleNameEndingWith("Repository")
                 .and().areInterfaces()
-                .should().resideInAPackage("..domain.ports.repository..")
+                .should().resideInAPackage("..domain.ports.outbound..")
                 .check(classes);
     }
 }

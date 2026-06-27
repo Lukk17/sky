@@ -14,7 +14,12 @@ services. `version = "1.0.2"`.
 - **Build plugin**: `sky.spring-service-conventions` (Spring Boot app, fat `bootJar` named `sky-booking.jar`, JaCoCo
   report). Depends on `:sky-common`.
 - **Hexagonal layout** (`com.lukk.sky.booking`):
-  - `domain/model`, `domain/ports`, `domain/exception` — the core; `BookingService` is exposed as a port.
+  - `domain/model`, `domain/exception` — core model and domain exceptions.
+  - `domain/ports/inbound` — driving port interfaces called by controllers (`BookingService`).
+  - `domain/ports/outbound` — driven port interfaces implemented by infrastructure adapters (`BookingRepository`,
+    `EventSourceRepository`, `BookingNotificationService`, `RestClient`, `RequestUriStrategy`).
+  - `domain/service` — domain service implementations (`BookingServicePrimary`, `BookingPersister`,
+    `EventSourceService`, `EventSourceServicePrimary`).
   - `adapters/inbound/api` — REST controllers; `adapters/dto` — wire DTOs; `adapters/outbound/rest` — the
     outbound offer-service client, caller, and URI strategy; `adapters/outbound/notification` — outbound notification.
   - `config`, `config/kafka`, `config/propertyBind` — Spring wiring and bound properties.
@@ -36,5 +41,6 @@ e.g. `./gradlew :sky-booking:test`.
 ## Conventions
 
 - Bump dependency versions in the root `gradle/libs.versions.toml`, never here.
-- Keep the hexagonal direction: controllers and adapters depend inward on `domain/ports`, never the reverse. ArchUnit
-  enforces this — a violation fails the build, do not weaken the rule.
+- Keep the hexagonal direction: controllers and adapters depend inward on `domain/ports/inbound` and `domain/ports/outbound`;
+  `domain/service` implementations depend on those port interfaces. Adapters must never import from `domain/service`
+  directly. ArchUnit enforces this — a violation fails the build, do not weaken the rule.

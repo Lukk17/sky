@@ -2,7 +2,7 @@ package com.lukk.sky.offer.adapters.outbound.storage;
 
 import com.lukk.sky.offer.config.propertyBind.S3Properties;
 import com.lukk.sky.offer.domain.exception.OfferException;
-import com.lukk.sky.offer.domain.ports.storage.PhotoStorage;
+import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

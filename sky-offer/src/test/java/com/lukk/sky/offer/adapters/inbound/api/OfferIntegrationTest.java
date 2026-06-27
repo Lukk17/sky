@@ -7,7 +7,7 @@ import com.lukk.sky.offer.TestSecurityConfig;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.model.Offer;
-import com.lukk.sky.offer.domain.ports.repository.OfferRepository;
+import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.AfterEach;

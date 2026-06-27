@@ -8,7 +8,7 @@ import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.booking.config.WebClientTestConfig;
 import com.lukk.sky.booking.domain.model.Booking;
-import com.lukk.sky.booking.domain.ports.repository.BookingRepository;
+import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;

@@ -65,7 +65,13 @@ A fifth module, `sky-common`, is a shared library (not a deployable service): it
 ## Architecture
 
 - **Stack**: Java 25, Spring Boot 4.0.7 (Spring Framework 7), Spring Web + WebFlux, Spring Data JPA, Spring Kafka 4, Flyway 11, springdoc-openapi 3.0 (Swagger UI at `/swagger-ui/index.html`), Lombok 1.18.38, JUnit 5.11, Gradle Kotlin DSL.
-- **Code structure**: hexagonal / ports & adapters per service — `domain/model` and `domain/ports` hold the core; the I/O splits into driving and driven adapters under `adapters/inbound` (REST controllers, Kafka listeners) and `adapters/outbound` (`rest` clients, `notification` publishers, `storage`), with `adapters/dto` for wire types. The `archunit` test dependency enforces the dependency direction and the controller location.
+- **Code structure**: hexagonal / ports & adapters per service. Within `domain/`, the layout is:
+  `domain/model` (entities), `domain/exception`, `domain/ports/inbound` (driving port interfaces called by controllers),
+  `domain/ports/outbound` (driven port interfaces implemented by infrastructure adapters — JPA repositories, Kafka
+  publishers, REST clients, S3 storage), and `domain/service` (domain service implementations and internal
+  interfaces). The I/O layer lives in `adapters/inbound` (REST controllers, Kafka listeners) and `adapters/outbound`
+  (`rest` clients, `notification` publishers, `storage`), with `adapters/dto` for wire types.
+  The `archunit` test dependency enforces the dependency direction and the controller location.
 - **API**: REST under a `/api/v1` URL prefix (`apiPrefix`), stripped at the ingress. Earlier `hello` probe endpoints were dropped.
 - **Persistence**: MySQL (`mysql-connector-j`) for the three stateful services (`sky-booking`, `sky-offer`, `sky-message`) against a shared `sky` schema, schema versioned with Flyway (`V1__init.sql` per service); H2 in tests, with Testcontainers (MySQL + Kafka) for integration tests. `sky-notify` is stateless (no JPA, no DB).
 - **Inter-service comms**: REST + Kafka (`spring-kafka`) for async events; `sky-notify` consumes events and pushes to clients over WebSocket.

@@ -2,7 +2,7 @@ package com.lukk.sky.offer.adapters.outbound.notification;
 
 import com.lukk.sky.common.kafka.KafkaNotificationPublisher;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
-import com.lukk.sky.offer.domain.ports.notification.OfferNotificationService;
+import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
