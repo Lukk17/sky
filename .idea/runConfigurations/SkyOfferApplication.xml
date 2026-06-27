@@ -11,7 +11,7 @@
       <env name="SPRING_SECURITY_PASS" value="XYZ" />
       <env name="SPRING_DATASOURCE_URL" value="jdbc:mysql://localhost:3306/sky" />
     </envs>
-    <module name="sky-offer.main" />
+    <module name="sky.sky-offer.main" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.lukk.sky.offer.SkyOfferApplication" />
     <extension name="net.ashald.envfile">
       <option name="IS_ENABLED" value="false" />

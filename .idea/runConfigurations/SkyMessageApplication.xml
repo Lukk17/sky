@@ -11,7 +11,7 @@
       <env name="SPRING_SECURITY_PASS" value="XYZ" />
       <env name="SPRING_DATASOURCE_URL" value="jdbc:mysql://localhost:3306/sky?useSSL=false&amp;useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=Europe/Warsaw" />
     </envs>
-    <module name="sky-message.main" />
+    <module name="sky.sky-message.main" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.lukk.sky.message.SkyMessageApplication" />
     <extension name="net.ashald.envfile">
       <option name="IS_ENABLED" value="false" />
