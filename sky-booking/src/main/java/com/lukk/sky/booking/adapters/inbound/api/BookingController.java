@@ -9,6 +9,7 @@ import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
+import com.lukk.sky.common.openapi.ApiCommonSuccessResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,6 +39,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Tag(name = "Bookings", description = "Booking lifecycle — create, list, and cancel bookings placed against offers.")
 @ApiCommonErrorResponses
+@ApiCommonSuccessResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j

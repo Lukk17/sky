@@ -5,6 +5,7 @@ import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
+import com.lukk.sky.common.openapi.ApiCommonSuccessResponses;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -45,6 +46,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Tag(name = "Offers", description = "Offer lifecycle — browse, create, edit, delete, and search flight/booking offers.")
 @ApiCommonErrorResponses
+@ApiCommonSuccessResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j

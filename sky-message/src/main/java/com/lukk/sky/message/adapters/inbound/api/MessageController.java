@@ -3,6 +3,7 @@ package com.lukk.sky.message.adapters.inbound.api;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
+import com.lukk.sky.common.openapi.ApiCommonSuccessResponses;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.ports.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +35,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Tag(name = "Messages", description = "Messaging — send, retrieve, and delete user-to-user messages.")
 @ApiCommonErrorResponses
+@ApiCommonSuccessResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j
