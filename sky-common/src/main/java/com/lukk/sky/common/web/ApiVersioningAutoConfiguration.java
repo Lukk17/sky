@@ -12,23 +12,23 @@ public class ApiVersioningAutoConfiguration implements WebMvcConfigurer {
     @Override
     public void configureApiVersioning(ApiVersionConfigurer configurer) {
         configurer
-            .usePathSegment(1, path -> {
-                var elements = path.pathWithinApplication().elements();
-                int i = 0;
-                for (var element : elements) {
-                    if (element instanceof org.springframework.http.server.PathContainer.PathSegment seg) {
-                        if (i == 1) {
-                            String value = seg.value();
-                            return value.length() >= 2
-                                    && value.charAt(0) == 'v'
-                                    && Character.isDigit(value.charAt(1));
+                .usePathSegment(1, path -> {
+                    var elements = path.pathWithinApplication().elements();
+                    int i = 0;
+                    for (var element : elements) {
+                        if (element instanceof org.springframework.http.server.PathContainer.PathSegment seg) {
+                            if (i == 1) {
+                                String value = seg.value();
+                                return value.length() >= 2
+                                        && value.charAt(0) == 'v'
+                                        && Character.isDigit(value.charAt(1));
+                            }
+                            i++;
                         }
-                        i++;
                     }
-                }
-                return false;
-            })
-            .setDefaultVersion("1")
-            .addSupportedVersions("1");
+                    return false;
+                })
+                .setDefaultVersion("1")
+                .addSupportedVersions("1");
     }
 }

@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
-import static com.lukk.sky.common.web.DateTimeConstants.DISPLAY_ZONE;
 
 @Builder
 @Data

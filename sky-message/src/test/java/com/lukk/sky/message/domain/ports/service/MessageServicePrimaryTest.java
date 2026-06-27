@@ -21,13 +21,9 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 import java.util.Optional;
 
-import static com.lukk.sky.message.Assemblers.MessageAssembler.getMessageDTO;
-import static com.lukk.sky.message.Assemblers.MessageAssembler.getMessage;
-import static com.lukk.sky.message.Assemblers.MessageAssembler.getMessagesDTO;
-import static com.lukk.sky.message.Assemblers.MessageAssembler.getMessages;
-import static com.lukk.sky.message.Assemblers.MessageAssembler.TEST_MESSAGE_ID;
 import static com.lukk.sky.message.Assemblers.MessageAssembler.RECEIVER_EMAIL;
 import static com.lukk.sky.message.Assemblers.MessageAssembler.SENDER_EMAIL;
+import static com.lukk.sky.message.Assemblers.MessageAssembler.TEST_MESSAGE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;

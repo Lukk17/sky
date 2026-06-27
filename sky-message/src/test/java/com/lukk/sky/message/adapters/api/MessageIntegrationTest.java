@@ -15,7 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -29,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class MessageIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record TestPage<T>(List<T> content, long totalElements) {}
+    record TestPage<T>(List<T> content, long totalElements) {
+    }
 
     @Autowired
     private MessageRepository messageRepository;
@@ -75,7 +80,8 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/messages/received",
                 HttpMethod.GET,
                 request,
-                new ParameterizedTypeReference<TestPage<MessageDTO>>() {});
+                new ParameterizedTypeReference<TestPage<MessageDTO>>() {
+                });
 
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         List<MessageDTO> content = requireNonNull(actual.getBody()).content();
@@ -98,7 +104,8 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/messages/sent",
                 HttpMethod.GET,
                 request,
-                new ParameterizedTypeReference<TestPage<MessageDTO>>() {});
+                new ParameterizedTypeReference<TestPage<MessageDTO>>() {
+                });
 
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         List<MessageDTO> content = requireNonNull(actual.getBody()).content();
@@ -127,7 +134,8 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/messages/received",
                 HttpMethod.GET,
                 request,
-                new ParameterizedTypeReference<TestPage<MessageDTO>>() {});
+                new ParameterizedTypeReference<TestPage<MessageDTO>>() {
+                });
 
         assertEquals(HttpStatus.NO_CONTENT, actual.getStatusCode());
         assertEquals(1, requireNonNull(savedMessages.getBody()).content().size());

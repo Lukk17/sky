@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @DisplayName("Booking — equals and hashCode contract (Hibernate-safe, id-based)")
 class BookingEqualsHashCodeTest {

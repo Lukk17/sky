@@ -8,7 +8,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import static com.lukk.sky.booking.Assemblers.UserAssembler.*;
+import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
+import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
+import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
 
 
 public class BookingAssembler {

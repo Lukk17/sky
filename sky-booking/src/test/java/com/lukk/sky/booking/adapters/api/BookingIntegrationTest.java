@@ -23,7 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
@@ -45,7 +49,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BookingIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record TestPage<T>(List<T> content, long totalElements) {}
+    record TestPage<T>(List<T> content, long totalElements) {
+    }
+
     public static final String BOOKING_TOPIC = "bookingTopic-1";
 
     @Autowired
@@ -126,7 +132,8 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/user/bookings",
                 HttpMethod.GET,
                 request,
-                new ParameterizedTypeReference<TestPage<BookingDTO>>() {});
+                new ParameterizedTypeReference<TestPage<BookingDTO>>() {
+                });
 
         assertEquals(HttpStatus.OK, actual.getStatusCode());
 
@@ -155,7 +162,8 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/user/bookings",
                 HttpMethod.GET,
                 request,
-                new ParameterizedTypeReference<TestPage<BookingDTO>>() {});
+                new ParameterizedTypeReference<TestPage<BookingDTO>>() {
+                });
 
         assertEquals(HttpStatus.NO_CONTENT, actual.getStatusCode());
         assertEquals(0, requireNonNull(savedBookings.getBody()).content().size());

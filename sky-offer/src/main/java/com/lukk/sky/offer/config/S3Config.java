@@ -78,7 +78,7 @@ public class S3Config {
                         "Photo upload will fail until MinIO is reachable. Cause: {}", bucket, e.getMessage());
             } catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
                 log.warn("S3 error while verifying bucket '{}' (status {}). " +
-                        "Check credentials and endpoint configuration. Cause: {}",
+                                "Check credentials and endpoint configuration. Cause: {}",
                         bucket, e.statusCode(), e.getMessage());
             }
         }

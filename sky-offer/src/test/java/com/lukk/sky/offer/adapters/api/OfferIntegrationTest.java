@@ -18,7 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
@@ -27,30 +31,29 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.getPopulatedOffer;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.getPopulatedOffersDTO;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_HOTEL_NAME;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_CITY;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_COMMENT;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_COUNTRY;
+import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DESCRIPTION;
+import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_HOTEL_NAME;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_PHOTO_PATH;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_ROOM_CAPACITY;
 import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_PRICE;
+import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_ROOM_CAPACITY;
+import static com.lukk.sky.offer.Assemblers.OfferAssembler.getPopulatedOffer;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 @DisplayName("Offer Integration Tests — full HTTP stack with embedded Kafka and H2 database")
 @Import(TestSecurityConfig.class)
 class OfferIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record TestPage<T>(List<T> content, long totalElements) {}
+    record TestPage<T>(List<T> content, long totalElements) {
+    }
 
     public static final String UPDATED_NAME = "UpdatedName";
     public static final String OFFER_TOPIC = "offerTopic-1";
@@ -119,7 +122,8 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/owner/offers",
                 HttpMethod.GET,
                 request,
-                new ParameterizedTypeReference<TestPage<OfferDTO>>() {}
+                new ParameterizedTypeReference<TestPage<OfferDTO>>() {
+                }
         );
 
         assertEquals(HttpStatus.OK, actual.getStatusCode());
@@ -136,7 +140,8 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/offers",
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<TestPage<OfferDTO>>() {}
+                new ParameterizedTypeReference<TestPage<OfferDTO>>() {
+                }
         );
 
         assertEquals(HttpStatus.OK, actual.getStatusCode());
@@ -206,7 +211,8 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
                 "/api/v1/offers",
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<TestPage<OfferDTO>>() {}
+                new ParameterizedTypeReference<TestPage<OfferDTO>>() {
+                }
         );
 
         List<OfferDTO> offers = requireNonNull(savedOffersPage.getBody()).content();

@@ -31,10 +31,10 @@ public class SecurityConfig {
     @Profile("!secure")
     public SecurityWebFilterChain permitAllSecurityWebFilterChain(ServerHttpSecurity http) {
         http
-            .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
-            .csrf(ServerHttpSecurity.CsrfSpec::disable)
-            .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-            .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
+                .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
         return http.build();
     }
 
@@ -42,12 +42,13 @@ public class SecurityConfig {
     @Profile("secure")
     public SecurityWebFilterChain oidcSecurityWebFilterChain(ServerHttpSecurity http) {
         http
-            .authorizeExchange(exchanges -> exchanges
-                .pathMatchers("/actuator/**").permitAll()
-                .anyExchange().authenticated()
-            )
-            .oauth2Login(login -> {})
-            .csrf(ServerHttpSecurity.CsrfSpec::disable);
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/actuator/**").permitAll()
+                        .anyExchange().authenticated()
+                )
+                .oauth2Login(login -> {
+                })
+                .csrf(ServerHttpSecurity.CsrfSpec::disable);
         return http.build();
     }
 }

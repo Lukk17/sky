@@ -77,7 +77,8 @@ class CorrelationIdFilterTest {
                 capturedMdc[0] = MDC.get(MDC_KEY);
             }
         };
-        MockFilterChain chain = new MockFilterChain(new jakarta.servlet.http.HttpServlet() {}, mdcCapture);
+        MockFilterChain chain = new MockFilterChain(new jakarta.servlet.http.HttpServlet() {
+        }, mdcCapture);
 
         filter.doFilter(request, response, chain);
 

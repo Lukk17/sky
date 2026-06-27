@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedList;
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedDTOList;
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBooked;
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedDTO;
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DATE;
 import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DEFAULT_BOOKED_ID;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBooked;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedDTO;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedDTOList;
+import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBookedList;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
 import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
