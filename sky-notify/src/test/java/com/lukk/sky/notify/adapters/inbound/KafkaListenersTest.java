@@ -44,12 +44,15 @@ class KafkaListenersTest {
     @Test
     @DisplayName("offerListener acknowledges the message when notifyClient succeeds")
     void offerListener_whenNotifySucceeds_thenAcknowledge() {
+        // given
         KafkaPayloadModel payload = new KafkaPayloadModel("offer-data", TEST_DATE.toString(), "user@test.com");
         String offerMessage = GSON.toJson(payload);
 
+        // when
         kafkaListeners.offerListener(offerMessage, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);
 
+        // then
         verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
         verify(acknowledgment).acknowledge();
@@ -58,12 +61,15 @@ class KafkaListenersTest {
     @Test
     @DisplayName("bookingListener acknowledges the message when notifyClient succeeds")
     void bookingListener_whenNotifySucceeds_thenAcknowledge() {
+        // given
         KafkaPayloadModel payload = new KafkaPayloadModel("booking-data", TEST_DATE.toString(), "user@test.com");
         String bookingMessage = GSON.toJson(payload);
 
+        // when
         kafkaListeners.bookingListener(bookingMessage, TEST_PARTITION, KAFKA_BOOKING_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);
 
+        // then
         verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, KAFKA_BOOKING_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
         verify(acknowledgment).acknowledge();
@@ -72,14 +78,15 @@ class KafkaListenersTest {
     @Test
     @DisplayName("offerListener does not acknowledge when notifyClient throws a RuntimeException")
     void offerListener_whenNotifyThrows_thenDoNotAcknowledge() {
+        // given
         KafkaPayloadModel payload = new KafkaPayloadModel("boom", TEST_DATE.toString(), "user@test.com");
         String offerMessage = GSON.toJson(payload);
-
         doThrow(new RuntimeException("ws failed"))
                 .when(notificationTransmissionService)
                 .notifyClient(payload, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                         TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
 
+        // when / then
         try {
             kafkaListeners.offerListener(offerMessage, TEST_PARTITION, KAFKA_OFFER_TOPIC,
                     TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, acknowledgment);

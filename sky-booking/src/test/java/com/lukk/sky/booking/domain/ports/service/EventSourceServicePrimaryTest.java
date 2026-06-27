@@ -52,19 +52,19 @@ class EventSourceServicePrimaryTest {
     @DisplayName("saveEvent assigns sequence number 1 when no prior event exists for the booking")
     void saveEvent_whenNoPriorEventExists_thenSaveWithSequenceNumberOne() {
         try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            // given
             instantMock.when(Instant::now).thenReturn(TEST_DATE);
-
             Booking booking = BookingAssembler.getPopulatedBooked();
             Event expected = getTestEvent(1, gson.toJson(BookingDTO.of(booking)));
-
             when(eventSourceRepository.findLastSequenceNumberByBookingId(TEST_DEFAULT_BOOKED_ID))
                     .thenReturn(Optional.empty());
 
+            // when
             eventSourceServicePrimary.saveEvent(booking, TEST_EVENT_TYPE);
 
+            // then
             ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
             verify(eventSourceRepository, times(1)).save(captor.capture());
-
             Event saved = captor.getValue();
             assertEquals(expected.getBookingId(), saved.getBookingId());
             assertEquals(expected.getSequenceNumber(), saved.getSequenceNumber());
@@ -78,19 +78,19 @@ class EventSourceServicePrimaryTest {
     @DisplayName("saveEvent increments sequence number when a prior event already exists for the booking")
     void saveEvent_whenPriorEventExists_thenSaveWithIncrementedSequenceNumber() {
         try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            // given
             instantMock.when(Instant::now).thenReturn(TEST_DATE);
-
             Booking booking = BookingAssembler.getPopulatedBooked();
             Event expected = getTestEvent(3, gson.toJson(BookingDTO.of(booking)));
-
             when(eventSourceRepository.findLastSequenceNumberByBookingId(TEST_DEFAULT_BOOKED_ID))
                     .thenReturn(Optional.of(2));
 
+            // when
             eventSourceServicePrimary.saveEvent(booking, TEST_EVENT_TYPE);
 
+            // then
             ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
             verify(eventSourceRepository, times(1)).save(captor.capture());
-
             Event saved = captor.getValue();
             assertEquals(expected.getBookingId(), saved.getBookingId());
             assertEquals(expected.getSequenceNumber(), saved.getSequenceNumber());
@@ -103,18 +103,19 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent assigns sequential sequence numbers across two consecutive events for the same booking")
     void saveEvent_whenTwoEventsForSameBooking_thenAssignSequentialNumbers() {
+        // given
         Booking booking = BookingAssembler.getPopulatedBooked();
-
         when(eventSourceRepository.findLastSequenceNumberByBookingId(TEST_DEFAULT_BOOKED_ID))
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(1));
 
+        // when
         eventSourceServicePrimary.saveEvent(booking, TEST_EVENT_TYPE);
         eventSourceServicePrimary.saveEvent(booking, TEST_EVENT_TYPE);
 
+        // then
         ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
         verify(eventSourceRepository, times(2)).save(captor.capture());
-
         List<Event> saved = captor.getAllValues();
         assertEquals(1, saved.get(0).getSequenceNumber());
         assertEquals(2, saved.get(1).getSequenceNumber());
@@ -123,15 +124,16 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent acquires the per-booking advisory lock before reading the sequence and saving")
     void saveEvent_whenSaving_thenLockAcquiredBeforeSequenceReadAndSave() {
+        // given
         Booking booking = BookingAssembler.getPopulatedBooked();
-
         when(eventSourceRepository.findLastSequenceNumberByBookingId(TEST_DEFAULT_BOOKED_ID))
                 .thenReturn(Optional.of(4));
 
+        // when
         eventSourceServicePrimary.saveEvent(booking, TEST_EVENT_TYPE);
 
+        // then
         long expectedLockKey = TEST_DEFAULT_BOOKED_ID.getMostSignificantBits() ^ TEST_DEFAULT_BOOKED_ID.getLeastSignificantBits();
-
         InOrder inOrder = inOrder(eventSourceRepository);
         inOrder.verify(eventSourceRepository).lockBookingEventStream(expectedLockKey);
         inOrder.verify(eventSourceRepository).findLastSequenceNumberByBookingId(TEST_DEFAULT_BOOKED_ID);
@@ -141,12 +143,14 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent throws IllegalArgumentException and persists nothing when the booking id is null")
     void saveEvent_whenBookingIdIsNull_thenThrowIllegalArgumentException() {
+        // given
         Booking booking = Booking.builder()
                 .offerId(java.util.UUID.randomUUID())
                 .bookingUser("user@test.com")
                 .ownerEmail("owner@test.com")
                 .build();
 
+        // when / then
         assertThrows(IllegalArgumentException.class,
                 () -> eventSourceServicePrimary.saveEvent(booking, TEST_EVENT_TYPE));
 

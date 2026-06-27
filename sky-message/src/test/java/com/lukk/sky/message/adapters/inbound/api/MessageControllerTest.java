@@ -86,12 +86,12 @@ class MessageControllerTest {
     @Test
     @DisplayName("POST /messages with valid payload and JWT returns 2xx and message body")
     void sendMessage_whenValidMessage_thenReturn2xxWithMessageBody() throws Exception {
+        // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
-
         when(messageService.send(any())).thenReturn(messageDTO);
-
         String expectedJson = gson.toJson(messageDTO);
 
+        // when
         MvcResult result = mvc.perform(
                         post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ class MessageControllerTest {
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
-
+        // then
         assertTrue(result.getResponse().getContentAsString().contains(messageDTO.getText()));
         assertTrue(result.getResponse().getContentAsString().contains(messageDTO.getReceiverEmail()));
         assertTrue(result.getResponse().getContentAsString().contains(messageDTO.getSenderEmail()));
@@ -110,12 +110,12 @@ class MessageControllerTest {
     @Test
     @DisplayName("POST /messages without JWT returns 401 Unauthorized")
     void sendMessage_whenNoJwt_thenReturn401() throws Exception {
+        // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
-
         when(messageService.send(any())).thenReturn(messageDTO);
-
         String expectedJson = gson.toJson(messageDTO);
 
+        // when / then
         mvc.perform(
                         post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -128,13 +128,13 @@ class MessageControllerTest {
     @Test
     @DisplayName("POST /messages with blank receiverEmail returns 400 and validation error message")
     void sendMessage_whenReceiverEmailBlank_thenReturnValidationError() throws Exception {
+        // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
         messageDTO.setReceiverEmail(" ");
-
         when(messageService.send(any())).thenReturn(messageDTO);
-
         String expectedJson = gson.toJson(messageDTO);
 
+        // when
         MvcResult result = mvc.perform(
                         post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -144,6 +144,7 @@ class MessageControllerTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
+        // then
         String body = result.getResponse().getContentAsString();
         assertTrue(body.contains("receiverEmail"));
         assertTrue(body.contains("field-errors"));
@@ -152,11 +153,13 @@ class MessageControllerTest {
     @Test
     @DisplayName("GET /messages/received with valid JWT returns 2xx and paged received messages")
     void getReceivedMessages_whenUserHasMessages_thenReturnPagedMessages() throws Exception {
+        // given
         List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
         Pageable pageable = PageRequest.of(0, 20);
         when(messageService.getReceivedMessages(eq(RECEIVER_EMAIL), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(messagesDTO, pageable, messagesDTO.size()));
 
+        // when / then
         mvc.perform(
                         get("/messages/received")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -183,11 +186,13 @@ class MessageControllerTest {
     @Test
     @DisplayName("GET /messages/sent with valid JWT returns 2xx and paged sent messages")
     void getSentMessages_whenUserHasMessages_thenReturnPagedMessages() throws Exception {
+        // given
         List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
         Pageable pageable = PageRequest.of(0, 20);
         when(messageService.getSentMessages(eq(SENDER_EMAIL), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(messagesDTO, pageable, messagesDTO.size()));
 
+        // when / then
         mvc.perform(
                         get("/messages/sent")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -212,7 +217,10 @@ class MessageControllerTest {
     @Test
     @DisplayName("DELETE /messages/{id} by receiver returns 2xx")
     public void deleteMessage_whenCalledByReceiver_thenReturn2xx() throws Exception {
+        // given
         doNothing().when(messageService).remove(TEST_MESSAGE_ID, RECEIVER_EMAIL);
+
+        // when / then
         mvc.perform(
                         delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -224,9 +232,11 @@ class MessageControllerTest {
     @Test
     @DisplayName("DELETE /messages/{id} by sender returns 2xx")
     public void deleteMessage_whenCalledBySender_thenReturn2xx() throws Exception {
+        // given
         doNothing().when(messageService).remove(TEST_MESSAGE_ID, SENDER_EMAIL);
-
         String expectedJson = gson.toJson(TEST_MESSAGE_ID);
+
+        // when / then
         mvc.perform(
                         delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -239,9 +249,11 @@ class MessageControllerTest {
     @Test
     @DisplayName("DELETE /messages/{id} without JWT returns 401 Unauthorized")
     public void deleteMessage_whenNoJwt_thenReturn401() throws Exception {
+        // given
         doNothing().when(messageService).remove(TEST_MESSAGE_ID, SENDER_EMAIL);
-
         String expectedJson = gson.toJson(TEST_MESSAGE_ID);
+
+        // when / then
         mvc.perform(
                         delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -253,11 +265,12 @@ class MessageControllerTest {
     @Test
     @DisplayName("POST /messages with JWT that has no role returns 403 Forbidden")
     void sendMessage_whenJwtHasNoRole_thenReturn403() throws Exception {
+        // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
         when(messageService.send(any())).thenReturn(messageDTO);
-
         String expectedJson = gson.toJson(messageDTO);
 
+        // when / then
         mvc.perform(
                         post("/messages")
                                 .contentType(MediaType.APPLICATION_JSON)

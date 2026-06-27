@@ -94,11 +94,13 @@ class BookingControllerTest {
     @Test
     @DisplayName("getBookings returns the user's bookings as a paged response when a valid JWT is present")
     void getBookings_whenJwtIsPresent_thenReturnPagedBookingsJson() throws Exception {
+        // given
         List<BookingDTO> bookingsDTO = BookingAssembler.getPopulatedBookedDTOList();
         Pageable pageable = PageRequest.of(0, 20);
         when(bookingService.getBookedOffersForUser(eq(TEST_USER_EMAIL), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(bookingsDTO, pageable, bookingsDTO.size()));
 
+        // when / then
         mvc.perform(
                         get("/user/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -133,17 +135,16 @@ class BookingControllerTest {
     @Test
     @DisplayName("bookOffer creates a booking and returns 201 with the booked DTO when the request is valid")
     void bookOffer_whenRequestIsValid_thenReturn201WithBookedDto() throws Exception {
+        // given
         BookingDTO expected = BookingAssembler.getPopulatedBookedDTO();
-
         Map<String, Object> values = new HashMap<>();
         values.put("offerId", TEST_DEFAULT_OFFER_ID.toString());
         values.put("dateToBook", TEST_DATE.toString());
-
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE.toString(), TEST_USER_EMAIL))
                 .thenReturn(expected);
-
         String jsonValues = gson.toJson(values);
 
+        // when / then
         mvc.perform(
                         post("/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -160,12 +161,13 @@ class BookingControllerTest {
     @Test
     @DisplayName("bookOffer returns 401 Unauthorized when no JWT is supplied")
     void bookOffer_whenNoJwt_thenReturn401() throws Exception {
+        // given
         Map<String, String> values = new HashMap<>();
         values.put("offerId", " ");
         values.put("dateToBook", TEST_DATE.toString());
-
         String jsonValues = gson.toJson(values);
 
+        // when / then
         mvc.perform(
                         post("/bookings")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -178,9 +180,11 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 200 OK when the booking exists and a valid JWT is present")
     void deleteBooking_whenBookingExistsAndJwtIsPresent_thenReturnOk() throws Exception {
+        // given
         when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
 
+        // when / then
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
@@ -191,9 +195,11 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 401 Unauthorized when no JWT is supplied")
     void deleteBooking_whenNoJwt_thenReturn401() throws Exception {
+        // given
         when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL))
                 .thenReturn("Booking removed by user");
 
+        // when / then
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                 )

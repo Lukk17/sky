@@ -90,19 +90,20 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("createBooking persists the booking, publishes a Kafka event, and calls the offer service")
     void createBooking_whenRequestIsValid_thenPersistAndPublishKafkaEvent() throws InterruptedException {
+        // given
         BookingPayload bookingPayload = BookingAssembler.getBookingPayload();
-
         mockWebServer.enqueue(new MockResponse().setBody(TEST_OWNER_EMAIL_2).setResponseCode(200));
-
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<BookingPayload> request = new HttpEntity<>(bookingPayload, headers);
 
+        // when
         ResponseEntity<BookingDTO> actual = restTemplate.exchange(
                 "/api/v1/bookings",
                 HttpMethod.POST,
                 request,
                 BookingDTO.class);
 
+        // then
         assertEquals(HttpStatus.CREATED, actual.getStatusCode());
 
         AtomicReference<ConsumerRecord<String, String>> recordRef = new AtomicReference<>();
@@ -124,10 +125,12 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("getAllBookings returns all bookings for the user in paged response when bookings exist")
     void getAllBookings_whenBookingsExistInDatabase_thenReturnAllBookings() {
+        // given
         List<Booking> bookings = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         ResponseEntity<TestPage<BookingDTO>> actual = restTemplate.exchange(
                 "/api/v1/user/bookings",
                 HttpMethod.GET,
@@ -135,8 +138,8 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
                 new ParameterizedTypeReference<TestPage<BookingDTO>>() {
                 });
 
+        // then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
-
         List<BookingDTO> content = requireNonNull(actual.getBody()).content();
         assertEquals(bookings.size(), content.size());
         for (int i = 0; i < bookings.size(); i++) {
@@ -147,17 +150,19 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("deleteBooking removes the booking and returns 204 No Content when the booking exists")
     void deleteBooking_whenBookingExists_thenRemoveAndReturn204() {
+        // given
         UUID bookingId = populateDatabase().getId();
-
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         ResponseEntity<Void> actual = restTemplate.exchange(
                 "/api/v1/bookings/" + bookingId,
                 HttpMethod.DELETE,
                 request,
                 Void.class);
 
+        // then
         ResponseEntity<TestPage<BookingDTO>> savedBookings = restTemplate.exchange(
                 "/api/v1/user/bookings",
                 HttpMethod.GET,

@@ -88,12 +88,13 @@ class OfferServiceCallerResilienceTest {
     @Order(1)
     @DisplayName("5xx response is retried max-attempts times; ResourceAccessException surfaces after exhaustion")
     void callOfferService_whenServerReturns5xx_thenRetriesMaxAttemptsTimes() {
+        // given
         mockWebServer.enqueue(new MockResponse().setResponseCode(503));
         mockWebServer.enqueue(new MockResponse().setResponseCode(503));
         mockWebServer.enqueue(new MockResponse().setResponseCode(503));
-
         String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/42/owner";
 
+        // when / then
         assertThrows(
                 ResourceAccessException.class,
                 () -> offerServiceCaller.callOfferService(url, UUID.randomUUID())
@@ -106,11 +107,12 @@ class OfferServiceCallerResilienceTest {
     @Order(2)
     @DisplayName("404 is not retried — BookingException surfaces immediately on first attempt")
     void callOfferService_whenServerReturns404_thenDoesNotRetryAndThrowsBookingException() {
+        // given
         mockWebServer.enqueue(new MockResponse().setResponseCode(404));
-
         UUID testOfferId = UUID.fromString("00000000-0000-0000-0000-000000000099");
         String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/99/owner";
 
+        // when / then
         BookingException ex = assertThrows(
                 BookingException.class,
                 () -> offerServiceCaller.callOfferService(url, testOfferId)
@@ -124,15 +126,18 @@ class OfferServiceCallerResilienceTest {
     @Order(3)
     @DisplayName("200 response returns body directly on happy path")
     void callOfferService_whenServerReturns200_thenReturnsBody() {
+        // given
         mockWebServer.enqueue(
                 new MockResponse()
                         .setBody("owner@example.com")
                         .setResponseCode(200)
         );
-
         String url = "http://localhost:" + mockWebServer.getPort() + "/api/v1/offers/1/owner";
+
+        // when
         String owner = offerServiceCaller.callOfferService(url, UUID.randomUUID());
 
+        // then
         assertEquals("owner@example.com", owner);
         assertEquals(1, mockWebServer.getRequestCount() - requestCountBaseline);
     }

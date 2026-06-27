@@ -34,13 +34,16 @@ class MessageRepositoryDataJpaTest {
     @Test
     @DisplayName("findAllByReceiverEmail returns only messages with the matching receiver")
     void findAllByReceiverEmail_whenReceiverHasMessages_thenReturnOnlyThoseMessages() {
+        // given
         save("hello", SENDER, RECEIVER);
         save("hi back", RECEIVER, SENDER);
         save("unrelated", OTHER, SENDER);
-
         Pageable pageable = PageRequest.of(0, 20);
+
+        // when
         Page<Message> received = messageRepository.findAllByReceiverEmail(RECEIVER, pageable);
 
+        // then
         assertEquals(1, received.getTotalElements());
         assertEquals("hello", received.getContent().get(0).getText());
         assertEquals(SENDER, received.getContent().get(0).getSenderEmail());
@@ -49,13 +52,16 @@ class MessageRepositoryDataJpaTest {
     @Test
     @DisplayName("findAllBySenderEmail returns only messages with the matching sender")
     void findAllBySenderEmail_whenSenderHasMessages_thenReturnOnlyThoseMessages() {
+        // given
         save("first", SENDER, RECEIVER);
         save("second", SENDER, OTHER);
         save("third", OTHER, RECEIVER);
-
         Pageable pageable = PageRequest.of(0, 20);
+
+        // when
         Page<Message> sent = messageRepository.findAllBySenderEmail(SENDER, pageable);
 
+        // then
         assertEquals(2, sent.getTotalElements());
         assertTrue(sent.getContent().stream().allMatch(m -> m.getSenderEmail().equals(SENDER)));
     }
@@ -63,11 +69,14 @@ class MessageRepositoryDataJpaTest {
     @Test
     @DisplayName("returns empty page when no message matches receiver")
     void findAllByReceiverEmail_whenNoMessagesForReceiver_thenReturnEmptyPage() {
+        // given
         save("hello", SENDER, RECEIVER);
-
         Pageable pageable = PageRequest.of(0, 20);
+
+        // when
         Page<Message> received = messageRepository.findAllByReceiverEmail("nobody@example.com", pageable);
 
+        // then
         assertTrue(received.isEmpty());
     }
 

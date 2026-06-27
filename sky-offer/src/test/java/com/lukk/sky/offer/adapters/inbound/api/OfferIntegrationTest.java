@@ -90,17 +90,18 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("POST /api/v1/owner/offers creates the offer, returns 201, and publishes a Kafka event")
     void createOffer_whenOwnerPostsNewOffer_thenReturn201AndPublishKafkaEvent() {
+        // given
         OfferDTO offer = OfferDTO.of(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
         offer.setId(null);
-
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
 
+        // when
         ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/v1/owner/offers", request, OfferDTO.class);
-
-        assertEquals(HttpStatus.CREATED, actual.getStatusCode());
         ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, OFFER_TOPIC, Duration.ofSeconds(20));
 
+        // then
+        assertEquals(HttpStatus.CREATED, actual.getStatusCode());
         assertOfferFields(requireNonNull(actual.getBody()), TEST_HOTEL_NAME);
         assertKafkaPayload(actual.getBody(), record);
     }
@@ -108,16 +109,16 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/owner/offers returns only the authenticated owner's offers in the page content")
     void getOwnedOffers_whenOwnerHasMultipleOffers_thenReturnOnlyOwnersOffers() {
+        // given
         populateDatabase();
-
         Offer offer = getPopulatedOffer(UUID.randomUUID());
         offer.setId(null);
         offer.setOwnerEmail(TEST_OWNER_EMAIL_2);
         offerRepository.save(offer);
-
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         ResponseEntity<TestPage<OfferDTO>> actual = restTemplate.exchange(
                 "/api/v1/owner/offers",
                 HttpMethod.GET,
@@ -126,6 +127,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
                 }
         );
 
+        // then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         assertEquals(2, requireNonNull(actual.getBody()).content().size());
         assertEquals(2, actual.getBody().totalElements());
@@ -134,8 +136,10 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/offers returns all offers in the page content")
     void getAllOffers_whenOffersExist_thenReturnAllOffers() {
+        // given
         populateDatabase();
 
+        // when
         ResponseEntity<TestPage<OfferDTO>> actual = restTemplate.exchange(
                 "/api/v1/offers",
                 HttpMethod.GET,
@@ -144,8 +148,8 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
                 }
         );
 
+        // then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
-
         List<OfferDTO> offers = requireNonNull(actual.getBody()).content();
         OfferDTO firstOffer = offers.get(0);
         assertOfferFields(firstOffer, TEST_HOTEL_NAME);
@@ -154,17 +158,19 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/offers/{id}/owner returns the owner email for an existing offer")
     void getOfferOwner_whenOfferExists_thenReturnOwnerEmail() {
+        // given
         UUID offerId = populateDatabase().getId();
-
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         ResponseEntity<String> actual = restTemplate.exchange(
                 "/api/v1/offers/" + offerId + "/owner",
                 HttpMethod.GET,
                 request,
                 String.class);
 
+        // then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         assertEquals(TEST_OWNER_EMAIL, actual.getBody());
     }
@@ -172,22 +178,22 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("PUT /api/v1/owner/offers updates the offer, returns 200, and publishes a Kafka event")
     void updateOffer_whenOwnerEditsOffer_thenReturn200AndPublishKafkaEvent() {
+        // given
         UUID offerId = populateDatabase().getId();
-
         OfferEditDTO updatedOffer = OfferEditDTO.of(OfferAssembler.getPopulatedOffer(offerId));
         updatedOffer.setHotelName(UPDATED_NAME);
-
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, headers);
 
+        // when
         ResponseEntity<OfferDTO> actual = restTemplate.exchange(
                 "/api/v1/owner/offers",
                 HttpMethod.PUT,
                 request,
                 OfferDTO.class);
-
         ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, OFFER_TOPIC, Duration.ofSeconds(20));
 
+        // then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         assertOfferFields(requireNonNull(actual.getBody()), UPDATED_NAME);
         assertKafkaPayload(actual.getBody(), record);
@@ -196,17 +202,19 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("DELETE /api/v1/owner/offers/{id} removes the offer and publishes a Kafka event")
     void deleteOffer_whenOwnerDeletesOffer_thenOfferRemovedAndKafkaEventPublished() {
+        // given
         UUID offerId = populateDatabase().getId();
-
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         restTemplate.exchange(
                 "/api/v1/owner/offers/" + offerId,
                 HttpMethod.DELETE,
                 request,
                 String.class);
 
+        // then
         ResponseEntity<TestPage<OfferDTO>> savedOffersPage = restTemplate.exchange(
                 "/api/v1/offers",
                 HttpMethod.GET,
@@ -214,17 +222,13 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
                 new ParameterizedTypeReference<TestPage<OfferDTO>>() {
                 }
         );
-
         List<OfferDTO> offers = requireNonNull(savedOffersPage.getBody()).content();
-
         assertTrue(offers
                 .stream()
                 .filter(offerDTO -> offerDTO.getId().equals(offerId))
                 .findFirst()
                 .isEmpty());
-
         ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, OFFER_TOPIC, Duration.ofSeconds(20));
-
         assertTrue(record.value().contains("Offer with ID"));
         assertTrue(record.value().contains("was deleted"));
     }

@@ -41,11 +41,14 @@ class BookingPersisterTest {
     @Test
     @DisplayName("saveAndPublish persists the booking and publishes the BOOKED event when no conflict exists")
     void saveAndPublish_whenNoConflict_thenPersistAndPublishEvent() {
+        // given
         Booking booking = getPopulatedBooked();
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
 
+        // when
         Booking result = bookingPersister.saveAndPublish(booking, List.of(), TEST_DATE);
 
+        // then
         verify(bookingRepository).save(booking);
         verify(eventSourceService).saveEvent(booking, EventType.BOOKED);
         assertEquals(booking, result);
@@ -54,9 +57,11 @@ class BookingPersisterTest {
     @Test
     @DisplayName("saveAndPublish throws BookingException when the offer is already booked on that date")
     void saveAndPublish_whenOfferAlreadyBookedOnDate_thenThrowBookingException() {
+        // given
         Booking existing = getPopulatedBooked();
         Booking newBooking = BookingAssembler.getPopulatedBooked();
 
+        // when / then
         assertThrows(BookingException.class,
                 () -> bookingPersister.saveAndPublish(newBooking, List.of(existing), TEST_DATE));
 
@@ -67,6 +72,7 @@ class BookingPersisterTest {
     @Test
     @DisplayName("saveAndPublish allows booking when existing bookings are for different dates")
     void saveAndPublish_whenExistingBookingsAreForDifferentDates_thenPersistSuccessfully() {
+        // given
         Booking existingOnDifferentDate = Booking.builder()
                 .id(java.util.UUID.randomUUID())
                 .offerId(java.util.UUID.randomUUID())
@@ -77,8 +83,10 @@ class BookingPersisterTest {
         Booking newBooking = getPopulatedBooked();
         when(bookingRepository.save(any(Booking.class))).thenReturn(newBooking);
 
+        // when
         Booking result = bookingPersister.saveAndPublish(newBooking, List.of(existingOnDifferentDate), TEST_DATE);
 
+        // then
         verify(bookingRepository).save(newBooking);
         verify(eventSourceService).saveEvent(newBooking, EventType.BOOKED);
         assertEquals(newBooking, result);

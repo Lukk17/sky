@@ -17,8 +17,10 @@ class OpenApiSecurityAutoConfigurationTest {
     @Test
     @DisplayName("skyOpenApi_whenInvoked_thenRegistersHttpBearerSecurityScheme")
     void skyOpenApi_whenInvoked_thenRegistersHttpBearerSecurityScheme() {
+        // when
         OpenAPI openAPI = config.skyOpenApi("Test API", "A test service.", "1.0");
 
+        // then
         SecurityScheme scheme = openAPI.getComponents().getSecuritySchemes().get(BEARER_AUTH_SCHEME);
 
         assertThat(scheme)
@@ -35,8 +37,10 @@ class OpenApiSecurityAutoConfigurationTest {
     @Test
     @DisplayName("skyOpenApi_whenInvoked_thenAddsGlobalSecurityRequirement")
     void skyOpenApi_whenInvoked_thenAddsGlobalSecurityRequirement() {
+        // when
         OpenAPI openAPI = config.skyOpenApi("Test API", "A test service.", "1.0");
 
+        // then
         assertThat(openAPI.getSecurity())
                 .as("a global security requirement must be present")
                 .isNotEmpty();
@@ -51,10 +55,13 @@ class OpenApiSecurityAutoConfigurationTest {
     @Test
     @DisplayName("skyOpenApi_whenTitleProvided_thenInfoTitleMatchesInput")
     void skyOpenApi_whenTitleProvided_thenInfoTitleMatchesInput() {
+        // given
         String expectedTitle = "Sky Offer API";
 
+        // when
         OpenAPI openAPI = config.skyOpenApi(expectedTitle, "desc", "2.0");
 
+        // then
         assertThat(openAPI.getInfo().getTitle())
                 .isEqualTo(expectedTitle);
     }

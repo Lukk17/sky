@@ -54,17 +54,19 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("POST /api/v1/messages with valid payload persists and returns 201 with message fields")
     void sendMessage_whenValidPayload_thenPersistAndReturn201() {
+        // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO();
-
         HttpHeaders headers = createTestHttpHeaders(SENDER_EMAIL);
         HttpEntity<MessageDTO> request = new HttpEntity<>(messageDTO, headers);
 
+        // when
         ResponseEntity<MessageDTO> actual = restTemplate.exchange(
                 "/api/v1/messages",
                 HttpMethod.POST,
                 request,
                 MessageDTO.class);
 
+        // then
         assertEquals(HttpStatus.CREATED, actual.getStatusCode());
         assertMessageFields(messageDTO, requireNonNull(actual.getBody()));
     }
@@ -72,10 +74,12 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/messages/received returns paged messages addressed to the authenticated user")
     void getReceivedMessages_whenUserHasMessages_thenReturnAll() {
+        // given
         List<Message> messages = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders(RECEIVER_EMAIL);
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         ResponseEntity<TestPage<MessageDTO>> actual = restTemplate.exchange(
                 "/api/v1/messages/received",
                 HttpMethod.GET,
@@ -83,6 +87,7 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
                 new ParameterizedTypeReference<TestPage<MessageDTO>>() {
                 });
 
+        // then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         List<MessageDTO> content = requireNonNull(actual.getBody()).content();
         assertEquals(2, content.size());
@@ -96,10 +101,12 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/messages/sent returns paged messages sent by the authenticated user")
     void getSentMessages_whenUserHasMessages_thenReturnAll() {
+        // given
         List<Message> messages = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders(SENDER_EMAIL);
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         ResponseEntity<TestPage<MessageDTO>> actual = restTemplate.exchange(
                 "/api/v1/messages/sent",
                 HttpMethod.GET,
@@ -107,6 +114,7 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
                 new ParameterizedTypeReference<TestPage<MessageDTO>>() {
                 });
 
+        // then
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         List<MessageDTO> content = requireNonNull(actual.getBody()).content();
         assertEquals(2, content.size());
@@ -120,16 +128,19 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("DELETE /api/v1/messages/{id} by receiver removes the message and returns 204 No Content")
     void deleteMessage_whenCalledByReceiver_thenRemoveAndReturn204() {
+        // given
         List<Message> messages = populateDatabaseWithMany();
         HttpHeaders headers = createTestHttpHeaders(RECEIVER_EMAIL);
         HttpEntity<?> request = new HttpEntity<>(headers);
 
+        // when
         ResponseEntity<Void> actual = restTemplate.exchange(
                 "/api/v1/messages/" + messages.get(0).getId(),
                 HttpMethod.DELETE,
                 request,
                 Void.class);
 
+        // then
         ResponseEntity<TestPage<MessageDTO>> savedMessages = restTemplate.exchange(
                 "/api/v1/messages/received",
                 HttpMethod.GET,

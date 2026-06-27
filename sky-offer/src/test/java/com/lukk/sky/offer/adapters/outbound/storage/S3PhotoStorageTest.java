@@ -63,16 +63,17 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("upload_whenValidArgs_thenCallsPutObjectWithCorrectParams")
     void upload_whenValidArgs_thenCallsPutObjectWithCorrectParams() {
+        // given
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(PutObjectResponse.builder().build());
-
         byte[] bytes = "bytes".getBytes();
         InputStream stream = new ByteArrayInputStream(bytes);
 
+        // when
         String key = photoStorage.upload(stream, bytes.length, "image/jpeg", "hotel.jpg");
 
+        // then
         assertThat(key).startsWith("offers/").endsWith("-hotel.jpg");
-
         ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
         verify(s3Client).putObject(captor.capture(), any(RequestBody.class));
         PutObjectRequest captured = captor.getValue();
@@ -85,40 +86,45 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("upload_whenFilenameHasSpecialChars_thenSanitizesFilename")
     void upload_whenFilenameHasSpecialChars_thenSanitizesFilename() {
+        // given
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(PutObjectResponse.builder().build());
-
         byte[] bytes = "bytes".getBytes();
         InputStream stream = new ByteArrayInputStream(bytes);
 
+        // when
         String key = photoStorage.upload(stream, bytes.length, "image/png", "my hotel & spa.png");
 
+        // then
         assertThat(key).endsWith("-my_hotel___spa.png");
     }
 
     @Test
     @DisplayName("upload_whenFilenameBlank_thenUsesDefaultPhotoSuffix")
     void upload_whenFilenameBlank_thenUsesDefaultPhotoSuffix() {
+        // given
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(PutObjectResponse.builder().build());
-
         byte[] bytes = "bytes".getBytes();
         InputStream stream = new ByteArrayInputStream(bytes);
 
+        // when
         String key = photoStorage.upload(stream, bytes.length, "image/jpeg", "   ");
 
+        // then
         assertThat(key).endsWith("-photo");
     }
 
     @Test
     @DisplayName("upload_whenS3Throws_thenRethrowsAsOfferException")
     void upload_whenS3Throws_thenRethrowsAsOfferException() {
+        // given
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenThrow(SdkException.create("S3 unavailable", new RuntimeException()));
-
         byte[] bytes = "bytes".getBytes();
         InputStream stream = new ByteArrayInputStream(bytes);
 
+        // when / then
         assertThatThrownBy(() -> photoStorage.upload(stream, bytes.length, "image/jpeg", "hotel.jpg"))
                 .isInstanceOf(OfferException.class)
                 .hasMessageContaining("Photo upload failed");
@@ -127,13 +133,16 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("presignedUrl_whenValidKey_thenReturnsUrl")
     void presignedUrl_whenValidKey_thenReturnsUrl() throws MalformedURLException {
+        // given
         PresignedGetObjectRequest presigned = mock(PresignedGetObjectRequest.class);
         when(presigned.url()).thenReturn(
                 URI.create("http://localhost:9000/sky-offers-test/offers/abc.jpg?X-Amz-Signature=sig").toURL());
         when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).thenReturn(presigned);
 
+        // when
         String url = photoStorage.presignedUrl("offers/abc.jpg");
 
+        // then
         assertThat(url).contains("offers/abc.jpg");
         assertThat(url).contains("X-Amz-Signature=sig");
         verify(s3Presigner).presignGetObject(any(GetObjectPresignRequest.class));
@@ -142,8 +151,10 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("presignedUrl_whenKeyIsNull_thenReturnsNull")
     void presignedUrl_whenKeyIsNull_thenReturnsNull() {
+        // when
         String url = photoStorage.presignedUrl(null);
 
+        // then
         assertThat(url).isNull();
         verifyNoInteractions(s3Presigner);
     }
@@ -151,8 +162,10 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("presignedUrl_whenKeyIsBlank_thenReturnsNull")
     void presignedUrl_whenKeyIsBlank_thenReturnsNull() {
+        // when
         String url = photoStorage.presignedUrl("   ");
 
+        // then
         assertThat(url).isNull();
         verifyNoInteractions(s3Presigner);
     }
@@ -160,9 +173,11 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("presignedUrl_whenS3Throws_thenRethrowsAsOfferException")
     void presignedUrl_whenS3Throws_thenRethrowsAsOfferException() {
+        // given
         when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class)))
                 .thenThrow(SdkException.create("S3 presign error", new RuntimeException()));
 
+        // when / then
         assertThatThrownBy(() -> photoStorage.presignedUrl("offers/abc.jpg"))
                 .isInstanceOf(OfferException.class)
                 .hasMessageContaining("Presign URL generation failed");

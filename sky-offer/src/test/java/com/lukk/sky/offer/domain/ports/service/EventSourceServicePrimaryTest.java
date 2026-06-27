@@ -52,19 +52,19 @@ class EventSourceServicePrimaryTest {
     @DisplayName("saveEvent assigns sequence number 1 when no previous event exists for the offer")
     void saveEvent_whenNoExistingEventsForOffer_thenSaveWithSequenceNumber1() {
         try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            // given
             instantMock.when(Instant::now).thenReturn(TEST_DATE);
-
             Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
             Event expected = getTestEvent(1, gson.toJson(offer));
-
             when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
                     .thenReturn(Optional.empty());
 
+            // when
             eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
 
+            // then
             ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
             verify(eventSourceRepository, times(1)).save(captor.capture());
-
             Event saved = captor.getValue();
             assertEquals(expected.getOfferId(), saved.getOfferId());
             assertEquals(expected.getSequenceNumber(), saved.getSequenceNumber());
@@ -78,19 +78,19 @@ class EventSourceServicePrimaryTest {
     @DisplayName("saveEvent assigns last sequence number + 1 when previous events already exist for the offer")
     void saveEvent_whenPreviousEventsExist_thenSaveWithIncrementedSequenceNumber() {
         try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            // given
             instantMock.when(Instant::now).thenReturn(TEST_DATE);
-
             Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
             Event expected = getTestEvent(3, gson.toJson(offer));
-
             when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
                     .thenReturn(Optional.of(2));
 
+            // when
             eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
 
+            // then
             ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
             verify(eventSourceRepository, times(1)).save(captor.capture());
-
             Event saved = captor.getValue();
             assertEquals(expected.getOfferId(), saved.getOfferId());
             assertEquals(expected.getSequenceNumber(), saved.getSequenceNumber());
@@ -103,18 +103,19 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent assigns sequential sequence numbers across two consecutive events for the same offer")
     void saveEvent_whenTwoEventsForSameOffer_thenAssignSequentialNumbers() {
+        // given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-
         when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(1));
 
+        // when
         eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
         eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
 
+        // then
         ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
         verify(eventSourceRepository, times(2)).save(captor.capture());
-
         List<Event> saved = captor.getAllValues();
         assertEquals(1, saved.get(0).getSequenceNumber());
         assertEquals(2, saved.get(1).getSequenceNumber());
@@ -123,15 +124,16 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent acquires the per-offer advisory lock before reading the sequence and saving")
     void saveEvent_whenSaving_thenLockAcquiredBeforeSequenceReadAndSave() {
+        // given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-
         when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
                 .thenReturn(Optional.of(4));
 
+        // when
         eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
 
+        // then
         long expectedLockKey = TEST_DEFAULT_OFFER_ID.getMostSignificantBits() ^ TEST_DEFAULT_OFFER_ID.getLeastSignificantBits();
-
         InOrder inOrder = inOrder(eventSourceRepository);
         inOrder.verify(eventSourceRepository).lockOfferEventStream(expectedLockKey);
         inOrder.verify(eventSourceRepository).findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID);
@@ -141,6 +143,7 @@ class EventSourceServicePrimaryTest {
     @Test
     @DisplayName("saveEvent throws IllegalArgumentException and persists nothing when the offer id is null")
     void saveEvent_whenOfferIdIsNull_thenThrowIllegalArgumentException() {
+        // given
         Offer offer = Offer.builder()
                 .hotelName("Hotel")
                 .ownerEmail("owner@test.com")
@@ -150,9 +153,9 @@ class EventSourceServicePrimaryTest {
                 .roomCapacity(1L)
                 .build();
 
+        // when / then
         assertThrows(IllegalArgumentException.class,
                 () -> eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE));
-
         verify(eventSourceRepository, never()).save(any(Event.class));
     }
 }

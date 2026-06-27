@@ -21,30 +21,39 @@ class AudienceValidatorTest {
     @Test
     @DisplayName("passes when aud claim contains the expected audience")
     void validate_whenAudContainsExpectedValue_thenSuccess() {
+        // given
         Jwt jwt = buildJwt(List.of(EXPECTED_AUDIENCE, "other-service"));
 
+        // when
         OAuth2TokenValidatorResult result = validator.validate(jwt);
 
+        // then
         assertThat(result.hasErrors()).isFalse();
     }
 
     @Test
     @DisplayName("passes when aud claim contains only the expected audience")
     void validate_whenAudContainsExactlyExpectedValue_thenSuccess() {
+        // given
         Jwt jwt = buildJwt(List.of(EXPECTED_AUDIENCE));
 
+        // when
         OAuth2TokenValidatorResult result = validator.validate(jwt);
 
+        // then
         assertThat(result.hasErrors()).isFalse();
     }
 
     @Test
     @DisplayName("fails when aud claim is absent")
     void validate_whenAudClaimAbsent_thenFailure() {
+        // given
         Jwt jwt = buildJwtWithoutAud();
 
+        // when
         OAuth2TokenValidatorResult result = validator.validate(jwt);
 
+        // then
         assertThat(result.hasErrors()).isTrue();
         assertThat(result.getErrors())
                 .anyMatch(e -> e.getDescription().contains("missing required audience claim"));
@@ -53,10 +62,13 @@ class AudienceValidatorTest {
     @Test
     @DisplayName("fails when aud claim is present but does not contain the expected audience")
     void validate_whenAudClaimDoesNotContainExpectedValue_thenFailure() {
+        // given
         Jwt jwt = buildJwt(List.of("some-other-service", "another-api"));
 
+        // when
         OAuth2TokenValidatorResult result = validator.validate(jwt);
 
+        // then
         assertThat(result.hasErrors()).isTrue();
         assertThat(result.getErrors())
                 .anyMatch(e -> e.getDescription().contains("does not contain the expected audience"));
@@ -65,10 +77,13 @@ class AudienceValidatorTest {
     @Test
     @DisplayName("fails when aud claim is an empty list")
     void validate_whenAudClaimIsEmpty_thenFailure() {
+        // given
         Jwt jwt = buildJwt(List.of());
 
+        // when
         OAuth2TokenValidatorResult result = validator.validate(jwt);
 
+        // then
         assertThat(result.hasErrors()).isTrue();
     }
 
