@@ -1,6 +1,17 @@
-version: "1"
-name: Sky API
-type: collection
-ignore:
-  - node_modules
-  - .git
+opencollection: 1.0.0
+
+info:
+  name: Sky
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+bundled: false
+extensions: {}

@@ -1,10 +1,3 @@
-# Self-driving collection: run "Get Token (Keycloak)" (seq 1) once and its post-response
-# script fills bearerToken below automatically. A full-collection run does this for you.
-# Tokens are short-lived (typically 5 minutes); re-run "Get Token" when you receive a 401.
-#
-# keycloakUrl points at the local Keycloak host (HTTPS, self-signed). The realm path
-# /realms/sky is appended by the request. The dev client/user below match
-# config/keycloak/sky-realm.json. Run bru with --insecure for the self-signed cert.
 name: local
 variables:
   - name: baseUrl
@@ -19,6 +12,5 @@ variables:
     value: lukk
   - name: keycloakPassword
     value: test1234
-  - name: bearerToken
-    value: ""
-    secret: true
+  - secret: true
+    name: bearerToken

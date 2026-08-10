@@ -210,7 +210,7 @@ k3d enables Traefik by default on the load balancer. The production stack uses n
 the cluster with Traefik disabled and install nginx-ingress yourself:
 
 ```shell
-k3d cluster create sky -p "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
+k3d cluster create sky -p "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0" --servers 1 --agents 2
 ```
 
 ```shell
@@ -224,6 +224,12 @@ image names and tags the Helm charts reference (see config/k8s/helm/helm_README.
 
 ```shell
 k3d image import lukk17/sky-offer lukk17/sky-booking lukk17/sky-message lukk17/sky-notify -c sky
+```
+
+or local
+
+```shell
+k3d image import sky-offer sky-booking sky-message sky-notify -c sky
 ```
 
 Install the Helm charts in the order documented in config/k8s/helm/helm_README.md. Once the ingress and services are
