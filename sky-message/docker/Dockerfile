@@ -15,6 +15,17 @@ RUN --mount=type=cache,id=gradle-sky-message,target=/home/gradle/.gradle gradle 
 
 # ===============> RUN STAGE <===============
 FROM eclipse-temurin:25-jre-alpine AS runtime
+
+# Trust the local Keycloak self-signed certificate so the OAuth2 resource server
+# can reach https://keycloak.test:9443 for OIDC discovery and JWKS.
+COPY config/keycloak/certs/localhostDomain.crt /tmp/keycloak.crt
+RUN keytool -importcert -noprompt \
+      -alias keycloak-local \
+      -file /tmp/keycloak.crt \
+      -keystore "$JAVA_HOME/lib/security/cacerts" \
+      -storepass changeit \
+ && rm /tmp/keycloak.crt
+
 RUN addgroup -S -g 1000 sky && adduser -S -u 1000 sky -G sky
 USER sky
 WORKDIR /app
