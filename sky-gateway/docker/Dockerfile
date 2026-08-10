@@ -8,7 +8,7 @@ COPY settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle
 COPY buildSrc ./buildSrc
 COPY sky-gateway ./sky-gateway
-RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-gateway:bootJar --no-daemon -x test \
+RUN --mount=type=cache,id=gradle-sky-gateway,target=/home/gradle/.gradle gradle :sky-gateway:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-gateway/build/libs/sky-gateway.jar \
         extract --layers --launcher --destination sky-gateway/build/extracted
 

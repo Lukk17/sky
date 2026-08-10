@@ -9,7 +9,7 @@ COPY gradle ./gradle
 COPY buildSrc ./buildSrc
 COPY sky-common ./sky-common
 COPY sky-booking ./sky-booking
-RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-booking:bootJar --no-daemon -x test \
+RUN --mount=type=cache,id=gradle-sky-booking,target=/home/gradle/.gradle gradle :sky-booking:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-booking/build/libs/sky-booking.jar \
         extract --layers --launcher --destination sky-booking/build/extracted
 

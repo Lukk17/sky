@@ -9,7 +9,7 @@ COPY gradle ./gradle
 COPY buildSrc ./buildSrc
 COPY sky-common ./sky-common
 COPY sky-notify ./sky-notify
-RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-notify:bootJar --no-daemon -x test \
+RUN --mount=type=cache,id=gradle-sky-notify,target=/home/gradle/.gradle gradle :sky-notify:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-notify/build/libs/sky-notify.jar \
         extract --layers --launcher --destination sky-notify/build/extracted
 

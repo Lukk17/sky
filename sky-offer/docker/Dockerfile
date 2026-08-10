@@ -9,7 +9,7 @@ COPY gradle ./gradle
 COPY buildSrc ./buildSrc
 COPY sky-common ./sky-common
 COPY sky-offer ./sky-offer
-RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-offer:bootJar --no-daemon -x test \
+RUN --mount=type=cache,id=gradle-sky-offer,target=/home/gradle/.gradle gradle :sky-offer:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-offer/build/libs/sky-offer.jar \
         extract --layers --launcher --destination sky-offer/build/extracted
 

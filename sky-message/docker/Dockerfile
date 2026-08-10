@@ -9,7 +9,7 @@ COPY gradle ./gradle
 COPY buildSrc ./buildSrc
 COPY sky-common ./sky-common
 COPY sky-message ./sky-message
-RUN --mount=type=cache,target=/home/gradle/.gradle gradle :sky-message:bootJar --no-daemon -x test \
+RUN --mount=type=cache,id=gradle-sky-message,target=/home/gradle/.gradle gradle :sky-message:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-message/build/libs/sky-message.jar \
         extract --layers --launcher --destination sky-message/build/extracted
 
