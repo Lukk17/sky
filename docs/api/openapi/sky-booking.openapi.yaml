@@ -1,0 +1,284 @@
+openapi: "3.1.0"
+
+info:
+  title: sky-booking
+  version: v1
+  description: |
+    Booking service for the Sky platform. Allows authenticated users to book offer slots
+    and manage their bookings. Identity is derived from the `email` claim in the bearer JWT
+    issued by Keycloak; the caller never sends their email explicitly.
+
+    All endpoints require a valid bearer token. See the `bearerAuth` security scheme and
+    the authentication guide at `docs/api/README.md` for how to mint a token.
+
+servers:
+  - url: http://localhost:5777/booking/api
+    description: Local via Spring Cloud Gateway (sky-gateway on port 5777)
+  - url: https://skycloud.luksarna.com/booking/api
+    description: Production (GCP via nginx-ingress)
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Keycloak-issued JWT. Obtain via the password grant or client-credentials grant against
+        `https://keycloak.luksarna.com/realms/sky/protocol/openid-connect/token`.
+        The service validates the token signature against the Keycloak JWKS endpoint.
+        The `email` claim in the token identifies the calling user for all booking operations.
+
+  schemas:
+    BookingPayload:
+      type: object
+      required:
+        - offerId
+        - dateToBook
+      properties:
+        offerId:
+          type: string
+          description: >
+            The numeric ID of the offer to book, sent as a string (matches the Long ID
+            stored in sky-offer).
+          example: "42"
+        dateToBook:
+          type: string
+          format: date
+          description: >
+            The date to book in ISO-8601 format (yyyy-MM-dd). Parsed by the service using
+            `LocalDate.parse`.
+          example: "2024-08-15"
+
+    BookingDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Auto-generated booking ID.
+          example: 101
+        offerId:
+          type: string
+          description: ID of the booked offer.
+          example: "42"
+        bookedDate:
+          type: string
+          description: >
+            The booked date rendered via `LocalDate.toString()`, which produces ISO-8601
+            (yyyy-MM-dd).
+          example: "2024-08-15"
+        bookingUser:
+          type: string
+          format: email
+          description: Email of the user who created the booking (taken from JWT `email` claim).
+          example: "traveller@example.com"
+        ownerEmail:
+          type: string
+          format: email
+          description: Email of the offer owner, resolved from sky-offer at booking time.
+          example: "owner@example.com"
+
+    PageOfBookingDTO:
+      type: object
+      description: Spring Data `Page<BookingDTO>` envelope returned by list endpoints.
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingDTO"
+        totalElements:
+          type: integer
+          format: int64
+          example: 5
+        totalPages:
+          type: integer
+          example: 1
+        size:
+          type: integer
+          example: 20
+        number:
+          type: integer
+          description: Zero-based current page index.
+          example: 0
+        first:
+          type: boolean
+          example: true
+        last:
+          type: boolean
+          example: true
+        numberOfElements:
+          type: integer
+          example: 5
+        empty:
+          type: boolean
+          example: false
+
+    ProblemDetail:
+      type: object
+      description: >
+        RFC 7807 / Spring 6 `ErrorResponse` problem detail. The `GlobalExceptionHandler`
+        returns this shape for validation failures (400) and domain `BookingException` (400).
+        Spring Security returns its own 401 shape (no body by default).
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "about:blank"
+        title:
+          type: string
+          example: "Bad Request"
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+          description: >
+            Human-readable description of the error. For validation errors this is a
+            semicolon-separated list in the form `Field '<name>' <constraint message>`.
+          example: "Field 'offerId' must not be blank; Field 'dateToBook' must not be blank"
+        instance:
+          type: string
+          format: uri
+          example: "/api/v1/bookings"
+
+paths:
+  /user/bookings:
+    get:
+      operationId: getUserBookings
+      summary: Get all bookings for the authenticated user (paginated)
+      description: >
+        Returns a paginated list of all bookings belonging to the user identified by the JWT
+        `email` claim. Use `?page=` and `?size=` query parameters to control pagination;
+        defaults to page 0, size 20.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Zero-based page index.
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: Number of items per page.
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >
+            Sort expression in Spring Data format, e.g. `bookedDate,desc`. Multiple values
+            are supported by repeating the parameter.
+      responses:
+        "200":
+          description: Successful — returns a page of the user's bookings. Empty `content` when no bookings exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOfBookingDTO"
+              example:
+                content:
+                  - id: 101
+                    offerId: "42"
+                    bookedDate: "2024-08-15"
+                    bookingUser: "traveller@example.com"
+                    ownerEmail: "owner@example.com"
+                totalElements: 1
+                totalPages: 1
+                size: 20
+                number: 0
+                first: true
+                last: true
+                numberOfElements: 1
+                empty: false
+        "401":
+          description: Missing or invalid bearer token.
+
+  /bookings:
+    post:
+      operationId: createBooking
+      summary: Create a new booking
+      description: >
+        Books an offer for the authenticated user on the specified date. The service resolves
+        the offer owner email from sky-offer via a resilient HTTP call (3 retries with
+        exponential back-off + circuit-breaker). Returns 201 on success and publishes a Kafka
+        notification event.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingPayload"
+            example:
+              offerId: "42"
+              dateToBook: "2024-08-15"
+      responses:
+        "201":
+          description: Booking created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingDTO"
+              example:
+                id: 101
+                offerId: "42"
+                bookedDate: "2024-08-15"
+                bookingUser: "traveller@example.com"
+                ownerEmail: "owner@example.com"
+        "400":
+          description: >
+            Validation failure (`offerId` or `dateToBook` blank) or a domain-level
+            `BookingException` (e.g. offer already booked for that date, offer not found).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              example:
+                type: "about:blank"
+                title: "Bad Request"
+                status: 400
+                detail: "Field 'offerId' must not be blank"
+                instance: "/api/v1/bookings"
+        "401":
+          description: Missing or invalid bearer token.
+
+  /bookings/{bookingId}:
+    delete:
+      operationId: deleteBooking
+      summary: Delete a booking
+      description: >
+        Removes the booking identified by `bookingId`. The service verifies that the booking
+        belongs to the authenticated user before deletion. Returns 200 with a plain-text
+        confirmation message (JSON-encoded string) on success.
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The booking ID to delete.
+          example: "101"
+      responses:
+        "200":
+          description: Booking deleted. Response body is a JSON-encoded string message.
+          content:
+            application/json:
+              schema:
+                type: string
+              example: "Booking removed."
+        "400":
+          description: Domain-level `BookingException` (e.g. booking not found, not owned by caller).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Missing or invalid bearer token.

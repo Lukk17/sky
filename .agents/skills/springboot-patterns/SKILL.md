@@ -1,0 +1,750 @@
+---
+name: springboot-patterns
+description: Spring Boot architecture patterns, REST API design, layered services, data access, caching, async processing, and logging. Use for Java Spring Boot backend work.
+origin: ECC
+---
+
+# Spring Boot Development Patterns
+
+Spring Boot architecture and API patterns for scalable, production-grade services.
+
+---
+
+### When to Activate
+
+- Building REST APIs with blocking Spring MVC on virtual threads. This skill targets blocking Spring MVC. WebFlux is out
+  of scope and requires an explicit project-level decision.
+- Structuring controller → service → repository layers
+- Configuring Spring Data JPA, caching, or async processing
+- Adding validation, exception handling, or pagination
+- Setting up profiles for dev/staging/production environments
+- Implementing event-driven patterns with Spring Events or Kafka
+
+---
+
+### REST API Structure
+
+```java
+@RestController
+@RequestMapping("/api/markets")
+@Validated
+class MarketController {
+  private final MarketService marketService;
+
+  MarketController(MarketService marketService) {
+    this.marketService = marketService;
+  }
+
+  @GetMapping
+  ResponseEntity<PageResponse<MarketResponse>> list(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    // Service returns a project DTO, never Spring Data's Page, so the framework
+    // type does not leak into the public API contract.
+    PageResponse<MarketResponse> markets = marketService.list(PageRequest.of(page, size));
+    return ResponseEntity.ok(markets);
+  }
+
+  @PostMapping
+  ResponseEntity<MarketResponse> create(@Valid @RequestBody CreateMarketRequest request) {
+    Market market = marketService.create(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(MarketResponse.from(market));
+  }
+}
+```
+
+---
+
+### Repository Pattern (Spring Data JPA)
+
+```java
+public interface MarketRepository extends JpaRepository<MarketEntity, Long> {
+  @Query("select m from MarketEntity m where m.status = :status order by m.volume desc")
+  List<MarketEntity> findActive(@Param("status") MarketStatus status, Pageable pageable);
+}
+```
+
+---
+
+### Service Layer with Transactions
+
+```java
+@Service
+public class MarketService {
+  private final MarketRepository repo;
+
+  public MarketService(MarketRepository repo) {
+    this.repo = repo;
+  }
+
+  @Transactional
+  public Market create(CreateMarketRequest request) {
+    MarketEntity entity = MarketEntity.from(request);
+    MarketEntity saved = repo.save(entity);
+    return Market.from(saved);
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<MarketResponse> list(Pageable pageable) {
+    // Map the repository Page into the project DTO here, in the service layer,
+    // so controllers and the API contract never see Spring Data's Page.
+    Page<MarketEntity> markets = repo.findAll(pageable);
+    return PageResponse.from(markets, entity -> MarketResponse.from(Market.from(entity)));
+  }
+}
+```
+
+---
+
+### DTOs and Validation
+
+```java
+public record CreateMarketRequest(
+    @NotBlank @Size(max = 200) String name,
+    @NotBlank @Size(max = 2000) String description,
+    @NotNull @FutureOrPresent Instant endDate,
+    @NotEmpty List<@NotBlank String> categories) {}
+
+public record MarketResponse(Long id, String name, MarketStatus status) {
+  static MarketResponse from(Market market) {
+    return new MarketResponse(market.id(), market.name(), market.status());
+  }
+}
+
+// Project-owned pagination envelope. Keeps Spring Data's Page out of the public API.
+public record PageResponse<T>(
+    List<T> content,
+    int page,
+    int size,
+    long totalElements,
+    int totalPages) {
+
+  static <S, T> PageResponse<T> from(Page<S> source, Function<S, T> mapper) {
+    return new PageResponse<>(
+        source.getContent().stream().map(mapper).toList(),
+        source.getNumber(),
+        source.getSize(),
+        source.getTotalElements(),
+        source.getTotalPages());
+  }
+}
+```
+
+---
+
+### Exception Handling
+
+Return RFC 7807 `application/problem+json` via Spring's `ProblemDetail`. Do not invent an ad-hoc error
+shape. Set `type`, `title`, `status`, and `detail`, and carry field errors as a problem property.
+
+```java
+@ControllerAdvice
+class GlobalExceptionHandler {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+    ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+    problem.setType(URI.create("https://example.com/problems/validation"));
+    problem.setTitle("Validation failed");
+    problem.setDetail("One or more fields are invalid");
+    Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+        .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a));
+    problem.setProperty("errors", fieldErrors);
+    return problem;
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  ProblemDetail handleAccessDenied() {
+    ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+    problem.setTitle("Forbidden");
+    return problem;
+  }
+
+  @ExceptionHandler(Exception.class)
+  ProblemDetail handleGeneric(Exception ex) {
+    // Log unexpected errors with stack traces, then return a generic problem body.
+    ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+    problem.setTitle("Internal server error");
+    return problem;
+  }
+}
+```
+
+---
+
+### HTTP Client
+
+Use `RestClient` for all synchronous HTTP calls (Spring 6.1+):
+
+```java
+@Bean
+public RestClient restClient(RestClient.Builder builder) {
+    return builder
+        .baseUrl("https://api.example.com")
+        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+        .build();
+}
+
+// Usage:
+ResponseEntity<UserDto> response = restClient.get()
+    .uri("/users/{id}", userId)
+    .retrieve()
+    .toEntity(UserDto.class);
+```
+
+- Do NOT use `RestTemplate`: it is deprecated
+- Do NOT use `WebClient`. `RestClient` (above) is the default synchronous outbound client. WebFlux is out of scope, so
+  there is no reactive path that justifies WebClient here.
+
+---
+
+### Error-Resilient External Calls
+
+Never use `Thread.sleep()` for retry logic. Use Resilience4j `@Retry` with exponential backoff + jitter. Never use
+fixed-interval retries.
+
+```java
+// WRONG — never do this:
+// int attempts = 0;
+// while (attempts < 3) { try { ... } catch ... Thread.sleep(...) }
+
+// CORRECT — Resilience4j with exponential backoff + jitter:
+@Service
+public class ExternalApiClient {
+    @Retry(name = "externalApi")
+    @CircuitBreaker(name = "externalApi", fallbackMethod = "fallback")
+    public ResponseEntity<String> call() {
+        return restClient.get().uri("/endpoint").retrieve().toEntity(String.class);
+    }
+
+    public ResponseEntity<String> fallback(Exception ex) {
+        return ResponseEntity.status(503).body("Service unavailable");
+    }
+}
+```
+
+```yaml
+# application.yml
+resilience4j:
+  retry:
+    instances:
+      externalApi:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true
+        randomized-wait-factor: 0.5
+  circuitbreaker:
+    instances:
+      externalApi:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+```
+
+---
+
+### Hexagonal Architecture (Ports & Adapters)
+
+Layer naming:
+
+| Layer | Package | Annotation stereotype |
+|---|---|---|
+| Domain | `domain.model`, `domain.service` | none (pure Java) |
+| Application Service | `application.port.in`, `application.port.out` | `@UseCase` |
+| REST Adapter (in) | `adapter.in.rest` | `@WebAdapter` |
+| Persistence Adapter (out) | `adapter.out.persistence` | `@PersistenceAdapter` |
+
+Rules:
+- Domain layer has ZERO dependencies on Spring or infrastructure
+- Application services implement use case ports, call out-ports
+- Adapters implement/use ports: never call each other directly
+
+```java
+// Application port (interface)
+public interface CreateOrderUseCase {
+    Order createOrder(CreateOrderCommand command);
+}
+
+// Use case implementation
+@UseCase
+@RequiredArgsConstructor
+public class CreateOrderService implements CreateOrderUseCase {
+    private final SaveOrderPort saveOrderPort;
+    // ...
+}
+
+// REST adapter calls use case via port
+@WebAdapter
+@RestController
+@RequiredArgsConstructor
+public class OrderController {
+    private final CreateOrderUseCase createOrderUseCase;
+}
+```
+
+---
+
+### API Versioning
+
+- URI path versioning: `/api/v1/resource`
+- When deprecating: add `@Deprecated` to controller, return `Deprecation` header with sunset date
+- Maintain deprecated version for minimum one full release cycle before removal
+
+```java
+@GetMapping("/api/v1/users/{id}")
+@Deprecated
+// Response includes: Deprecation: true, Sunset: Sat, 01 Jan 2026 00:00:00 GMT
+public ResponseEntity<UserDto> getUserV1(@PathVariable Long id) { ... }
+```
+
+---
+
+### OpenAPI / Swagger
+
+Add `springdoc-openapi-starter-webmvc-ui` dependency. Annotate controllers:
+
+```java
+@Tag(name = "Users", description = "User management")
+@RestController
+public class UserController {
+
+    @Operation(summary = "Get user by ID")
+    @ApiResponse(responseCode = "200", description = "User found")
+    @ApiResponse(responseCode = "404", description = "User not found")
+    @GetMapping("/api/v1/users/{id}")
+    public UserDto getUser(@PathVariable Long id) { ... }
+}
+```
+
+Commit `openapi.yaml` to the repository (generate with springdoc `springdoc.api-docs.path=/v3/api-docs`).
+
+---
+
+### Caching
+
+Requires `@EnableCaching` on a configuration class.
+
+- Always specify explicit TTL and max-size eviction policy: never use unbounded caches
+- Never cache mutable shared state without an invalidation strategy
+
+```java
+@Bean
+public CacheManager cacheManager(RedisConnectionFactory factory) {
+    RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+        .entryTtl(Duration.ofMinutes(10))
+        .disableCachingNullValues();
+    return RedisCacheManager.builder(factory).cacheDefaults(config).build();
+}
+```
+
+```java
+@Service
+public class MarketCacheService {
+  private final MarketRepository repo;
+
+  public MarketCacheService(MarketRepository repo) {
+    this.repo = repo;
+  }
+
+  @Cacheable(value = "market", key = "#id")
+  public Market getById(Long id) {
+    return repo.findById(id)
+        .map(Market::from)
+        .orElseThrow(() -> new EntityNotFoundException("Market not found"));
+  }
+
+  @CacheEvict(value = "market", key = "#id")
+  public void evict(Long id) {}
+}
+```
+
+---
+
+### Async Processing
+
+Requires `@EnableAsync` on a configuration class.
+
+```java
+@Service
+public class NotificationService {
+  @Async
+  public CompletableFuture<Void> sendAsync(Notification notification) {
+    // send email/SMS
+    return CompletableFuture.completedFuture(null);
+  }
+}
+```
+
+---
+
+### Transaction Management
+
+- Place `@Transactional` on service layer methods only: never on controllers or repository methods
+- Use `readOnly = true` for query-only methods (improves performance with Hibernate)
+- Self-invocation bypass: calling a `@Transactional` method from within the same bean bypasses the proxy: extract to a
+  separate bean if needed
+
+```java
+@Service
+public class OrderService {
+    @Transactional(readOnly = true)
+    public Order findById(Long id) { ... }
+
+    @Transactional
+    public Order createOrder(CreateOrderCommand cmd) { ... }
+}
+```
+
+---
+
+### Intra-Service Events
+
+Use Spring's `ApplicationEventPublisher` for decoupling within a service:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class OrderService {
+    private final ApplicationEventPublisher events;
+
+    @Transactional
+    public Order createOrder(CreateOrderCommand cmd) {
+        Order order = // ... save
+        events.publishEvent(new OrderCreatedEvent(order.getId()));
+        return order;
+    }
+}
+
+// Listen AFTER the transaction commits:
+@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+public void onOrderCreated(OrderCreatedEvent event) {
+    notificationService.sendConfirmation(event.orderId());
+}
+```
+
+---
+
+### Observability
+
+```yaml
+management:
+  endpoints.web.exposure.include: health,info,prometheus,metrics
+  endpoint.health:
+    show-details: always
+    group:
+      liveness.include: livenessState
+      readiness.include: readinessState,db,redis
+  metrics.export.otlp.endpoint: http://otel-collector:4318/v1/metrics
+  tracing.sampling.probability: 1.0  # 100% in dev; reduce in prod
+```
+
+Implement custom health indicators for critical dependencies:
+
+```java
+@Component
+public class ExternalApiHealthIndicator implements HealthIndicator {
+    @Override
+    public Health health() {
+        return isReachable() ? Health.up().build() : Health.down().withDetail("reason", "timeout").build();
+    }
+}
+```
+
+Additional observability:
+- Structured logging (JSON) via Logback encoder
+- Metrics: Micrometer + Prometheus/OTel
+- Tracing: Micrometer Tracing with OpenTelemetry or Brave backend
+
+---
+
+### Logging (SLF4J)
+
+```java
+@Service
+@Slf4j
+public class ReportService {
+
+  public Report generate(Long marketId) {
+    log.info("generate_report marketId={}", marketId);
+    try {
+      // logic
+    } catch (Exception ex) {
+      log.error("generate_report_failed marketId={}", marketId, ex);
+      throw ex;
+    }
+    return new Report();
+  }
+}
+```
+
+---
+
+### Startup readiness log
+
+Spring Boot apps emit the banner twice, on purpose:
+
+1. At process boot, via Spring's native `banner.txt` resource. Tells "the JVM is up, the framework is loading, here's
+   the version metadata". Useful for diagnosing crashes that happen before traffic ever flows.
+2. At accepting-traffic time, again above the full readiness log block (URL / profile / dependency / observability
+   sections from [observability-and-logging](../observability-and-logging/SKILL.md#startup-readiness-log)). Tells "we
+   are actually serving
+   requests". This is the entry on-call looks at first when paging.
+
+Same banner shape both times. ANSI Shadow FIGlet font, 6 lines tall, Unicode box-drawing (`█▀▄╔╗╚╝═║`). Generate once
+with `figlet -f 'ANSI Shadow' 'YOURAPP'` or via <https://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow>, paste
+into both places (the resource file and the readiness-log builder) as a constant. Do not let the agent freehand it; it
+will silently pick Standard FIGlet (3 lines tall, `/ \ _ |` ASCII slashes) and the log will be wrong.
+
+#### Banner #1: replace Spring's default at boot
+
+Drop the banner into `src/main/resources/banner.txt`. Spring picks it up automatically. Use Spring's `${AnsiColor.X}`
+and property tokens for color and version metadata. Example contents (replace the `EXAMPLE` art with your own app name
+in ANSI Shadow):
+
+```text
+${AnsiColor.BRIGHT_CYAN}
+███████╗██╗  ██╗ █████╗ ███╗   ███╗██████╗ ██╗     ███████╗
+██╔════╝╚██╗██╔╝██╔══██╗████╗ ████║██╔══██╗██║     ██╔════╝
+█████╗   ╚███╔╝ ███████║██╔████╔██║██████╔╝██║     █████╗
+██╔══╝   ██╔██╗ ██╔══██║██║╚██╔╝██║██╔═══╝ ██║     ██╔══╝
+███████╗██╔╝ ██╗██║  ██║██║ ╚═╝ ██║██║     ███████╗███████╗
+╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝     ╚══════╝╚══════╝
+${AnsiColor.BRIGHT_YELLOW}  :: Example     ::  ${AnsiColor.BRIGHT_BLACK}${application.formatted-version}${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_BLACK}  :: Spring Boot ::  ${spring-boot.formatted-version}
+${AnsiColor.BRIGHT_BLACK}  :: Java        ::  ${java.version}
+${AnsiColor.DEFAULT}
+```
+
+Available property tokens (Spring auto-replaces):
+
+- `${application.version}` / `${application.formatted-version}`: your app's version from `Implementation-Version` in the
+  manifest (set by Spring Boot Maven/Gradle plugin).
+- `${spring-boot.version}` / `${spring-boot.formatted-version}`: Spring Boot version.
+- `${java.version}`: JVM version.
+- `${application.title}` / `${application.formatted-title}`: manifest `Implementation-Title`.
+
+Color tokens (`${AnsiColor.BRIGHT_CYAN}`, `BRIGHT_YELLOW`, `BRIGHT_BLACK`, `DEFAULT`, etc.) work on terminals that
+support ANSI; degrade gracefully elsewhere. Keep the last line `${AnsiColor.DEFAULT}` so the terminal returns to normal
+after the banner.
+
+Leave Spring's banner mechanism enabled for this path (do not set `spring.main.banner-mode=off`). The default is
+`console`, which prints to stdout; that is what you want.
+
+#### Banner #2: emit again above the readiness log
+
+When the readiness event fires, prepend the same banner (without `${AnsiColor.X}` tokens this time, since the log
+framework does not interpret them) to the multi-section URL / profile / dependency / observability block.
+
+Hook: `@EventListener` on `AvailabilityChangeEvent<ReadinessState>` filtered to `ACCEPTING_TRAFFIC`. This is the truly
+last startup signal; it fires after `ApplicationReadyEvent` and after every `CommandLineRunner` / `ApplicationRunner`
+bean.
+
+```java
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class StartupLogConfig {
+
+  private final Environment env;
+
+  @EventListener
+  public void onAcceptingTraffic(AvailabilityChangeEvent<ReadinessState> event) {
+    if (event.getState() != ReadinessState.ACCEPTING_TRAFFIC) {
+      return;
+    }
+    // One log call, leading `\n`. The placeholder substitutes the whole multi-line
+    // banner + readiness block. Per-line `log.info` would stamp a timestamp / level /
+    // logger prefix on every line and shred the banner art. See canonical rule in
+    // coding-standards "Emit the whole block in ONE log call with a leading `\n`".
+    log.info("\n{}", buildStartupLog());
+  }
+}
+```
+
+Critical: `buildStartupLog()` must return ONE multi-line String, not call the logger itself. This is where Spring Boot
+apps usually get the bug. The temptation is to "just call `log.info` for each line of the block"; that produces exactly
+the broken output: every line stamped with `[timestamp] INFO ... StartupLogConfig [App] :`, and any background thread
+(Axon `Coordinator`, scheduled job, connection pool) can interleave its own log in the middle and rip the block in half.
+
+Wrong: per-line emission inside the builder.
+
+```java
+private void emit() {
+    log.info("----------------------------------------------------------");
+    log.info("    Application '{}' is running!", appName);
+    log.info("");
+    log.info("    Access URLs:");
+    log.info("      Local:     {}", localUrl);
+    log.info("      Hostname:  {}", hostnameUrl);
+    // ...continues per line. Each is a separate atomic event,
+    // and other threads can log between any two of these.
+}
+```
+
+Right: build one String, return it, log it once.
+
+```java
+private String buildStartupLog() {
+    String localUrl     = "http://localhost:" + port + contextPath;
+    String hostnameUrl  = "http://" + hostname() + ":" + port + contextPath;
+    String jwkSetStatus = probeJwkSet();
+    String dbStatus     = probeDatabase();
+
+    return String.join("\n",
+        BANNER,  // pre-rendered ANSI Shadow art as a static final String constant
+        "----------------------------------------------------------",
+        "    Application '" + appName + "' is running!",
+        "",
+        "    Access URLs:",
+        "      Local:     " + localUrl,
+        "      Hostname:  " + hostnameUrl,
+        "",
+        "    Profile(s): " + String.join(",", env.getActiveProfiles()),
+        "",
+        "    Auth (OAuth2 Resource Server):",
+        "      Issuer:   " + issuer,
+        "      JWK Set:  " + jwkSetUrl + " " + jwkSetStatus,
+        "",
+        "    Event Store (PostgreSQL):",
+        "      URL:      " + jdbcUrl + " " + dbStatus,
+        // ...rest of sections
+        "----------------------------------------------------------"
+    );
+}
+```
+
+Probe results (`jwkSetStatus`, `dbStatus`) are computed BEFORE the `String.join`, so the final emission is atomic; the
+readiness probes finishing in different orders do not produce interleaved output.
+
+For the multi-line banner constant, paste the ANSI Shadow art into a `private static final String BANNER = """ ... """;`
+text block (Java 15+) or a `String.join("\n", ...)` of literal lines for older Java.
+
+Probe timeouts: use `RestClient` backed by `SimpleClientHttpRequestFactory` with `Duration.ofSeconds(2)` for connect +
+read. Catch `Exception` broadly, `log.debug(...)` the detail, surface only the `[FAILED]` marker in the banner.
+
+```java
+private RestClient timedRestClient() {
+    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(Duration.ofSeconds(2));
+    factory.setReadTimeout(Duration.ofSeconds(2));
+    return RestClient.builder().requestFactory(factory).build();
+}
+```
+
+---
+
+### Middleware / Filters
+
+```java
+@Component
+@Slf4j
+public class RequestLoggingFilter extends OncePerRequestFilter {
+
+  @Override
+  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+      FilterChain filterChain) throws ServletException, IOException {
+    long start = System.currentTimeMillis();
+    try {
+      filterChain.doFilter(request, response);
+    } finally {
+      long duration = System.currentTimeMillis() - start;
+      log.info("req method={} uri={} status={} durationMs={}",
+          request.getMethod(), request.getRequestURI(), response.getStatus(), duration);
+    }
+  }
+}
+```
+
+---
+
+### Pagination and Sorting
+
+```java
+PageRequest page = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+Page<Market> results = marketService.list(page);
+```
+
+---
+
+### Rate Limiting (Filter + Bucket4j)
+
+Security Note: The `X-Forwarded-For` header is untrusted by default because clients can spoof it.
+Only use forwarded headers when:
+1. Your app is behind a trusted reverse proxy (nginx, AWS ALB, etc.)
+2. You have registered `ForwardedHeaderFilter` as a bean
+3. You have configured `server.forward-headers-strategy=NATIVE` or `FRAMEWORK` in application properties
+4. Your proxy is configured to overwrite (not append to) the `X-Forwarded-For` header
+
+When `ForwardedHeaderFilter` is properly configured, `request.getRemoteAddr()` will automatically
+return the correct client IP from the forwarded headers. Without this configuration, use
+`request.getRemoteAddr()` directly-it returns the immediate connection IP, which is the only
+trustworthy value.
+
+```java
+@Component
+public class RateLimitFilter extends OncePerRequestFilter {
+  private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+
+  /*
+   * SECURITY: This filter uses request.getRemoteAddr() to identify clients for rate limiting.
+   *
+   * If your application is behind a reverse proxy (nginx, AWS ALB, etc.), you MUST configure
+   * Spring to handle forwarded headers properly for accurate client IP detection:
+   *
+   * 1. Set server.forward-headers-strategy=NATIVE (for cloud platforms) or FRAMEWORK in
+   *    application.properties/yaml
+   * 2. If using FRAMEWORK strategy, register ForwardedHeaderFilter:
+   *
+   *    @Bean
+   *    ForwardedHeaderFilter forwardedHeaderFilter() {
+   *        return new ForwardedHeaderFilter();
+   *    }
+   *
+   * 3. Ensure your proxy overwrites (not appends) the X-Forwarded-For header to prevent spoofing
+   * 4. Configure server.tomcat.remoteip.trusted-proxies or equivalent for your container
+   *
+   * Without this configuration, request.getRemoteAddr() returns the proxy IP, not the client IP.
+   * Do NOT read X-Forwarded-For directly—it is trivially spoofable without trusted proxy handling.
+   */
+  @Override
+  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+      FilterChain filterChain) throws ServletException, IOException {
+    // Use getRemoteAddr() which returns the correct client IP when ForwardedHeaderFilter
+    // is configured, or the direct connection IP otherwise. Never trust X-Forwarded-For
+    // headers directly without proper proxy configuration.
+    String clientIp = request.getRemoteAddr();
+
+    Bucket bucket = buckets.computeIfAbsent(clientIp,
+        k -> Bucket.builder()
+            .addLimit(Bandwidth.classic(100, Refill.greedy(100, Duration.ofMinutes(1))))
+            .build());
+
+    if (bucket.tryConsume(1)) {
+      filterChain.doFilter(request, response);
+    } else {
+      response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+    }
+  }
+}
+```
+
+---
+
+### Background Jobs
+
+Use Spring's `@Scheduled` or integrate with queues (e.g., Kafka, SQS, RabbitMQ). Keep handlers idempotent and
+observable.
+
+---
+
+### Production Defaults
+
+- Prefer constructor injection, avoid field injection
+- Enable `spring.mvc.problemdetails.enabled=true` for RFC 7807 errors (Spring Boot 3+)
+- Configure HikariCP pool sizes for workload, set timeouts
+- Use `@Transactional(readOnly = true)` for queries
+- Enforce null-safety via `@NonNull` and `Optional` where appropriate
+
+Remember: Keep controllers thin, services focused, repositories simple, and errors handled centrally. Optimize for
+maintainability and testability.

@@ -1,0 +1,137 @@
+# ==================================================================================================================
+sky:
+  apiPrefix: /api/v1
+  offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
+  offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT:}
+  offerOwnerEndpoint: api/v1/offers
+  crossOrigin:
+    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com,http://localhost:5777,http://localhost:4200,http://localhost:5555}
+
+# SPRING setup
+
+server:
+  port: ${BOOKING_PORT:5555}
+  forward-headers-strategy: framework
+
+springdoc:
+  info:
+    title: sky-booking
+    version: v1
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: '/swagger-ui.html'
+    urls:
+      - url: ${SWAGGER_URL:/v3/api-docs/public}
+        name: Booking API doc
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  application:
+    name: sky-booking
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI:https://keycloak.test:9443/realms/sky}
+  web:
+    # location from http header
+    locale-resolver: accept_header
+  mvc:
+    # for option request handling
+    dispatch-options-request: true
+    problemdetails:
+      enabled: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    table: flyway_schema_history_booking
+    baseline-on-migrate: true
+    baseline-version: 0
+  jpa:
+    # validate: schema must match entities; migrations own evolution.
+    hibernate.ddl-auto: validate
+    show-sql: ${SHOW_SQL_QUERIES:false}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Europe/Warsaw
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://host.docker.internal:5432/sky}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 5000
+      validation-timeout: 5000
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  kafka:
+    bootstrap-servers: ${KAFKA_ADDRESS:kafka-service}:${KAFKA_PORT:9092}
+    producer:
+      client-id: bookingService
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+    admin:
+      auto-create: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus"
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+resilience4j:
+  retry:
+    instances:
+      offerService:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.io.IOException
+        ignore-exceptions:
+          - com.lukk.sky.booking.domain.exception.BookingException
+  circuitbreaker:
+    instances:
+      offerService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+
+logging:
+  level:
+    org:
+      springframework:
+        web: ${SPRING_DEBUG:INFO}
+      hibernate: ${HIBERNATE_DEBUG:WARN}
+      apache:
+        kafka:
+          clients:
+            admin:
+              AdminClientConfig: WARN
+            producer:
+              ProducerConfig: WARN

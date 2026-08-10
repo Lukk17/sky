@@ -78,7 +78,7 @@ email: `lukk@test.com`
 pass: `Test1234!`
 
 ### Rest way: 
-[Postman rest](#auth0-login-rest-way)
+[REST way](#auth0-login-rest-way)
 
 --------------
 
@@ -86,7 +86,7 @@ pass: `Test1234!`
 
 ### Encrypted using Sealed Secrets
 
-Install instruction can be found [here](/k8s/_deployment-scripts/deployment_README.md)
+Install instruction can be found [here](./_deployment-scripts/deployment_README.md)
 
 Save Public Key Locally:
 ```shell
@@ -116,7 +116,7 @@ kubectl apply -f <sealed-secret-file>.yaml
 
 ### Deploy
 
-[README](/k8s/_deployment-scripts/deployment_README.md)
+[README](./_deployment-scripts/deployment_README.md)
 
 Waiting for deployment to be ready:
 ```shell
@@ -262,13 +262,11 @@ kubectl delete secret basic-auth
 
 ### Auth0 login Rest way
 
-To login via postman with auth0:
-https://community.auth0.com/t/full-auth-code-flow-using-postman/105024
+To drive the Auth0 authorization-code flow by hand, use Bruno or any REST client. The Bruno
+collection lives at `docs/api/request`; the legacy single-file collection no longer exists, so
+build the four requests below as ad-hoc requests.
 
-Request are in postman collection config/postman-collection/sky.postman_collection.json  
-inside cloud/Auth0 Code Flow
-
-IMPORTANT: clear cookies in postman (if not then Bad request error occurs)
+IMPORTANT: clear cookies in your client between attempts (otherwise a Bad request error occurs).
 
 Go step by step:
 1. Get to /authorize

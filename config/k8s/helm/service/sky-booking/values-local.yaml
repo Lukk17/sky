@@ -1,0 +1,68 @@
+deployment:
+  image:
+    repository: "sky-booking"
+    pullPolicy: "Never"
+    tag: "e2e"
+
+imagePullSecrets: []
+
+oauth2:
+  issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"
+
+ingress:
+  tls:
+    secretName: dev-ssl-cert
+
+  service:
+    name: "sky-booking-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+      nginx.ingress.kubernetes.io/auth-url: ~
+      nginx.ingress.kubernetes.io/auth-signin: ~
+      nginx.ingress.kubernetes.io/auth-response-headers: ~
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/booking/api(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swagger:
+    name: "sky-booking-swagger-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+      nginx.ingress.kubernetes.io/auth-url: ~
+      nginx.ingress.kubernetes.io/auth-signin: ~
+      nginx.ingress.kubernetes.io/auth-response-headers: ~
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/booking/swagger-ui(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swaggerResource:
+    name: "sky-booking-swagger-resources-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/v3/api-docs/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+      nginx.ingress.kubernetes.io/auth-url: ~
+      nginx.ingress.kubernetes.io/auth-signin: ~
+      nginx.ingress.kubernetes.io/auth-response-headers: ~
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/booking/v3/api-docs(/|$)(.*)"
+            pathType: "ImplementationSpecific"

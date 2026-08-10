@@ -1,11 +1,12 @@
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mysql-deployment
-  namespace: default
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
+  serviceName: mysql-service
   selector:
     matchLabels:
       component: mysql
@@ -14,6 +15,9 @@ spec:
       labels:
         component: mysql
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
       volumes:
         - name: mysql-storage
           persistentVolumeClaim:
@@ -25,6 +29,10 @@ spec:
         - name: mysql
           image: {{  .Values.image.name }}
           imagePullPolicy: {{  .Values.image.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           ports:
             - containerPort: {{  .Values.service.port }}
           volumeMounts:
@@ -32,6 +40,29 @@ spec:
               name: mysql-storage
             - name: mysql-initdb
               mountPath: /docker-entrypoint-initdb.d
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - 127.0.0.1
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:

@@ -1512,7 +1512,7 @@ metrics:
 provisioning:
   ## @param provisioning.enabled Enable kafka provisioning Job
   ##
-  enabled: false
+  enabled: true
   ## @param provisioning.numPartitions Default number of partitions for topics when unspecified
   ##
   numPartitions: 1
@@ -1528,7 +1528,22 @@ provisioning:
   ##     max.message.bytes: 64000
   ##     flush.messages: 1
   ##
-  topics: []
+  topics:
+    - name: bookingTopic-1
+      partitions: 1
+      replicationFactor: 1
+    - name: offerTopic-1
+      partitions: 1
+      replicationFactor: 1
+    # Dead Letter Topics for the kafka-reliability change. sky-notify's
+    # DefaultErrorHandler + DeadLetterPublishingRecoverer publish poison-pill /
+    # unrecoverable messages here so the live partition keeps moving.
+    - name: bookingTopic-1.DLT
+      partitions: 1
+      replicationFactor: 1
+    - name: offerTopic-1.DLT
+      partitions: 1
+      replicationFactor: 1
   ## @param provisioning.nodeSelector Node labels for pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##

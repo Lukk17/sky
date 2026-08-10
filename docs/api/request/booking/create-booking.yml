@@ -1,0 +1,57 @@
+info:
+  name: Create Booking
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/booking/api/bookings"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "offerId": "{{offerId}}",
+        "dateToBook": "2027-08-15"
+      }
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201 && res.body && res.body.id !== undefined) {
+          bru.setVar("bookingId", res.body.id);
+        }
+        // offerId is returned as a string in the booking response while the offer id
+        // is a number; compare after coercion so the link is verified correctly.
+        const createdOfferId = bru.getVar("offerId");
+        if (String(res.body.offerId) !== String(createdOfferId)) {
+          throw new Error("offerId mismatch: expected " + createdOfferId + " got " + res.body.offerId);
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.id
+      operator: isDefined
+    - expression: res.body.offerId
+      operator: isDefined
+    - expression: res.body.bookedDate
+      operator: isDefined
+    - expression: res.body.bookingUser
+      operator: isDefined
+    - expression: res.body.bookingUser
+      operator: eq
+      value: "lukk@sky.dev"
+    - expression: res.body.bookedDate
+      operator: eq
+      value: "2027-08-15"
+    - expression: res.body.ownerEmail
+      operator: eq
+      value: "lukk@sky.dev"

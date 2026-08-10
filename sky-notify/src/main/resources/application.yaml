@@ -1,0 +1,72 @@
+# ==================================================================================================================
+sky:
+  kafka:
+    consumer:
+      concurrency: 1
+
+# SPRING setup
+
+server:
+  port: ${NOTIFY_PORT:5554}
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  application:
+    name: sky-notify
+  web:
+    # location from http header
+    locale-resolver: accept_header
+  mvc:
+    # for option request handling
+    dispatch-options-request: true
+  kafka:
+    bootstrap-servers: ${KAFKA_ADDRESS:kafka-service}:${KAFKA_PORT:9092}
+    admin:
+      auto-create: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keycloak realm issuer, e.g. https://<keycloak-host>/realms/<realm>.
+          # Mandatory in non-test runs — WebSocketAuthChannelInterceptor uses the
+          # JwtDecoder built from this value. Provider-neutral env var name so the
+          # same property name works whether we point at Keycloak, Auth0, or any
+          # other OIDC IdP.
+          issuer-uri: ${OAUTH2_ISSUER_URI:https://keycloak.test:9443/realms/sky}
+
+# expose actuator endpoints (* for all)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus"
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        web: ${SPRING_DEBUG:INFO}
+        messaging:
+          simp:
+            broker:
+              SimpleBrokerMessageHandler: WARN
+      apache:
+        kafka:
+          clients:
+            consumer:
+              ConsumerConfig: WARN
+

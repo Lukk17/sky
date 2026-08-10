@@ -1,0 +1,16 @@
+hostname: "keycloak.127.0.0.1.nip.io"
+
+ingress:
+  tls:
+    secretName: dev-ssl-cert
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+  controller: "nginx"
+  hosts:
+    - host: "keycloak.127.0.0.1.nip.io"
+      paths:
+        - path: "/"
+          pathType: "Prefix"

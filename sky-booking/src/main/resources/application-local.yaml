@@ -1,0 +1,65 @@
+# ==================================================================================================================
+# SPRING setup
+
+sky:
+  offerServiceHostname: http://localhost
+  offerServiceHostPort: 5552
+  offerOwnerEndpoint: api/v1/offers
+
+server:
+  port: 5555
+
+spring:
+  web:
+    locale-resolver: accept_header
+
+  mvc:
+    dispatch-options-request: true
+
+  security:
+    user:
+      name: ${LOCAL_AUTH_USER:user}
+      password: ${LOCAL_AUTH_PASSWORD:}
+
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
+
+  jpa:
+    hibernate.ddl-auto: update
+    show-sql: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sky
+    hikari:
+      connection-timeout: 60000
+      validation-timeout: 60000
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      client-id: offerBookingService
+    admin:
+      auto-create: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO
+      apache:
+        kafka:
+          clients:
+            admin:
+              AdminClientConfig: WARN
+            producer:
+              ProducerConfig: WARN

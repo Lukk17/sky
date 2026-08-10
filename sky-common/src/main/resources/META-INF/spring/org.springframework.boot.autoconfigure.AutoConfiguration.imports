@@ -1,0 +1,8 @@
+com.lukk.sky.common.web.CorrelationIdAutoConfiguration
+com.lukk.sky.common.web.ApiVersioningAutoConfiguration
+com.lukk.sky.common.security.ResourceServerJwtAutoConfiguration
+com.lukk.sky.common.security.MethodSecurityAutoConfiguration
+com.lukk.sky.common.openapi.OpenApiAutoConfiguration
+com.lukk.sky.common.openapi.OpenApiSecurityAutoConfiguration
+com.lukk.sky.common.config.CommonConfigPropertiesAutoConfiguration
+com.lukk.sky.common.startup.StartupLogConfig

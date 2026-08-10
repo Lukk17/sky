@@ -1,14 +1,18 @@
 package com.lukk.sky.notify.domain.ports;
 
 /**
- * Service for publishing notifications.
+ * Port for emitting a serialized notification to a specific user's WebSocket destination.
  */
 public interface NotificationPublisher {
+
     /**
-     * Publish the provided data as a notification.
+     * Publish the provided JSON payload to the named user's notification queue.
      *
-     * @param data The data to be published. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code data} is {@code null}.
+     * @param targetUser principal name (matches the JWT {@code sub} or configured claim)
+     *                   the broker uses to route to {@code /user/{targetUser}/queue/notify}.
+     *                   Must not be {@code null}.
+     * @param data       JSON payload. Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code targetUser} or {@code data} is {@code null}.
      */
-    public void publish(String data);
+    void publish(String targetUser, String data);
 }

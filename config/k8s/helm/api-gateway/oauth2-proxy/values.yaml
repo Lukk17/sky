@@ -1,15 +1,15 @@
 
 image:
   name: "quay.io/oauth2-proxy/oauth2-proxy:v7.4.0"
-  imagePullPolicy: "Always"
+  imagePullPolicy: "IfNotPresent"
 
 args:
-  provider: "oidc"
+  provider: "keycloak-oidc"
   emailDomain: "*"
   upstream: "file:///dev/null"
   httpAddress: "0.0.0.0:4180"
   cookieSecure: "false"
-  oidcIssuerUrl: "https://lukk17.eu.auth0.com/"
+  oidcIssuerUrl: "https://keycloak.luksarna.com/realms/sky"
   insecureOidcAllowUnverifiedEmail: "true"
   redirectUrl: "https://skycloud.luksarna.com/oauth2/callback"
   setAuthorizationHeader: "true"
@@ -21,22 +21,25 @@ args:
   passUserHeaders: "true"
   passBasicAuth: "true"
 
+secrets:
+  clientIdKey: "keycloak-client-id"
+  clientSecretKey: "keycloak-client-secret"
+  cookieSecretKey: "keycloak-client-cookie-secret"
+  secretName: "sky-secrets"
+
 service:
   name: oauth2-proxy
   port: 4180
 
 ingress:
   name: oauth2-ingress
+  tls:
+    secretName: dev-ssl-cert
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 
   controller: "nginx"
-  tls:
-    - hosts:
-        - skycloud.luksarna.com
-      secretName: dev-ssl-cert
-
   hosts:
     - host: skycloud.luksarna.com
       paths:

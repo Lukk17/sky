@@ -1,20 +1,24 @@
 package com.lukk.sky.offer.adapters.dto;
 
 import com.lukk.sky.offer.domain.model.Offer;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.util.UUID;
 
 @Builder
 @Data
 @AllArgsConstructor
 public class OfferDTO {
 
-    private Long id;
+    private UUID id;
 
     @NotBlank
     private String hotelName;
@@ -43,6 +47,11 @@ public class OfferDTO {
     private String country;
     private String photoPath;
 
+    /**
+     * Presigned GET URL, populated by the service layer when returning DTOs to callers.
+     */
+    private String photoUrl;
+
     public static OfferDTO of(Offer offer) {
         return OfferDTO.builder()
                 .hotelName(offer.getHotelName())
@@ -59,7 +68,6 @@ public class OfferDTO {
     }
 
     public Offer toDomain() {
-
         return Offer.builder()
                 .id(this.getId())
                 .hotelName(this.getHotelName())
@@ -74,28 +82,4 @@ public class OfferDTO {
                 .build();
     }
 
-    public OfferDTO mergeWithDomain(Offer dbOffer) {
-        OfferDTO.OfferDTOBuilder builder = OfferDTO.builder();
-        builder.id(dbOffer.getId());
-        builder.hotelName(Optional.ofNullable(this.getHotelName())
-                .orElse(dbOffer.getHotelName()));
-        builder.city(Optional.ofNullable(this.getCity())
-                .orElse(dbOffer.getCity()));
-        builder.country(Optional.ofNullable(this.getCountry())
-                .orElse(dbOffer.getCountry()));
-        builder.ownerEmail(Optional.ofNullable(this.getOwnerEmail())
-                .orElse(dbOffer.getOwnerEmail()));
-        builder.description(Optional.ofNullable(this.getDescription())
-                .orElse(dbOffer.getDescription()));
-        builder.comment(Optional.ofNullable(this.getComment())
-                .orElse(dbOffer.getComment()));
-        builder.price(Optional.ofNullable(this.getPrice())
-                .orElse(dbOffer.getPrice()));
-        builder.roomCapacity(Optional.ofNullable(this.getRoomCapacity())
-                .orElse(dbOffer.getRoomCapacity()));
-        builder.photoPath(Optional.ofNullable(this.getPhotoPath())
-                .orElse(dbOffer.getPhotoPath()));
-
-        return builder.build();
-    }
 }

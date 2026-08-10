@@ -1,19 +1,47 @@
 # Local running
 
+---
+
+### Local development endpoints and credentials
+
+These are local-development-only, non-secret, intentionally committed values for the local Docker
+stack. Real environments inject secrets via Kubernetes sealed-secrets; none of the values below
+exist in any production system.
+
+| Service | URL | Credentials |
+|---|---|---|
+| Keycloak | https://keycloak.test:9443 | admin / admin (console), realm sky |
+| Keycloak realm users | https://keycloak.test:9443/realms/sky | owner/owner, user/user, lukk/test1234 |
+| Keycloak client | sky-backend | secret: dev-only-change-in-prod |
+| PostgreSQL | localhost:5432 | database sky, user sky_user, password sky_pass |
+| MinIO | http://localhost:9070 | access key admin, secret key password |
+| Kafka | localhost:9092 | no auth (Docker Compose managed) |
+
+`keycloak.test` must resolve to `127.0.0.1` in the hosts file. For the full Keycloak import and
+cert-trust runbook see config/keycloak/SETUP.md.
+
+---
+
 ### Part 1. Running on Minikube
 - [Minikube setup](#minikube-setup)
 - [Accessing app](#accessing-app)
 - [Services deployment](#services-deployment)
 
-### Part 2. Running with Gradle
+### Part 2. Running on k3d
+- [Create the cluster](#create-the-cluster)
+- [Ingress controller](#ingress-controller)
+- [Deploy the platform](#deploy-the-platform)
+- [Delete the cluster](#delete-the-cluster)
+
+### Part 3. Running with Gradle
 - [Kafka install and run](#kafka-install-and-run)
 - [Build and Run with Gradle](#build-and-run-with-gradle)
 
-### Part 3. Running with Docker
+### Part 4. Running with Docker
 - [Running app in Docker](#running-app-in-docker)
-- [Adding MySQL server to docker](#adding-mysql-server-to-docker)
+- [Adding PostgreSQL server to docker](#adding-postgresql-server-to-docker)
 
-### Part 4. Extras
+### Part 5. Extras
 - [Troubleshooting](#troubleshooting)
 - [Clearing](#clearing)
 
@@ -151,8 +179,67 @@ it will prompt for password
 ### Run deployment script:
 `services-deploy.sh`
 
-mysql, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage, etc.
+postgres, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage, etc.
 
+
+---------------------------------
+
+## Running on k3d
+
+[k3d](https://k3d.io) runs a k3s Kubernetes cluster inside Docker. It is lighter than Minikube and publishes host
+ports straight onto the in-cluster load balancer, which is how the platform is reached from the host.
+
+### Create the cluster
+
+The load balancer is published on host port 5777 (forwarded to the in-cluster ingress on port 80), so the platform
+answers at `http://localhost:5777`, the same host port as the local Docker Compose gateway.
+
+```shell
+k3d cluster create sky -p "5777:80@loadbalancer"
+```
+
+To give the cluster more agents:
+
+```shell
+k3d cluster create sky -p "5777:80@loadbalancer" --servers 1 --agents 2
+```
+
+### Ingress controller
+
+k3d enables Traefik by default on the load balancer. The production stack uses nginx-ingress, so to match it create
+the cluster with Traefik disabled and install nginx-ingress yourself:
+
+```shell
+k3d cluster create sky -p "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0" --servers 1 --agents 2
+```
+
+```shell
+helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
+```
+
+### Deploy the platform
+
+Build the service images first, then import them into the cluster so the pods do not pull from a registry. Import the
+image names and tags the Helm charts reference (see config/k8s/helm/helm_README.md):
+
+```shell
+k3d image import lukk17/sky-offer lukk17/sky-booking lukk17/sky-message lukk17/sky-notify -c sky
+```
+
+or local
+
+```shell
+k3d image import sky-offer sky-booking sky-message sky-notify -c sky
+```
+
+Install the Helm charts in the order documented in config/k8s/helm/helm_README.md. Once the ingress and services are
+up, the platform answers on the host at `http://localhost:5777/offer/api/...`.
+
+### Delete the cluster
+
+```shell
+k3d cluster delete sky
+```
 
 ---------------------------------
 
@@ -207,7 +294,7 @@ It can be run by docker-compose file or individually via Dockerfiles.
 
 #### Remember of adding env variable to your system or use Intellij RunConfiguration which has those variables.
 
-### A) Using [docker-compose.yml](../docker/docker-compose.yml)
+### A) Using [docker-compose.yaml](../docker/docker-compose.yaml)
 
 After starting, give containers a minute or so to fully start and connect with each other.  
 Before that, there could be 500 errors.  
@@ -217,7 +304,7 @@ This log need to appear in all containers:
 
 In the main project folder (before any modules) run:
 ```
-docker-compose -f config/docker/docker-compose.yml up
+docker-compose -f config/docker/docker-compose.yaml up
 ```  
 
 or in "config/docker/" folder:
@@ -227,12 +314,12 @@ docker-compose up
 
 or if you want to rebuild all:
 ```
-docker-compose -f config/docker/docker-compose.yml up --build
+docker-compose -f config/docker/docker-compose.yaml up --build
 ```
 
 or with clean build:
 ```
-docker-compose -f config/docker/docker-compose.yml build --no-cache
+docker-compose -f config/docker/docker-compose.yaml build --no-cache
 ```
 
 ### B) Using Dockerfiles, create and start/run methods
@@ -341,29 +428,30 @@ docker network rm sky-net
 
 ---------------------------------
 
-## Adding MySQL server to docker
+## Adding PostgreSQL server to docker
 
-For every microservice that needs its one database MySQL DB image should be created in docker.   
-Mysql image can be added to docker-compose.yml, for example, sky-offer DB image should look like:
+For every microservice that needs its own database a PostgreSQL DB image should be created in docker.
+A postgres image can be added to docker-compose.yaml, for example, sky-offer DB image should look like:
 
 ```yaml
-  mysql-sky_offer:
-    image: 'mysql:latest'
+  postgres-sky_offer:
+    image: 'postgres:16'
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=XXX
-      - MYSQL_DATABASE=sky_offer
+      - POSTGRES_DB=sky
+      - POSTGRES_USER=XXX
+      - POSTGRES_PASSWORD=XXX
     ports:
-      - 3307:3306
-    expose:
-      - 3306
+      - 5432:5432
 ```
 
-In microservice docker-compose.yml description dependency to right MySQL image needs to be added:
+The JDBC URL for connecting a service to this container is `jdbc:postgresql://host.docker.internal:5432/sky`.
+
+In microservice docker-compose.yaml description dependency to right PostgreSQL image needs to be added:
 
 ```yaml
     depends_on:
-      - mysql-sky_offer
+      - postgres-sky_offer
 ```
 
 
@@ -406,8 +494,8 @@ minikube ssh docker pull <imageName>
 ```
 examples:
 ```shell
-minikube ssh docker pull mysql
-minikube ssh docker pull quay.io/keycloak/keycloak:19.0.3
+minikube ssh docker pull postgres:16
+minikube ssh docker pull quay.io/keycloak/keycloak:26.2.5
 minikube ssh docker pull lukk17/sky-offer
 minikube ssh docker pull lukk17/sky-message
 ```
@@ -450,8 +538,8 @@ spec:
 
 examples:
 ```shell
-minikube image load mysql
-minikube image load quay.io/keycloak/keycloak:19.0.3
+minikube image load postgres:16
+minikube image load quay.io/keycloak/keycloak:26.2.5
 minikube image load lukk17/sky-offer
 minikube image load lukk17/sky-message
 ```

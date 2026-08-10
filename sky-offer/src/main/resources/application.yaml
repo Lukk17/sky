@@ -1,0 +1,129 @@
+# ==================================================================================================================
+sky:
+  apiPrefix: /api/v1
+  crossOrigin:
+    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com,http://localhost:5777,http://localhost:4200,http://localhost:5552}
+  s3:
+    endpoint: ${S3_ENDPOINT:http://localhost:9070}
+    region: ${S3_REGION:us-east-1}
+    bucket: ${S3_BUCKET:sky-offers}
+    access-key: ${S3_ACCESS_KEY:admin}
+    secret-key: ${S3_SECRET_KEY:password}
+    path-style-access: ${S3_PATH_STYLE:true}
+    presign-ttl: ${S3_PRESIGN_TTL:PT15M}
+
+# SPRING setup
+
+server:
+  port: ${OFFER_PORT:5552}
+  forward-headers-strategy: framework
+
+springdoc:
+  info:
+    title: sky-offer
+    version: v1
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: '/swagger-ui.html'
+    urls:
+      - url: ${SWAGGER_URL:/v3/api-docs/public}
+        name: Booking API doc
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  application:
+    name: sky-offer
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+        default-page-size: 20
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI:https://keycloak.test:9443/realms/sky}
+  web:
+    # location from http header
+    locale-resolver: accept_header
+  mvc:
+    # for option request handling
+    dispatch-options-request: true
+    problemdetails:
+      enabled: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    table: flyway_schema_history_offer
+    baseline-on-migrate: true
+    baseline-version: 0
+  jpa:
+    # validate: schema must match entities; migrations own evolution.
+    hibernate.ddl-auto: validate
+    show-sql: ${SHOW_SQL_QUERIES:false}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Europe/Warsaw
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://host.docker.internal:5432/sky}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 5000
+      validation-timeout: 5000
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  kafka:
+    bootstrap-servers: ${KAFKA_ADDRESS:kafka-service}:${KAFKA_PORT:9092}
+    producer:
+      client-id: offerService
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+    admin:
+      auto-create: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus"
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        web: ${SPRING_DEBUG:INFO}
+      hibernate: ${HIBERNATE_DEBUG:WARN}
+      apache:
+        kafka:
+          clients:
+            admin:
+              AdminClientConfig: WARN
+            producer:
+              ProducerConfig: WARN

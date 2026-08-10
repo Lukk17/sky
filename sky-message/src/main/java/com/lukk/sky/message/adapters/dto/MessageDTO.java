@@ -5,18 +5,21 @@ import com.lukk.sky.message.domain.model.Message;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
-import static com.lukk.sky.message.config.Constants.DATE_TIME_FORMAT;
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Builder
 @Data
+@AllArgsConstructor
 public class MessageDTO {
 
-    private Long id;
+    private UUID id;
 
     @Size(max = 65000)
     private String text;
@@ -29,7 +32,7 @@ public class MessageDTO {
     private String senderEmail;
 
     private String createdTime;
-    private boolean read;
+    private Boolean read;
 
     public static MessageDTO of(Message message) {
         return MessageDTO.builder()
@@ -37,7 +40,8 @@ public class MessageDTO {
                 .text(message.getText())
                 .receiverEmail(message.getReceiverEmail())
                 .senderEmail(message.getSenderEmail())
-                .createdTime(message.getCreatedTime().format(DATE_TIME_FORMAT))
+                .createdTime(DATE_TIME_FORMAT.format(message.getCreatedTime()))
+                .read(message.isRead())
                 .build();
     }
 
@@ -46,7 +50,7 @@ public class MessageDTO {
                 .text(this.getText())
                 .receiverEmail(this.getReceiverEmail())
                 .senderEmail(this.getSenderEmail())
-                .createdTime(LocalDateTime.parse(this.getCreatedTime(), DATE_TIME_FORMAT))
+                .createdTime(DATE_TIME_FORMAT.parse(this.getCreatedTime(), Instant::from))
                 .build();
     }
 }

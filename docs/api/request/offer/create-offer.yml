@@ -1,0 +1,62 @@
+info:
+  name: Create Offer
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/offer/api/owner/offers"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "hotelName": "Grand Hotel Paris",
+        "description": "A luxury hotel in the heart of Paris, steps from the Eiffel Tower.",
+        "comment": "Breakfast included.",
+        "price": 249.99,
+        "roomCapacity": 2,
+        "city": "Paris",
+        "country": "France",
+        "photoPath": "/images/grand-hotel-paris.jpg"
+      }
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201 && res.body && res.body.id !== undefined) {
+          bru.setVar("offerId", res.body.id);
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.id
+      operator: isDefined
+    - expression: res.body.hotelName
+      operator: isDefined
+    - expression: res.body.hotelName
+      operator: eq
+      value: "Grand Hotel Paris"
+    - expression: res.body.city
+      operator: eq
+      value: "Paris"
+    - expression: res.body.country
+      operator: eq
+      value: "France"
+    - expression: res.body.roomCapacity
+      operator: eq
+      value: "2"
+    - expression: res.body.price
+      operator: eq
+      value: "249.99"
+    - expression: res.body.ownerEmail
+      operator: eq
+      value: "lukk@sky.dev"

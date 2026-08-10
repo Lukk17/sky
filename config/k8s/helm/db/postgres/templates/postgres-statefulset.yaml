@@ -1,0 +1,73 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-deployment
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  serviceName: postgres-service
+  selector:
+    matchLabels:
+      component: postgres
+  template:
+    metadata:
+      labels:
+        component: postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volume.claimName }}
+      containers:
+        - name: postgres
+          image: {{ .Values.image.name }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-storage
+              subPath: pgdata
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.data.dbName }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.secret.userKey }}
+                  name: {{ .Values.secret.name }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.secret.passwordKey }}
+                  name: {{ .Values.secret.name }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata

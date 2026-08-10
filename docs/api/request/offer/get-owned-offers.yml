@@ -1,0 +1,29 @@
+info:
+  name: Get Owned Offers
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/offer/api/owner/offers?page=0&size=20"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.content
+      operator: isDefined
+    - expression: res.body.totalElements
+      operator: isDefined
+    - expression: res.body.totalElements
+      operator: gte
+      value: "1"
+    - expression: res.body.content.length
+      operator: gte
+      value: "1"

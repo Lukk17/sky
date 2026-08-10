@@ -3,6 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.volume.configMap.name }}
+  namespace: {{ .Release.Namespace }}
 data:
   initdb.sql: |
     {{  .Values.data.init }}

@@ -1,0 +1,46 @@
+info:
+  name: Send Message
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/msg/api/messages"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "text": "Hello, I am interested in your offer for Grand Hotel Paris. Is the room available for August?",
+        "receiverEmail": "owner@example.com"
+      }
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201 && res.body && res.body.id !== undefined) {
+          bru.setVar("messageId", res.body.id);
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.id
+      operator: isDefined
+    - expression: res.body.senderEmail
+      operator: isDefined
+    - expression: res.body.receiverEmail
+      operator: isDefined
+    - expression: res.body.senderEmail
+      operator: eq
+      value: "lukk@sky.dev"
+    - expression: res.body.receiverEmail
+      operator: eq
+      value: "owner@example.com"

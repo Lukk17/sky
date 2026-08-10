@@ -1,0 +1,89 @@
+deployment:
+  image:
+    repository: "sky-offer"
+    pullPolicy: "Never"
+    tag: "e2e"
+
+imagePullSecrets: []
+
+oauth2:
+  issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"
+
+ingress:
+  tls:
+    secretName: dev-ssl-cert
+
+  service:
+    name: "sky-offer-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/offer/api(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  serviceOwner:
+    name: "sky-offer-owner-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/owner/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+      nginx.ingress.kubernetes.io/auth-url: ~
+      nginx.ingress.kubernetes.io/auth-signin: ~
+      nginx.ingress.kubernetes.io/auth-response-headers: ~
+      nginx.ingress.kubernetes.io/enable-cors: ~
+      nginx.ingress.kubernetes.io/cors-allow-origin: ~
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/offer/api/owner(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swagger:
+    name: "sky-offer-swagger-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+      nginx.ingress.kubernetes.io/auth-url: ~
+      nginx.ingress.kubernetes.io/auth-signin: ~
+      nginx.ingress.kubernetes.io/auth-response-headers: ~
+      nginx.ingress.kubernetes.io/enable-cors: ~
+      nginx.ingress.kubernetes.io/cors-allow-origin: ~
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/offer/swagger-ui(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swaggerResource:
+    name: "sky-offer-swagger-resources-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/v3/api-docs/$2"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
+      nginx.ingress.kubernetes.io/auth-url: ~
+      nginx.ingress.kubernetes.io/auth-signin: ~
+      nginx.ingress.kubernetes.io/auth-response-headers: ~
+      nginx.ingress.kubernetes.io/enable-cors: ~
+      nginx.ingress.kubernetes.io/cors-allow-origin: ~
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/offer/v3/api-docs(/|$)(.*)"
+            pathType: "ImplementationSpecific"

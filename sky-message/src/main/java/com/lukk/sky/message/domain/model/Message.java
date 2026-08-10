@@ -1,34 +1,43 @@
 package com.lukk.sky.message.domain.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.Hibernate;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(of = {"id", "senderEmail", "receiverEmail"})
 @Entity
+@Table(name = "message")
 public class Message {
 
     @Id
-//    identity will use autoIncrement, AUTO will generate additional table
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @NotBlank
-//    lob will make field type as longtext
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String text;
 
-    private LocalDateTime createdTime;
+    private Instant createdTime;
 
     private boolean isRead;
 
@@ -39,4 +48,26 @@ public class Message {
     @NotBlank
     @Email
     private String senderEmail;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+
+        Message other = (Message) o;
+
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
+    }
 }

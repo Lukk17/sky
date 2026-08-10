@@ -14,3 +14,11 @@ volume:
 
 data:
   init: "CREATE DATABASE IF NOT EXISTS sky;GRANT ALL PRIVILEGES ON * . * TO '${MYSQL_USER}'@'%';FLUSH PRIVILEGES;"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 384Mi
+  limits:
+    cpu: "1"
+    memory: 768Mi

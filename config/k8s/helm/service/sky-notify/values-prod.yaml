@@ -1,0 +1,6 @@
+# Production-environment overlay for sky-notify.
+# See sky-booking/values-prod.yaml header for the rationale.
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"

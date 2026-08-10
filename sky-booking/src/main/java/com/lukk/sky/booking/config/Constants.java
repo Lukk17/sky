@@ -1,13 +1,16 @@
 package com.lukk.sky.booking.config;
 
-import java.time.format.DateTimeFormatter;
-import java.util.Set;
+import com.lukk.sky.common.kafka.SkyTopics;
 
-public class Constants {
-    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
-    public static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss dd.MM.yyyy");
-    // keep with lower case
-    public static final Set<String> USER_INFO_HEADERS = Set.of("x-auth-request-email", "x-forwarded-user");
+/**
+ * Service-local constants for sky-booking. Cross-service Kafka topic names
+ * live in {@link SkyTopics}; cross-cutting web constants live in
+ * {@code com.lukk.sky.common.web}.
+ */
+public final class Constants {
 
-    public static final String KAFKA_TOPIC = "bookingTopic-1";
+    public static final String KAFKA_TOPIC = SkyTopics.BOOKING_TOPIC;
+
+    private Constants() {
+    }
 }

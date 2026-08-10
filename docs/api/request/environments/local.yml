@@ -1,0 +1,16 @@
+name: local
+variables:
+  - name: baseUrl
+    value: http://localhost:5777
+  - name: keycloakUrl
+    value: https://keycloak.test:9443
+  - name: keycloakClientId
+    value: sky-backend
+  - name: keycloakClientSecret
+    value: dev-only-change-in-prod
+  - name: keycloakUsername
+    value: lukk
+  - name: keycloakPassword
+    value: test1234
+  - secret: true
+    name: bearerToken

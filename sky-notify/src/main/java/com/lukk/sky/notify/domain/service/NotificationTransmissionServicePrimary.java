@@ -1,7 +1,7 @@
 package com.lukk.sky.notify.domain.service;
 
 import com.google.gson.Gson;
-import com.lukk.sky.notify.adapters.dto.KafkaPayloadModel;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.notify.adapters.dto.WebsocketPayloadModel;
 import com.lukk.sky.notify.adapters.outbound.NotificationPublisherPrimary;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +10,11 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 /**
- * The primary implementation of the {@link NotificationTransmissionService} interface.
- * This implementation uses a {@link NotificationPublisherPrimary} to publish notifications.
+ * Translates a Kafka payload into a per-user WebSocket payload.
+ *
+ * <p>The Kafka producer side (booking/offer) stamps the originating user identity into
+ * {@link KafkaPayloadModel#userInfo()}; we route the WebSocket message to that user only,
+ * never broadcasting.
  */
 @Service
 @Slf4j
@@ -19,26 +22,23 @@ import org.springframework.stereotype.Service;
 @Primary
 public class NotificationTransmissionServicePrimary implements NotificationTransmissionService {
 
+    private static final Gson GSON = new Gson();
+
     private final NotificationPublisherPrimary notificationPublisherPrimary;
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation deserializes the message from JSON into a {@link KafkaPayloadModel} object.
-     * Then it creates a new {@link WebsocketPayloadModel} object, with the KafkaPayloadModel and the
-     * other provided parameters, serializes it into JSON and sends it to a client through a WebSocket.
-     * Finally, it logs the sent notification.
-     */
     @Override
-    public void notifyClient(String message, String partition, String topic, String groupId, String timestamp, String offset) {
-        Gson gson = new Gson();
+    public void notifyClient(KafkaPayloadModel payload, String partition, String topic, String groupId, String timestamp, String offset) {
+        if (payload == null || payload.userInfo() == null || payload.userInfo().isBlank()) {
+            log.warn("Dropping Kafka message with missing userInfo (topic={}, offset={})", topic, offset);
 
-        KafkaPayloadModel payloadModel = gson.fromJson(message, KafkaPayloadModel.class);
+            return;
+        }
 
-        String websocketPayloadJson = gson.toJson(new WebsocketPayloadModel(
-                payloadModel, partition, topic, groupId, timestamp, offset));
+        String websocketPayloadJson = GSON.toJson(new WebsocketPayloadModel(
+                payload, partition, topic, groupId, timestamp, offset));
 
-        notificationPublisherPrimary.publish(websocketPayloadJson);
-        log.info("Notification sent to websocket with payload: {}", websocketPayloadJson);
+        notificationPublisherPrimary.publish(payload.userInfo(), websocketPayloadJson);
+        log.info("Notification routed to user='{}' (topic={}, offset={})",
+                payload.userInfo(), topic, offset);
     }
 }

@@ -8,15 +8,29 @@
 .mvn
 
 .gradle/
+build/
+**/build/
+
+# Kafka / Zookeeper local runtime data (never tracked)
+**/kafka-logs/
+**/zookeeper-data/
+Developmentkafka*
+kafka-logs/
+zookeeper-data/
+
+# AWS Elastic Beanstalk leftovers (project no longer targets EB)
+Dockerrun.aws.json
+
+# IntelliJ "Inspect Code" export dumps (generated to the project root)
+/*.xml
+/.descriptions.xml
 
 ### IntelliJ IDEA ###
 *.iws
 *.iml
 *.ipr
 
-!.idea/
-.idea/**
-!.idea/runConfigurations
+.idea/
 
 .metadata
 bin/
@@ -76,3 +90,7 @@ local.properties
 .classpath
 
 
+
+# e2e capability test run records (kept ephemeral; README stays tracked).
+e2e/testing/runs/*.md
+!e2e/testing/runs/README.md

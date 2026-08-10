@@ -1,0 +1,62 @@
+# ==================================================================================================================
+sky:
+  apiPrefix: api/v1
+  offerServiceHostname: http://localhost
+  offerServiceHostPort: 80
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost/test-issuer
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  kafka:
+    # bootstrap-servers wired by @ServiceConnection on the Testcontainers Kafka.
+    consumer:
+      auto-offset-reset: earliest
+
+logging:
+  level:
+    state:
+      change:
+        logger: ERROR
+    kafka:
+      cluster: ERROR
+      controller:
+        KafkaController: ERROR
+        RequestSendThread: ERROR
+        ZkReplicaStateMachine: ERROR
+        TopicDeletionManager: ERROR
+      network: ERROR
+      zk: ERROR
+      coordinator: ERROR
+      log: ERROR
+      server:
+        KafkaConfig: ERROR
+        FinalizedFeatureChangeListener: ERROR
+        BrokerToControllerRequestThread: ERROR
+    org:
+      apache:
+        zookeeper: ERROR
+        kafka:
+          server:
+            ReplicaAlterLogDirsManager: ERROR
+            operationPurgatory$ExpiredOperationReaper: ERROR
+            controllerEventManager$ControllerEventThread: ERROR
+          common: ERROR
+          coordinator: ERROR
+          log: ERROR
+          clients:
+            quota: ERROR
+            Metadata: ERROR
+            consumer:
+              ConsumerConfig: ERROR
+              internals: ERROR

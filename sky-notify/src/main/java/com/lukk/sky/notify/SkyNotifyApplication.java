@@ -1,8 +1,8 @@
 package com.lukk.sky.notify;
 
-import com.lukk.sky.notify.config.propertyBind.LoggingLvlConfigProperties;
-import com.lukk.sky.notify.config.propertyBind.ManagementConfigProperties;
-import com.lukk.sky.notify.config.propertyBind.ServerConfigProperties;
+import com.lukk.sky.common.config.LoggingLvlConfigProperties;
+import com.lukk.sky.common.config.ManagementConfigProperties;
+import com.lukk.sky.common.config.ServerConfigProperties;
 import com.lukk.sky.notify.config.propertyBind.SpringConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class SkyNotifyApplication {
     private final LoggingLvlConfigProperties loggingLvlConfigProperties;
 
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         log.info(">>>>>>>>>> Notify App start <<<<<<<<<<");
         SpringApplication.run(SkyNotifyApplication.class, args);
     }
