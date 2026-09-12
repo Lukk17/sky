@@ -1,0 +1,4 @@
+# Local-environment overlay for oauth2-proxy.
+# values.yaml already targets the local k3d cluster, so this overlay adds nothing.
+# It exists so `ENV=local` resolves the same -f values-<env>.yaml path as every
+# other chart the deployment scripts install.

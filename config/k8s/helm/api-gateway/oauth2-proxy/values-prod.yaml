@@ -1,4 +1,21 @@
+# Production-environment overlay for oauth2-proxy.
+# Apply on top of values.yaml:
+#   helm upgrade --install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy \
+#     -f values-prod.yaml
+
+args:
+  cookieSecure: "true"
+  oidcIssuerUrl: "https://keycloak.luksarna.com/realms/sky"
+  redirectUrl: "https://skycloud.luksarna.com/oauth2/callback"
 
 ingress:
   tls:
     secretName: sky-tls-cert
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: skycloud.luksarna.com
+      paths:
+        - path: "/oauth2(/|$)(.*)"
+          pathType: ImplementationSpecific

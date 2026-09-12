@@ -9,9 +9,9 @@ args:
   upstream: "file:///dev/null"
   httpAddress: "0.0.0.0:4180"
   cookieSecure: "false"
-  oidcIssuerUrl: "https://keycloak.luksarna.com/realms/sky"
+  oidcIssuerUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky"
   insecureOidcAllowUnverifiedEmail: "true"
-  redirectUrl: "https://skycloud.luksarna.com/oauth2/callback"
+  redirectUrl: "http://localhost:5777/oauth2/callback"
   setAuthorizationHeader: "true"
   scope: "openid email"
   setXauthrequest: "true"
@@ -37,11 +37,11 @@ ingress:
     secretName: dev-ssl-cert
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 
   controller: "nginx"
   hosts:
-    - host: skycloud.luksarna.com
+    - host: localhost
       paths:
         - path: "/oauth2(/|$)(.*)"
           pathType: ImplementationSpecific
