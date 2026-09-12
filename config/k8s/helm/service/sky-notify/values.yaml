@@ -1,7 +1,6 @@
-# Default values for sky-offer.
+# Default values for sky-notify.
 
 name: sky-notify
-namespace: default
 
 label:
   app: sky-notify
@@ -13,17 +12,12 @@ deployment:
   image:
     repository: lukk17/sky-notify
     pullPolicy: IfNotPresent
-    tag: "1.0.2"
+    tag: "v2.0.0"
   container:
     name: sky-notify-container
   env:
     spring:
       debug: "INFO"
-      securityUser: "spring-security-user"
-      securityPass: "spring-security-pass"
-
-secret:
-  name: sky-secrets
 
 imagePullSecrets:
   - name: docker-cred
@@ -32,6 +26,24 @@ service:
   name: sky-notify-service
   type: ClusterIP
   port: "5554"
+
+ingress:
+  tls:
+    secretName: dev-ssl-cert
+
+  service:
+    name: "sky-notify-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+
+    controller: "nginx"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/notifyWebsocket"
+            pathType: "Prefix"
 
 oauth2:
   issuerUri: "https://keycloak.luksarna.com/realms/sky"

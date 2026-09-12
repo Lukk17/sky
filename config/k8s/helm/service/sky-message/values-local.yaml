@@ -2,7 +2,7 @@ deployment:
   image:
     repository: "sky-message"
     pullPolicy: "Never"
-    tag: "e2e"
+    tag: "latest"
 
 imagePullSecrets: []
 

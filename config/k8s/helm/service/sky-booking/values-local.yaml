@@ -2,7 +2,7 @@ deployment:
   image:
     repository: "sky-booking"
     pullPolicy: "Never"
-    tag: "e2e"
+    tag: "latest"
 
 imagePullSecrets: []
 

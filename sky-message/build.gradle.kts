@@ -3,7 +3,7 @@ plugins {
     id("sky.web-conventions")
 }
 
-version = "1.0.2"
+version = "2.0.0"
 description = "sky-message"
 
 dependencies {
@@ -15,8 +15,6 @@ dependencies {
     runtimeOnly(libs.postgresql)
     implementation(libs.spring.boot.starter.flyway)
     runtimeOnly(libs.flyway.database.postgresql)
-
-    implementation(libs.gson)
 
     implementation(libs.bundles.jaxb)
 

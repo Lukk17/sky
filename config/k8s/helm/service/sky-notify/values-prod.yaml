@@ -1,6 +1,10 @@
 # Production-environment overlay for sky-notify.
 # See sky-booking/values-prod.yaml header for the rationale.
 
+ingress:
+  tls:
+    secretName: sky-tls-cert
+
 deployment:
   image:
     pullPolicy: "IfNotPresent"

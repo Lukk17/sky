@@ -2,9 +2,26 @@ deployment:
   image:
     repository: "sky-notify"
     pullPolicy: "Never"
-    tag: "e2e"
+    tag: "latest"
 
 imagePullSecrets: []
 
 oauth2:
   issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"
+
+ingress:
+  tls:
+    secretName: dev-ssl-cert
+
+  service:
+    name: "sky-notify-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    controller: "nginx"
+    hosts:
+      - host: "localhost"
+        paths:
+          - path: "/notifyWebsocket"
+            pathType: "Prefix"

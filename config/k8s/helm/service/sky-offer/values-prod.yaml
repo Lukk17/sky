@@ -2,7 +2,6 @@
 # See sky-booking/values-prod.yaml header for the rationale.
 
 ingress:
-  host: "skycloud.luksarna.com"
   tls:
     secretName: sky-tls-cert
 

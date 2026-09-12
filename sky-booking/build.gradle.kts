@@ -4,7 +4,7 @@ plugins {
     id("sky.kafka-conventions")
 }
 
-version = "1.0.2"
+version = "2.0.0"
 description = "sky-booking"
 
 dependencies {
@@ -16,8 +16,6 @@ dependencies {
     runtimeOnly(libs.postgresql)
     implementation(libs.spring.boot.starter.flyway)
     runtimeOnly(libs.flyway.database.postgresql)
-
-    implementation(libs.gson)
 
     implementation(libs.resilience4j.spring.boot4)
     implementation(libs.aspectjweaver)

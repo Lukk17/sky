@@ -1,7 +1,6 @@
 # Default values for sky-offer.
 
 name: "sky-offer"
-namespace: "default"
 
 label:
   app: "sky-offer"
@@ -13,15 +12,13 @@ deployment:
   image:
     repository: "lukk17/sky-offer"
     pullPolicy: "IfNotPresent"
-    tag: "1.0.2"
+    tag: "v2.0.0"
   container:
     name: "sky-offer-container"
   env:
     spring:
       datasourceUrl: "jdbc:postgresql://postgres-service:5432/sky"
       debug: "INFO"
-      securityUser: "spring-security-user"
-      securityPass: "spring-security-pass"
     hibernate:
       showSqlQueries: "false"
       debug: "INFO"
@@ -129,7 +126,8 @@ oauth2:
   audience: "sky-backend"
 
 s3:
-  endpoint: "http://minio-service:9000"
+  endpoint: "http://floci-service:4566"
+  presignEndpoint: ""
   bucket: "sky-offers"
   accessKeySecretKey: "s3-access-key"
   secretKeySecretKey: "s3-secret-key"

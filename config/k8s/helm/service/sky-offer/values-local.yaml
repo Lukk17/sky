@@ -2,12 +2,15 @@ deployment:
   image:
     repository: "sky-offer"
     pullPolicy: "Never"
-    tag: "e2e"
+    tag: "latest"
 
 imagePullSecrets: []
 
 oauth2:
   issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"
+
+s3:
+  presignEndpoint: "http://s3.localhost:5777"
 
 ingress:
   tls:

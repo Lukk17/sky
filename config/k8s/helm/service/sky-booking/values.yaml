@@ -1,7 +1,6 @@
 # Default values for sky-booking.
 
 name: "sky-booking"
-namespace: "default"
 
 label:
   app: "sky-booking"
@@ -13,15 +12,13 @@ deployment:
   image:
     repository: "lukk17/sky-booking"
     pullPolicy: "IfNotPresent"
-    tag: "1.0.2"
+    tag: "v2.0.0"
   container:
     name: "sky-booking-container"
   env:
     spring:
       datasourceUrl: "jdbc:postgresql://postgres-service:5432/sky"
       debug: "INFO"
-      securityUser: "spring-security-user"
-      securityPass: "spring-security-pass"
     hibernate:
       showSqlQueries: "false"
       debug: "INFO"

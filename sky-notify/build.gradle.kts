@@ -3,7 +3,7 @@ plugins {
     id("sky.kafka-conventions")
 }
 
-version = "1.0.2"
+version = "2.0.0"
 description = "sky-notify"
 
 configurations {
@@ -21,7 +21,8 @@ dependencies {
     implementation(libs.spring.boot.starter.oauth2.resource.server)
     implementation("org.springframework.security:spring-security-messaging")
 
-    implementation(libs.gson)
+    compileOnly("org.jspecify:jspecify")
 
+    testImplementation("org.jspecify:jspecify")
     testImplementation(libs.testcontainers.kafka)
 }
