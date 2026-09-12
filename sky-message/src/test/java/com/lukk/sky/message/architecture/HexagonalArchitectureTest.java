@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-@DisplayName("Hexagonal Architecture — package dependency rules")
+@DisplayName("Hexagonal Architecture: package dependency rules")
 class HexagonalArchitectureTest {
 
     private static JavaClasses classes;
@@ -32,16 +32,43 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("Domain has no Spring Web / Reactor / RestTemplate / WebClient dependencies")
-    void domainClasses_whenInspected_thenHaveNoWebStackDependencies() {
+    @DisplayName("No class uses Reactor or WebFlux: sky-message is a servlet MVC service")
+    void allClasses_whenInspected_thenHaveNoReactiveStackDependencies() {
+        noClasses()
+                .should().dependOnClassesThat().resideInAnyPackage(
+                        "reactor..",
+                        "org.reactivestreams..",
+                        "org.springframework.web.reactive..",
+                        "org.springframework.http.client.reactive.."
+                )
+                .because("sky-message runs on blocking Spring MVC and declares no reactive dependency")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("Domain does not call out over HTTP: outbound calls belong to an adapter")
+    void domainClasses_whenInspected_thenHaveNoHttpClientDependencies() {
         noClasses()
                 .that().resideInAPackage("..domain..")
-                .and().areNotAnnotatedWith("org.springframework.web.bind.annotation.RestControllerAdvice")
-                .should().dependOnClassesThat().resideInAnyPackage(
-                        "org.springframework.web.client..",
-                        "org.springframework.web.reactive.function.client..",
-                        "reactor.netty.."
-                )
+                .should().dependOnClassesThat().resideInAnyPackage("org.springframework.web.client..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("Adapters depend on ports, never on a domain service implementation")
+    void adapterClasses_whenInspected_thenHaveNoDependencyOnDomainServiceImplementations() {
+        noClasses()
+                .that().resideInAPackage("..adapters..")
+                .should().dependOnClassesThat().resideInAPackage("..domain.service..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("No class acts as an OAuth2 client: sky-message only validates tokens it is given")
+    void allClasses_whenInspected_thenHaveNoOAuth2ClientDependencies() {
+        noClasses()
+                .should().dependOnClassesThat().resideInAnyPackage("org.springframework.security.oauth2.client..")
+                .because("sky-message reaches Keycloak for signing keys alone, so it holds no client credential")
                 .check(classes);
     }
 

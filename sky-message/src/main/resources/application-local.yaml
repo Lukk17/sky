@@ -1,4 +1,3 @@
-# ==================================================================================================================
 # SPRING setup
 
 server:
@@ -14,17 +13,12 @@ spring:
   mvc:
     dispatch-options-request: true
 
-  security:
-    user:
-      name: ${LOCAL_AUTH_USER:user}
-      password: ${LOCAL_AUTH_PASSWORD:}
-
   flyway:
     locations: classpath:db/migration,classpath:db/demo
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
 
   datasource:
@@ -33,7 +27,7 @@ spring:
       connection-timeout: 60000
       validation-timeout: 60000
     username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:}
+    password: ${POSTGRES_PASSWORD:local}
     driver-class-name: org.postgresql.Driver
 
 # expose actuator endpoints (* for all)

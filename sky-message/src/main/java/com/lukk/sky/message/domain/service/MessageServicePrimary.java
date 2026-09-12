@@ -1,7 +1,7 @@
 package com.lukk.sky.message.domain.service;
 
 import com.lukk.sky.message.adapters.dto.MessageDTO;
-import com.lukk.sky.message.domain.exception.MessageException;
+import com.lukk.sky.message.domain.exception.MessageAccessDeniedException;
 import com.lukk.sky.message.domain.exception.MessageNotFoundException;
 import com.lukk.sky.message.domain.model.Message;
 import com.lukk.sky.message.domain.ports.inbound.MessageService;
@@ -45,8 +45,8 @@ public class MessageServicePrimary implements MessageService {
 
     /**
      * {@inheritDoc}
-     * <p>Throws a {@link MessageException} if the message does not exist, or if the user trying to
-     * delete the message is neither the sender nor the receiver.
+     * <p>Throws a {@link MessageNotFoundException} when the message does not exist, and a
+     * {@link MessageAccessDeniedException} when the caller is neither the sender nor the receiver.
      * Logs a message when the message is successfully deleted.
      */
     @Override
@@ -54,14 +54,12 @@ public class MessageServicePrimary implements MessageService {
         Message message = messageRepo.findById(messageId)
                 .orElseThrow(() -> new MessageNotFoundException("Message with ID: " + messageId + " not found."));
 
-        if (message.getReceiverEmail().equals(userId)
-                || message.getSenderEmail().equals(userId)) {
+        if (message.getReceiverEmail().equals(userId) || message.getSenderEmail().equals(userId)) {
             messageRepo.delete(message);
             log.info("Message with ID: {} removed.", messageId);
         } else {
-            throw new MessageException(String.format(
-                    "Can't delete message with ID:%s. User: %s is not receiver nor sender.",
-                    messageId, userId));
+            throw new MessageAccessDeniedException(
+                    "You are neither the sender nor the receiver of this message.");
         }
     }
 

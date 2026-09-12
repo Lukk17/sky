@@ -21,14 +21,15 @@ public class MessageDTO {
 
     private UUID id;
 
+    @NotBlank
     @Size(max = 65000)
     private String text;
 
     @NotBlank
     @Email
+    @Size(max = 255)
     private String receiverEmail;
 
-    @Email
     private String senderEmail;
 
     private String createdTime;

@@ -7,19 +7,22 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Shared Testcontainers configuration for {@code @SpringBootTest} classes that need a
- * live datasource but are not extending {@link AbstractIntegrationTest}. Import via
- * {@code @Import(TestcontainersConfiguration.class)} on the test class.
- *
- * <p>The container is static so it is started once per JVM and reused across all
- * importing test classes.
+ * Owns the PostgreSQL image tag for every sky-message test, and exposes it as a bean for
+ * {@code @SpringBootTest} classes that need a live datasource without extending
+ * {@link AbstractIntegrationTest}. Import via {@code @Import(TestcontainersConfiguration.class)}.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
+    private static final DockerImageName POSTGRES_IMAGE = DockerImageName.parse("postgres:17-alpine");
+
+    static PostgreSQLContainer newPostgresContainer() {
+        return new PostgreSQLContainer(POSTGRES_IMAGE);
+    }
+
     @Bean
     @ServiceConnection
     PostgreSQLContainer postgresContainer() {
-        return new PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"));
+        return newPostgresContainer();
     }
 }

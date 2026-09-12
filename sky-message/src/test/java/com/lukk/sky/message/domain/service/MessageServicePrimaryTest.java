@@ -1,8 +1,9 @@
 package com.lukk.sky.message.domain.service;
 
-import com.lukk.sky.message.Assemblers.MessageAssembler;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
-import com.lukk.sky.message.domain.exception.MessageException;
+import com.lukk.sky.message.assemblers.MessageAssembler;
+import com.lukk.sky.message.domain.exception.MessageAccessDeniedException;
+import com.lukk.sky.message.domain.exception.MessageNotFoundException;
 import com.lukk.sky.message.domain.model.Message;
 import com.lukk.sky.message.domain.ports.outbound.MessageRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -21,9 +22,9 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 import java.util.Optional;
 
-import static com.lukk.sky.message.Assemblers.MessageAssembler.RECEIVER_EMAIL;
-import static com.lukk.sky.message.Assemblers.MessageAssembler.SENDER_EMAIL;
-import static com.lukk.sky.message.Assemblers.MessageAssembler.TEST_MESSAGE_ID;
+import static com.lukk.sky.message.assemblers.MessageAssembler.RECEIVER_EMAIL;
+import static com.lukk.sky.message.assemblers.MessageAssembler.SENDER_EMAIL;
+import static com.lukk.sky.message.assemblers.MessageAssembler.TEST_MESSAGE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-@DisplayName("MessageServicePrimary — domain service unit tests")
+@DisplayName("MessageServicePrimary: domain service unit tests")
 class MessageServicePrimaryTest {
 
     @Mock
@@ -59,6 +60,24 @@ class MessageServicePrimaryTest {
     }
 
     @Test
+    @DisplayName("send() to an address no identity realm holds still persists the message")
+    void send_whenReceiverIsUnknownToAnyRealm_thenPersistAndReturnDto() {
+        // given
+        MessageDTO messageDTO = MessageAssembler.getMessageDTO();
+        messageDTO.setReceiverEmail("nobody@test");
+        Message message = MessageAssembler.getMessage(TEST_MESSAGE_ID);
+        message.setReceiverEmail("nobody@test");
+        when(messageRepository.save(any())).thenReturn(message);
+
+        // when
+        MessageDTO actual = messageService.send(messageDTO);
+
+        // then
+        assertEquals("nobody@test", actual.getReceiverEmail());
+        verify(messageRepository).save(any());
+    }
+
+    @Test
     @DisplayName("remove() when caller is the receiver deletes the message from the repository")
     void remove_whenCallerIsReceiver_thenDeleteFromRepository() {
         // given
@@ -75,24 +94,26 @@ class MessageServicePrimaryTest {
     }
 
     @Test
-    @DisplayName("remove() when caller is neither sender nor receiver throws MessageException")
-    void remove_whenCallerIsNeitherSenderNorReceiver_thenThrowMessageException() {
+    @DisplayName("remove() when caller is neither sender nor receiver throws MessageAccessDeniedException")
+    void remove_whenCallerIsNeitherSenderNorReceiver_thenThrowMessageAccessDeniedException() {
         // given
         Message expected = MessageAssembler.getMessage(TEST_MESSAGE_ID);
         when(messageRepository.findById(TEST_MESSAGE_ID)).thenReturn(Optional.of(expected));
 
         // when / then
-        assertThrows(MessageException.class, () -> messageService.remove(TEST_MESSAGE_ID, "NOT_EXISTING"));
+        assertThrows(MessageAccessDeniedException.class,
+                () -> messageService.remove(TEST_MESSAGE_ID, "NOT_EXISTING"));
     }
 
     @Test
-    @DisplayName("remove() when message does not exist throws MessageException")
-    void remove_whenMessageDoesNotExist_thenThrowMessageException() {
+    @DisplayName("remove() when message does not exist throws MessageNotFoundException")
+    void remove_whenMessageDoesNotExist_thenThrowMessageNotFoundException() {
         // given
         when(messageRepository.findById(TEST_MESSAGE_ID)).thenReturn(Optional.empty());
 
         // when / then
-        assertThrows(MessageException.class, () -> messageService.remove(TEST_MESSAGE_ID, RECEIVER_EMAIL));
+        assertThrows(MessageNotFoundException.class,
+                () -> messageService.remove(TEST_MESSAGE_ID, RECEIVER_EMAIL));
 
         verify(messageRepository).findById(TEST_MESSAGE_ID);
     }

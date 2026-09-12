@@ -1,4 +1,4 @@
-package com.lukk.sky.message.Assemblers;
+package com.lukk.sky.message.assemblers;
 
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.model.Message;
@@ -20,9 +20,7 @@ public class MessageAssembler {
     public static final boolean IS_READ = false;
 
     public static List<MessageDTO> getMessagesDTO() {
-        return List.of(
-                getMessageDTO(),
-                getMessageDTO());
+        return List.of(getMessageDTO(), getMessageDTO());
     }
 
     public static MessageDTO getMessageDTO() {
@@ -36,9 +34,7 @@ public class MessageAssembler {
     }
 
     public static List<MessageDTO> getMessagesDTO_withoutCreatedAndID() {
-        return List.of(
-                getMessageDTO_withoutCreatedAndID(),
-                getMessageDTO_withoutCreatedAndID());
+        return List.of(getMessageDTO_withoutCreatedAndID(), getMessageDTO_withoutCreatedAndID());
     }
 
     public static MessageDTO getMessageDTO_withoutCreatedAndID() {
@@ -51,11 +47,8 @@ public class MessageAssembler {
     }
 
     public static List<Message> getMessages() {
-        return List.of(
-                getMessage(TEST_MESSAGE_ID),
-                getMessage(TEST_MESSAGE_ID_2));
+        return List.of(getMessage(TEST_MESSAGE_ID), getMessage(TEST_MESSAGE_ID_2));
     }
-
 
     public static Message getMessage(UUID id) {
         return Message.builder()

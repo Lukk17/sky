@@ -3,7 +3,7 @@ package com.lukk.sky.message.adapters.inbound.api;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
-import com.lukk.sky.common.openapi.ApiCommonSuccessResponses;
+import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.ports.inbound.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,9 +33,9 @@ import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
-@Tag(name = "Messages", description = "Messaging — send, retrieve, and delete user-to-user messages.")
+@Tag(name = "Messages", description = "Messaging: send, retrieve, and delete user-to-user messages.")
 @ApiCommonErrorResponses
-@ApiCommonSuccessResponses
+@ApiSecuredErrorResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -70,8 +70,7 @@ public class MessageController {
     })
     @IsUser
     @GetMapping("/messages/received")
-    public ResponseEntity<Page<MessageDTO>> getReceivedMessages(
-            @PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<Page<MessageDTO>> getReceivedMessages(@PageableDefault(size = 20) Pageable pageable) {
         String userEmail = SecurityUtils.currentUserEmail();
         log.info("Getting received messages for user: {}", userEmail);
 
@@ -86,8 +85,7 @@ public class MessageController {
     })
     @IsUser
     @GetMapping("/messages/sent")
-    public ResponseEntity<Page<MessageDTO>> getSentMessages(
-            @PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<Page<MessageDTO>> getSentMessages(@PageableDefault(size = 20) Pageable pageable) {
         String userEmail = SecurityUtils.currentUserEmail();
         log.info("Getting sent messages for user: {}", userEmail);
 
@@ -96,10 +94,8 @@ public class MessageController {
 
     @Operation(summary = "Delete message")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Message deleted",
-                    content = @Content),
-            @ApiResponse(responseCode = "404", description = "Message not found",
-                    content = @Content)
+            @ApiResponse(responseCode = "204", description = "Message deleted", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Message not found", content = @Content)
     })
     @IsUser
     @DeleteMapping("/messages/{messageId}")

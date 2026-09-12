@@ -1,12 +1,17 @@
 package com.lukk.sky.message.domain.ports.outbound;
 
+import com.lukk.sky.common.config.CommonConfigPropertiesAutoConfiguration;
+import com.lukk.sky.message.TestcontainersConfiguration;
+import com.lukk.sky.message.config.propertyBind.SpringConfigProperties;
 import com.lukk.sky.message.domain.model.Message;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
-@AutoConfigureTestDatabase
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(TestcontainersConfiguration.class)
+@ImportAutoConfiguration(CommonConfigPropertiesAutoConfiguration.class)
+@EnableConfigurationProperties(SpringConfigProperties.class)
 @ActiveProfiles("test")
-@Disabled("Re-enable after Testcontainers MySQL replaces H2 and @ConfigurationProperties scanning is wired for @DataJpaTest")
-@DisplayName("MessageRepository — JPA slice tests")
+@DisplayName("MessageRepository: JPA slice tests")
 class MessageRepositoryDataJpaTest {
 
     private static final String RECEIVER = "receiver@example.com";
