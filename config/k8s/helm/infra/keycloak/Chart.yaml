@@ -3,4 +3,4 @@ name: keycloak
 description: A Helm chart for Keycloak 26.x with a dedicated backing PostgreSQL and pre-imported sky realm.
 type: application
 version: 1.0.0
-appVersion: "26.2.5"
+appVersion: "26.5.7"

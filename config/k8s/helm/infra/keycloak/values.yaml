@@ -1,5 +1,5 @@
 image:
-  name: "quay.io/keycloak/keycloak:26.2.5"
+  name: "quay.io/keycloak/keycloak:26.5.7"
   imagePullPolicy: "IfNotPresent"
 
 hostname: "keycloak.luksarna.com"
@@ -10,7 +10,6 @@ secret:
   adminPasswordKey: "keycloak-admin-password"
   dbUserKey: "keycloak-db-user"
   dbPasswordKey: "keycloak-db-password"
-  clientSecretKey: "keycloak-client-secret"
 
 service:
   port: 8080
@@ -40,9 +39,6 @@ postgres:
     claimName: "keycloak-postgres-pvc"
     storage: "2Gi"
   dbName: "keycloak"
-  secret:
-    userKey: "keycloak-db-user"
-    passwordKey: "keycloak-db-password"
   resources:
     requests:
       cpu: 100m
