@@ -2,8 +2,8 @@
 
 Two sets of artefacts live here:
 
-- [request/](request/) — Bruno collection (OpenCollection YAML) for hands-on HTTP testing
-- [openapi/](openapi/) — OpenAPI 3.1 specs for code generation and formal reference
+- [request/](request/), the Bruno collection (OpenCollection YAML) for hands-on HTTP testing
+- [openapi/](openapi/), the OpenAPI 3.1 specs for code generation and formal reference
 
 ---
 
@@ -16,24 +16,34 @@ at that folder.
 The collection uses the [OpenCollection YAML](https://docs.usebruno.com/opencollection-yaml/overview)
 format (`.yml` request and environment files, with [request/opencollection.yml](request/opencollection.yml)
 as the collection root), which is the default format in Bruno v3.1 and later. It replaces the
-legacy single-file `.bru` format; both still open in Bruno if you are on an older release.
+legacy single-file `.bru` format. Both still open in Bruno if you are on an older release.
 
-The collection has three environments in [request/environments/](request/environments/):
+The collection has four environments in [request/environments/](request/environments/):
 
-| Environment | `baseUrl` | Target |
-|---|---|---|
-| `local` | `http://localhost:5777` (Spring Cloud Gateway) | the local Docker Compose stack |
-| `k8s` | `http://localhost:5777` (cluster ingress) | a local in-cluster deployment (k3d, minikube, kind) |
-| `prod` | `https://skycloud.luksarna.com` | the deployed GKE stack |
+| File | `--env` value | Name shown in the app | `baseUrl` | Target |
+|---|---|---|---|---|
+| [request/environments/local.yml](request/environments/local.yml) | `local` | `sky-local` | `http://localhost:5777` | The local Docker Compose or Gradle stack behind sky-gateway |
+| [request/environments/k8s.yml](request/environments/k8s.yml) | `k8s` | `k8s` | `http://localhost:5777` | A local in-cluster deployment (k3d, minikube, kind) |
+| [request/environments/prod.yml](request/environments/prod.yml) | `prod` | `sky-prod` | `https://skycloud.luksarna.com` | The deployed cluster |
+| [request/environments/ci.yml](request/environments/ci.yml) | `ci` | `sky-e2e` | `http://sky-gateway:5777` | The self-contained compose stack, from inside its own network |
 
-The `local` and `k8s` environments share the same `baseUrl` but differ in `keycloakUrl`: `local`
-mints tokens from the host Keycloak, while `k8s` mints them from the cluster's own Keycloak. Using
-the wrong one gives a valid token but a 401 on every authenticated call, since the issuer will not
-match. See [config/k8s/local_README.md](../../config/k8s/local_README.md) for the cluster runbook.
+The `--env` value is the file name without its extension, which is what the CLI resolves. The name inside
+the file is what the Bruno desktop app shows in its environment selector. They do not have to match, and
+for `local` and `prod` they deliberately do not.
 
-Both environments also define a `keycloakUrl` (the realm issuer host) plus the realm client and user
-credentials, and a `bearerToken`. You do not fill `bearerToken` by hand: the `auth/get-token.yml` request
-mints a token and saves it there automatically. See the next section.
+`local` and `k8s` share a `baseUrl` and differ in `keycloakUrl`: `local` mints tokens from the host
+Keycloak, `k8s` from the cluster's own. Picking the wrong one gives you a valid token and a 401 on every
+authenticated call, because the issuer will not match what the services validate against. See
+[config/k8s/local_README.md](../../config/k8s/local_README.md) for the cluster runbook.
+
+`ci` is the odd one out: every host in it is a Docker Compose service name, so it only resolves from inside the
+network [config/docker/docker-compose.ci.yaml](../../config/docker/docker-compose.ci.yaml) creates, and the
+`bruno` service in that file is what runs it. See
+[config/local-dev/e2e-stack_README.md](../../config/local-dev/e2e-stack_README.md) for that stack and for the CI
+gate built on it.
+
+Every environment also carries the realm client and user credentials plus an empty `bearerToken`. You never
+fill `bearerToken` by hand, the `auth/get-token.yml` request mints a token and saves it there.
 
 ---
 
@@ -47,15 +57,33 @@ The collection is self-driving: you never copy a token or an id by hand.
 1. `auth/get-token.yml` (seq 1) runs the Keycloak password grant and, in a post-response script, saves the
    returned `access_token` into the `bearerToken` environment variable. Every other request sends
    `Authorization: Bearer {{bearerToken}}`, so once this request has run they are all authenticated.
-2. `offer/create-offer.yml` saves the new offer id into the runtime variable `offerId`; the owner lookup, photo
-   upload, edit and the final delete all reference `{{offerId}}`. `booking/create-booking.yml` saves `bookingId`
-   for its delete, and `message/send-message.yml` saves `messageId` for its delete.
-3. `offer/upload-photo.yml` posts the 1x1 image at [request/sample.png](request/sample.png) as
-   `multipart/form-data` under the `file` field, the part name the controller expects.
+2. `offer/create-offer.yml` saves the new offer id into the runtime variable `offerId`, and the owner lookup, every
+   photo request, the edit and the final delete all reference `{{offerId}}`. `booking/create-booking.yml` saves
+   `bookingId` for its delete, and `message/send-message.yml` saves `messageId` for its delete.
+3. `offer/upload-photo.yml` posts the 400x200 PNG at
+   [../../e2e/fixtures/offer-photo.png](../../e2e/fixtures/offer-photo.png) as `multipart/form-data` under the
+   `file` field, the part name the controller expects. The path in the request,
+   `../../../e2e/fixtures/offer-photo.png`, leaves the collection root, which Bruno allows, so the e2e suite and the
+   collection share one copy of the image. A post-response script then fetches the presigned `photoUrl` back with
+   `bru.sendRequest` and the request asserts the canary marker `SKY-OFFER-PHOTO-CANARY-4471` is in the stored bytes.
+   The script asks for the body hex-encoded and looks for the hex of the marker, because Bruno's default safe
+   sandbox passes a response body across as a C string and a PNG truncates at its first NUL byte. If the object
+   store is unreachable, the two round-trip assertions report `presigned URL not fetchable: <reason>` and a status
+   of 0, so a store outage reads as an outage rather than as a wrong response body.
+4. Three more requests close the photo lifecycle, and each one goes back to the store rather than trusting the
+   response body. `offer/replace-photo.yml` posts a second image and requires the address of the object it replaced
+   to answer 404, which is how a leaked object fails the run. `offer/delete-photo.yml` calls
+   `DELETE /offer/api/owner/offers/{{offerId}}/photo`, expects 204, and requires the address it just cleared to be
+   gone as well. `offer/restore-photo.yml` uploads once more so the teardown still has a photo to take with it, and
+   `cleanup/delete-offer.yml` then requires that last object to be gone too. `offer/edit-offer.yml` sits in the same
+   group: it refetches the photo after the edit, which pins the rule that an edit cannot touch the stored object.
+   None of them names an object key, because the key belongs to the server and every one of them addresses the photo
+   through `{{offerId}}`.
 
 The collection runs in dependency order. The `seq` on each request and on each folder makes the run flow as:
-get token, then offer create, reads, owner lookup, photo upload and edit, then booking create, read and delete,
-then message send, read and delete, and finally the offer delete as teardown.
+get token, then offer create, the reads, the owner lookup, the photo upload, the edit, then the photo replace,
+delete and restore, then booking create, read and delete, then message send, read and delete, and finally the offer
+delete as teardown.
 
 ---
 
@@ -65,7 +93,7 @@ This is the normal way to use the collection day to day. The terminal path below
 agents, and the OpenSpec e2e runbooks.
 
 1. Open Bruno, choose "Open Collection", and point it at [request/](request/).
-2. In the environment selector (top right), pick `local`, `k8s`, or `prod`.
+2. In the environment selector (top right), pick `sky-local`, `k8s`, or `sky-prod`.
 3. To run single requests, run `auth/get-token.yml` once, then run any other request. The saved `bearerToken`
    and the chained ids (`offerId`, `bookingId`, `messageId`) are reused for the rest of the session.
 4. To run the whole flow, open the Collection Runner (right-click the collection, then "Run"). It executes in
@@ -78,13 +106,23 @@ agents, and the OpenSpec e2e runbooks.
 ### Run from the terminal (CLI)
 
 ```bash
-bru run -r --env local
+bru run -r --env local --insecure
 ```
 
 Switch `--env local` to `--env k8s` for a local in-cluster deployment, or `--env prod` for the deployed stack.
-Before a prod run, fill `keycloakClientSecret`, `keycloakUsername` and `keycloakPassword` in
-[request/environments/prod.yml](request/environments/prod.yml); the `local` and `k8s` environments already carry
-the dev realm credentials taken from `config/keycloak/sky-realm.json`.
+`--insecure` is there because `local` and `k8s` both mint tokens from a Keycloak on the self-signed development
+certificate. Drop it for `prod`, which has a real one, and for `ci`, which is plain HTTP on a private network.
+
+`ci` is not run this way. It runs inside the compose network:
+
+```bash
+docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml run --rm bruno
+```
+
+Before a prod run, fill `keycloakClientSecret`, `keycloakUsername`, and `keycloakPassword` in
+[request/environments/prod.yml](request/environments/prod.yml). The `local` and `k8s` environments already carry the
+development realm credentials, taken from
+[config/k8s/helm/infra/keycloak/files/sky-realm.json](../../config/k8s/helm/infra/keycloak/files/sky-realm.json).
 
 ---
 
@@ -102,7 +140,7 @@ For automated scripts or CI without a user, use the client-credentials grant ins
 curl -s -X POST "https://keycloak.test:9443/realms/sky/protocol/openid-connect/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials" -d "client_id=<client-id>" -d "client_secret=<client-secret>"
 ```
 
-Tokens are short-lived (typically 5 minutes); re-run `auth/get-token.yml` (or the curl above) when you get a `401`.
+Tokens live for 300 seconds. Re-run `auth/get-token.yml`, or the curl above, when you start getting `401`.
 
 ---
 
@@ -111,11 +149,15 @@ Tokens are short-lived (typically 5 minutes); re-run `auth/get-token.yml` (or th
 Locally, sky-gateway (port 5777) strips the service prefix and rewrites the path before
 forwarding to the downstream service. Production uses the same mapping via nginx-ingress.
 
-| Gateway prefix | Downstream service | Direct port |
-|---|---|---|
-| `/booking/api/**` | sky-booking | 5555 |
-| `/offer/api/**` | sky-offer | 5552 |
-| `/msg/api/**` | sky-message | 5553 |
+| Gateway prefix | Downstream service | Direct port | Rewritten to |
+|---|---|---|---|
+| `/booking/api/**` | sky-booking | 5555 | `/api/v1/{remainder}` |
+| `/offer/api/**` | sky-offer | 5552 | `/api/v1/{remainder}` |
+| `/msg/api/**` | sky-message | 5553 | `/api/v1/{remainder}` |
+| `/notifyWebsocket/**` | sky-notify | 5554 | passthrough, no rewrite |
+
+The collection covers the three REST services. The fourth row is the WebSocket handshake, which Bruno does not drive,
+and it is listed so the route table here matches [sky-gateway/README.md](../../sky-gateway/README.md).
 
 The Bruno collection uses `{{baseUrl}}/booking/api/...` etc. so requests work against
 both the gateway (local or prod) and directly against a service when you change `baseUrl`.
@@ -126,8 +168,8 @@ both the gateway (local or prod) and directly against a service when you change 
 
 sky-offer has two public endpoints that work without a bearer token:
 
-- `GET {{baseUrl}}/offer/api/offers` — list all offers
-- `POST {{baseUrl}}/offer/api/search` — keyword search
+- `GET {{baseUrl}}/offer/api/offers`, list all offers
+- `POST {{baseUrl}}/offer/api/search`, keyword search
 
 Every other endpoint across all three services requires `Authorization: Bearer <token>`.
 The sky-booking and sky-message services have no public endpoints at all.
@@ -149,11 +191,9 @@ The raw OpenAPI JSON is at `/v3/api-docs` on each service.
 
 ### OpenAPI specs
 
-The three specs in [openapi/](openapi/) document the exact contract derived from the
-controller and DTO source files. Each spec includes component schemas built from the
-Java DTO fields (types accurate to `Long`, `BigDecimal`, `LocalDate`, etc.), the Spring
-Data `Page<T>` envelope shape, and the RFC 7807 problem-detail error shape produced by
-each service's `GlobalExceptionHandler`.
+The three specs in [openapi/](openapi/) document the contract derived from the controller and DTO source
+files. Each spec carries component schemas built from the Java DTO fields, the Spring Data `Page<T>`
+envelope shape, and the problem-detail error shape the shared exception handler in `sky-common` produces.
 
 | Spec file | Service |
 |---|---|
@@ -164,8 +204,5 @@ each service's `GlobalExceptionHandler`.
 To generate a client from a spec:
 
 ```bash
-openapi-generator-cli generate \
-  -i docs/api/openapi/sky-booking.openapi.yaml \
-  -g typescript-axios \
-  -o generated/sky-booking-client
+openapi-generator-cli generate -i docs/api/openapi/sky-booking.openapi.yaml -g typescript-axios -o generated/sky-booking-client
 ```

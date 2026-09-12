@@ -1,22 +1,82 @@
-# Helm deployment guide
+# Helm charts
 
-Charts live under [config/k8s/helm/](.). The stack installs in dependency order: Sealed Secrets controller, then
-Keycloak (with its own backing PostgreSQL), then `oauth2-proxy`, then the app PostgreSQL, MinIO, Kafka, and the four
-service charts. Each step is independent; partial installs are safe to resume.
+Chart-by-chart reference for the sky platform. Every chart in [config/k8s/helm/](.) is documented here: what it installs, which values it reads, and which `sky-secrets` keys it needs.
+
+Start with the scripts. The manual sequence below them exists for the times you need to install one chart on its own, read what a chart actually does, or debug a failed release.
+
+---
+
+### Deploy with the scripts
+
+[config/k8s/_deployment-scripts/](../_deployment-scripts/) holds one script per operation, in a Linux and a Windows batch flavour. They wrap the whole manual sequence below in dependency order and wait for each dependency to become ready before moving on, which is the part that is easy to get wrong by hand.
+
+| Operation | Linux | Windows |
+|---|---|---|
+| First install | [helm/linux/helm-app-deploy.sh](../_deployment-scripts/helm/linux/helm-app-deploy.sh) | [helm/win/helm-app-deploy.bat](../_deployment-scripts/helm/win/helm-app-deploy.bat) |
+| Upgrade in place | [helm/linux/helm-app-upgrade.sh](../_deployment-scripts/helm/linux/helm-app-upgrade.sh) | [helm/win/helm-app-upgrade.bat](../_deployment-scripts/helm/win/helm-app-upgrade.bat) |
+| Remove everything | [helm/linux/helm-app-remove.sh](../_deployment-scripts/helm/linux/helm-app-remove.sh) | [helm/win/helm-app-remove.bat](../_deployment-scripts/helm/win/helm-app-remove.bat) |
+
+Run them from the repository root, not from the script directory, because every path inside them is relative to the root.
+
+Unix shell:
+
+```bash
+./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
+```
+
+Windows:
+
+```bat
+.\config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
+```
+
+They read one variable, `ENV`, which defaults to `prod` and selects the `values-<env>.yaml` overlay for the charts that ship one: keycloak, oauth2-proxy, kafka, and the four services. Set `ENV=local` to install the same releases with the local overlays.
+
+Unix shell:
+
+```bash
+ENV=local ./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
+```
+
+Windows, set the variable first:
+
+```bat
+set ENV=local
+```
+
+Then run the script as above.
+
+Two things the deploy scripts do not do, so plan around them:
+
+- They do not install an ingress controller. Install nginx-ingress first, see [config/k8s/local_README.md](../local_README.md) for a local cluster or [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md) for GKE.
+- They always install the Sealed Secrets controller and apply the sealed secrets from [config/k8s/secret/sealed/](../secret/sealed/), including under `ENV=local`. A local k3d cluster has no sealed-secrets key material, so use the plain committed secret and the step-by-step runbook in [config/k8s/local_README.md](../local_README.md) instead of the scripts.
+
+The upgrade script skips the sealed secrets and reinstalls nothing, it only runs `helm upgrade` per release. The remove script deletes every release plus the `sealed-secrets` namespace and the Kafka PVC.
+
+---
+
+### What is in the tree
+
+| Chart | Path | Installs |
+|---|---|---|
+| Sealed Secrets controller | [api-gateway/sealed-secrets-controller/](api-gateway/sealed-secrets-controller/) | The controller that decrypts SealedSecret resources in the cluster |
+| oauth2-proxy | [api-gateway/oauth2-proxy/](api-gateway/oauth2-proxy/) | The OIDC session proxy nginx delegates authentication to |
+| Keycloak | [infra/keycloak/](infra/keycloak/) | Keycloak plus its own backing PostgreSQL and the `sky` realm import |
+| floci | [infra/floci/](infra/floci/) | The S3-compatible object store that holds offer photos |
+| App PostgreSQL | [db/postgres/](db/postgres/) | The `sky` database shared by the three stateful services |
+| Database PVC | [db/database-persistent-volume-claim/](db/database-persistent-volume-claim/) | The claim the PostgreSQL StatefulSet mounts |
+| Kafka | [kafka/](kafka/) | Single-node KRaft broker on `apache/kafka`, see the Kafka section |
+| Services | [service/](service/) | One chart each for sky-offer, sky-booking, sky-message, sky-notify. There is no chart for sky-gateway, which is local-development only |
 
 ---
 
 ### Prerequisites
 
-Make sure your `kubectl` context points at the right cluster before running any `helm install` command.
-
-Check the current context:
+Point `kubectl` at the right cluster before running any install. Getting this wrong installs the production stack onto whatever context was last active.
 
 ```shell
 kubectl config current-context
 ```
-
-Switch context:
 
 ```shell
 kubectl config use-context my-cluster-name
@@ -24,12 +84,28 @@ kubectl config use-context my-cluster-name
 
 ---
 
+### Values overlays
+
+Every chart has a default `values.yaml`. Charts that differ per environment also ship `values-local.yaml` and `values-prod.yaml`, and you pass the overlay with `-f`. Helm merges the overlay on top of the defaults, so the overlay only carries the keys that change.
+
+| Chart | Default `values.yaml` targets | Overlays |
+|---|---|---|
+| oauth2-proxy | The local k3d cluster: issuer `http://keycloak.127.0.0.1.nip.io/realms/sky`, redirect `http://localhost:5777/oauth2/callback` | [values-local.yaml](api-gateway/oauth2-proxy/values-local.yaml) is empty on purpose, [values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml) swaps in the production issuer, redirect URL, host, and TLS secret |
+| Keycloak | Hostname `keycloak.luksarna.com` | [values-local.yaml](infra/keycloak/values-local.yaml) swaps the hostname to the nip.io one and turns off SSL redirect, [values-prod.yaml](infra/keycloak/values-prod.yaml) swaps the TLS secret name |
+| Services | Host `skycloud.luksarna.com`, Docker Hub images, oauth2-proxy auth annotations | `values-local.yaml` per chart points at locally built `:latest` images with `pullPolicy: Never`, hosts `localhost`, and nulls out the auth annotations, `values-prod.yaml` swaps the TLS secret name |
+| Kafka | Both environments: the single-node KRaft broker is identical either way | [values-local.yaml](kafka/values-local.yaml) and [values-prod.yaml](kafka/values-prod.yaml) are both deliberately empty of overrides, so the `-f values-<env>.yaml` argument the scripts pass resolves for this chart too |
+| floci | Both environments, with the public ingress off by default | [values-local.yaml](infra/floci/values-local.yaml) turns the ingress on for host `s3.localhost`, [values-prod.yaml](infra/floci/values-prod.yaml) states the off position explicitly |
+| PostgreSQL, PVC, Sealed Secrets | Both environments | No overlay, the defaults are environment-neutral |
+
+Namespace is never a value. Every template uses `.Release.Namespace`, so `-n <namespace>` on the Helm command decides where a release lands.
+
+---
+
 ### 1. Sealed Secrets controller
 
-Sealed Secrets encrypts Kubernetes secrets in-repo. The controller decrypts them at deploy time using a TLS key that
-lives outside the repo (store it in a password manager or a secrets vault).
+Sealed Secrets encrypts Kubernetes secrets in the repository. The controller decrypts them at deploy time using a TLS key that lives outside the repository, in a password manager or a secrets vault. Creating and rotating that key pair is covered in [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md).
 
-Create the `sealed-secrets` namespace:
+Create the namespace:
 
 ```shell
 kubectl create namespace sealed-secrets
@@ -41,27 +117,23 @@ Create the TLS secret from your stored key pair:
 kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-public.crt --key=./config/k8s/secret/sealed-private.key -n sealed-secrets
 ```
 
-Install the bundled chart (v0.22.0):
+Install the vendored chart:
 
 ```shell
 helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secrets-controller/ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 ```
 
-Alternatively, install the latest upstream chart:
+Or install the current upstream chart instead:
 
 ```shell
 helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
 ```
 
 ```shell
-helm repo update
-```
-
-```shell
 helm install sealed-secrets-controller sealed-secrets/sealed-secrets -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 ```
 
-Apply the sealed secrets (already committed to the repo):
+Apply the sealed secrets, which are committed:
 
 ```shell
 kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
@@ -71,82 +143,45 @@ kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
 kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
 ```
 
----
-
-### 2. Sky secrets — full key inventory
-
-The single `sky-secrets` SealedSecret must contain all keys listed below. Re-create and re-seal it whenever any
-credential changes.
-
-**Keycloak keys**
-
-| Key | Description |
-|---|---|
-| `keycloak-client-id` | oauth2-proxy OIDC client ID (`sky-backend`) |
-| `keycloak-client-secret` | oauth2-proxy OIDC client secret |
-| `keycloak-client-cookie-secret` | oauth2-proxy cookie encryption secret (32-byte random base64) |
-| `keycloak-admin` | Keycloak admin username |
-| `keycloak-admin-password` | Keycloak admin password |
-| `keycloak-db-user` | PostgreSQL username for the Keycloak-internal backing database |
-| `keycloak-db-password` | PostgreSQL password for the Keycloak-internal backing database |
-
-**App database keys (PostgreSQL)**
-
-| Key | Description |
-|---|---|
-| `postgres-user` | PostgreSQL username for the sky application database |
-| `postgres-password` | PostgreSQL password for the sky application database |
-
-**MinIO / S3 keys**
-
-| Key | Description |
-|---|---|
-| `minio-root-user` | MinIO root user (acts as S3 access key for admin operations) |
-| `minio-root-password` | MinIO root password |
-| `s3-access-key` | S3 access key used by sky-offer (may equal `minio-root-user`) |
-| `s3-secret-key` | S3 secret key used by sky-offer (may equal `minio-root-password`) |
-
-**Spring Security keys (used by all four services)**
-
-| Key | Description |
-|---|---|
-| `spring-security-user` | Spring Boot basic-auth username for local/dev profiles |
-| `spring-security-pass` | Spring Boot basic-auth password for local/dev profiles |
-
-**kubeseal command — re-create `sky-secrets`**
-
-Build the plain secret first (substitute real values):
-
 ```shell
-kubectl create secret generic sky-secrets \
-  --from-literal=keycloak-client-id=sky-backend \
-  --from-literal=keycloak-client-secret=<client-secret> \
-  --from-literal=keycloak-client-cookie-secret=<32-byte-random-base64> \
-  --from-literal=keycloak-admin=admin \
-  --from-literal=keycloak-admin-password=<keycloak-admin-password> \
-  --from-literal=keycloak-db-user=keycloak \
-  --from-literal=keycloak-db-password=<keycloak-db-password> \
-  --from-literal=postgres-user=sky \
-  --from-literal=postgres-password=<postgres-password> \
-  --from-literal=minio-root-user=<minio-root-user> \
-  --from-literal=minio-root-password=<minio-root-password> \
-  --from-literal=s3-access-key=<s3-access-key> \
-  --from-literal=s3-secret-key=<s3-secret-key> \
-  --from-literal=spring-security-user=<spring-user> \
-  --from-literal=spring-security-pass=<spring-pass> \
-  --dry-run=client -o yaml \
-  | kubeseal --controller-namespace sealed-secrets --controller-name sealed-secrets-controller \
-  --cert config/k8s/secret/sealed-public.crt -o yaml \
-  > config/k8s/secret/sealed/sealed-secrets.yaml
+kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
 ```
 
-Then apply it:
+---
+
+### 2. The sky-secrets key inventory
+
+Every chart that needs a credential reads it from one Secret named `sky-secrets`. In a cluster with sealed secrets that is the decrypted [config/k8s/secret/sealed/sealed-secrets.yaml](../secret/sealed/sealed-secrets.yaml). On a local cluster it is the plain committed [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml).
+
+| Key | Read by | Purpose |
+|---|---|---|
+| `postgres-user` | postgres chart, all three stateful services | Username for the `sky` database |
+| `postgres-password` | postgres chart, all three stateful services | Password for the `sky` database |
+| `s3-access-key` | sky-offer | S3 access key. The AWS SDK refuses to build a client without one, floci accepts any value |
+| `s3-secret-key` | sky-offer | S3 secret key. Same rule, and the same caveat about floci |
+| `keycloak-admin` | keycloak chart | Keycloak admin console username |
+| `keycloak-admin-password` | keycloak chart | Keycloak admin console password |
+| `keycloak-db-user` | keycloak chart | Username for Keycloak's own backing PostgreSQL, not the app database |
+| `keycloak-db-password` | keycloak chart | Password for Keycloak's own backing PostgreSQL |
+| `keycloak-client-id` | oauth2-proxy | OIDC client id, `sky-backend` |
+| `keycloak-client-secret` | oauth2-proxy | OIDC client secret |
+| `keycloak-client-cookie-secret` | oauth2-proxy | Cookie encryption secret, 32 random bytes base64-encoded |
+
+The committed [config/k8s/secret/sealed/sealed-secrets.yaml](../secret/sealed/sealed-secrets.yaml) does not match that table. It predates both the MySQL-to-PostgreSQL move and the Auth0-to-Keycloak move, and still carries `mysql-username`, `mysql-password`, `mysql-root-user`, `mysql-root-pass`, `auth0-client-id`, `auth0-client-secret`, `auth0-client-cookie-secret`, `spring-security-user`, `spring-security-pass`, `keycloak-user`, `keycloak-pass` and `postgres-pass`. Of the eleven keys the charts read, only `postgres-user` is present. Applying it as it stands gives every pod a `CreateContainerConfigError`, so re-seal it with the command below before a production deploy and treat that as a prerequisite rather than a cleanup task. The local path is unaffected: [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml) carries all eleven current keys. `minio-root-user` and `minio-root-password` are gone from both the table and the command: the floci chart needs no credentials, so nothing read them any more, and the next reseal drops them.
+
+Re-create and re-seal the whole Secret whenever any one credential changes. Substitute real values:
+
+```shell
+kubectl create secret generic sky-secrets --from-literal=postgres-user=<postgres-user> --from-literal=postgres-password=<postgres-password> --from-literal=s3-access-key=<s3-access-key> --from-literal=s3-secret-key=<s3-secret-key> --from-literal=keycloak-admin=admin --from-literal=keycloak-admin-password=<keycloak-admin-password> --from-literal=keycloak-db-user=keycloak_user --from-literal=keycloak-db-password=<keycloak-db-password> --from-literal=keycloak-client-id=sky-backend --from-literal=keycloak-client-secret=<client-secret> --from-literal=keycloak-client-cookie-secret=<32-byte-random-base64> --dry-run=client -o yaml | kubeseal --controller-namespace sealed-secrets --controller-name sealed-secrets-controller --cert config/k8s/secret/sealed-public.crt -o yaml > config/k8s/secret/sealed/sealed-secrets.yaml
+```
+
+Apply the result:
 
 ```shell
 kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
 ```
 
-To generate the 32-byte cookie secret:
+Generate the cookie secret:
 
 ```shell
 python3 -c "import os,base64; print(base64.b64encode(os.urandom(32)).decode())"
@@ -156,25 +191,13 @@ python3 -c "import os,base64; print(base64.b64encode(os.urandom(32)).decode())"
 
 ### 3. Keycloak
 
-Keycloak 26.x runs with a dedicated backing PostgreSQL (managed inside the same Helm chart, do not share the app DB).
-The `sky` realm is pre-imported via `--import-realm` on first boot. The canonical realm file is
-`config/keycloak/sky-realm.json`; the `helm-app-deploy` script syncs it into this chart's `files/sky-realm.json`
-(gitignored) before installing, so there is only one committed copy. If you run `helm install`/`helm template` for this
-chart by hand, copy the realm in first:
+Keycloak 26 runs with a dedicated backing PostgreSQL managed inside the same chart. Do not point it at the app database. The `sky` realm is imported on first boot from [infra/keycloak/files/sky-realm.json](infra/keycloak/files/sky-realm.json), which the chart publishes as a ConfigMap mounted at `/opt/keycloak/data/import`. That file is the only copy of the realm in the repository, so `helm install` and `helm template` both work straight from a clean checkout with no copy step.
 
 ```shell
-cp ./config/keycloak/sky-realm.json ./config/k8s/helm/infra/keycloak/files/sky-realm.json
+helm install keycloak ./config/k8s/helm/infra/keycloak/ -f ./config/k8s/helm/infra/keycloak/values-prod.yaml
 ```
 
-Install (production overlay swaps the TLS secret name):
-
-```shell
-helm install keycloak ./config/k8s/helm/infra/keycloak/ \
-  -f ./config/k8s/helm/infra/keycloak/values.yaml \
-  -f ./config/k8s/helm/infra/keycloak/values-prod.yaml
-```
-
-Wait for the backing PostgreSQL to be ready before Keycloak finishes startup:
+Wait for the backing PostgreSQL, then for Keycloak:
 
 ```shell
 kubectl wait --namespace default --for=condition=ready --timeout=300s pod -l component=keycloak-postgres
@@ -184,44 +207,33 @@ kubectl wait --namespace default --for=condition=ready --timeout=300s pod -l com
 kubectl wait --namespace default --for=condition=ready --timeout=300s pod -l component=keycloak
 ```
 
-Keycloak is reachable at `https://keycloak.luksarna.com`. The admin console is at
-`https://keycloak.luksarna.com/admin`.
+In production Keycloak answers at `https://keycloak.luksarna.com`, with the admin console at `https://keycloak.luksarna.com/admin`. Realm contents, users, and token minting are documented in [config/keycloak/SETUP.md](../../keycloak/SETUP.md).
 
 ---
 
-### 4. oauth2-proxy (API gateway)
+### 4. oauth2-proxy
 
-`oauth2-proxy` sits in front of authenticated routes. It validates OIDC sessions with Keycloak and forwards the
-caller's identity in `x-auth-request-email`, `x-auth-request-access-token`, and `authorization` headers so the
-downstream JWT resource-servers can verify the bearer token independently.
+`oauth2-proxy` sits in front of the authenticated routes. nginx delegates to it through `auth-url` annotations, it validates the OIDC session against Keycloak, and it forwards the caller's identity in the `x-auth-request-email`, `x-auth-request-access-token`, and `authorization` headers so each downstream resource server can verify the bearer token independently.
 
-Install oauth2-proxy with the production overlay:
+The chart uses provider `keycloak-oidc` against the `sky` realm. Its default `values.yaml` is aimed at the local k3d cluster, so a production install must pass the production overlay:
 
 ```shell
-helm install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/ -f ./config/k8s/helm/api-gateway/oauth2-proxy/values.yaml -f ./config/k8s/helm/api-gateway/oauth2-proxy/values-prod.yaml
+helm install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/ -f ./config/k8s/helm/api-gateway/oauth2-proxy/values-prod.yaml
 ```
 
 ---
 
-### 5. App database (PostgreSQL)
+### 5. App PostgreSQL
 
-The app database is PostgreSQL 16. All four services connect to it at `jdbc:postgresql://postgres-service:5432/sky`.
-The PVC (`database-persistent-volume-claim`) is installed in a separate chart to allow the database pod to be
-recreated without losing the claim.
-
-Install the PVC:
+PostgreSQL 16 holds one database named `sky`. All three stateful services connect to it at `jdbc:postgresql://postgres-service:5432/sky` and each owns its own Flyway history table. The PVC is a separate chart so the database pod can be recreated without losing the claim.
 
 ```shell
 helm install database-persistent-volume-claim ./config/k8s/helm/db/database-persistent-volume-claim/
 ```
 
-Install PostgreSQL:
-
 ```shell
 helm install postgres ./config/k8s/helm/db/postgres/
 ```
-
-Wait for it to be ready:
 
 ```shell
 kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=postgres
@@ -229,70 +241,97 @@ kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l com
 
 ---
 
-### 6. MinIO (object storage)
+### 6. floci, the object store
 
-sky-offer stores offer photos in MinIO (S3-compatible). Services reach it at `http://minio-service:9000`. The
-application creates its bucket on first boot; no manual bucket-init step is required.
+`sky-offer` stores offer photos in floci, the same AWS emulator the local developer stack runs, pinned to the same image digest. Nothing about the application changed with the swap: floci speaks the S3 API, the application creates its bucket on first boot, and there is no bucket-init step.
 
 ```shell
-helm install minio ./config/k8s/helm/infra/minio/
+helm install floci ./config/k8s/helm/infra/floci/ -f ./config/k8s/helm/infra/floci/values-local.yaml
 ```
 
 ```shell
-kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=minio
+kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=floci
 ```
+
+Swap `values-local.yaml` for `values-prod.yaml` outside a local cluster. The deployment scripts pass `values-${ENV}.yaml` and pick the right one for you.
+
+floci authenticates nobody. It accepts any credentials, does not verify a SigV4 signature, and serves an unsigned `GET` of any object. That was measured against `floci/floci:2.0.1`, not assumed. The two consequences are that `s3-access-key` and `s3-secret-key` exist only because the AWS SDK refuses to build a client without credentials, and that the public ingress is off unless an overlay turns it on. Turning it on in an environment reachable from the internet publishes every offer photo, and every write path, to anyone who can resolve the host.
+
+#### The two addresses
+
+The store has two addresses and they are not interchangeable.
+
+| Property | Chart value | What it is |
+|---|---|---|
+| `sky.s3.endpoint` | `s3.endpoint`, `http://floci-service:4566` | Where `sky-offer` sends its own S3 API calls: upload, delete, bucket creation. A cluster-internal name |
+| `sky.s3.presign-endpoint` | `s3.presignEndpoint`, empty by default | The address baked into a presigned URL handed to a client. Must resolve for that client |
+
+A presigned URL is signed against the host it names, port included, so the store has to receive the same `Host` header the signature was computed over. nginx forwards the client `Host` verbatim (`proxy_set_header Host $best_http_host`, where `$best_http_host` is `$http_host`), so routing a signed URL through the ingress works as long as the signed host is the one the client actually dials.
+
+Leave `s3.presignEndpoint` empty and the presigner falls back to `s3.endpoint`, which is the pre-existing behaviour: correct under docker-compose, where one hostname resolves on both sides, and useless in a cluster, where the internal service name resolves for nobody outside it. `values-local.yaml` sets it to `http://s3.localhost:5777`, the floci ingress on the same host port the rest of the stack answers on.
 
 ---
 
 ### 7. Kafka
 
-Install the bundled Bitnami chart (v3.5.0):
+The chart under [kafka/](kafka/) started life as Bitnami's and has since been repointed at upstream Apache images, because Bitnami delisted its whole public image catalogue and every `bitnami/*` tag the chart shipped now returns 404 from Docker Hub. [kafka/values.yaml](kafka/values.yaml) sets `image.repository: apache/kafka` at tag `3.7.1` and carries a literal `config` block with a single-node KRaft `server.properties`: `node.id=1`, `process.roles=broker,controller`, a controller quorum of `1@localhost:9093`, and replication factors of 1 throughout. `kraft.enabled` is true, `zookeeper.enabled` is false, and a `format-storage` init container runs `kafka-storage.sh format --ignore-formatted` against that same config before the broker starts, which is the step KRaft needs and the old ZooKeeper path did not. Data lives on an 8Gi PVC mounted at `/kafka`.
 
 ```shell
-helm install kafka-service ./config/k8s/helm/kafka/
+helm install kafka-service ./config/k8s/helm/kafka/ -f ./config/k8s/helm/kafka/values-local.yaml
 ```
 
-Install the latest upstream chart:
+Topic creation no longer goes through the Bitnami provisioning Job. `provisioning.enabled` is `false` and the broker config sets `auto.create.topics.enable=true`, so `offerTopic-1`, `bookingTopic-1` and their `.DLT` partners appear when a producer or consumer first touches them. The topic list under `provisioning.topics` is kept as documentation of what the platform expects, not as something the chart acts on.
 
-```shell
-helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka
-```
+Both [kafka/values-local.yaml](kafka/values-local.yaml) and [kafka/values-prod.yaml](kafka/values-prod.yaml) are deliberately empty of overrides: `values.yaml` already renders the broker both environments run. They exist so `ENV=local` and `ENV=prod` resolve the same `-f values-<env>.yaml` path the scripts pass to every other chart, and all four deployment scripts now do pass it for Kafka. The command above is what the scripts run, not a workaround for them.
+
+Two definitions of this same single-node broker now exist. The chart is one; [config/k8s/local/kafka-local.yaml](../local/kafka-local.yaml) is the other, a hand-written ConfigMap plus StatefulSet plus two Services with a nearly identical `server.properties` and the same `apache/kafka:3.7.1` image, differing mainly in using an `emptyDir` for the log directory. [config/k8s/local_README.md](../local_README.md) still applies that manifest. Use the chart, since it is what the deployment scripts install and what production runs, and treat the standalone manifest as the fallback for a cluster where you do not want Helm involved. Neither is deleted here, because collapsing them is a change with its own decision to make: say which one survives first.
 
 ---
 
 ### 8. Service charts
 
-Each service chart lives under [config/k8s/helm/service/](./service/). Install them in any order after the
-infrastructure charts are healthy.
+Each service chart lives under [service/](service/). Install them in any order once the infrastructure charts are healthy. Every install pairs the chart defaults with the environment overlay.
+
+All four deployment templates wrap the image coordinates in Helm's `required`:
+
+```text
+image: "{{ required "deployment.image.repository must be set, see values.yaml" .Values.deployment.image.repository }}:{{ required "deployment.image.tag must be set, see values.yaml" .Values.deployment.image.tag }}"
+```
+
+So an overlay or a `--set` that empties either value fails the render and names the value, instead of producing a pod spec with a half-formed image reference that only fails at pull time. `values.yaml` supplies both for every chart, `values-local.yaml` overrides them to the locally built `:latest` tag, and the release pipeline rewrites the tag in `values.yaml`. The overlay uses `latest` rather than a version because the local loop rebuilds and reimports the same tag on every change, so a version pin there would need editing in four values files and in the import command on every bump.
 
 ```shell
-helm install sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values.yaml -f ./config/k8s/helm/service/sky-offer/values-prod.yaml
+helm install sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values-prod.yaml
 ```
 
 ```shell
-helm install sky-booking ./config/k8s/helm/service/sky-booking -f ./config/k8s/helm/service/sky-booking/values.yaml -f ./config/k8s/helm/service/sky-booking/values-prod.yaml
+helm install sky-booking ./config/k8s/helm/service/sky-booking -f ./config/k8s/helm/service/sky-booking/values-prod.yaml
 ```
 
 ```shell
-helm install sky-message ./config/k8s/helm/service/sky-message -f ./config/k8s/helm/service/sky-message/values.yaml -f ./config/k8s/helm/service/sky-message/values-prod.yaml
+helm install sky-message ./config/k8s/helm/service/sky-message -f ./config/k8s/helm/service/sky-message/values-prod.yaml
 ```
 
 ```shell
-helm install sky-notify ./config/k8s/helm/service/sky-notify -f ./config/k8s/helm/service/sky-notify/values.yaml -f ./config/k8s/helm/service/sky-notify/values-prod.yaml
+helm install sky-notify ./config/k8s/helm/service/sky-notify -f ./config/k8s/helm/service/sky-notify/values-prod.yaml
 ```
 
 ---
 
 ### Ingress and routing
 
-Each service chart templates its own Ingress resources. The `nginx-ingress` controller handles TLS termination and
-path rewriting. Example for `sky-offer`:
+nginx-ingress terminates TLS and rewrites paths. Every service chart templates its own Ingress resources, `sky-notify` included. `sky-notify` is the one that does not rewrite: its single Ingress serves `/notifyWebsocket` with `pathType: Prefix`, passes the path through unchanged, carries no oauth2-proxy auth annotations because the JWT is checked on the STOMP `CONNECT` frame, and raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not close an idle WebSocket after its default 60.
 
-- Public path `/offer/api(/|$)(.*)` rewrites to `/api/v1/$2` inside the pod.
-- Owner path `/offer/api/owner(/|$)(.*)` goes through `oauth2-proxy` auth before rewriting.
-- Swagger paths `/offer/swagger-ui(/|$)(.*)` also require auth.
+Using `sky-offer` as the example:
 
-The ingress annotations for auth are:
+| Public path | Rewritten to | Authentication |
+|---|---|---|
+| `/offer/api(/\|$)(.*)` | `/api/v1/$2` | None, these are the public list and search endpoints |
+| `/offer/api/owner(/\|$)(.*)` | `/api/v1/owner/$2` | Through oauth2-proxy |
+| `/offer/swagger-ui(/\|$)(.*)` | `/swagger-ui/$2` | Through oauth2-proxy |
+| `/offer/v3/api-docs(/\|$)(.*)` | `/v3/api-docs/$2` | Through oauth2-proxy |
+
+The annotations that delegate to oauth2-proxy:
 
 ```yaml
 nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
@@ -300,73 +339,47 @@ nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/s
 nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
 ```
 
+Each `values-local.yaml` sets those three to `~`, and the ingress templates skip nil-valued annotations, so a local install gets the same paths with no auth hop.
+
 ---
 
 ### Changing the application hostname
 
-When moving from one hostname to another (e.g. `sky.luksarna.com` to `skycloud.luksarna.com`):
+When moving from one hostname to another, for example `sky.luksarna.com` to `skycloud.luksarna.com`:
 
-1. Update `spec.rules.host` in every service `values.yaml`.
-2. Update `nginx.ingress.kubernetes.io/auth-url` and `auth-signin` annotations in every service `values.yaml`.
-3. Update `redirect-url` in `oauth2-proxy/values.yaml`.
-4. Update Keycloak: add the new hostname to Allowed Redirect URIs for the `sky` client at `https://keycloak.luksarna.com/admin`.
-5. Update the Bruno environments in `docs/api/request/environments/`.
+1. Update every `hosts[].host` under `ingress.service`, `ingress.serviceOwner`, `ingress.swagger`, and `ingress.swaggerResource` in each service chart's `values.yaml`.
+2. Update the `auth-url` and `auth-signin` annotations in the same files.
+3. Update `args.redirectUrl` in [api-gateway/oauth2-proxy/values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml).
+4. Add the new callback URL to the `sky-backend` client's redirect URIs in [infra/keycloak/files/sky-realm.json](infra/keycloak/files/sky-realm.json), and to the running Keycloak if the realm is already imported.
+5. Update the Bruno environments in [docs/api/request/environments/](../../../docs/api/request/environments/).
 
 ---
 
 ### Upgrading a chart
 
 ```shell
-helm upgrade sky-offer ./config/k8s/helm/service/sky-offer
+helm upgrade sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values-prod.yaml
 ```
+
+Omitting the `-f` overlay silently reverts that release to the chart defaults, which for the service charts means the production host with production auth annotations. Always pass the same overlay you installed with. The upgrade scripts listed at the top of this document do that for you.
 
 ---
 
 ### Uninstalling
 
-Remove service charts:
+Remove the service releases:
 
 ```shell
-helm uninstall sky-offer
+helm uninstall sky-offer sky-booking sky-message sky-notify
 ```
+
+Remove the infrastructure releases:
 
 ```shell
-helm uninstall sky-booking
+helm uninstall kafka-service floci postgres database-persistent-volume-claim oauth2-proxy keycloak
 ```
 
-```shell
-helm uninstall sky-message
-```
-
-```shell
-helm uninstall sky-notify
-```
-
-Remove infrastructure:
-
-```shell
-helm uninstall kafka-service
-```
-
-```shell
-helm uninstall minio
-```
-
-```shell
-helm uninstall postgres
-```
-
-```shell
-helm uninstall database-persistent-volume-claim
-```
-
-```shell
-helm uninstall oauth2-proxy
-```
-
-```shell
-helm uninstall keycloak
-```
+Remove the Sealed Secrets controller and its key:
 
 ```shell
 helm uninstall sealed-secrets-controller -n sealed-secrets
@@ -384,50 +397,38 @@ kubectl delete -f config/k8s/secret/sealed --recursive
 
 ### Troubleshooting
 
-**`CreateContainerConfigError`**
+`CreateContainerConfigError` on a pod. The pod cannot read a key from `sky-secrets`. Three causes, in the order worth checking: the committed sealed secret still has the old MySQL and Auth0 key names (see the key inventory above, this is the likely one today), the sealed secrets were never applied, or the Sealed Secrets controller was reinstalled with a new key and every secret needs re-encrypting. See [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md).
 
-The pod cannot read a secret. Either the sealed secrets were not applied, or the Sealed Secrets controller was
-reinstalled with a new key (requiring all secrets to be re-encrypted). See
-[deployment_README.md](../_deployment-scripts/deployment_README.md#create-new-sealed-secrets).
+`cannot unmarshal number into Go struct field EnvVar...value of type string`. An environment value in a values file or a deployment template is unquoted. Wrap numeric-looking values in double quotes.
 
-**`cannot unmarshal number into Go struct field EnvVar...value of type string`**
+`cannot re-use a name that is still in use`. A release with that name is already installed. Upgrade it, or uninstall it first.
 
-Every env value in `values.yaml` and `deployment.yaml` templates must be quoted. Wrap numeric-looking values in `""`.
+Keycloak fails to start with `KC_DB` errors. Its backing PostgreSQL was not ready when Keycloak started. The `kubectl wait` between the two installs exists for exactly this, and the deploy scripts already include it.
 
-**`cannot re-use a name that is still in use`**
+`ImagePullBackOff` on the Kafka pod. The chart defaults pin an image tag Docker Hub no longer serves. See the Kafka section above.
 
-A release with that name is already installed. Either upgrade it or uninstall it first:
-
-```shell
-helm uninstall sky-offer
-```
-
-**Keycloak fails to start with `KC_DB` errors**
-
-The Keycloak-backing PostgreSQL pod must be ready before Keycloak starts. The `kubectl wait` commands in the deploy
-script handle this ordering, but if installing manually ensure `component=keycloak-postgres` is Ready before
-installing or upgrading the keycloak chart.
+`ImagePullBackOff` on a service pod in a local cluster. The `values-local.yaml` overlay sets `pullPolicy: Never` and expects the `:latest` image already imported into the node. Import it, see [config/k8s/local_README.md](../local_README.md).
 
 ---
 
 ### Common Helm commands
 
-List all installed releases:
+List installed releases:
 
 ```shell
 helm list
 ```
 
-Download a chart as a `.tgz`:
+Render a chart without installing it, which is the fastest way to see what a values change actually does:
 
 ```shell
-helm pull <chart name>
+helm template sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values-local.yaml
 ```
 
-Install from a local folder:
+Show the values a release was installed with:
 
 ```shell
-helm install <release name> ./<chart folder>
+helm get values sky-offer
 ```
 
 ---
@@ -436,7 +437,11 @@ helm install <release name> ./<chart folder>
 
 | Document | What it covers |
 |---|---|
-| [../k8s_README.md](../k8s_README.md) | kubectl reference, secrets, cluster access |
-| [../../local-dev/local_README.md](../../local-dev/local_README.md) | Local dev: Gradle, Docker, Minikube |
-| [../../../README.md](../../../README.md) | Root README: platform overview, modules, build |
-| [api-gateway/sealed-secrets-controller/sealedSecrets_README.md](api-gateway/sealed-secrets-controller/sealedSecrets_README.md) | Sealed Secrets chart parameter reference |
+| [README.md](../../../README.md) | Platform overview, modules, build, ports |
+| [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
+| [config/k8s/local_README.md](../local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
+| [config/k8s/k8s_README.md](../k8s_README.md) | Operating a running cluster with kubectl |
+| [config/local-dev/local_README.md](../../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |
+| [config/keycloak/SETUP.md](../../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
+| [api-gateway/sealed-secrets-controller/sealedSecrets_README.md](api-gateway/sealed-secrets-controller/sealedSecrets_README.md) | Vendored Sealed Secrets chart parameter reference |
+| [kafka/README.md](kafka/README.md) | Upstream Bitnami parameter reference the Kafka chart was forked from. Still useful for the parameter names, stale on every image tag and on the ZooKeeper and provisioning paths this chart no longer uses |

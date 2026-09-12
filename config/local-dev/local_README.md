@@ -1,586 +1,290 @@
-# Local running
+# Local development without Kubernetes
+
+How to run the sky backend on your own machine with Gradle or Docker Compose, against host-installed PostgreSQL, Keycloak, and an S3-compatible object store.
+
+This document owns the non-Kubernetes local setup. For a local Kubernetes cluster go to [config/k8s/local_README.md](../k8s/local_README.md) instead, which owns every cluster command and the cluster credentials.
+
+Every command runs from the repository root unless the prose says otherwise.
 
 ---
 
-### Local development endpoints and credentials
+### Endpoints and credentials
 
-These are local-development-only, non-secret, intentionally committed values for the local Docker
-stack. Real environments inject secrets via Kubernetes sealed-secrets; none of the values below
-exist in any production system.
+Development-only, non-secret, intentionally committed values. Real environments inject secrets through Kubernetes sealed secrets, and none of the values below exist in any deployed system.
 
-| Service | URL | Credentials |
+| Service | Address | Credentials |
 |---|---|---|
-| Keycloak | https://keycloak.test:9443 | admin / admin (console), realm sky |
-| Keycloak realm users | https://keycloak.test:9443/realms/sky | owner/owner, user/user, lukk/test1234 |
-| Keycloak client | sky-backend | secret: dev-only-change-in-prod |
-| PostgreSQL | localhost:5432 | database sky, user sky_user, password sky_pass |
-| MinIO | http://localhost:9070 | access key admin, secret key password |
-| Kafka | localhost:9092 | no auth (Docker Compose managed) |
+| Keycloak | https://keycloak.test:9443 | admin / admin for the console, realm `sky` |
+| Keycloak realm users | https://keycloak.test:9443/realms/sky | lukk / test1234, owner / owner, user / user |
+| Keycloak client | `sky-backend` | secret `dev-only-change-in-prod` |
+| PostgreSQL | localhost:5432 | database `sky`, user postgres, password local |
+| Object store S3 API | http://localhost:9070 | root / localdev |
+| Object store console | http://localhost:9071 | root / localdev |
+| Kafka | localhost:9092 | no authentication |
 
-`keycloak.test` must resolve to `127.0.0.1` in the hosts file. For the full Keycloak import and
-cert-trust runbook see config/keycloak/SETUP.md.
+The object-store password is `localdev` rather than `local` because MinIO refuses to start with a root password shorter than eight characters, and MinIO is still one of the two implementations this page offers:
+
+```text
+HINT: MINIO_ROOT_USER length should be at least 3, and MINIO_ROOT_PASSWORD length at least 8 characters
+```
+
+`keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows). The four services default to `OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky`, so a bare `./gradlew :sky-offer:bootRun` works without exporting anything.
 
 ---
 
-### Part 1. Running on Minikube
-- [Minikube setup](#minikube-setup)
-- [Accessing app](#accessing-app)
-- [Services deployment](#services-deployment)
+### 1. Start Keycloak
 
-### Part 2. Running on k3d
-- [Create the cluster](#create-the-cluster)
-- [Ingress controller](#ingress-controller)
-- [Deploy the platform](#deploy-the-platform)
-- [Delete the cluster](#delete-the-cluster)
+Keycloak serves HTTPS on host port 9443 using the development keypair the `local-dev` stack generates at `local-dev/auth/certificates/localhost/`, and imports the `sky` realm from the chart's realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](../k8s/helm/infra/keycloak/files/sky-realm.json). That file is the only copy of the realm in the repository.
 
-### Part 3. Running with Gradle
-- [Kafka install and run](#kafka-install-and-run)
-- [Build and Run with Gradle](#build-and-run-with-gradle)
+The commands below assume the `InstallationHelper` checkout sits beside this one, so `../InstallationHelper` resolves from the repository root. The private key stays in that project and is never copied here. Only the certificate authority is committed in this repository, at [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt), because a Docker build context cannot read a path outside the repository and the service images need the trust anchor at build time.
 
-### Part 4. Running with Docker
-- [Running app in Docker](#running-app-in-docker)
-- [Adding PostgreSQL server to docker](#adding-postgresql-server-to-docker)
+PowerShell:
 
-### Part 5. Extras
-- [Troubleshooting](#troubleshooting)
-- [Clearing](#clearing)
-
----------------------------------
-
-## Minikube setup
-
-
-### Start minikube with more resources
-```shell
-minikube start --cpus 4 --memory 16384
-```
-or with a different driver than default (docker)
-```shell
-minikube start --cpus 4 --memory 16384 --driver=virtualbox
-minikube start --cpus 4 --memory 16384 --driver=docker
-```
-for linux only
-```shell
-minikube start --cpus 4 --memory 16384 --driver=kvm2
-```
-for windows only
-```shell
-minikube start --cpus 4 --memory 16384 --driver=hyperv
-```
-Driver can be checked in Minikube configuration in  
-on Linux
-```
-~/.minikube/profiles/minikube/config.json
-``` 
-on Windows
-```
-%USERPROFILE%\.minikube\profiles\minikube\config.json
+```powershell
+docker run -d --name keycloak -p 9443:8443 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e KC_HOSTNAME=https://keycloak.test:9443 -e KC_HTTPS_CERTIFICATE_FILE=/opt/keycloak/conf/tls.crt -e KC_HTTPS_CERTIFICATE_KEY_FILE=/opt/keycloak/conf/tls.key -v "${PWD}/../InstallationHelper/local-dev/auth/certificates/localhost/localhost.crt:/opt/keycloak/conf/tls.crt:ro" -v "${PWD}/../InstallationHelper/local-dev/auth/certificates/localhost/localhost.key:/opt/keycloak/conf/tls.key:ro" -v "${PWD}/config/k8s/helm/infra/keycloak/files:/opt/keycloak/data/import:ro" quay.io/keycloak/keycloak:26.5.7 start-dev --import-realm
 ```
 
-on Windows, it needs setup in wsl - by creating `.wslconfig` file in home directory:
-```
-[wsl2]
-memory=20GB   # Limits VM memory in WSL 2 up to 3GB
-processors=4 # Makes the WSL 2 VM use two virtual processors
-```
+Unix shell:
 
-or set parameters before:
-```shell
-minikube config set memory 12288
-minikube config set cpus 4
-minikube config set disk-size 15000
+```bash
+docker run -d --name keycloak -p 9443:8443 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e KC_HOSTNAME=https://keycloak.test:9443 -e KC_HTTPS_CERTIFICATE_FILE=/opt/keycloak/conf/tls.crt -e KC_HTTPS_CERTIFICATE_KEY_FILE=/opt/keycloak/conf/tls.key -v "$(pwd)/../InstallationHelper/local-dev/auth/certificates/localhost/localhost.crt:/opt/keycloak/conf/tls.crt:ro" -v "$(pwd)/../InstallationHelper/local-dev/auth/certificates/localhost/localhost.key:/opt/keycloak/conf/tls.key:ro" -v "$(pwd)/config/k8s/helm/infra/keycloak/files:/opt/keycloak/data/import:ro" quay.io/keycloak/keycloak:26.5.7 start-dev --import-realm
 ```
 
-### Adding nginx ingress addons:
+Confirm the issuer matches what the services expect:
 
-list of addons:
-```shell
-minikube addons list
+```bash
+curl -sk https://keycloak.test:9443/realms/sky/.well-known/openid-configuration
 ```
 
-enabling addons:
-```shell
-minikube addons enable ingress
-minikube addons enable ingress-dns
+The `issuer` field must read `https://keycloak.test:9443/realms/sky`. Realm import, user management, token minting, and the certificate trust step are all in [config/keycloak/SETUP.md](../keycloak/SETUP.md).
+
+---
+
+### 2. Start PostgreSQL
+
+One database named `sky` serves all three stateful services, with every table in the `public` schema. Flyway creates and versions them on service startup, so there is nothing to load by hand.
+
+```bash
+docker run -d --name sky-postgres -p 5432:5432 -e POSTGRES_DB=sky -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=local postgres:16-alpine
 ```
 
-### Update minikube context:
-After that, kubernetes know what it is working and know its config.
-```shell
-minikube update-context
+The tag above matches the cluster, where [config/k8s/helm/db/postgres/values.yaml](../k8s/helm/db/postgres/values.yaml) pins `postgres:16-alpine`. The test suite is the one place that runs 17, through Testcontainers, so a schema change has to be valid on both.
+
+Check it answers:
+
+```bash
+docker exec sky-postgres pg_isready -U postgres -d sky
 ```
 
-### Get minikube IP
-```shell
-minikube ip
+---
+
+### 3. Start the object store
+
+`sky-offer` stores offer photos here. The only requirement is an S3-compatible endpoint on port 9070. The bucket is created on startup by [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), so no bucket-init step is needed.
+
+Two implementations both satisfy it, and the application cannot tell them apart:
+
+- floci, a local AWS emulator. This is what the shared local-dev stack on this machine runs and what the Helm chart now installs in a cluster, pinned to the same image digest in both places. It ignores the access key and the secret, so `root` and `localdev` pass through unchanged.
+- MinIO, a fallback if you want a store that actually enforces credentials. It does check the SigV4 signature, which is why the committed values are a valid MinIO pair, and it is useful precisely when you want that check exercised. Nothing in the cluster runs it any more.
+
+Floci serves the S3 API on container port 4566, and its console is a second container that has to resolve the first by name. Create a user-defined network, because the default bridge gives no name resolution between containers:
+
+```bash
+docker network create sky-objectstore
 ```
 
-### minikube dashboard - terminal needs to remain open
-```shell
-minikube dashboard
-```
-or just url address :
-```shell
-minikube dashboard --url
+```bash
+docker run -d --name floci --network sky-objectstore -p 9070:4566 -e FLOCI_STORAGE_MODE=persistent -e FLOCI_STORAGE_PERSISTENT_PATH=/app/data -v floci_data:/app/data floci/floci:2.0.1@sha256:4e451c39c7bb88e3cd4f87e8fc0c25d5b47695a51185d521e2241fa00486e8eb
 ```
 
--------------
-## Accessing app
-
-### URL
-App should be accessible from URL:  
-`http://<minikubeIP>/offer/api/home`
-
-But there can be some problems because a docker driver adds a layer of networking,
-which can complicate things and make the app not accessible.  
-As a **workaround** to access cluster nginx use port forwarding:
-```shell
-kubectl port-forward svc/ingress-nginx-controller -n ingress-nginx 80:80 443:443
-```
-now app will be accessible and under:  
-`http://localhost/offer/api/home`
-
-### With host defined in ingress
-
-Edit file (as admin):  
-on Windows
-```
-C:\Windows\System32\drivers\etc\hosts
-```
-on Linux
-```
-/etc/hosts
+```bash
+docker run -d --name floci-ui --network sky-objectstore -p 9071:4500 -e FLOCI_ENDPOINT=http://floci:4566 floci/floci-ui:0.4.0
 ```
 
-adding:
-```
-127.0.0.1 skycloud.luksarna.com
-```
-where `skycloud.luksarna.com` is host name from ingress
+MinIO instead, if you want the credential and signature checks a real store performs. PowerShell:
 
-then the app will respond at address:
-```
-http://skycloud.luksarna.com/offer/api/home
-```  
-where `offer/api/home` is service endpoint
-
--------------
-
-## Services deployment
-
-
-### Generate auth file with secrets (must be generated in api-gateway/ingress folder):
-```shell
-htpasswd -c auth <username>
-```
-where `username` will be user to log in via basic auth in nginx ingress   
-it will prompt for password
-
-### Run deployment script:
-`services-deploy.sh`
-
-postgres, sky-offer, sky-booking and sky-message services may require restarting due to creation of storage, etc.
-
-
----------------------------------
-
-## Running on k3d
-
-[k3d](https://k3d.io) runs a k3s Kubernetes cluster inside Docker. It is lighter than Minikube and publishes host
-ports straight onto the in-cluster load balancer, which is how the platform is reached from the host.
-
-### Create the cluster
-
-The load balancer is published on host port 5777 (forwarded to the in-cluster ingress on port 80), so the platform
-answers at `http://localhost:5777`, the same host port as the local Docker Compose gateway.
-
-```shell
-k3d cluster create sky -p "5777:80@loadbalancer"
+```powershell
+docker run -d --name sky-minio -p 9070:9000 -p 9071:9001 -e MINIO_ROOT_USER=root -e MINIO_ROOT_PASSWORD=localdev minio/minio:RELEASE.2024-11-07T00-52-20Z server /data --console-address ":9001"
 ```
 
-To give the cluster more agents:
+Unix shell:
 
-```shell
-k3d cluster create sky -p "5777:80@loadbalancer" --servers 1 --agents 2
+```bash
+docker run -d --name sky-minio -p 9070:9000 -p 9071:9001 -e MINIO_ROOT_USER=root -e MINIO_ROOT_PASSWORD=localdev minio/minio:RELEASE.2024-11-07T00-52-20Z server /data --console-address ":9001"
 ```
 
-### Ingress controller
+Check the endpoint answers, whichever you started. A `200` means an S3 service is listening, a `403` means MinIO is listening and rejecting the unsigned request, and a connection error means nothing is there:
 
-k3d enables Traefik by default on the load balancer. The production stack uses nginx-ingress, so to match it create
-the cluster with Traefik disabled and install nginx-ingress yourself:
-
-```shell
-k3d cluster create sky -p "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0" --servers 1 --agents 2
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9070/
 ```
 
-```shell
-helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
+The health path differs between the two, so do not reach for `/minio/health/live` unless you know you started MinIO. floci answers both `/health` and `/_floci/health`, and returns 404 for the MinIO path. The Helm chart and the local-dev compose file both probe `/_floci/health`, which is the path the image's own `HEALTHCHECK` uses.
+
+---
+
+### 4. Trust the Keycloak certificate
+
+The OAuth2 resource server fetches the JWKS over HTTPS, and the JVM rejects the certificate with a PKIX path validation error until the authority that issued it is trusted. Never disable TLS validation in committed code.
+
+Every image in this repository already trusts it, the gateway included: each `docker/Dockerfile` imports [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt) under the alias `local-dev-ca` into the JRE `cacerts` store at build time, next to the public certificate authorities rather than instead of them. Trusting the authority rather than the leaf means a reissued leaf needs no image rebuild. So the whole Docker Compose stack needs nothing extra, and this step is only for a service you start with `./gradlew bootRun` on the host, which uses your own JDK's trust store.
+
+The full procedure, with PowerShell and Unix variants for `openssl` and `keytool`, is in [config/keycloak/SETUP.md](../keycloak/SETUP.md).
+
+---
+
+### Option A, run everything in Docker Compose
+
+[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts Kafka, the four services, and the gateway. PostgreSQL, Keycloak, and the object store are not in the file, they must already be running from steps 1 to 3. The compose services reach all three on `host.docker.internal`, so they work against a host install or a separate compose project either way.
+
+There is no pre-step. The images bake the local development certificate authority into their own `cacerts`, and the compose file mounts no truststore and sets no `JAVA_TOOL_OPTIONS` override, so `up --build` is the whole flow. It used to mount one, and that was wrong: `-Djavax.net.ssl.trustStore` replaces the JVM trust store instead of adding to it, so the containers trusted Keycloak and no public authority.
+
+Start the stack:
+
+```bash
+docker compose -f config/docker/docker-compose.yaml up --build -d
 ```
 
-### Deploy the platform
+Follow the logs:
 
-Build the service images first, then import them into the cluster so the pods do not pull from a registry. Import the
-image names and tags the Helm charts reference (see config/k8s/helm/helm_README.md):
-
-```shell
-k3d image import lukk17/sky-offer lukk17/sky-booking lukk17/sky-message lukk17/sky-notify -c sky
+```bash
+docker compose -f config/docker/docker-compose.yaml logs -f
 ```
 
-or local
+Stop it:
 
-```shell
-k3d image import sky-offer sky-booking sky-message sky-notify -c sky
+```bash
+docker compose -f config/docker/docker-compose.yaml down
 ```
 
-Install the Helm charts in the order documented in config/k8s/helm/helm_README.md. Once the ingress and services are
-up, the platform answers on the host at `http://localhost:5777/offer/api/...`.
+The gateway answers at `http://localhost:5777` with the same path prefixes the cluster ingress uses, and each service port (5552 to 5555) stays published for direct calls. Give the containers a minute after start: readiness probes have a 60 second start period, and calls before that return errors.
 
-### Delete the cluster
+---
 
-```shell
-k3d cluster delete sky
+### Option B, run one service with Gradle
+
+Useful when you are changing one service and want a fast edit-run loop.
+
+Unix shell:
+
+```bash
+./gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
----------------------------------
+PowerShell:
 
-## Kafka install and run
-
-1. Download binary from:  
-   https://kafka.apache.org/downloads
-2. Extract to place like `C:/kafka`
-3. In `config` folder open `zookeeper.properties`
-   set field `dataDir` with a path like `C:/kafka/zookeeper-data`
-4. In `config` folder open `server.properties`
-   set field `log.dirs` with a path like `C:/kafka/kafka-logs`
-5. Open the terminal in kafka directory and use command:
-   ```shell
-      .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
-   ```
-   or use full path like:
-   ```shell
-   D:\Development\kafka\bin\windows\zookeeper-server-start.bat D:\Development\kafka\config\zookeeper.properties
-   ```
-   <br>
-6. In another terminal in kafka directory use command:
-   ```shell
-      .\bin\windows\kafka-server-start.bat .\config\server.properties
-   ```
-   or use full path like:
-   ```shell
-   D:\Development\kafka\bin\windows\kafka-server-start.bat D:\Development\kafka\config\server.properties
-   ```
----------------------------------
-
-## Build and Run with Gradle
-
-### All run configurations are saved in the folder:
-```
-.idea\runConfigurations
+```powershell
+.\gradlew.bat :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
-To run a build project with command:
-```
-gradle clean bootRun --args='--spring.profiles.active=local'
-```
+The `local` profile turns on the Flyway repeatable demo seed. The datasource, Kafka, S3, and issuer defaults live in each service's `application.yaml`, and the defaults already point at the host addresses in the table above, except for two:
 
-It will be using default environment variables.  
-To change them, add all variables to an operating system.
+- `POSTGRES_USER` and `POSTGRES_PASSWORD` have no defaults. Export them, or the context fails to start.
+- `KAFKA_ADDRESS` defaults to `kafka-service`, the in-cluster hostname. Set it to whatever host runs your broker.
 
----------------------------------
+A service run on the host can use the compose broker, but the broker advertises itself as `kafka:9092`, so the host needs `127.0.0.1 kafka` in its hosts file for the client to follow the advertised address after the initial connect.
 
-## Running app in Docker
+Start only the broker from compose:
 
-It can be run by docker-compose file or individually via Dockerfiles.
-
-#### Remember of adding env variable to your system or use Intellij RunConfiguration which has those variables.
-
-### A) Using [docker-compose.yaml](../docker/docker-compose.yaml)
-
-After starting, give containers a minute or so to fully start and connect with each other.  
-Before that, there could be 500 errors.  
-This log need to appear in all containers:  
-`Getting all instance registry info from the eureka server`
-
-
-In the main project folder (before any modules) run:
-```
-docker-compose -f config/docker/docker-compose.yaml up
-```  
-
-or in "config/docker/" folder:
-```
-docker-compose up
-```  
-
-or if you want to rebuild all:
-```
-docker-compose -f config/docker/docker-compose.yaml up --build
+```bash
+docker compose -f config/docker/docker-compose.yaml up -d kafka
 ```
 
-or with clean build:
-```
-docker-compose -f config/docker/docker-compose.yaml build --no-cache
+`sky-message` needs no broker at all, it has no Kafka dependency.
+
+---
+
+### Building the images by hand
+
+Compose builds the images for you and tags each one twice from a single build. Build one on its own when you want to push it or import it into a cluster, and carry both tags by hand too: the version tag records what is inside, and `latest` is what the Compose stack runs and what the local Helm overlays expect on a cluster node. A local tag carries no leading `v`, unlike a published one, and `SKY_VERSION` overrides the version Compose uses. Every build runs from the repository root, not from the module directory, because the Dockerfile copies `settings.gradle.kts`, `buildSrc`, and `sky-common` alongside the service.
+
+```bash
+docker build . -f sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
 ```
 
-### B) Using Dockerfiles, create and start/run methods
-
-#### Prerequisite
-
-Create a network for microservices:
+```bash
+docker build . -f sky-booking/docker/Dockerfile -t sky-booking:2.0.0 -t sky-booking:latest
 ```
+
+```bash
+docker build . -f sky-message/docker/Dockerfile -t sky-message:2.0.0 -t sky-message:latest
+```
+
+```bash
+docker build . -f sky-notify/docker/Dockerfile -t sky-notify:2.0.0 -t sky-notify:latest
+```
+
+```bash
+docker build . -f sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gateway:latest
+```
+
+To run them outside compose, put them on one network so they can resolve each other by container name:
+
+```bash
 docker network create sky-net
 ```
 
-ALL DOCKER BUILD COMMANDS NEED TO BE STARTED FROM the MAIN (SKY) FOLDER,   
-NOT FROM EACH MODULE FOLDER  
-due to the gradle build dependency on config module Gradle file
-
-
-#### 1. sky-booking
-
-Build:
-```
-docker build . -f sky-booking/docker/Dockerfile -t sky-booking:latest --no-cache
-```  
-
-Docker container creation:
-```
-docker create --name sky-booking --network sky-net sky-booking:latest
-```  
-
-Starting a container:
-```
-docker start sky-booking
+```bash
+docker run -d --name sky-offer --network sky-net -p 5552:5552 sky-offer:latest
 ```
 
-#### 2. sky-offer
+---
 
-Build:
-```
-docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest --no-cache
-```  
+### Troubleshooting
 
-Docker container creation:
-```
-docker create --name sky-offer --network sky-net sky-offer:latest
-```  
+A service exits at startup with `Failed to configure a DataSource`. `POSTGRES_USER` or `POSTGRES_PASSWORD` is unset. Neither has a default in `application.yaml`.
 
-Starting a container:
-```
-docker start sky-offer
-```
+A service logs `PKIX path validation failed`. The Keycloak certificate is not trusted by that JVM. Go back to step 4.
 
-#### 3. sky-notify
+A service starts but every authenticated call returns 401. The token came from a different issuer than the one the service validates against. Compare the `iss` claim in the token with the service's `OAUTH2_ISSUER_URI`. This is the usual symptom of pointing a host-run service at the cluster Keycloak, or the reverse.
 
-Build:
-```
-docker build . -f sky-notify/docker/Dockerfile -t sky-notify:latest --no-cache
-```  
+Photo upload fails while everything else works. The status says which half to look at. A 503 with `Retry-After: 10` means the store never answered, so check that the container from step 3 is up and listening on port 9070. A 502 means the store answered and refused, so check `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_BUCKET` against what the store actually holds. Either way `sky-offer` logs a warning and boots anyway when the bucket check fails at startup, so the failure only shows up on the photo endpoints.
 
-Docker container creation:
-```
-docker create --name sky-notify --network sky-net sky-notify:latest
-```  
+---
 
-Starting a container:
-```
-docker start sky-notify
+### Clearing
+
+Remove the local infrastructure containers:
+
+```bash
+docker rm -f keycloak sky-postgres floci floci-ui
 ```
 
-#### 4. sky-message
+Remove the compose stack including its Kafka volume:
 
-Build:
-```
-docker build . -f sky-message/docker/Dockerfile -t sky-message:latest --no-cache
-```  
-
-Docker container creation:
-```
-docker create --name sky-message --network sky-net sky-message:latest
-```  
-
-Starting a container:
-```
-docker start sky-message
-```  
-
-
-#### Running instead creating containers:
-```
-docker run sky-booking:latest 
-docker run sky-offer:latest 
-docker run sky-notify:latest 
-docker run sky-message:latest 
-```  
-
-Now you need to add them into the same network:
-```  
-docker network connect sky-net sky-booking  
-docker network connect sky-net sky-offer  
-docker network connect sky-net sky-notify  
-docker network connect sky-net sky-message 
+```bash
+docker compose -f config/docker/docker-compose.yaml down -v
 ```
 
-If the network is not needed can be removed with:
-```
-docker network rm sky-net
-```
+List this project's images:
 
----------------------------------
-
-## Adding PostgreSQL server to docker
-
-For every microservice that needs its own database a PostgreSQL DB image should be created in docker.
-A postgres image can be added to docker-compose.yaml, for example, sky-offer DB image should look like:
-
-```yaml
-  postgres-sky_offer:
-    image: 'postgres:16'
-    restart: always
-    environment:
-      - POSTGRES_DB=sky
-      - POSTGRES_USER=XXX
-      - POSTGRES_PASSWORD=XXX
-    ports:
-      - 5432:5432
+```bash
+docker images -a --filter "reference=sky-*"
 ```
 
-The JDBC URL for connecting a service to this container is `jdbc:postgresql://host.docker.internal:5432/sky`.
+Remove them, PowerShell:
 
-In microservice docker-compose.yaml description dependency to right PostgreSQL image needs to be added:
-
-```yaml
-    depends_on:
-      - postgres-sky_offer
+```powershell
+docker images -a --filter "reference=sky-*" --format "{{.ID}}" | ForEach-Object { docker rmi -f $_ }
 ```
 
+Remove them, Unix shell:
 
----------------------------------
-
-## Troubleshooting
-
-### Load Balancer
-if type loadBalancer after minikube tunnel  
-`http://<minikubeIP>:<external port>/`  
-to get external port run:
-```shell
-kubectl get service sky-offer-service        
-```
-you will get something like that
-```shell
-NAME                TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)          AGE
-sky-offer-service   LoadBalancer   10.106.230.5   10.106.230.5   5552:31182/TCP   5h43m
-```
-under ports there is `5552:31182/TCP` - you need to use `31182` port.
-
-### Minikube
-
-#### Changing Windows Docker max RAM usage
-
-Create `.wslconfig` in user directory
-populate with this config:
-```
-[wsl2]
-memory=26GB # Limits VM memory in WSL 2 to 4 GB
-processors=6 # Makes the WSL 2 VM use two virtual processors
-```
-restart service `LxssManager` to restart WSL settings
-
-#### If error with pulling docker images:
-
-pull images with this command:
-```shell
-minikube ssh docker pull <imageName>
-```
-examples:
-```shell
-minikube ssh docker pull postgres:16
-minikube ssh docker pull quay.io/keycloak/keycloak:26.2.5
-minikube ssh docker pull lukk17/sky-offer
-minikube ssh docker pull lukk17/sky-message
+```bash
+docker images -a --filter "reference=sky-*" --format "{{.ID}}" | xargs -r docker rmi -f
 ```
 
-#### If not working, start in containerd runtime:
+---
 
-```shell
-minikube start --container-runtime=containerd
-```
+### Docs map
 
-or via setting parameter:
-```shell
-minikube config set container-runtime containerd
-```
-Valid options: docker, cri-o, containerd (default: auto)
-
-Sometimes change of a driver helps:
-```shell
-minikube start --driver=none
-```
-
-#### If not working, try cache images:
-```shell
-minikube cache add <dockerhub username>/<repo name>:<version optional>
-```
-
-due to cache deprecation best to use:
-```shell
-minikube image load <dockerhub username>/<repo name>:<version optional>
-```
-
-AND add in deployment's definition:
-```yaml
-spec:
-    template:
-        spec:
-            containers:
-                imagePullPolicy: Never
-```
-
-examples:
-```shell
-minikube image load postgres:16
-minikube image load quay.io/keycloak/keycloak:26.2.5
-minikube image load lukk17/sky-offer
-minikube image load lukk17/sky-message
-```
-
-additional thing to try:
-```shell
-docker pull <imageName>
-```
-<br>
-
-#### minikube visibility under localhost (127.0.0.1") - terminal needs to remain open
-```shell
-minikube tunnel
-```
-or else get its address:
-```shell
-minikube ip
-```
-
-create a tunnel for service:
-```shell
-minikube service -n default <serviceName> --url
-```
-where `serviceName` is from `kubectl get service`
-and `default` is namespace
-
-
--------------
-
-
-## Clearing
-
-```shell
-minikube stop
-```
-
-```shell
-minikube delete
-```
-
-full delete:
-```shell
-minikube delete --all
-```
+| Document | What it covers |
+|---|---|
+| [README.md](../../README.md) | Platform overview, modules, build, ports |
+| [config/local-dev/e2e-stack_README.md](e2e-stack_README.md) | The self-contained end-to-end stack and the Bruno gate in CI |
+| [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
+| [config/k8s/helm/helm_README.md](../k8s/helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
+| [config/k8s/_deployment-scripts/deployment_README.md](../k8s/_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
+| [config/k8s/k8s_README.md](../k8s/k8s_README.md) | Operating a running cluster with kubectl |
+| [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |

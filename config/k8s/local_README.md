@@ -1,79 +1,91 @@
-# Local k3d cluster — sky platform
+# Local Kubernetes cluster
 
-This document is the single source of commands needed to stand up the full sky backend stack
-on a local k3d cluster and verify it with the Bruno collection.
+Single source of commands for standing the full sky backend stack up on a local k3d cluster and verifying it with the Bruno collection.
 
-The cluster is named `k3d-sky`. Host port 5777 maps to the cluster load balancer port 80.
-All traffic enters through nginx-ingress. Keycloak is the OIDC provider, available at
-`http://keycloak.127.0.0.1.nip.io:5777`. The nip.io domain resolves to 127.0.0.1 on the
-host without touching the hosts file, and CoreDNS resolves it to the nginx-ingress ClusterIP
-inside the cluster so services can reach Keycloak for OIDC discovery.
+The cluster is named `k3d-sky`. Host port 5777 maps to the cluster load balancer port 80. All traffic enters through nginx-ingress. Keycloak is the OIDC provider at `http://keycloak.127.0.0.1.nip.io:5777`. The nip.io domain resolves to 127.0.0.1 on the host without touching the hosts file, and CoreDNS resolves it to the nginx-ingress ClusterIP inside the cluster so services can reach Keycloak for OIDC discovery.
+
+Every command below is a single line and runs unchanged in a Unix shell and in PowerShell 7. Run all of them from the repository root. The CoreDNS patch in step 6 is the one exception, and it says so where it happens: it carries JSON inside an argument, so it ships one form per shell, and Windows PowerShell 5.1 can run neither of them.
+
+For running the services without Kubernetes (Gradle or Docker Compose) see [config/local-dev/local_README.md](../local-dev/local_README.md). For the chart-by-chart reference see [config/k8s/helm/helm_README.md](helm/helm_README.md).
 
 ---
 
 ### Architecture, what actually runs
 
-k3d runs the whole Kubernetes cluster as exactly two Docker containers, regardless of how many
-applications you deploy:
+The cluster the create command in step 1 produces runs as exactly two Docker containers, regardless of how many applications you deploy:
 
-- `k3d-sky-server-0`, the single k3s node. Every pod (the four services plus Postgres, MinIO,
-  Kafka, Keycloak, and Keycloak's own Postgres) runs inside this one container as a containerd
-  container, not as a Docker container. `docker ps` does not show them; `kubectl get pods` does.
-- `k3d-sky-serverlb`, a small proxy. It is not a second Kubernetes server. It is the load
-  balancer that forwards host port 5777 into the cluster's nginx-ingress on port 80.
+- `k3d-sky-server-0`, the single k3s node. Every pod (the four services plus PostgreSQL, floci, Kafka, Keycloak, and Keycloak's own PostgreSQL) runs inside this one container as a containerd container, not as a Docker container. `docker ps` does not show them, `kubectl get pods` does.
+- `k3d-sky-serverlb`, a small proxy. It is not a second Kubernetes server. It is the load balancer that forwards host port 5777 into the cluster's nginx-ingress on port 80.
 
-So you do not run two Docker containers per app. You run two Docker containers for the entire
-cluster, and the nine sky pods live inside the server node. The name "serverlb" is k3d's, it
-means "load balancer in front of the server", not "a second server".
+So you do not run two Docker containers per app. You run two Docker containers for the entire cluster, and the sky pods live inside the server node. The name "serverlb" is k3d's, it means "load balancer in front of the server", not "a second server".
 
-The full first-time bring-up is slow because it does three heavy things: building the four
-service images (Gradle compiles inside Docker, minutes each), the first cluster create (k3d
-pulls the k3s image), and starting nine pods (each Spring Boot service needs about 25 seconds).
-None of that repeats while iterating. To redeploy one changed service, rebuild just its image,
-`k3d image import` it, and `kubectl rollout restart deploy/<name>`, which takes about a minute.
+#### A cluster with agent nodes
+
+A `sky` cluster created with `--agents N` is the other shape you may be sitting on, and nothing else on this page changes for it. Each agent is one more Docker container and one more schedulable node, so the pods spread across them, and `svclb-ingress-nginx-controller` in `kube-system` then runs one pod per node rather than one in total. A long-lived cluster can also still be carrying the `k3d-sky-tools` image loader from step 2, which is not a node at all. A three-node cluster with that leftover is five containers: one server, two agents, the load balancer, and the loader.
+
+Ask the cluster which shape you have rather than counting containers:
+
+```bash
+kubectl get nodes
+```
+
+The `control-plane` row is the server. Every row with no role printed is an agent, and a single `control-plane` row on its own means this is the one-node cluster the bullets above describe. For the container side of the same question:
+
+```bash
+k3d node list
+```
+
+Its `ROLE` column separates `server` from `agent` from `loadbalancer`, and a row with an empty role is the tools container rather than any kind of node.
+
+The pod names, the wait selectors, and every command below are the same either way, because nothing in the charts pins a pod to a node.
+
+The charts are also not k3d specific. They work on any Kubernetes whose ingress answers on host port 5777, which is the only assumption the `values-local.yaml` overlays and the Bruno `k8s` environment make about the distribution.
+
+The full first-time bring-up is slow because it does three heavy things: building the four service images (Gradle compiles inside Docker, minutes each), the first cluster create (k3d pulls the k3s image), and starting the pods (each Spring Boot service needs about 25 seconds). None of that repeats while iterating. To redeploy one changed service, rebuild just its image, `k3d image import` it, and `kubectl rollout restart deploy/<name>`, which takes about a minute.
+
+`sky-notify` ships an Ingress in its chart, on `/notifyWebsocket` with host `localhost` locally, so the WebSocket endpoint is reachable from the host at `ws://localhost:5777/notifyWebsocket` like every other route. No `kubectl port-forward` is needed. The Ingress raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds, because nginx otherwise closes an idle WebSocket after 60.
 
 ---
 
 ### Prerequisites
 
-- k3d >= 5 (`k3d version`)
+- k3d 5 or newer (`k3d version`)
 - kubectl (`kubectl version --client`)
-- Helm >= 3.12 (`helm version`)
-- Bruno CLI >= 1 (`bru --version`)
-- Docker with local images: `sky-offer:e2e`, `sky-booking:e2e`, `sky-message:e2e`, `sky-notify:e2e`
+- Helm 3.12 or newer (`helm version`)
+- Bruno CLI 1 or newer (`bru --version`)
+- Docker, with the four service images built locally as `sky-offer:latest`, `sky-booking:latest`, `sky-message:latest`, `sky-notify:latest`
+
+Build them with Compose rather than by hand. [config/docker/docker-compose.yaml](../docker/docker-compose.yaml) is the one place the build is defined, and one build per service produces both tags the convention requires: `sky-<service>:latest` and a version tag from `SKY_VERSION`. With the variable unset the compose file's own fallback applies, and that fallback tracks the module `version` in each module's `build.gradle.kts`, so a release moves the two together in one change. Export `SKY_VERSION` to tag a build at a different version. Every command below uses `latest`, so nothing on this page changes when the version moves.
+
+```bash
+docker compose -f config/docker/docker-compose.yaml build sky-offer sky-booking sky-message sky-notify
+```
+
+Building by hand works too and is documented in [config/local-dev/local_README.md](../local-dev/local_README.md). It means repeating both tags for each service, which is how this page drifted onto a tag nothing produced.
 
 ---
 
 ### 1. Create the k3d cluster
 
-Run once. Skip if the cluster already exists.
+Run once. Skip if the cluster already exists. Traefik is disabled because the stack uses nginx-ingress.
 
-PowerShell:
-```powershell
-k3d cluster create sky --port "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
-```
-
-Bash:
 ```bash
 k3d cluster create sky --port "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
 ```
+
+If every `kubectl` command from here on fails to connect while the cluster itself is healthy, the kubeconfig address k3d just wrote is the likely cause. See item 7 under [Known issues](#known-issues-and-design-notes).
 
 ---
 
 ### 2. Import local Docker images into k3d
 
-The cluster's k3s node has its own containerd image store, separate from host Docker, so locally
-built images must be copied in. Use `--mode direct`, which streams the images straight into the node
-and never creates the `k3d-tools` helper container:
+The cluster's k3s node has its own containerd image store, separate from host Docker, so locally built images must be copied in. `--mode direct` streams the images straight into the node and never creates the `k3d-tools` helper container:
 
 ```bash
-k3d image import --mode direct sky-offer:e2e sky-booking:e2e sky-message:e2e sky-notify:e2e -c sky
+k3d image import --mode direct sky-offer:latest sky-booking:latest sky-message:latest sky-notify:latest -c sky
 ```
 
-Without `--mode direct`, k3d spins up a short-lived `k3d-sky-tools` helper container to do the copy.
-It is meant to be removed automatically after the import, but an interrupted or repeated import can
-leave it running. It is harmless (just an image loader, not a cluster node), and you can remove a
-lingering one at any time:
+Without `--mode direct`, k3d spins up a short-lived `k3d-sky-tools` helper container to do the copy. It is meant to be removed automatically after the import, but an interrupted or repeated import can leave it running. It is harmless (just an image loader, not a cluster node), and you can remove a lingering one at any time:
 
 ```bash
 docker rm -f k3d-sky-tools
@@ -83,51 +95,53 @@ docker rm -f k3d-sky-tools
 
 ### 3. Install nginx-ingress
 
+Add the chart repository, then refresh its index, then install from the named repository. All three commands are needed:
+
 ```bash
-helm upgrade --install ingress-nginx ingress-nginx \
-  --repo https://kubernetes.github.io/ingress-nginx \
-  --namespace ingress-nginx --create-namespace \
-  --set controller.service.type=LoadBalancer
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 ```
+
+```bash
+helm repo update ingress-nginx
+```
+
+```bash
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.type=LoadBalancer
+```
+
+Do not delete the `helm repo update` line as redundant: `helm repo add` writes the repository index only when it creates the entry, so on a machine where the entry already survives in `repositories.yaml` while the index cache under the Windows temp directory has been cleaned, the add prints `already exists with the same configuration, skipping` and puts nothing back. The install then looks for a chart version in an index that is not there and dies on `Error: no cached repo found. (try 'helm repo update'): open C:\Users\...\Temp\helm\repository\ingress-nginx-index.yaml` before it touches the cluster. Only `helm repo update` restores that file.
+
+An earlier version of this step installed in one command, naming the chart `ingress-nginx` and passing `--repo https://kubernetes.github.io/ingress-nginx`. That flag resolves through whatever repository entry already matches the URL and reads the same cached index, so it hits the same failure rather than avoiding it, and the step after it then reports `error: no matching resources found` because the controller was never installed.
 
 Wait for the controller to be ready before continuing:
 
 ```bash
-kubectl wait pod -n ingress-nginx -l app.kubernetes.io/component=controller \
-  --for=condition=Ready --timeout=120s
+kubectl wait pod -n ingress-nginx -l app.kubernetes.io/component=controller --for=condition=Ready --timeout=120s
 ```
 
 ---
 
-### 4. Create the sky-secrets Secret
+### 4. Apply the local secrets
 
-All credentials are plain-text dev values. Never use these in production.
+The local credentials are committed at [config/k8s/local/sky-secrets-local.yaml](local/sky-secrets-local.yaml), so there is nothing to type and nothing to keep in sync by hand. They are plain-text development values. Never use them anywhere else.
 
 ```bash
-kubectl create secret generic sky-secrets \
-  --from-literal=postgres-user=sky_user \
-  --from-literal=postgres-password=sky_pass \
-  --from-literal=s3-access-key=admin \
-  --from-literal=s3-secret-key=password \
-  --from-literal=spring-security-user=sky_user \
-  --from-literal=spring-security-pass=sky_pass \
-  --from-literal=keycloak-admin=admin \
-  --from-literal=keycloak-admin-password=admin \
-  --from-literal=keycloak-db-user=keycloak_user \
-  --from-literal=keycloak-db-password=keycloak_pass \
-  --from-literal=keycloak-client-secret=dev-only-change-in-prod
+kubectl apply -f config/k8s/local/sky-secrets-local.yaml
 ```
+
+The cluster charts read this one `sky-secrets` Secret. The production path uses the same key names through a SealedSecret instead, see [config/k8s/helm/helm_README.md](helm/helm_README.md) for the full key inventory.
 
 ---
 
-### 5. Create the TLS Secret (self-signed, dev only)
+### 5. Apply the development TLS secret
+
+The self-signed development certificate and its ready-made Secret manifest are committed under [config/k8s/secret/ssl/](secret/ssl/). Apply the manifest rather than regenerating a certificate:
 
 ```bash
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /tmp/tls.key -out /tmp/tls.crt \
-  -subj "//CN=localhost/O=k3d-sky-local"
-kubectl create secret tls dev-ssl-cert --cert=/tmp/tls.crt --key=/tmp/tls.key
+kubectl apply -f config/k8s/secret/ssl/dev-ssl-cert.yaml
 ```
+
+The certificate carries `CN=localhost` and is valid for ten years. Its subject alternative names are `localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`, which is every host a local Ingress serves: the four services on `localhost` and Keycloak on the nip.io name. Trust it in a browser and those names verify, anything else does not. The local overlays set `ssl-redirect: "false"` and the cluster only maps host port 5777 to the load balancer's port 80, so the default local path is plain HTTP and the certificate mostly just satisfies the `tls` block on each Ingress.
 
 ---
 
@@ -136,28 +150,47 @@ kubectl create secret tls dev-ssl-cert --cert=/tmp/tls.crt --key=/tmp/tls.key
 Get the nginx-ingress ClusterIP:
 
 ```bash
-kubectl get svc -n ingress-nginx ingress-nginx-controller \
-  -o jsonpath='{.spec.clusterIP}'
+kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}'
 ```
 
-Replace `NGINX_CLUSTER_IP` in the command below with that value (e.g. `10.43.245.67`):
+Print the host records CoreDNS already holds, because a merge patch on `NodeHosts` replaces that whole value rather than adding a line to it:
 
 ```bash
-kubectl patch configmap coredns -n kube-system \
-  --type merge \
-  -p '{"data":{"NodeHosts":"NGINX_CLUSTER_IP keycloak.127.0.0.1.nip.io\n"}}'
+kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}'
+```
+
+k3d puts one record per cluster node plus `192.168.65.254 host.k3d.internal` in there, and a patch that sends only the Keycloak line deletes every one of them. So the new value has to carry all of those plus one more. The command below reads the current records, drops any Keycloak record left by an earlier run so it is safe to repeat, and appends one line. Replace `NGINX_CLUSTER_IP` with the ClusterIP from the command above. Unix shell:
+
+```bash
+kubectl patch configmap coredns -n kube-system --type merge -p "{\"data\":{\"NodeHosts\":\"$(kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}' | grep -v ' keycloak.127.0.0.1.nip.io$' | awk '{printf "%s\\\\n", $0}')NGINX_CLUSTER_IP keycloak.127.0.0.1.nip.io\\n\"}}"
+```
+
+PowerShell 7:
+
+```powershell
+kubectl patch configmap coredns -n kube-system --type merge -p ('{"data":{"NodeHosts":"' + ((((kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}') -notmatch ' keycloak\.127\.0\.0\.1\.nip\.io$') | ForEach-Object { $_ + '\n' }) -join '') + 'NGINX_CLUSTER_IP keycloak.127.0.0.1.nip.io\n"}}')
+```
+
+If you would rather see the exact value you are sending, write the patch out by hand with every record from the printout, each one followed by `\n`, and the Keycloak line last.
+
+Two routes do not work here, and neither failure message points at why. `kubectl patch --patch-file /dev/stdin` fails in Git Bash on Windows with `error: unable to read patch file: open /proc/self/fd/0: The system cannot find the path specified.`, so the patch has to go in inline through `-p`. And Windows PowerShell 5.1 strips the inner double quotes when it passes a JSON argument to a native executable, so every form of this patch fails there, the plain one with `error decoding patch: invalid character 'd' looking for beginning of object key string`. Use Git Bash, WSL or PowerShell 7 for this step.
+
+Check the merged value before restarting. Every record from the printout must still be there, with one Keycloak line added:
+
+```bash
+kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}'
+```
+
+```bash
 kubectl rollout restart deployment coredns -n kube-system
 ```
 
 ---
 
-### 7. Deploy infra charts
-
-Run all commands from the repo root.
+### 7. Deploy the infrastructure charts
 
 ```bash
-helm upgrade --install database-persistent-volume-claim \
-  config/k8s/helm/db/db-volume-claim -n default
+helm upgrade --install database-persistent-volume-claim config/k8s/helm/db/database-persistent-volume-claim -n default
 ```
 
 ```bash
@@ -165,55 +198,92 @@ helm upgrade --install postgres config/k8s/helm/db/postgres -n default
 ```
 
 ```bash
-helm upgrade --install minio config/k8s/helm/infra/minio -n default
+helm upgrade --install floci config/k8s/helm/infra/floci -f config/k8s/helm/infra/floci/values-local.yaml -n default
 ```
+
+The local overlay at [config/k8s/helm/infra/floci/values-local.yaml](helm/infra/floci/values-local.yaml) is what turns the object store's Ingress on, and the store does not work from your machine without it. The overlay adds an Ingress on host `s3.localhost`, so the store answers at `http://s3.localhost:5777`, on the same host port as everything else, and that name resolves to 127.0.0.1 with no hosts-file entry. `sky-offer` needs both addresses and they are not interchangeable: it uploads to `http://floci-service:4566`, the in-cluster Service name, and signs its presigned photo URLs against `http://s3.localhost:5777`, which is set as `s3.presignEndpoint` in [config/k8s/helm/service/sky-offer/values-local.yaml](helm/service/sky-offer/values-local.yaml), because the internal name resolves for no client outside the cluster. Drop the overlay and the Ingress is never rendered, uploads still succeed, and every photo URL the cluster hands out is unreachable.
+
+Scaling the `floci-deployment` StatefulSet to zero replicas is the supported way to see the outage path: an upload then answers 503 with a `Retry-After: 10` header, while a photo delete and an offer delete both still answer as they would against a reachable store, and scaling back to one replica restores uploads with every stored object still in the claim.
 
 ```bash
-helm upgrade --install keycloak config/k8s/helm/infra/keycloak \
-  -f config/k8s/helm/infra/keycloak/values-local.yaml -n default
+helm upgrade --install keycloak config/k8s/helm/infra/keycloak -f config/k8s/helm/infra/keycloak/values-local.yaml -n default
 ```
 
-Deploy Kafka using the standalone KRaft manifest (the Bitnami chart image is no longer
-available on Docker Hub):
+Kafka has two definitions in this repository and each one stands up the same single-node KRaft broker. Install the chart at [config/k8s/helm/kafka/](helm/kafka/), because that is what the deployment scripts install and what the GCP cluster runs:
+
+```bash
+helm upgrade --install kafka-service config/k8s/helm/kafka -f config/k8s/helm/kafka/values-local.yaml -n default
+```
+
+The standalone manifest at [config/k8s/local/kafka-local.yaml](local/kafka-local.yaml) is the Helm-free alternative, for when you want Kafka in the cluster without Helm touching it:
 
 ```bash
 kubectl apply -f config/k8s/local/kafka-local.yaml
 ```
 
-Wait for infra to be ready:
+The chart was repointed at `apache/kafka:3.7.1` with the same single-node KRaft `server.properties`, its own storage-format init container, and auto-create topics, so the reason this page once reached for a hand-written manifest is gone and both now describe the same broker.
+
+Do not run both. The chart sets `fullnameOverride: kafka-service` and the manifest names its Service and StatefulSet `kafka-service` as well, so whichever goes second collides with the first. Collapsing the two into one definition is worth doing and is left as an open decision rather than made here, see [Known issues](#known-issues-and-design-notes).
+
+Wait for infrastructure to be ready, one wait per command:
 
 ```bash
 kubectl wait pod -l component=postgres --for=condition=Ready --timeout=120s
-kubectl wait pod -l component=keycloak-postgres --for=condition=Ready --timeout=120s
-kubectl wait pod -l component=keycloak --for=condition=Ready --timeout=180s
-kubectl wait pod -l component=minio --for=condition=Ready --timeout=120s
-kubectl wait statefulset/kafka-service --for=condition=Available=true --timeout=120s
 ```
+
+```bash
+kubectl wait pod -l component=keycloak-postgres --for=condition=Ready --timeout=120s
+```
+
+```bash
+kubectl wait pod -l component=keycloak --for=condition=Ready --timeout=180s
+```
+
+```bash
+kubectl wait pod -l component=floci --for=condition=Ready --timeout=120s
+```
+
+```bash
+kubectl wait pod -l app.kubernetes.io/name=kafka --for=condition=Ready --timeout=120s
+```
+
+That last selector belongs to the Helm chart, which labels its pod `app.kubernetes.io/name=kafka` and sets no plain `component` label. The standalone manifest labels the same pod `component=kafka` instead, so if you applied the manifest rather than the chart, wait on `-l component=kafka`. Getting this wrong is silent: `kubectl wait` prints `error: no matching resources found` and returns immediately, and the next step starts against a broker that is not up yet. Every other wait on this page was checked against the chart that creates the pod.
 
 ---
 
-### 8. Deploy service charts
+### 8. Deploy the service charts
 
 ```bash
-helm upgrade --install sky-offer config/k8s/helm/service/sky-offer \
-  -f config/k8s/helm/service/sky-offer/values-local.yaml -n default
-
-helm upgrade --install sky-booking config/k8s/helm/service/sky-booking \
-  -f config/k8s/helm/service/sky-booking/values-local.yaml -n default
-
-helm upgrade --install sky-message config/k8s/helm/service/sky-message \
-  -f config/k8s/helm/service/sky-message/values-local.yaml -n default
-
-helm upgrade --install sky-notify config/k8s/helm/service/sky-notify \
-  -f config/k8s/helm/service/sky-notify/values-local.yaml -n default
+helm upgrade --install sky-offer config/k8s/helm/service/sky-offer -f config/k8s/helm/service/sky-offer/values-local.yaml -n default
 ```
 
-Wait for all service pods to be ready:
+```bash
+helm upgrade --install sky-booking config/k8s/helm/service/sky-booking -f config/k8s/helm/service/sky-booking/values-local.yaml -n default
+```
+
+```bash
+helm upgrade --install sky-message config/k8s/helm/service/sky-message -f config/k8s/helm/service/sky-message/values-local.yaml -n default
+```
+
+```bash
+helm upgrade --install sky-notify config/k8s/helm/service/sky-notify -f config/k8s/helm/service/sky-notify/values-local.yaml -n default
+```
+
+Wait for the service pods:
 
 ```bash
 kubectl wait pod -l app=sky-offer --for=condition=Ready --timeout=180s
+```
+
+```bash
 kubectl wait pod -l app=sky-booking --for=condition=Ready --timeout=180s
+```
+
+```bash
 kubectl wait pod -l app=sky-message --for=condition=Ready --timeout=180s
+```
+
+```bash
 kubectl wait pod -l app=sky-notify --for=condition=Ready --timeout=180s
 ```
 
@@ -221,19 +291,19 @@ kubectl wait pod -l app=sky-notify --for=condition=Ready --timeout=180s
 
 ### 9. Verify the stack
 
-Check all pods are 1/1 Running:
+Check every pod is 1/1 Running:
 
 ```bash
 kubectl get pods
 ```
 
-Expected output (nine sky pods, all 1/1, plus the ingress-nginx controller in its own namespace):
+Expected, plus the ingress-nginx controller in its own namespace:
 
-```
+```text
+floci-deployment-0               1/1 Running
 kafka-service-0                  1/1 Running
 keycloak-deployment-*            1/1 Running
 keycloak-postgres-0              1/1 Running
-minio-deployment-0               1/1 Running
 postgres-deployment-0            1/1 Running
 sky-booking-deployment-*         1/1 Running
 sky-message-deployment-*         1/1 Running
@@ -241,68 +311,79 @@ sky-notify-deployment-*          1/1 Running
 sky-offer-deployment-*           1/1 Running
 ```
 
-Verify Keycloak OIDC issuer:
+Verify the Keycloak OIDC issuer:
 
 ```bash
-curl -s "http://keycloak.127.0.0.1.nip.io:5777/realms/sky/.well-known/openid-configuration" \
-  | grep '"issuer"'
+curl -s "http://keycloak.127.0.0.1.nip.io:5777/realms/sky/.well-known/openid-configuration"
 ```
 
-Expected: `"issuer":"http://keycloak.127.0.0.1.nip.io/realms/sky"`
+The `issuer` field must read `http://keycloak.127.0.0.1.nip.io/realms/sky`. If it reads anything else the services will reject every token the cluster Keycloak mints.
 
 ---
 
 ### 10. Run the Bruno collection
 
-Use the `k8s` environment, not `local`. The cluster runs its own Keycloak with issuer
-`http://keycloak.127.0.0.1.nip.io/realms/sky`, while `--env local` mints tokens from your host
-Keycloak (`https://keycloak.test:9443/...`). A token from the wrong issuer is rejected by the
-cluster services, so `--env local` against the cluster gives a valid token but 401 on every
-authenticated call. The public endpoints (get-all-offers, search) still pass, which is the
-tell-tale sign you used the wrong environment.
+Use the `k8s` environment, not `local`. The cluster runs its own Keycloak with issuer `http://keycloak.127.0.0.1.nip.io/realms/sky`, while `--env local` mints tokens from your host Keycloak at `https://keycloak.test:9443`. A token from the wrong issuer is rejected by the cluster services, so `--env local` against the cluster gives a valid token and a 401 on every authenticated call. The public endpoints (get-all-offers, search) still pass, which is the tell-tale sign you picked the wrong environment.
 
 ```bash
 cd docs/api/request
+```
+
+```bash
 bru run -r --env k8s --insecure
 ```
 
-Expected result: 16/16 requests pass, 66/66 assertions green.
+The collection passes in full against the cluster, every request and every assertion, with nothing to work around. The message flow used to fail here: `sky-message` asked the Keycloak realm whether the receiver address existed before it stored anything, that lookup did not succeed against the cluster Keycloak, and the send answered 503 instead of 201. The check is gone. The module makes no outbound call of any kind now, and a message to an address nobody owns is accepted.
+
+A green run is worth more than a row of 200s, because three of its checks reach back into the object store rather than trusting a response body:
+
+- The photo round trip. The upload refetches its own presigned `photoUrl` through the floci ingress and asserts the canary marker is in the bytes that come back, so the object in the bucket is the fixture that was posted and not just any image.
+- The photo survives an edit. `PUT /offer/api/owner/offers` refetches the photo afterwards, which is the regression guard for the defect where a client-supplied path overwrote the server's object key and orphaned the real object.
+- The object really goes. The photo replace, the photo delete, and the offer delete each refetch the address they just invalidated and require a 404, so a leaked object fails the run rather than passing quietly.
+
+The collection and its environments are documented in [docs/api/README.md](../../docs/api/README.md).
 
 ---
 
 ### Bruno k8s environment
 
-The environment file is at `docs/api/request/environments/k8s.yml`. It is named `k8s` rather than
-`k3d` because the same environment works against any Kubernetes distro (k3d, minikube, kind) as long
-as that distro's ingress is exposed at `localhost:5777` and its Keycloak issues the same nip.io
-issuer. The values are:
+The environment file is [docs/api/request/environments/k8s.yml](../../docs/api/request/environments/k8s.yml). It is named `k8s` rather than `k3d` because the same environment works against any Kubernetes distro (k3d, minikube, kind) as long as that distro's ingress is exposed at `localhost:5777` and its Keycloak issues the same nip.io issuer. The values are:
 
-- `baseUrl`: `http://localhost:5777`
-- `keycloakUrl`: `http://keycloak.127.0.0.1.nip.io:5777`
-- `keycloakClientId`: `sky-backend`
-- `keycloakClientSecret`: `dev-only-change-in-prod`
-- `keycloakUsername`: `lukk`
-- `keycloakPassword`: `test1234`
+| Variable | Value |
+|---|---|
+| `baseUrl` | `http://localhost:5777` |
+| `keycloakUrl` | `http://keycloak.127.0.0.1.nip.io:5777` |
+| `keycloakClientId` | `sky-backend` |
+| `keycloakClientSecret` | `dev-only-change-in-prod` |
+| `keycloakUsername` | `lukk` |
+| `keycloakPassword` | `test1234` |
+| `bearerToken` | empty, filled at run time by [docs/api/request/auth/get-token.yml](../../docs/api/request/auth/get-token.yml) |
 
 ---
 
-### Credentials (dev-only, never use in production)
+### Credentials
 
-| Service | Username | Password |
+Development-only, non-secret, intentionally committed. They come from [config/k8s/local/sky-secrets-local.yaml](local/sky-secrets-local.yaml) and the realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](helm/infra/keycloak/files/sky-realm.json). Never use them anywhere else.
+
+| What | Username | Password |
 |---|---|---|
-| Postgres (sky) | sky_user | sky_pass |
-| MinIO | admin | password |
-| Keycloak admin | admin | admin |
-| Keycloak realm user | lukk | test1234 |
-| Keycloak client secret | sky-backend | dev-only-change-in-prod |
+| PostgreSQL (sky database) | postgres | local |
+| S3 access key and secret | root | localdev |
+| Keycloak admin console | admin | admin |
+| Keycloak realm user (admin role) | lukk | test1234 |
+| Keycloak realm user (admin role) | owner | owner |
+| Keycloak realm user (user role) | user | user |
+| Keycloak client `sky-backend` | client secret | dev-only-change-in-prod |
+
+The last row is still needed and the list of who needs it has shrunk, which is worth saying so nobody puts it back where it no longer belongs. `oauth2-proxy` reads the secret to run its OIDC session flow, and [docs/api/request/auth/get-token.yml](../../docs/api/request/auth/get-token.yml) reads it to run the password grant that mints the caller's token, which is also why `sky-backend` is the `keycloakClientId` in the table above. No sky service reads it any more: `sky-message` used to fetch a service-account token with it for a receiver lookup against the Keycloak administration interface, and both the lookup and its `USER_DIRECTORY_CLIENT_SECRET` are gone. Validating a JWT needs no client secret, so a service environment block should never carry one.
+
+Do not read the S3 row as a control. floci, the object store the cluster now runs, authenticates nobody: it accepts any credentials, verifies no signature, and serves an unsigned GET of any object it holds. The two keys exist only because the AWS SDK refuses to build a client without them, in [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), which hands them to `AwsBasicCredentials.create`. The values are kept at a length MinIO would also accept, because [config/local-dev/local_README.md](../local-dev/local_README.md) still offers MinIO as the local alternative for when you do want the credential and signature checks exercised.
 
 ---
 
 ### Stop and start the cluster
 
-You do not need to tear down and rebuild to pause work. One command stops every cluster container
-(the k3s node and the load balancer) together, and one starts them again with all deployed charts
-and data intact. This is the single on/off switch for the whole stack:
+You do not need to tear down and rebuild to pause work. One command stops every cluster container (the k3s node and the load balancer) together, and one starts them again with all deployed charts and data intact. This is the single on/off switch for the whole stack:
 
 ```bash
 k3d cluster stop sky
@@ -312,22 +393,37 @@ k3d cluster stop sky
 k3d cluster start sky
 ```
 
-Note: Docker Desktop will not show the k3d containers as one grouped stack with a single toggle,
-because k3d does not tag them as a Compose project and labelling them as one would fight k3d's own
-lifecycle management. The `k3d cluster stop` and `k3d cluster start` commands above are the
-equivalent single control.
+Docker Desktop will not show the k3d containers as one grouped stack with a single toggle, because k3d does not tag them as a Compose project and labelling them as one would fight k3d's own lifecycle management. The two commands above are the equivalent single control.
 
 ---
 
 ### Tear down
 
-Remove all chart releases:
+Remove the chart releases:
 
 ```bash
-helm uninstall sky-offer sky-booking sky-message sky-notify \
-  keycloak minio postgres database-persistent-volume-claim -n default
+helm uninstall sky-offer sky-booking sky-message sky-notify keycloak floci postgres database-persistent-volume-claim -n default
+```
+
+That line takes the stored photos with it. [config/k8s/helm/infra/floci/templates/floci-pvc.yaml](helm/infra/floci/templates/floci-pvc.yaml) is a plain template rather than a StatefulSet volume claim template, so Helm owns `floci-pvc` and `helm uninstall floci` deletes the claim and every object in the store. To pause work and keep the objects, do not tear down at all, use `k3d cluster stop sky` from the section above.
+
+Then remove Kafka, using whichever of the two definitions you installed in step 7. The chart:
+
+```bash
+helm uninstall kafka-service -n default
+```
+
+Or the standalone manifest:
+
+```bash
 kubectl delete -f config/k8s/local/kafka-local.yaml
+```
+
+```bash
 kubectl delete secret sky-secrets dev-ssl-cert
+```
+
+```bash
 kubectl delete pvc --all -n default
 ```
 
@@ -341,32 +437,56 @@ k3d cluster delete sky
 
 ### Known issues and design notes
 
-1. Postgres readiness probe: an earlier version of the charts used `exec: pg_isready -U
-   $(POSTGRES_USER)`, but Kubernetes does not expand env vars in probe exec commands, so
-   `$(POSTGRES_USER)` was passed literally and the probe failed. Both the app Postgres and the
-   Keycloak Postgres readiness probes now use `tcpSocket` in the chart templates, consistent
-   with their startup and liveness probes, so no runtime patch is needed.
+1. PostgreSQL readiness probe. An earlier version of the charts used `exec: pg_isready -U $(POSTGRES_USER)`, but Kubernetes does not expand environment variables in probe exec commands, so `$(POSTGRES_USER)` was passed literally and the probe failed. Both the app PostgreSQL and the Keycloak PostgreSQL readiness probes now use `tcpSocket` in the chart templates, consistent with their startup and liveness probes, so no runtime patch is needed.
 
-2. Keycloak ingress class: the keycloak chart uses the deprecated `kubernetes.io/ingress.class`
-   annotation. This was patched to `spec.ingressClassName: nginx` in the template at
-   `config/k8s/helm/infra/keycloak/templates/keycloak-ingress.yaml`.
+2. Keycloak ingress class. The upstream keycloak example used the deprecated `kubernetes.io/ingress.class` annotation. The chart template at [config/k8s/helm/infra/keycloak/templates/keycloak-ingress.yaml](helm/infra/keycloak/templates/keycloak-ingress.yaml) sets `spec.ingressClassName: nginx` instead.
 
-3. Bitnami Kafka image: `bitnami/kafka:3.5.0-debian-11-r7` is no longer available on Docker Hub.
-   The cluster uses a standalone KRaft-mode Kafka defined in `config/k8s/local/kafka-local.yaml`
-   using `apache/kafka:3.7.1`.
+3. Two Kafka definitions. The chart at [config/k8s/helm/kafka/](helm/kafka/) used to pin `bitnami/kafka:3.5.0-debian-11-r7`, which Docker Hub stopped serving when Bitnami delisted its public image catalogue, and that is why the standalone manifest at [config/k8s/local/kafka-local.yaml](local/kafka-local.yaml) was written. The chart has since been repointed at `apache/kafka:3.7.1` with a real KRaft configuration, a storage-format init container, and auto-create topics, so the two now describe the same single-node broker in two places. The chart is the one the deployment scripts install, and the manifest is the Helm-free fallback. Deleting one of them is a real decision and has not been taken.
 
-4. Spring Boot 4 breaking change: `SPRING_SECURITY_USER` env var maps to `spring.security.user`,
-   which Spring Boot 4 now requires to be a structured object rather than a plain string. The
-   env var was a dead leftover from the basic-auth era and was removed from all four service
-   deployment templates.
+4. Spring Boot 4 breaking change. The `SPRING_SECURITY_USER` environment variable maps to `spring.security.user`, which Spring Boot 4 requires to be a structured object rather than a plain string. The variable was a leftover from the basic-auth era and has been removed from all four service deployment templates, along with the matching `spring.securityUser` and `spring.securityPass` values keys.
 
-5. Auth annotations: the production `values.yaml` files contain nginx auth-url/auth-signin
-   annotations that route to the production oauth2-proxy. These are nulled out in
-   `values-local.yaml` for every affected ingress section. The ingress templates were updated
-   to skip nil-valued annotations so the null override takes effect.
+5. Auth annotations. The default `values.yaml` files carry nginx `auth-url` and `auth-signin` annotations that route to the production oauth2-proxy. Each `values-local.yaml` nulls them out for every affected ingress section, and the ingress templates skip nil-valued annotations so the null override takes effect.
 
-6. Image user UID: Kubernetes requires a numeric UID when `runAsNonRoot: true` is set, and the
-   deployment templates set `runAsUser: 1000`. The Dockerfiles pin the `sky` runtime user to a
-   fixed UID and GID of 1000 (`adduser -S -u 1000 sky`), so the container's user matches the
-   `runAsUser` value deterministically across rebuilds rather than relying on the base image's
-   auto-assigned UID.
+6. Image user UID. Kubernetes requires a numeric UID when `runAsNonRoot: true` is set, and the deployment templates set `runAsUser: 1000`. The Dockerfiles pin the `sky` runtime user to a fixed UID and GID of 1000 (`adduser -S -u 1000 sky`), so the container's user matches the `runAsUser` value deterministically across rebuilds rather than relying on the base image's auto-assigned UID.
+
+7. Stale `host.docker.internal` in the kubeconfig address. Not a defect in this repository, and it stops every command on the page dead, so it is written up here. The symptom is that every `kubectl` command fails at once, naming an address you never typed:
+
+    ```text
+    Unable to connect to the server: dial tcp 192.168.1.10:51639: connectex: No connection could be made because the target machine actively refused it.
+    ```
+
+    k3d writes the API server address into the kubeconfig as `https://host.docker.internal:PORT`, and a Windows hosts file pinning `host.docker.internal` to an address that is no longer right sends every call somewhere nothing is listening. The cluster itself is usually fine.
+
+    One command tells it apart from a dead cluster. Use the port from the failing message, and read `401` as the good answer, because it is the correct reply to an unauthenticated request and it proves the API server is up:
+
+    ```bash
+    curl -sk https://127.0.0.1:51639/version
+    ```
+
+    If that answers, point the kubeconfig at loopback on the same port:
+
+    ```bash
+    kubectl config set-cluster k3d-sky --server=https://127.0.0.1:51639
+    ```
+
+    k3d picks that port when it creates the cluster, so `k3d cluster delete sky` followed by `k3d cluster create` gives you a different one and this fix has to be redone with the new port. Read the port the kubeconfig currently holds:
+
+    ```bash
+    kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'
+    ```
+
+---
+
+### Docs map
+
+| Document | What it covers |
+|---|---|
+| [README.md](../../README.md) | Platform overview, modules, build, ports |
+| [config/local-dev/local_README.md](../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |
+| [config/local-dev/e2e-stack_README.md](../local-dev/e2e-stack_README.md) | The self-contained Compose stack and the Bruno gate CI runs on it |
+| [config/k8s/helm/helm_README.md](helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
+| [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
+| [config/k8s/k8s_README.md](k8s_README.md) | Operating a running cluster with kubectl |
+| [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+| [e2e/README.md](../../e2e/README.md) | End-to-end capability suite and how a run is recorded |

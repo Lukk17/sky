@@ -1,8 +1,8 @@
 # messaging: run tasks template
 
-Spec: [`1-messaging-test.md`](1-messaging-test.md)
+Spec: [../1-messaging-test.md](../1-messaging-test.md)
 
-Copy this file to `runs/<UTC-timestamp>_1-messaging-tasks.md` before
+Copy this file to `e2e/testing/runs/<UTC-timestamp>_1-messaging-tasks.md` before
 starting a run. Tick boxes as you go. Add anything you did beyond the spec
 under Additional tasks I did.
 
@@ -23,10 +23,10 @@ under Additional tasks I did.
 
 ### Expected
 
-- [ ] Run summary reports Status PASS, all requests passed, all assertions passed: 17/17.
+- [ ] Run summary reports Status PASS, all requests passed, all assertions passed: 18/18.
 - [ ] Sent message returns HTTP 201 with UUID `id`, `senderEmail` `lukk@sky.dev`, the submitted `receiverEmail`, and the canary `text`.
 - [ ] Received page returns HTTP 200 with a `content` array and numeric `totalElements`.
-- [ ] Sent page returns HTTP 200 with the created message present (Postgres `sky.message`).
+- [ ] Sent page returns HTTP 200 with the created message present (Postgres `public.message`).
 - [ ] Teardown delete returns HTTP 204.
 
 ### Verdict

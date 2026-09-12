@@ -1,7 +1,7 @@
 # End-to-end capability tests
 
 Manual / AI-runnable e2e suite for this project. Each test exercises one capability end-to-end against a live stack
-and asserts only **observable behaviour**: HTTP status codes, response body content, persisted state in backing
+and asserts only observable behaviour: HTTP status codes, response body content, persisted state in backing
 services (databases, object stores, vector stores, caches). Logs are diagnostic, not pass criteria.
 
 ## What's here
@@ -43,7 +43,12 @@ Full methodology in the `e2e-runbooks` skill in [Lukk17/agent-standards](https:/
 ## API client
 
 Pick one client per project and use it consistently across all tests. Recommended defaults: Bruno CLI, hurl, or
-plain curl for the simplest cases. Document the project's choice in the project's main README; this file is generic.
+plain curl for the simplest cases.
+
+This project uses the Bruno CLI (`bru`) against the collection in [../docs/api/request/](../docs/api/request/). Every
+spec here runs it with `--env local`, which is the environment file name. Bruno resolves `--env` by file name, not by
+the `name:` field inside the file, so `--env sky-local` fails even though `sky-local` is what the desktop app shows.
+[../docs/api/README.md](../docs/api/README.md) has the full environment table.
 
 ## Prerequisites before any test
 

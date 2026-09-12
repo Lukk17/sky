@@ -1,6 +1,12 @@
-# Keycloak
+# Keycloak on vanilla manifests (experiment, not in use)
 
-## Deployment
+Scratch notes for the raw Kubernetes manifests in this directory. Nothing here is part of the deployed platform.
+
+The platform runs Keycloak from the Helm chart at [config/k8s/helm/infra/keycloak/](../../helm/infra/keycloak/), with the realm imported from a ConfigMap. The runbook that matters is [config/keycloak/SETUP.md](../../../keycloak/SETUP.md), and the local cluster flow is [config/k8s/local_README.md](../../local_README.md). Read the rest of this file only if you are reviving the vanilla-manifest path.
+
+---
+
+### Deployment
 
 <br>
 
@@ -24,7 +30,7 @@ https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernete
 
 <br>
 
-## Config
+### Config
 
 https://github.com/oauth2-proxy/oauth2-proxy/issues/1124
 
@@ -123,7 +129,7 @@ https://www.keycloak.org/keycloak-benchmark/kubernetes-guide/latest/installation
 
 -----------------
 
-## GCP
+### GCP
 After deployment on GCP:
 https://console.cloud.google.com/kubernetes/discovery?
 
@@ -143,7 +149,7 @@ nginx: 34.118.116.39:80
 keycloak: 34.116.246.43:8080
 
 
-## Troubleshooter
+### Troubleshooter
 
 
 #### 404 not found on keycloak
