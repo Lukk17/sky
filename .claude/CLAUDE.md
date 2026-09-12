@@ -10,3 +10,4 @@
 @../sky-offer/AGENTS.md
 @../sky-message/AGENTS.md
 @../sky-notify/AGENTS.md
+@../sky-gateway/AGENTS.md
