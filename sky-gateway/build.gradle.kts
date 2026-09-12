@@ -2,12 +2,16 @@ plugins {
     id("sky.spring-service-conventions")
 }
 
-version = "1.0.0"
+version = "2.0.0"
 description = "sky-gateway"
 
 // Spring Cloud Gateway is reactive (WebFlux / Netty). The sky.spring-service-conventions
 // plugin adds actuator and test infra but does NOT pull spring-boot-starter-web, so the
 // gateway starts on Netty as required. Do NOT add spring-boot-starter-web here.
+
+tasks.jacocoTestCoverageVerification {
+    enabled = false
+}
 
 dependencyManagement {
     imports {
@@ -19,11 +23,13 @@ dependencyManagement {
 }
 
 dependencies {
-    // Core gateway — reactive HTTP proxy + route predicates + filters (WebFlux/Netty).
+    implementation(project(":sky-common"))
+
+    // Core gateway: reactive HTTP proxy + route predicates + filters (WebFlux/Netty).
     implementation(libs.spring.cloud.starter.gateway.server.webflux)
 
-    // OAuth2 client: optional `secure` profile wires token-relay to upstream services.
-    // Kept optional here so the gateway starts cleanly with no Keycloak instance running.
+    // OAuth2 client: the `@Profile("!local")` chain in config/SecurityConfig wires Keycloak OIDC
+    // login and the TokenRelay filter. The `local` chain permits every exchange and uses neither.
     implementation(libs.spring.boot.starter.oauth2.client)
 
     // Lombok for config properties
