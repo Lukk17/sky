@@ -1,7 +1,7 @@
 # helm-charts Specification
 
 ## Purpose
-TBD - created by archiving change helm-parameterize-cleanup. Update Purpose after archive.
+Keeps the charts deployable in more than one environment by holding environment-specific values out of the defaults, pinning image tags rather than tracking a moving one, and naming a secret for what it actually contains.
 ## Requirements
 ### Requirement: Helm charts have no environment-specific values in defaults
 Default `values.yaml` files in every Helm chart MUST NOT contain environment-specific literals (hostnames, TLS secret names, namespaces, Auth0 callbacks). Environment specifics MUST live in `values-<env>.yaml` overlay files passed via `-f` at deploy time.

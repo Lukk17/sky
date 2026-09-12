@@ -1,7 +1,7 @@
 # repo-hygiene Specification
 
 ## Purpose
-TBD - created by archiving change repo-hygiene-cleanup. Update Purpose after archive.
+Keeps the repository to source only, so runtime data and build output stay out of version control and a clone carries nothing that a build or a run would regenerate anyway.
 ## Requirements
 ### Requirement: No runtime data in source control
 The repository MUST NOT track files produced by running infrastructure (Kafka broker logs, Zookeeper state, database files), nor obsolete deploy artifacts for platforms the project no longer targets.

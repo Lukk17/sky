@@ -1,7 +1,8 @@
 # messaging-e2e Specification
 
 ## Purpose
-TBD - created by archiving change add-messaging-e2e-test. Update Purpose after archive.
+Governs the runbook that exercises user-to-user messaging end to end against a deployed stack, including the refusal
+of a message to an address the identity realm does not hold, verified on observable behaviour.
 ## Requirements
 ### Requirement: Messaging capability has a behaviour-only e2e runbook
 

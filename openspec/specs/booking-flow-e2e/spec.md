@@ -1,7 +1,8 @@
 # booking-flow-e2e Specification
 
 ## Purpose
-TBD - created by archiving change add-booking-flow-e2e-test. Update Purpose after archive.
+Governs the runbook that exercises the booking flow end to end against a deployed stack, so the path a real client
+takes is verified on observable behaviour rather than on unit tests and log output.
 ## Requirements
 ### Requirement: Booking flow capability has a behaviour-only e2e runbook
 

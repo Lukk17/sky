@@ -1,7 +1,7 @@
 # kubernetes-deployment Specification
 
 ## Purpose
-TBD - created by archiving change remove-vanilla-k8s. Update Purpose after archive.
+Makes one tool the only path into the cluster, so what is running is described in a single place rather than by a chart and a set of hand-maintained manifests that drift apart.
 ## Requirements
 ### Requirement: Helm is the only Kubernetes deployment path
 The repository MUST maintain exactly one Kubernetes deployment path: Helm charts under `config/k8s/helm/`. Hand-written `kubectl apply -f` YAML files (the historical `config/k8s/vanilla/` tree) MUST NOT exist.

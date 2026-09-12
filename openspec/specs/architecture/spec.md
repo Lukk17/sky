@@ -1,7 +1,7 @@
 # architecture Specification
 
 ## Purpose
-TBD - created by archiving change hexagonal-enforcement-archunit. Update Purpose after archive.
+Holds every service to the hexagonal layout, with the dependency direction and the package structure checked by a test rather than by review, so an adapter cannot quietly reach past a port into a domain service.
 ## Requirements
 ### Requirement: Hexagonal layer separation is enforced by ArchUnit
 Every service MUST run ArchUnit tests that fail the build when the hexagonal dependency direction is violated. Specifically: `adapters` may depend on `domain` and `sky.common`; `domain` may depend only on itself, `sky.common`, and `java.*`; `config` may depend on both `adapters` and `domain`. No cross-service imports are permitted.

@@ -1,7 +1,7 @@
 # framework-version Specification
 
 ## Purpose
-TBD - created by archiving change spring-boot-4-migration. Update Purpose after archive.
+Pins the framework and language level every service runs on, and keeps that pin in one place, so no module drifts onto a different version than the rest of the build.
 ## Requirements
 ### Requirement: All services run on Spring Boot 4 and Java 25
 Every service MUST compile and run on Spring Boot 4 (Spring Framework 7) and Java 25. Deprecated SB3 test annotations (`@MockBean`) MUST be replaced by their SB4 equivalents (`@MockitoBean`).

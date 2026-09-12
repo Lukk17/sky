@@ -1,7 +1,7 @@
 # kafka-messaging Specification
 
 ## Purpose
-TBD - created by archiving change kafka-reliability. Update Purpose after archive.
+Sets the reliability contract both sides of a topic are held to, so a write is not acknowledged before it is safely replicated, an offset is not committed before the side effect it stands for succeeded, and a message that cannot be processed has somewhere to go instead of blocking the partition.
 ## Requirements
 ### Requirement: Producers acknowledge fully replicated, idempotent writes
 Every Kafka producer in the system MUST be configured with `acks=all`, `enable.idempotence=true`, `retries=Integer.MAX_VALUE`, `delivery.timeout.ms=120000`, and `max.in.flight.requests.per.connection <= 5`. No producer may rely on Spring Kafka defaults for these properties.

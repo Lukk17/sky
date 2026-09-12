@@ -1,7 +1,7 @@
 # gradle-build Specification
 
 ## Purpose
-TBD - created by archiving change gradle-version-catalog. Update Purpose after archive.
+Keeps the monorepo on one rooted build with one version catalogue and shared convention plugins, so a version bump or a change to build logic happens once instead of once per module.
 ## Requirements
 ### Requirement: Single version catalog owns every dependency version
 The repository MUST use a Gradle version catalog at `gradle/libs.versions.toml` as the sole declaration site for dependency and plugin versions. Build scripts MUST reference catalog accessors (`libs.*`) rather than string-literal versions.

@@ -1,7 +1,7 @@
 # websocket Specification
 
 ## Purpose
-TBD - created by archiving change websocket-auth. Update Purpose after archive.
+Fixes how the notification channel is secured and addressed, so a client proves who it is when it connects and then receives only the notifications meant for it.
 ## Requirements
 ### Requirement: STOMP CONNECT requires a valid JWT
 The sky-notify service MUST reject any STOMP `CONNECT` frame that lacks a valid JWT in the `Authorization` header. A `ChannelInterceptor` on the client-inbound channel MUST validate the token (signature, expiry, issuer, audience) using the same Auth0 issuer the REST API trusts.

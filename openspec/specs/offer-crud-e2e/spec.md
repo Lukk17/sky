@@ -1,16 +1,20 @@
 # offer-crud-e2e Specification
 
 ## Purpose
-TBD - created by archiving change add-offer-crud-e2e-test. Update Purpose after archive.
+Governs the runbook that exercises the offer lifecycle an owner drives, from create through delete and including the
+photo, end to end against a deployed stack and verified on observable behaviour rather than on log output.
+
 ## Requirements
+
 ### Requirement: Offer CRUD capability has a behaviour-only e2e runbook
 
 The suite MUST carry an immutable spec at `e2e/testing/2-offer-crud-test.md` and its run-record template at
 `e2e/testing/templates/2-offer-crud-tasks.template.md` that drive the owner lifecycle (create, list, search, list
 owned, resolve owner, upload photo, edit, delete) for the authenticated user lukk@sky.dev through the gateway at
 `http://localhost:5777`. Assertions MUST be observable behaviour only: HTTP status codes, response body content, and
-persisted state in Postgres `sky.offer` / `sky.offer_photo` and the MinIO `sky-offers` bucket. The runbook MUST
-upload the canary fixture `e2e/fixtures/offer-photo.png` and MUST NOT assert on log substrings.
+persisted state in the Postgres `public.offer` table of the `sky` database, including its server-owned
+`photo_object_key` column, and in the `sky-offers` bucket of the object store. The runbook MUST upload the canary
+fixture `e2e/fixtures/offer-photo.png` and MUST NOT assert on log substrings.
 
 #### Scenario: Full owner lifecycle round-trips with a retrievable canary offer
 
@@ -20,4 +24,3 @@ upload the canary fixture `e2e/fixtures/offer-photo.png` and MUST NOT assert on 
   the same offer by `hotelName`, the owner lookup returns `lukk@sky.dev`, the photo upload returns HTTP 200 with a
   non-empty presigned `photoUrl`, the edit returns HTTP 200 and is reflected on a follow-up read, the delete returns
   HTTP 204, and the offer no longer appears in the owner's page
-

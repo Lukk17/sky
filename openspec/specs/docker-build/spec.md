@@ -1,7 +1,7 @@
 # docker-build Specification
 
 ## Purpose
-TBD - created by archiving change docker-modernization. Update Purpose after archive.
+Defines how a service image is built and run: a build stage separate from the runtime stage, a runtime that ships no compiler, layers ordered so a code change does not invalidate the dependency layer, and a container that does not run as root.
 ## Requirements
 ### Requirement: Two-stage Dockerfile with JDK build and JRE runtime
 Every service MUST be built via a two-stage Dockerfile: a build stage based on a Gradle + JDK image, and a runtime stage based on a JRE-only image (eclipse-temurin or distroless). The full JDK MUST NOT ship in the runtime image.

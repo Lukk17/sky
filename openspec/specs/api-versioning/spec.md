@@ -1,7 +1,7 @@
 # api-versioning Specification
 
 ## Purpose
-TBD - created by archiving change api-cleanup. Update Purpose after archive.
+Keeps every REST endpoint explicitly versioned and consistently named, so a breaking payload change can ship as a new version instead of silently altering the contract callers already depend on.
 ## Requirements
 ### Requirement: Header-based API versioning via Spring Framework 7 native mechanism
 Every REST service (sky-booking, sky-offer, sky-message) MUST configure API versioning through `WebMvcConfigurer.configureApiVersioning(ApiVersionConfigurer)` using the `X-API-Version` request header as the primary resolver. Every controller method or class MUST declare its version via `@RequestMapping(version = "1")` (or a method-level override).

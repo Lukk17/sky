@@ -1,7 +1,7 @@
 # spring-boot-hygiene Specification
 
 ## Purpose
-TBD - created by archiving change spring-boot-cleanup. Update Purpose after archive.
+Keeps each service's configuration honest: only the starters actually used on the classpath, no credential committed as a default, and a cross-origin policy that does not answer every origin.
 ## Requirements
 ### Requirement: Only the starters actually used are on the classpath
 No service may declare a Spring Boot starter it does not use. Specifically: `spring-boot-starter-data-rest` MUST NOT be declared by any service; services that use a servlet stack MUST NOT declare `spring-boot-starter-webflux`; services MUST declare exactly one springdoc-openapi UI starter matching their stack.
