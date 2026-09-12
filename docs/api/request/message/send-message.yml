@@ -18,7 +18,7 @@ http:
     data: |-
       {
         "text": "Hello, I am interested in your offer for Grand Hotel Paris. Is the room available for August?",
-        "receiverEmail": "owner@example.com"
+        "receiverEmail": "lukk@sky.dev"
       }
 
 runtime:
@@ -43,4 +43,4 @@ runtime:
       value: "lukk@sky.dev"
     - expression: res.body.receiverEmail
       operator: eq
-      value: "owner@example.com"
+      value: "lukk@sky.dev"
