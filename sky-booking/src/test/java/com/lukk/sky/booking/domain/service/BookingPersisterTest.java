@@ -1,6 +1,7 @@
 package com.lukk.sky.booking.domain.service;
 
-import com.lukk.sky.booking.Assemblers.BookingAssembler;
+import com.lukk.sky.booking.assemblers.BookingAssembler;
+import com.lukk.sky.booking.domain.exception.BookingDateAlreadyBookedException;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.model.EventType;
@@ -15,9 +16,10 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.TEST_DATE;
-import static com.lukk.sky.booking.Assemblers.BookingAssembler.getPopulatedBooked;
+import static com.lukk.sky.booking.assemblers.BookingAssembler.TEST_DATE;
+import static com.lukk.sky.booking.assemblers.BookingAssembler.getPopulatedBooked;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -55,16 +57,18 @@ class BookingPersisterTest {
     }
 
     @Test
-    @DisplayName("saveAndPublish throws BookingException when the offer is already booked on that date")
-    void saveAndPublish_whenOfferAlreadyBookedOnDate_thenThrowBookingException() {
+    @DisplayName("saveAndPublish throws BookingDateAlreadyBookedException when the offer is already booked on that date")
+    void saveAndPublish_whenOfferAlreadyBookedOnDate_thenThrowBookingDateAlreadyBookedException() {
         // given
         Booking existing = getPopulatedBooked();
         Booking newBooking = BookingAssembler.getPopulatedBooked();
 
         // when / then
-        assertThrows(BookingException.class,
+        assertThrows(BookingDateAlreadyBookedException.class,
                 () -> bookingPersister.saveAndPublish(newBooking, List.of(existing), TEST_DATE));
 
+        assertFalse(BookingException.class.isAssignableFrom(BookingDateAlreadyBookedException.class),
+                "the already-booked conflict must stay outside BookingException so the 400 mapping cannot reclaim it");
         verifyNoInteractions(bookingRepository);
         verifyNoInteractions(eventSourceService);
     }

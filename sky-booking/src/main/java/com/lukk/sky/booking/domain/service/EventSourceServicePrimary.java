@@ -1,19 +1,17 @@
 package com.lukk.sky.booking.domain.service;
 
-import com.google.gson.Gson;
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
+import com.lukk.sky.booking.domain.exception.EventSequenceConflictException;
 import com.lukk.sky.booking.domain.model.Booking;
-import com.lukk.sky.booking.domain.model.Event;
 import com.lukk.sky.booking.domain.model.EventType;
-import com.lukk.sky.booking.domain.ports.outbound.EventSourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import tools.jackson.databind.ObjectMapper;
 
-import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -21,29 +19,40 @@ import java.time.Instant;
 @Primary
 public class EventSourceServicePrimary implements EventSourceService {
 
-    private static final Gson GSON = new Gson();
+    static final int MAX_APPEND_ATTEMPTS = 20;
 
-    private final EventSourceRepository eventSourceRepository;
+    private final BookingEventAppender bookingEventAppender;
+    private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional
     public void saveEvent(Booking booking, EventType eventType) {
         Assert.notNull(booking.getId(), "Booking id must not be null when saving an event");
 
-        long lockKey = booking.getId().getMostSignificantBits() ^ booking.getId().getLeastSignificantBits();
-        eventSourceRepository.lockBookingEventStream(lockKey);
+        String payload = objectMapper.writeValueAsString(BookingDTO.of(booking));
 
-        int lastSequence = eventSourceRepository.findLastSequenceNumberByBookingId(booking.getId())
-                .orElse(0);
+        appendRetryingSequenceConflicts(booking.getId(), eventType, payload);
+    }
 
-        Event event = Event.builder()
-                .bookingId(booking.getId())
-                .sequenceNumber(lastSequence + 1)
-                .eventType(eventType)
-                .payload(GSON.toJson(BookingDTO.of(booking)))
-                .timestamp(Instant.now())
-                .build();
+    private void appendRetryingSequenceConflicts(UUID bookingId, EventType eventType, String payload) {
+        EventSequenceConflictException lastConflict = null;
 
-        eventSourceRepository.save(event);
+        for (int attempt = 1; attempt <= MAX_APPEND_ATTEMPTS; attempt++) {
+            try {
+                bookingEventAppender.appendNextEvent(bookingId, eventType, payload);
+
+                return;
+
+            } catch (EventSequenceConflictException conflict) {
+                lastConflict = conflict;
+
+                log.warn("event_append_conflict bookingId={} eventType={} attempt={} maxAttempts={}",
+                        bookingId, eventType, attempt, MAX_APPEND_ATTEMPTS);
+            }
+        }
+
+        throw new EventSequenceConflictException(
+                "Gave up appending a %s event for booking %s after %d attempts"
+                        .formatted(eventType, bookingId, MAX_APPEND_ATTEMPTS),
+                lastConflict);
     }
 }

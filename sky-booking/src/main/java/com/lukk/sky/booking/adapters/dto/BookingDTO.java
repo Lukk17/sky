@@ -1,5 +1,6 @@
 package com.lukk.sky.booking.adapters.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.lukk.sky.booking.domain.model.Booking;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @Builder
 @Data
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BookingDTO {
 
     private UUID id;
@@ -39,5 +41,4 @@ public class BookingDTO {
                 .ownerEmail(booking.getOwnerEmail())
                 .build();
     }
-
 }

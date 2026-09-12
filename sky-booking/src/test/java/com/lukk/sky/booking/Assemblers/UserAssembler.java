@@ -1,4 +1,4 @@
-package com.lukk.sky.booking.Assemblers;
+package com.lukk.sky.booking.assemblers;
 
 public class UserAssembler {
     public static final String TEST_USER_EMAIL = "testUser@user.com";

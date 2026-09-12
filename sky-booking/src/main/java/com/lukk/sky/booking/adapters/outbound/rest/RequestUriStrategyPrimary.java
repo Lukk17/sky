@@ -30,19 +30,12 @@ public class RequestUriStrategyPrimary implements RequestUriStrategy {
      */
     @Override
     public String createRestUrl(String endpoint) {
-        String url;
-        if (skyConfigProperties.getOfferServiceHostPort().isBlank()) {
-            url = String.format("%s/%s",
-                    skyConfigProperties.getOfferServiceHostname(),
-                    endpoint
-            );
-        } else {
-            url = String.format("%s:%s/%s",
-                    skyConfigProperties.getOfferServiceHostname(),
-                    skyConfigProperties.getOfferServiceHostPort(),
-                    endpoint
-            );
-        }
+        String hostname = skyConfigProperties.getOfferServiceHostname();
+        String port = skyConfigProperties.getOfferServiceHostPort();
+        String url = port.isBlank()
+                ? String.format("%s/%s", hostname, endpoint)
+                : String.format("%s:%s/%s", hostname, port, endpoint);
+
         log.info("Creating default endpoint url: {}", url);
 
         return url;

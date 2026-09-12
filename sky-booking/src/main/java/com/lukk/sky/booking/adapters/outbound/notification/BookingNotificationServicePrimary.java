@@ -6,8 +6,9 @@ import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
-import static com.lukk.sky.booking.config.Constants.KAFKA_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.BOOKING_TOPIC;
 
 @Service
 @Primary
@@ -15,8 +16,8 @@ public class BookingNotificationServicePrimary implements BookingNotificationSer
 
     private final KafkaNotificationPublisher publisher;
 
-    public BookingNotificationServicePrimary(KafkaTemplate<String, String> kafkaTemplate) {
-        this.publisher = new KafkaNotificationPublisher(kafkaTemplate, KAFKA_TOPIC);
+    public BookingNotificationServicePrimary(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
+        this.publisher = new KafkaNotificationPublisher(kafkaTemplate, objectMapper, BOOKING_TOPIC);
     }
 
     @Override

@@ -9,7 +9,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 /**
  * Base for sky-booking integration tests. Boots PostgreSQL and Kafka via Testcontainers
@@ -32,11 +31,11 @@ public abstract class AbstractIntegrationTest {
     @Container
     @ServiceConnection
     protected static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"));
+            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE);
 
     @Container
     @ServiceConnection
     protected static final ConfluentKafkaContainer KAFKA =
-            new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"))
+            new ConfluentKafkaContainer(TestcontainersConfiguration.KAFKA_IMAGE)
                     .withReuse(true);
 }

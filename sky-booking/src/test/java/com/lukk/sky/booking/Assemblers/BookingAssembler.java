@@ -1,4 +1,4 @@
-package com.lukk.sky.booking.Assemblers;
+package com.lukk.sky.booking.assemblers;
 
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.adapters.dto.BookingPayload;
@@ -8,19 +8,19 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
-import static com.lukk.sky.booking.Assemblers.UserAssembler.TEST_USER_EMAIL;
-
+import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_OWNER_EMAIL;
+import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
+import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_USER_EMAIL;
 
 public class BookingAssembler {
-    public static UUID TEST_DEFAULT_BOOKED_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-    public static UUID TEST_DEFAULT_BOOKED_ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
-    public static UUID TEST_DEFAULT_OFFER_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
-    public static UUID TEST_DEFAULT_OFFER_ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000102");
+    public static final UUID TEST_DEFAULT_BOOKED_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final UUID TEST_DEFAULT_BOOKED_ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
-    public static LocalDate TEST_DATE = LocalDate.of(2201, 6, 20);
+    public static final UUID TEST_DEFAULT_OFFER_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
+    public static final UUID TEST_DEFAULT_OFFER_ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000102");
+
+    public static final LocalDate TEST_DATE = LocalDate.of(2201, 6, 20);
 
     public static List<Booking> getPopulatedBookedList() {
         return List.of(
@@ -68,6 +68,6 @@ public class BookingAssembler {
     }
 
     public static BookingPayload getBookingPayload() {
-        return new BookingPayload(TEST_DEFAULT_OFFER_ID, TEST_DATE.toString());
+        return new BookingPayload(TEST_DEFAULT_OFFER_ID, TEST_DATE);
     }
 }

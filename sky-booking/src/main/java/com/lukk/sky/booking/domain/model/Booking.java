@@ -26,7 +26,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(of = {"id", "offerId", "bookingUser"})
+@ToString(of = {"id", "offerId", "bookedDate"})
 public class Booking {
 
     @Id
@@ -48,20 +48,15 @@ public class Booking {
     private String ownerEmail;
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        if (o == null) {
-            return false;
-        }
-        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) {
             return false;
         }
 
-        Booking other = (Booking) o;
-
-        return id != null && id.equals(other.getId());
+        return id != null && id.equals(((Booking) other).getId());
     }
 
     @Override

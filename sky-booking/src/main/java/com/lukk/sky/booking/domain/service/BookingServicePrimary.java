@@ -1,7 +1,7 @@
 package com.lukk.sky.booking.domain.service;
 
-
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
+import com.lukk.sky.booking.domain.exception.BookingAccessDeniedException;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.exception.BookingNotFoundException;
 import com.lukk.sky.booking.domain.model.Booking;
@@ -42,13 +42,12 @@ public class BookingServicePrimary implements BookingService {
     }
 
     @Override
-    public BookingDTO bookOffer(UUID offerId, String dateToBookUnparsed, String userEmail)
+    public BookingDTO bookOffer(UUID offerId, LocalDate dateToBook, String userEmail)
             throws BookingException {
         log.info("Booking offer with ID: {} by user: {}", offerId, userEmail);
 
         String ownerEmail = restClient.requestOfferOwner(offerId);
 
-        LocalDate dateToBook = LocalDate.parse(dateToBookUnparsed, DATE_FORMAT);
         List<Booking> existingBookings = getBookingsForOffer(offerId);
 
         checkIfBookingDateIsInFuture(dateToBook);
@@ -81,9 +80,8 @@ public class BookingServicePrimary implements BookingService {
             return "Booking removed by owner";
 
         } else {
-            throw new BookingException(String.format(
-                    "User: %s can't delete booking with ID: %s because it's not booked or owned by him.",
-                    userEmail, bookingId));
+            throw new BookingAccessDeniedException(
+                    "You neither booked this offer nor own it, so you cannot cancel this booking.");
         }
     }
 

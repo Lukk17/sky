@@ -1,6 +1,5 @@
 package com.lukk.sky.booking.domain.ports.outbound;
 
-
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 
 /**

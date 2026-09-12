@@ -1,5 +1,8 @@
 package com.lukk.sky.booking.architecture;
 
+import com.lukk.sky.booking.SkyBookingApplication;
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -7,21 +10,40 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+import java.util.Set;
+
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Enforces hexagonal layering for sky-booking. Rules tailored to the current
- * package layout — they pass today and act as a regression net.
+ * package layout. They pass today and act as a regression net.
  *
  * <p>Known tech-debt the rules deliberately tolerate (track in follow-up changes):
  * <ul>
- *   <li>{@code domain.service.*} imports {@code adapters.dto.BookingDTO} —
+ *   <li>{@code domain.service.*} imports {@code adapters.dto.BookingDTO}:
  *       DTOs should split into request/response (adapter) vs command/result (domain).</li>
  * </ul>
  */
 @DisplayName("Hexagonal architecture enforcement tests")
 class HexagonalArchitectureTest {
+
+    private static final Set<String> HAND_WRITTEN_QUERY_TYPES = Set.of(
+            "org.springframework.data.jpa.repository.Query",
+            "org.springframework.data.jpa.repository.NativeQuery",
+            "jakarta.persistence.EntityManager",
+            "jakarta.persistence.EntityManagerFactory",
+            "jakarta.persistence.PersistenceContext",
+            "jakarta.persistence.Query",
+            "jakarta.persistence.TypedQuery",
+            "jakarta.persistence.NamedQuery",
+            "jakarta.persistence.NamedNativeQuery",
+            "org.hibernate.Session",
+            "org.hibernate.SessionFactory");
+
+    private static final String HIBERNATE_QUERY_PACKAGE = "org.hibernate.query";
 
     private static JavaClasses classes;
 
@@ -29,7 +51,15 @@ class HexagonalArchitectureTest {
     static void importClasses() {
         classes = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-                .importPackages("com.lukk.sky.booking");
+                .importUrl(productionClasses());
+
+        assertThat(classes)
+                .as("production classes available to the architecture rules")
+                .isNotEmpty();
+    }
+
+    private static URL productionClasses() {
+        return SkyBookingApplication.class.getProtectionDomain().getCodeSource().getLocation();
     }
 
     @Test
@@ -42,16 +72,32 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("Domain has no Spring Web / Reactor / RestTemplate / WebClient dependencies")
-    void domainClasses_whenInspected_thenHaveNoWebStackDependencies() {
+    @DisplayName("Adapters never reach into domain.service, only into the ports")
+    void adapters_whenInspected_thenDependOnPortsRatherThanDomainServiceImplementations() {
+        noClasses()
+                .that().resideInAPackage("..adapters..")
+                .should().dependOnClassesThat().resideInAPackage("..domain.service..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("Domain has no outbound HTTP client dependency")
+    void domainClasses_whenInspected_thenHaveNoHttpClientDependencies() {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .and().areNotAnnotatedWith("org.springframework.web.bind.annotation.RestControllerAdvice")
+                .should().dependOnClassesThat().resideInAPackage("org.springframework.web.client..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("The whole service is off the reactive stack: no Reactor and no WebFlux anywhere")
+    void allClasses_whenInspected_thenHaveNoReactiveStackDependencies() {
+        noClasses()
                 .should().dependOnClassesThat().resideInAnyPackage(
-                        "org.springframework.web.client..",
-                        "org.springframework.web.reactive.function.client..",
-                        "reactor.netty.."
-                )
+                        "reactor..",
+                        "org.springframework.web.reactive..",
+                        "org.springframework.http.client.reactive..")
                 .check(classes);
     }
 
@@ -83,5 +129,27 @@ class HexagonalArchitectureTest {
                 .and().areInterfaces()
                 .should().resideInAPackage("..domain.ports.outbound..")
                 .check(classes);
+    }
+
+    @Test
+    @DisplayName("No main source writes a query by hand: no @Query, no native query, no EntityManager")
+    void mainSources_whenCheckedForHandWrittenQueries_thenNoneUsesQueryAnnotationNativeQueryOrEntityManager() {
+        noClasses()
+                .should().dependOnClassesThat(areHandWrittenQueryApi())
+                .because("every query must be a Spring Data Specification passed to JpaSpecificationExecutor"
+                        + " (findAll, findBy) or a derived query method: replace @Query, @NativeQuery,"
+                        + " EntityManager.createQuery, EntityManager.createNativeQuery and the Hibernate query"
+                        + " API with a Specification built in an adapter under adapters.outbound.persistence")
+                .check(classes);
+    }
+
+    private static DescribedPredicate<JavaClass> areHandWrittenQueryApi() {
+        return new DescribedPredicate<>("the @Query annotation, a native query, an EntityManager or a Hibernate query API") {
+            @Override
+            public boolean test(JavaClass javaClass) {
+                return HAND_WRITTEN_QUERY_TYPES.contains(javaClass.getFullName())
+                        || javaClass.getPackageName().startsWith(HIBERNATE_QUERY_PACKAGE);
+            }
+        };
     }
 }

@@ -1,5 +1,6 @@
 package com.lukk.sky.booking.config;
 
+import com.lukk.sky.common.web.CorrelationIdClientHttpRequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -12,7 +13,12 @@ import java.time.Duration;
 public class RestClientConfig {
 
     @Bean
-    public RestClient restClient() {
+    public CorrelationIdClientHttpRequestInterceptor correlationIdInterceptor() {
+        return new CorrelationIdClientHttpRequestInterceptor();
+    }
+
+    @Bean
+    public RestClient restClient(CorrelationIdClientHttpRequestInterceptor correlationIdInterceptor) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(2))
                 .build();
@@ -22,6 +28,7 @@ public class RestClientConfig {
 
         return RestClient.builder()
                 .requestFactory(factory)
+                .requestInterceptor(correlationIdInterceptor)
                 .build();
     }
 }

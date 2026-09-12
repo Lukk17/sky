@@ -1,6 +1,6 @@
 package com.lukk.sky.booking.domain.service;
 
-import com.lukk.sky.booking.domain.exception.BookingException;
+import com.lukk.sky.booking.domain.exception.BookingDateAlreadyBookedException;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.model.EventType;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
@@ -34,7 +34,7 @@ public class BookingPersister {
 
     private static void checkIfAlreadyBooked(List<Booking> bookedList, LocalDate dateToBook) {
         if (bookedList.stream().anyMatch(b -> b.getBookedDate().isEqual(dateToBook))) {
-            throw new BookingException("Offer you try to book was already booked on that date.");
+            throw new BookingDateAlreadyBookedException("Offer you try to book was already booked on that date.");
         }
     }
 }

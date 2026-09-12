@@ -54,20 +54,15 @@ public class Event {
     private Instant timestamp;
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        if (o == null) {
-            return false;
-        }
-        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) {
             return false;
         }
 
-        Event other = (Event) o;
-
-        return id != null && id.equals(other.getId());
+        return id != null && id.equals(((Event) other).getId());
     }
 
     @Override

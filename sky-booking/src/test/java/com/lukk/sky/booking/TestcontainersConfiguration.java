@@ -17,9 +17,16 @@ import org.testcontainers.utility.DockerImageName;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
+    /**
+     * Single source of truth for the container images used across this module's tests.
+     */
+    public static final DockerImageName POSTGRES_IMAGE = DockerImageName.parse("postgres:17-alpine");
+
+    public static final DockerImageName KAFKA_IMAGE = DockerImageName.parse("confluentinc/cp-kafka:7.6.0");
+
     @Bean
     @ServiceConnection
     PostgreSQLContainer postgresContainer() {
-        return new PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"));
+        return new PostgreSQLContainer(POSTGRES_IMAGE);
     }
 }

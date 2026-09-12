@@ -1,4 +1,3 @@
-# ==================================================================================================================
 sky:
   apiPrefix: /api/v1
   offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
@@ -7,13 +6,12 @@ sky:
   crossOrigin:
     allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com,http://localhost:5777,http://localhost:4200,http://localhost:5555}
 
-# SPRING setup
-
 server:
   port: ${BOOKING_PORT:5555}
   forward-headers-strategy: framework
 
 springdoc:
+  override-with-generic-response: false
   info:
     title: sky-booking
     version: v1
@@ -114,6 +112,8 @@ resilience4j:
           - java.io.IOException
         ignore-exceptions:
           - com.lukk.sky.booking.domain.exception.BookingException
+          - com.lukk.sky.booking.domain.exception.OfferServiceBadResponseException
+          - com.lukk.sky.booking.domain.exception.OfferServiceUnavailableException
   circuitbreaker:
     instances:
       offerService:
@@ -121,6 +121,9 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.io.IOException
 
 logging:
   level:
