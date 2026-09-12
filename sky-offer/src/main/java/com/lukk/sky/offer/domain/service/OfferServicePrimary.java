@@ -2,12 +2,15 @@ package com.lukk.sky.offer.domain.service;
 
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
+import com.lukk.sky.offer.domain.exception.PhotoStorageException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
+import com.lukk.sky.offer.domain.ports.outbound.OfferSearch;
 import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +31,7 @@ import java.util.UUID;
 public class OfferServicePrimary implements OfferService {
 
     private final OfferRepository offerRepository;
+    private final OfferSearch offerSearch;
     private final EventSourceService eventSourceService;
     private final PhotoStorage photoStorage;
 
@@ -36,21 +40,20 @@ public class OfferServicePrimary implements OfferService {
     public Page<OfferDTO> getAllOffers(Pageable pageable) {
         log.info("Pulling all offers page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
 
-        return offerRepository.findAll(pageable).map(offer -> withPresignedUrl(OfferDTO.of(offer)));
+        return offerRepository.findAll(pageable).map(this::toDto);
     }
 
     @Override
     public OfferDTO addOffer(OfferDTO offerDTO) throws OfferException {
-        if (offerDTO.getId() != null && offerRepository.existsById(offerDTO.getId())) {
-            throw new OfferException("Offer with given ID already exist!");
-        }
+        Offer newOffer = offerDTO.toDomain();
+        newOffer.setId(null);
 
-        Offer savedOffer = offerRepository.save(offerDTO.toDomain());
+        Offer savedOffer = offerRepository.save(newOffer);
 
         log.info("Saved offer with ID: {} from user: {}", savedOffer.getId(), savedOffer.getOwnerEmail());
         eventSourceService.saveEvent(savedOffer, EventType.OFFER_CREATED);
 
-        return withPresignedUrl(OfferDTO.of(savedOffer));
+        return toDto(savedOffer);
     }
 
     @Override
@@ -63,9 +66,10 @@ public class OfferServicePrimary implements OfferService {
 
             log.info("Deleted offer with ID: {}", offerToDelete.getId());
             eventSourceService.saveEvent(offerToDelete, EventType.OFFER_DELETED);
+            removeStoredPhoto(offerToDelete.getId(), offerToDelete.getPhotoObjectKey());
 
         } else {
-            throw new OfferException("You can't remove offer of which owner is someone else!");
+            throw new OfferAccessDeniedException("You can only delete offers you own.");
         }
     }
 
@@ -75,8 +79,7 @@ public class OfferServicePrimary implements OfferService {
         log.info("Pulling offers which owner is user: {} page={} size={}",
                 ownerEmail, pageable.getPageNumber(), pageable.getPageSize());
 
-        return offerRepository.findAllByOwnerEmail(ownerEmail, pageable)
-                .map(offer -> withPresignedUrl(OfferDTO.of(offer)));
+        return offerRepository.findAllByOwnerEmail(ownerEmail, pageable).map(this::toDto);
     }
 
     @Override
@@ -84,22 +87,26 @@ public class OfferServicePrimary implements OfferService {
     public Page<OfferDTO> searchOffers(String searched, Pageable pageable) {
         log.info("Searching offers for: {}", searched);
 
-        return offerRepository.searchByTerm(searched, pageable)
-                .map(offer -> withPresignedUrl(OfferDTO.of(offer)));
+        return offerSearch.searchByTerm(searched, pageable).map(this::toDto);
     }
 
     @Override
-    public OfferDTO editOffer(OfferEditDTO offerEditDTO) {
-        Offer dbOffer = offerRepository
+    public OfferDTO editOffer(OfferEditDTO offerEditDTO, String ownerEmail) {
+        Offer storedOffer = offerRepository
                 .findById(offerEditDTO.getId())
                 .orElseThrow(() -> new OfferNotFoundException("Offer not found."));
 
-        Offer savedOffer = offerRepository.save(offerEditDTO.mergeWithDomain(dbOffer).toDomain());
+        if (!storedOffer.getOwnerEmail().equals(ownerEmail)) {
+            throw new OfferAccessDeniedException("You can only edit offers you own.");
+        }
+
+        offerEditDTO.applyTo(storedOffer);
+        Offer savedOffer = offerRepository.save(storedOffer);
 
         log.info("Offer with ID: {} edited.", savedOffer.getId());
         eventSourceService.saveEvent(savedOffer, EventType.OFFER_UPDATED);
 
-        return withPresignedUrl(OfferDTO.of(savedOffer));
+        return toDto(savedOffer);
     }
 
     @Override
@@ -118,26 +125,71 @@ public class OfferServicePrimary implements OfferService {
     @Override
     public OfferDTO uploadPhoto(UUID offerId, String ownerEmail, InputStream content, long contentLength,
                                 String validatedContentType, String filename) {
-        Offer offer = offerRepository.findById(offerId)
-                .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId)));
+        Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only upload photos for your own offers.");
 
-        if (!offer.getOwnerEmail().equals(ownerEmail)) {
-            throw new OfferException("You can only upload photos for your own offers.");
-        }
-
-        String key = photoStorage.upload(content, contentLength, validatedContentType, filename);
-        offer.setPhotoPath(key);
+        String previousKey = offer.getPhotoObjectKey();
+        String key = photoStorage.upload(offerId, content, contentLength, validatedContentType, filename);
+        offer.setPhotoObjectKey(key);
         Offer saved = offerRepository.save(offer);
 
         log.info("Photo uploaded for offer ID: {} key={}", offerId, key);
 
-        return withPresignedUrl(OfferDTO.of(saved));
+        if (!key.equals(previousKey)) {
+            removeStoredPhoto(offerId, previousKey);
+        }
+
+        return toDto(saved);
     }
 
-    private OfferDTO withPresignedUrl(OfferDTO dto) {
-        String url = photoStorage.presignedUrl(dto.getPhotoPath());
-        dto.setPhotoUrl(url);
+    @Override
+    public void deletePhoto(UUID offerId, String ownerEmail) {
+        Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only delete photos of your own offers.");
+
+        String key = offer.getPhotoObjectKey();
+        offer.setPhotoObjectKey(null);
+        offerRepository.save(offer);
+
+        log.info("Photo cleared for offer ID: {} key={}", offerId, key);
+        removeStoredPhoto(offerId, key);
+    }
+
+    private Offer requireOwnedOffer(UUID offerId, String ownerEmail, String accessDeniedMessage) {
+        Offer offer = offerRepository.findById(offerId)
+                .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId)));
+
+        if (!offer.getOwnerEmail().equals(ownerEmail)) {
+            throw new OfferAccessDeniedException(accessDeniedMessage);
+        }
+
+        return offer;
+    }
+
+    private void removeStoredPhoto(UUID offerId, String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+
+        try {
+            photoStorage.delete(offerId, key);
+        } catch (PhotoStorageException ex) {
+            log.warn("photo_delete_failed key={} reason={}", key, ex.getMessage());
+        }
+    }
+
+    private OfferDTO toDto(Offer offer) {
+        OfferDTO dto = OfferDTO.of(offer);
+        dto.setPhotoUrl(photoAddress(offer));
 
         return dto;
+    }
+
+    private String photoAddress(Offer offer) {
+        String key = offer.getPhotoObjectKey();
+
+        if (key == null || key.isBlank()) {
+            return offer.getExternalPhotoUrl();
+        }
+
+        return photoStorage.presignedUrl(key);
     }
 }

@@ -8,9 +8,17 @@
 # Any Kubernetes distro works with this same environment as long as its ingress
 # is exposed at localhost:5777 and its Keycloak issues the same nip.io issuer.
 #
+# offer/upload-photo.yml fetches the presigned photoUrl back. The cluster signs that URL against
+# s3.presignEndpoint in config/k8s/helm/service/sky-offer/values-local.yaml, which is
+# http://s3.localhost:5777, the floci ingress on the same host port the rest of the stack answers on.
+# The upload itself goes to s3.endpoint, http://floci-service:4566, which only resolves inside the
+# cluster. Both round-trip assertions pass here.
+#
 # Run the collection with:
 #   bru run -r --env k8s --insecure
-# from the docs/api/request directory.
+# from the docs/api/request directory. Running a single folder needs the token passed in, because
+# auth/get-token.yml is what fills bearerToken:
+#   bru run offer -r --env k8s --insecure --env-var bearerToken=<token>
 name: k8s
 variables:
   - name: baseUrl

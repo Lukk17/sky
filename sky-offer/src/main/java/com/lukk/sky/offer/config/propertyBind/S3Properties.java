@@ -7,6 +7,7 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "sky.s3")
 public record S3Properties(
         String endpoint,
+        String presignEndpoint,
         String region,
         String bucket,
         String accessKey,
@@ -14,4 +15,12 @@ public record S3Properties(
         boolean pathStyleAccess,
         Duration presignTtl
 ) {
+
+    public String resolvedPresignEndpoint() {
+        if (presignEndpoint == null || presignEndpoint.isBlank()) {
+            return endpoint;
+        }
+
+        return presignEndpoint;
+    }
 }

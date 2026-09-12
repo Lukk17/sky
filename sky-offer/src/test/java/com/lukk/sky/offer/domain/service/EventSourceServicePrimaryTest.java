@@ -1,143 +1,128 @@
 package com.lukk.sky.offer.domain.service;
 
-import com.google.gson.Gson;
-import com.lukk.sky.offer.Assemblers.OfferAssembler;
-import com.lukk.sky.offer.domain.model.Event;
+import com.lukk.sky.offer.assemblers.OfferAssembler;
+import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
+import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
-import com.lukk.sky.offer.domain.ports.outbound.EventSourceRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
-import static com.lukk.sky.offer.Assemblers.EventAssembler.TEST_DATE;
-import static com.lukk.sky.offer.Assemblers.EventAssembler.TEST_EVENT_TYPE;
-import static com.lukk.sky.offer.Assemblers.EventAssembler.getTestEvent;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
+import static com.lukk.sky.offer.assemblers.EventAssembler.TEST_EVENT_TYPE;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
+import static com.lukk.sky.offer.domain.service.EventSourceServicePrimary.MAX_APPEND_ATTEMPTS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("EventSourceServicePrimary — unit tests for event sourcing persistence logic")
+@DisplayName("EventSourceServicePrimary: unit tests for event sourcing persistence logic")
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 class EventSourceServicePrimaryTest {
 
     @Mock
-    EventSourceRepository eventSourceRepository;
+    OfferEventAppender offerEventAppender;
 
-    @InjectMocks
-    EventSourceServicePrimary eventSourceServicePrimary;
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
-    Gson gson = new Gson();
+    private EventSourceServicePrimary eventSourceServicePrimary;
 
-    @Test
-    @DisplayName("saveEvent assigns sequence number 1 when no previous event exists for the offer")
-    void saveEvent_whenNoExistingEventsForOffer_thenSaveWithSequenceNumber1() {
-        try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
-            // given
-            instantMock.when(Instant::now).thenReturn(TEST_DATE);
-            Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-            Event expected = getTestEvent(1, gson.toJson(offer));
-            when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
-                    .thenReturn(Optional.empty());
-
-            // when
-            eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
-
-            // then
-            ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
-            verify(eventSourceRepository, times(1)).save(captor.capture());
-            Event saved = captor.getValue();
-            assertEquals(expected.getOfferId(), saved.getOfferId());
-            assertEquals(expected.getSequenceNumber(), saved.getSequenceNumber());
-            assertEquals(expected.getEventType(), saved.getEventType());
-            assertEquals(expected.getPayload(), saved.getPayload());
-            assertEquals(expected.getTimestamp(), saved.getTimestamp());
-        }
+    @BeforeEach
+    void setUp() {
+        eventSourceServicePrimary = new EventSourceServicePrimary(offerEventAppender, objectMapper);
     }
 
     @Test
-    @DisplayName("saveEvent assigns last sequence number + 1 when previous events already exist for the offer")
-    void saveEvent_whenPreviousEventsExist_thenSaveWithIncrementedSequenceNumber() {
-        try (MockedStatic<Instant> instantMock = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
-            // given
-            instantMock.when(Instant::now).thenReturn(TEST_DATE);
-            Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-            Event expected = getTestEvent(3, gson.toJson(offer));
-            when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
-                    .thenReturn(Optional.of(2));
-
-            // when
-            eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
-
-            // then
-            ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
-            verify(eventSourceRepository, times(1)).save(captor.capture());
-            Event saved = captor.getValue();
-            assertEquals(expected.getOfferId(), saved.getOfferId());
-            assertEquals(expected.getSequenceNumber(), saved.getSequenceNumber());
-            assertEquals(expected.getEventType(), saved.getEventType());
-            assertEquals(expected.getPayload(), saved.getPayload());
-            assertEquals(expected.getTimestamp(), saved.getTimestamp());
-        }
-    }
-
-    @Test
-    @DisplayName("saveEvent assigns sequential sequence numbers across two consecutive events for the same offer")
-    void saveEvent_whenTwoEventsForSameOffer_thenAssignSequentialNumbers() {
+    @DisplayName("saveEvent appends one event carrying the offer id and the event type")
+    void saveEvent_whenCalled_thenAppendOneEventForThatOfferAndEventType() {
         // given
         Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-        when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.of(1));
-
-        // when
-        eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
-        eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
-
-        // then
-        ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
-        verify(eventSourceRepository, times(2)).save(captor.capture());
-        List<Event> saved = captor.getAllValues();
-        assertEquals(1, saved.get(0).getSequenceNumber());
-        assertEquals(2, saved.get(1).getSequenceNumber());
-    }
-
-    @Test
-    @DisplayName("saveEvent acquires the per-offer advisory lock before reading the sequence and saving")
-    void saveEvent_whenSaving_thenLockAcquiredBeforeSequenceReadAndSave() {
-        // given
-        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
-        when(eventSourceRepository.findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID))
-                .thenReturn(Optional.of(4));
 
         // when
         eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
 
         // then
-        long expectedLockKey = TEST_DEFAULT_OFFER_ID.getMostSignificantBits() ^ TEST_DEFAULT_OFFER_ID.getLeastSignificantBits();
-        InOrder inOrder = inOrder(eventSourceRepository);
-        inOrder.verify(eventSourceRepository).lockOfferEventStream(expectedLockKey);
-        inOrder.verify(eventSourceRepository).findLastSequenceNumberByOfferId(TEST_DEFAULT_OFFER_ID);
-        inOrder.verify(eventSourceRepository).save(any(Event.class));
+        verify(offerEventAppender, times(1))
+                .appendNextEvent(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_EVENT_TYPE), anyString());
+    }
+
+    @Test
+    @DisplayName("saveEvent serialises the offer with Jackson, keeping null fields and unescaped punctuation")
+    void saveEvent_whenOfferHasNullFieldAndPunctuation_thenPayloadKeepsNullsAndRawPunctuation() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        offer.setDescription("Bed & breakfast <near> the old town");
+        offer.setPhotoObjectKey(null);
+
+        // when
+        eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
+
+        // then
+        ArgumentCaptor<String> payload = ArgumentCaptor.forClass(String.class);
+        verify(offerEventAppender).appendNextEvent(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_EVENT_TYPE), payload.capture());
+        assertEquals("{\"id\":\"00000000-0000-0000-0000-000000000001\",\"hotelName\":\"testHotelName\","
+                        + "\"description\":\"Bed & breakfast <near> the old town\","
+                        + "\"comment\":\"testComment\",\"price\":20,\"ownerEmail\":\"test@owner.com\","
+                        + "\"roomCapacity\":5,\"city\":\"testCity\",\"country\":\"testCountry\","
+                        + "\"photoObjectKey\":null,"
+                        + "\"externalPhotoUrl\":\"https://images.example.com/test-hotel.jpeg\"}",
+                payload.getValue());
+    }
+
+    @Test
+    @DisplayName("saveEvent retries the append when another writer took the sequence number first")
+    void saveEvent_whenFirstAttemptsConflict_thenRetryUntilTheAppendSucceeds() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        when(offerEventAppender.appendNextEvent(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_EVENT_TYPE), anyString()))
+                .thenThrow(conflict())
+                .thenThrow(conflict())
+                .thenReturn(null);
+
+        // when
+        eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE);
+
+        // then
+        verify(offerEventAppender, times(3))
+                .appendNextEvent(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_EVENT_TYPE), anyString());
+    }
+
+    @Test
+    @DisplayName("saveEvent gives up after the bounded number of attempts, with the last conflict as the cause")
+    void saveEvent_whenEveryAttemptConflicts_thenThrowAfterMaxAttemptsWithTheLastConflictAsCause() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        EventSequenceConflictException everyAttemptConflicts = conflict();
+        when(offerEventAppender.appendNextEvent(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_EVENT_TYPE), anyString()))
+                .thenThrow(everyAttemptConflicts);
+
+        // when
+        EventSequenceConflictException thrown = assertThrows(EventSequenceConflictException.class,
+                () -> eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE));
+
+        // then
+        verify(offerEventAppender, times(MAX_APPEND_ATTEMPTS))
+                .appendNextEvent(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_EVENT_TYPE), anyString());
+        assertSame(everyAttemptConflicts, thrown.getCause());
+        assertThat(thrown).hasMessageContaining(String.valueOf(MAX_APPEND_ATTEMPTS));
     }
 
     @Test
@@ -156,6 +141,11 @@ class EventSourceServicePrimaryTest {
         // when / then
         assertThrows(IllegalArgumentException.class,
                 () -> eventSourceServicePrimary.saveEvent(offer, TEST_EVENT_TYPE));
-        verify(eventSourceRepository, never()).save(any(Event.class));
+        verify(offerEventAppender, never()).appendNextEvent(any(UUID.class), any(EventType.class), anyString());
+    }
+
+    private static EventSequenceConflictException conflict() {
+        return new EventSequenceConflictException("sequence number already taken",
+                new IllegalStateException("duplicate key"));
     }
 }

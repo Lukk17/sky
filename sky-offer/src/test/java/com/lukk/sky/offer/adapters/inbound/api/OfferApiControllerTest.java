@@ -1,12 +1,13 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.lukk.sky.offer.Assemblers.OfferAssembler;
+import com.lukk.sky.offer.assemblers.OfferAssembler;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
-import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
+import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
+import com.lukk.sky.offer.domain.exception.PhotoStorageBadResponseException;
+import com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException;
 import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.mock.web.MockMultipartFile;
@@ -32,14 +34,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.util.List;
 
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_HOTEL_NAME;
-import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_HOTEL_NAME;
+import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL;
+import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,12 +51,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("OfferApiController — MockMvc tests for the public and owner offer API endpoints")
+@DisplayName("OfferApiController: MockMvc tests for the public and owner offer API endpoints")
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -72,15 +78,26 @@ class OfferApiControllerTest {
             0x00, 0x00, 0x00, 0x0D
     };
 
+    private static final byte[] VALID_WEBP_BYTES = {
+            0x52, 0x49, 0x46, 0x46, 0x24, 0x00, 0x00, 0x00,
+            0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20
+    };
+
+    private static final byte[] RIFF_WAVE_BYTES = {
+            0x52, 0x49, 0x46, 0x46, 0x24, 0x00, 0x00, 0x00,
+            0x57, 0x41, 0x56, 0x45, 0x66, 0x6D, 0x74, 0x20
+    };
+
     private static final byte[] INVALID_MAGIC_BYTES = {
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
             0x08, 0x09, 0x0A, 0x0B
     };
 
-    private Gson gson;
-
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockitoBean
     private OfferService offerService;
@@ -112,11 +129,6 @@ class OfferApiControllerTest {
 
     @BeforeEach
     void beforeAll() {
-        gson = new GsonBuilder()
-                .enableComplexMapKeySerialization()
-                .serializeNulls()
-                .create();
-
         doNothing().when(offerNotificationService).sendMessage(any());
     }
 
@@ -185,7 +197,7 @@ class OfferApiControllerTest {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         when(offerService.addOffer(offerDTO)).thenReturn(offerDTO);
-        String expectedJson = gson.toJson(offerDTO);
+        String expectedJson = objectMapper.writeValueAsString(offerDTO);
 
         // when
         MvcResult result = mvc.perform(
@@ -201,48 +213,134 @@ class OfferApiControllerTest {
     }
 
     @Test
-    @DisplayName("addOffer_whenOfferAlreadyExists_thenReturn400WithErrorMessage")
-    void addOffer_whenOfferAlreadyExists_thenReturn400WithErrorMessage() throws Exception {
+    @DisplayName("addOffer_whenOwnerEmailIsGarbage_thenIgnoreItBecauseTheServerAssignsItFromTheJwt")
+    void addOffer_whenOwnerEmailIsGarbage_thenIgnoreIt() throws Exception {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        doThrow(new OfferException("Offer with given ID already exist!"))
-                .when(offerService).addOffer(offerDTO);
-        String expectedJson = gson.toJson(offerDTO);
+        offerDTO.setOwnerEmail("not-an-email");
+        when(offerService.addOffer(any())).thenReturn(offerDTO);
+        String payload = objectMapper.writeValueAsString(offerDTO);
 
-        // when
-        MvcResult result = mvc.perform(
+        // when / then
+        mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                                .content(expectedJson))
-                .andExpect(status().isBadRequest())
-                .andReturn();
-
-        // then
-        assertTrue(result.getResponse().getContentAsString().contains("Offer with given ID already exist!"));
+                                .content(payload))
+                .andExpect(status().isCreated());
     }
 
     @Test
-    @DisplayName("addOffer_whenOwnerEmailInvalid_thenReturn400WithValidationMessage")
-    void addOffer_whenOwnerEmailInvalid_thenReturn400WithValidationMessage() throws Exception {
+    @DisplayName("addOffer_whenTheEventSequenceConflicts_thenReturn409TellingTheClientToReRead")
+    void addOffer_whenTheEventSequenceConflicts_thenReturn409TellingTheClientToReRead() throws Exception {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        offerDTO.setOwnerEmail(" ");
-        String expectedJson = gson.toJson(offerDTO);
+        when(offerService.addOffer(any()))
+                .thenThrow(new EventSequenceConflictException(
+                        "Gave up appending a CREATED event for offer " + TEST_DEFAULT_OFFER_ID + " after 20 attempts",
+                        new IllegalStateException("duplicate key")));
+        String payload = objectMapper.writeValueAsString(offerDTO);
 
-        // when
-        MvcResult result = mvc.perform(
+        // when / then
+        mvc.perform(
                         post("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                                .content(expectedJson))
-                .andExpect(status().isBadRequest())
-                .andReturn();
+                                .content(payload))
+                .andExpect(status().isConflict())
+                .andExpect(header().doesNotExist(HttpHeaders.RETRY_AFTER))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value(
+                        "A concurrent write advanced the offer event sequence. Re-read the offer and retry the change against its current state."));
+    }
 
-        // then
-        String body = result.getResponse().getContentAsString();
-        assertTrue(body.contains("ownerEmail"));
-        assertTrue(body.contains("field-errors"));
+    @Test
+    @DisplayName("addOffer_whenHotelNameExceeds255Chars_thenReturn400WithFieldError")
+    void addOffer_whenHotelNameExceeds255Chars_thenReturn400() throws Exception {
+        // given
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        offerDTO.setHotelName("a".repeat(256));
+        String payload = objectMapper.writeValueAsString(offerDTO);
+
+        // when / then
+        mvc.perform(
+                        post("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                                .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.['field-errors'].hotelName").exists());
+    }
+
+    @Test
+    @DisplayName("editOffer_whenHotelNameIsBlank_thenReturn400WithFieldError")
+    void editOffer_whenHotelNameIsBlank_thenReturn400() throws Exception {
+        // given
+        OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
+        offerEditDTO.setHotelName("   ");
+        String payload = objectMapper.writeValueAsString(offerEditDTO);
+
+        // when / then
+        mvc.perform(
+                        put("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                                .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.['field-errors'].hotelName").exists());
+    }
+
+    @Test
+    @DisplayName("editOffer_whenHotelNameIsAbsent_thenAcceptItAsAPartialUpdate")
+    void editOffer_whenHotelNameIsAbsent_thenAcceptIt() throws Exception {
+        // given
+        OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
+        offerEditDTO.setHotelName(null);
+        when(offerService.editOffer(any(), eq(TEST_OWNER_EMAIL)))
+                .thenReturn(OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID));
+        String payload = objectMapper.writeValueAsString(offerEditDTO);
+
+        // when / then
+        mvc.perform(
+                        put("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                                .content(payload))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("editOffer_whenCallerIsNotOwner_thenReturn403")
+    void editOffer_whenCallerIsNotOwner_thenReturn403() throws Exception {
+        // given
+        OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
+        doThrow(new OfferAccessDeniedException("You can only edit offers you own."))
+                .when(offerService).editOffer(any(), eq(TEST_USER_EMAIL));
+        String payload = objectMapper.writeValueAsString(offerEditDTO);
+
+        // when / then
+        mvc.perform(
+                        put("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                                .content(payload))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("deleteOffer_whenCallerIsNotOwner_thenReturn403")
+    void deleteOffer_whenCallerIsNotOwner_thenReturn403() throws Exception {
+        // given
+        doThrow(new OfferAccessDeniedException("You can only delete offers you own."))
+                .when(offerService).deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
+
+        // when / then
+        mvc.perform(
+                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -251,9 +349,9 @@ class OfferApiControllerTest {
         // given
         OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.editOffer(offerEditDTO)).thenReturn(offerDTO);
-        String requestJson = gson.toJson(offerEditDTO);
-        String expectedResponseJson = gson.toJson(offerDTO);
+        when(offerService.editOffer(offerEditDTO, TEST_OWNER_EMAIL)).thenReturn(offerDTO);
+        String requestJson = objectMapper.writeValueAsString(offerEditDTO);
+        String expectedResponseJson = objectMapper.writeValueAsString(offerDTO);
 
         // when
         MvcResult result = mvc.perform(
@@ -274,7 +372,7 @@ class OfferApiControllerTest {
     void editOffer_whenNoJwt_thenReturn401() throws Exception {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        String expectedJson = gson.toJson(offerDTO);
+        String expectedJson = objectMapper.writeValueAsString(offerDTO);
 
         // when / then
         mvc.perform(put("/owner/offers").contentType(MediaType.APPLICATION_JSON).content(expectedJson))
@@ -441,7 +539,6 @@ class OfferApiControllerTest {
     void uploadPhoto_whenValidPng_thenReturnUpdatedOfferDtoWithPhotoUrl() throws Exception {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        offerDTO.setPhotoPath("offers/test-uuid-hotel.png");
         offerDTO.setPhotoUrl("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.png?X-Amz-Signature=sig");
         when(offerService.uploadPhoto(
                 eq(TEST_DEFAULT_OFFER_ID),
@@ -462,8 +559,58 @@ class OfferApiControllerTest {
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful())
-                .andExpect(jsonPath("$.photoPath").value("offers/test-uuid-hotel.png"))
+                .andExpect(jsonPath("$.photoObjectKey").doesNotExist())
                 .andExpect(jsonPath("$.photoUrl").value("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.png?X-Amz-Signature=sig"));
+    }
+
+    @Test
+    @DisplayName("uploadPhoto_whenValidWebP_thenReturnUpdatedOfferDtoWithPhotoUrl")
+    void uploadPhoto_whenValidWebP_thenReturnUpdatedOfferDtoWithPhotoUrl() throws Exception {
+        // given
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        offerDTO.setPhotoUrl("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.webp?X-Amz-Signature=sig");
+        when(offerService.uploadPhoto(
+                eq(TEST_DEFAULT_OFFER_ID),
+                eq(TEST_OWNER_EMAIL),
+                any(InputStream.class),
+                anyLong(),
+                eq("image/webp"),
+                eq("hotel.webp")
+        )).thenReturn(offerDTO);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.webp", "image/webp", VALID_WEBP_BYTES
+        );
+
+        // when / then
+        mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.photoUrl")
+                        .value("http://localhost:9000/sky-offers-test/offers/test-uuid-hotel.webp?X-Amz-Signature=sig"));
+    }
+
+    @Test
+    @DisplayName("uploadPhoto_whenFileIsTooSmallToSniff_thenReturn400")
+    void uploadPhoto_whenFileIsTooSmallToSniff_thenReturn400() throws Exception {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.jpg", "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8}
+        );
+
+        // when
+        MvcResult result = mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        assertTrue(result.getResponse().getContentAsString().contains("Unsupported image format"));
     }
 
     @Test
@@ -531,6 +678,28 @@ class OfferApiControllerTest {
     }
 
     @Test
+    @DisplayName("uploadPhoto_whenFileIsARiffContainerButNotWebP_thenReturn400AndNeverReachTheService")
+    void uploadPhoto_whenFileIsARiffContainerButNotWebP_thenReturn400() throws Exception {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.webp", "image/webp", RIFF_WAVE_BYTES
+        );
+
+        // when
+        MvcResult result = mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        assertTrue(result.getResponse().getContentAsString().contains("Unsupported image format"));
+        verifyNoInteractions(offerService);
+    }
+
+    @Test
     @DisplayName("uploadPhoto_whenNoJwt_thenReturn401")
     void uploadPhoto_whenNoJwt_thenReturn401() throws Exception {
         // given
@@ -547,10 +716,10 @@ class OfferApiControllerTest {
     }
 
     @Test
-    @DisplayName("uploadPhoto_whenNotOwner_thenReturn400")
-    void uploadPhoto_whenNotOwner_thenReturn400() throws Exception {
+    @DisplayName("uploadPhoto_whenNotOwner_thenReturn403")
+    void uploadPhoto_whenNotOwner_thenReturn403() throws Exception {
         // given
-        doThrow(new OfferException("You can only upload photos for your own offers."))
+        doThrow(new OfferAccessDeniedException("You can only upload photos for your own offers."))
                 .when(offerService).uploadPhoto(
                         eq(TEST_DEFAULT_OFFER_ID),
                         eq(TEST_OWNER_EMAIL),
@@ -569,11 +738,217 @@ class OfferApiControllerTest {
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isForbidden())
                 .andReturn();
 
         // then
         assertTrue(result.getResponse().getContentAsString()
                 .contains("You can only upload photos for your own offers."));
+    }
+
+    @Test
+    @DisplayName("uploadPhoto_whenTheObjectStoreIsUnavailable_thenReturn503WithRetryAfter")
+    void uploadPhoto_whenTheObjectStoreIsUnavailable_thenReturn503WithRetryAfter() throws Exception {
+        // given
+        doThrow(new PhotoStorageUnavailableException(
+                "Photo upload failed. The object store is unavailable.",
+                new IllegalStateException("Connection refused")))
+                .when(offerService).uploadPhoto(
+                        eq(TEST_DEFAULT_OFFER_ID),
+                        eq(TEST_OWNER_EMAIL),
+                        any(InputStream.class),
+                        anyLong(),
+                        anyString(),
+                        any()
+                );
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.jpg", "image/jpeg", VALID_JPEG_BYTES
+        );
+
+        // when / then
+        mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "10"))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(jsonPath("$.title").value("Service Unavailable"))
+                .andExpect(jsonPath("$.detail").value("Photo upload failed. The object store is unavailable."));
+    }
+
+    @Test
+    @DisplayName("uploadPhoto_whenTheObjectStoreRefusesTheRequest_thenReturn502WithoutRetryAfter")
+    void uploadPhoto_whenTheObjectStoreRefusesTheRequest_thenReturn502WithoutRetryAfter() throws Exception {
+        // given
+        doThrow(new PhotoStorageBadResponseException(
+                "Photo upload failed. The object store refused the request.",
+                new IllegalStateException("Access Denied")))
+                .when(offerService).uploadPhoto(
+                        eq(TEST_DEFAULT_OFFER_ID),
+                        eq(TEST_OWNER_EMAIL),
+                        any(InputStream.class),
+                        anyLong(),
+                        anyString(),
+                        any()
+                );
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.jpg", "image/jpeg", VALID_JPEG_BYTES
+        );
+
+        // when / then
+        mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isBadGateway())
+                .andExpect(header().doesNotExist(HttpHeaders.RETRY_AFTER))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(502))
+                .andExpect(jsonPath("$.title").value("Bad Gateway"))
+                .andExpect(jsonPath("$.detail").value("Photo upload failed. The object store refused the request."));
+    }
+
+    @Test
+    @DisplayName("getAllOffers_whenThePhotoAddressCannotBeSigned_thenReturn503WithRetryAfter")
+    void getAllOffers_whenThePhotoAddressCannotBeSigned_thenReturn503WithRetryAfter() throws Exception {
+        // given
+        when(offerService.getAllOffers(any(Pageable.class)))
+                .thenThrow(new PhotoStorageUnavailableException(
+                        "Photo address could not be signed. The object store is unavailable.",
+                        new IllegalStateException("presign failed")));
+
+        // when / then
+        mvc.perform(get("/offers"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "10"))
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(jsonPath("$.detail").value(
+                        "Photo address could not be signed. The object store is unavailable."));
+    }
+
+    @Test
+    @DisplayName("deletePhoto_whenCallerIsOwner_thenReturn204")
+    void deletePhoto_whenCallerIsOwner_thenReturn204() throws Exception {
+        // given
+        doNothing().when(offerService).deletePhoto(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
+
+        // when / then
+        mvc.perform(
+                        delete(String.format("/owner/offers/%s/photo", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("deletePhoto_whenCallerIsNotOwner_thenReturn403")
+    void deletePhoto_whenCallerIsNotOwner_thenReturn403() throws Exception {
+        // given
+        doThrow(new OfferAccessDeniedException("You can only delete photos of your own offers."))
+                .when(offerService).deletePhoto(TEST_DEFAULT_OFFER_ID, TEST_USER_EMAIL);
+
+        // when / then
+        mvc.perform(
+                        delete(String.format("/owner/offers/%s/photo", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("deletePhoto_whenNoToken_thenReturn401AndTouchNoService")
+    void deletePhoto_whenNoToken_thenReturn401() throws Exception {
+        // when / then
+        mvc.perform(
+                        delete(String.format("/owner/offers/%s/photo", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(offerService);
+    }
+
+    @Test
+    @DisplayName("addOffer_whenBodyCarriesAStorageKeyUnderTheRetiredPhotoPathField_thenItIsIgnored")
+    void addOffer_whenBodyCarriesTheRetiredPhotoPathField_thenItIsIgnored() throws Exception {
+        // given
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        when(offerService.addOffer(any(OfferDTO.class))).thenReturn(offerDTO);
+        String requestJson = """
+                {
+                  "hotelName": "testHotelName",
+                  "price": 20,
+                  "roomCapacity": 5,
+                  "city": "testCity",
+                  "country": "testCountry",
+                  "photoPath": "offers/00000000-0000-0000-0000-000000000002/victim.png"
+                }
+                """;
+
+        // when / then
+        mvc.perform(
+                        post("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.photoPath").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("addOffer_whenExternalPhotoUrlIsAStorageKey_thenReturn400")
+    void addOffer_whenExternalPhotoUrlIsAStorageKey_thenReturn400() throws Exception {
+        // given
+        String requestJson = """
+                {
+                  "hotelName": "testHotelName",
+                  "price": 20,
+                  "roomCapacity": 5,
+                  "city": "testCity",
+                  "country": "testCountry",
+                  "externalPhotoUrl": "offers/00000000-0000-0000-0000-000000000002/victim.png"
+                }
+                """;
+
+        // when / then
+        mvc.perform(
+                        post("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(offerService);
+    }
+
+    @Test
+    @DisplayName("editOffer_whenExternalPhotoUrlIsARelativePath_thenReturn400")
+    void editOffer_whenExternalPhotoUrlIsARelativePath_thenReturn400() throws Exception {
+        // given
+        String requestJson = String.format("""
+                {
+                  "id": "%s",
+                  "externalPhotoUrl": "/images/grand-hotel-paris-new.jpg"
+                }
+                """, TEST_DEFAULT_OFFER_ID);
+
+        // when / then
+        mvc.perform(
+                        put("/owner/offers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(offerService);
     }
 }

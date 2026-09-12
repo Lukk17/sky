@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.io.InputStream;
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 
@@ -31,8 +32,9 @@ public class TestS3Config {
     public PhotoStorage testPhotoStorage() {
         return new PhotoStorage() {
             @Override
-            public String upload(InputStream content, long contentLength, String contentType, String filename) {
-                return "offers/test-uuid-" + filename;
+            public String upload(UUID offerId, InputStream content, long contentLength, String contentType,
+                                 String filename) {
+                return "offers/" + offerId + "/test-uuid-" + filename;
             }
 
             @Override
@@ -42,6 +44,10 @@ public class TestS3Config {
                 }
 
                 return "http://localhost:9000/sky-offers-test/" + key + "?X-Amz-Signature=test";
+            }
+
+            @Override
+            public void delete(UUID offerId, String key) {
             }
         };
     }

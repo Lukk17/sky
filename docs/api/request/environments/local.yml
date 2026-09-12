@@ -1,4 +1,16 @@
-name: local
+# Local Docker Compose / Gradle stack, reached through sky-gateway on host port 5777.
+# Tokens come from the host Keycloak at https://keycloak.test:9443 (self-signed cert,
+# so pass --insecure to the CLI). For a Kubernetes cluster use the k8s environment instead:
+# a token from the wrong issuer is accepted by Keycloak and rejected by the services.
+#
+# offer/upload-photo.yml fetches the presigned photoUrl back and asserts the canary marker in the
+# stored bytes, so the object store has to answer on the host at http://s3.localhost:9070, the same
+# hostname sky-offer signs the URL against (S3_ENDPOINT in config/docker/docker-compose.yaml).
+#
+# Run with:
+#   bru run -r --env local --insecure
+# The --env flag takes the file name, local, while the name below is what the Bruno app shows.
+name: sky-local
 variables:
   - name: baseUrl
     value: http://localhost:5777

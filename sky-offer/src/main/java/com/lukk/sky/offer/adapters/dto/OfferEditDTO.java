@@ -1,7 +1,8 @@
 package com.lukk.sky.offer.adapters.dto;
 
+import com.lukk.sky.offer.adapters.dto.validation.ExternalPhotoUrl;
+import com.lukk.sky.offer.adapters.dto.validation.NullOrNotBlank;
 import com.lukk.sky.offer.domain.model.Offer;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -21,6 +22,8 @@ public class OfferEditDTO {
     @NotNull
     private UUID id;
 
+    @NullOrNotBlank
+    @Size(max = 255)
     private String hotelName;
 
     @Size(max = 3000)
@@ -32,15 +35,21 @@ public class OfferEditDTO {
     @Min(value = 0)
     private BigDecimal price;
 
-    @Email
     private String ownerEmail;
 
     @Min(value = 1)
     private Long roomCapacity;
 
+    @NullOrNotBlank
+    @Size(max = 255)
     private String city;
+
+    @NullOrNotBlank
+    @Size(max = 255)
     private String country;
-    private String photoPath;
+
+    @ExternalPhotoUrl
+    private String externalPhotoUrl;
 
     public static OfferEditDTO of(Offer offer) {
         return OfferEditDTO.builder()
@@ -53,38 +62,19 @@ public class OfferEditDTO {
                 .comment(offer.getComment())
                 .price(offer.getPrice())
                 .roomCapacity(offer.getRoomCapacity())
-                .photoPath(offer.getPhotoPath())
+                .externalPhotoUrl(offer.getExternalPhotoUrl())
                 .build();
     }
 
-    public Offer toDomain() {
-        return Offer.builder()
-                .id(this.getId())
-                .hotelName(this.getHotelName())
-                .city(this.getCity())
-                .country(this.getCountry())
-                .ownerEmail(this.getOwnerEmail())
-                .description(this.getDescription())
-                .comment(this.getComment())
-                .price(this.getPrice())
-                .roomCapacity(this.getRoomCapacity())
-                .photoPath(this.getPhotoPath())
-                .build();
-    }
-
-    public OfferEditDTO mergeWithDomain(Offer dbOffer) {
-        OfferEditDTO.OfferEditDTOBuilder builder = OfferEditDTO.builder();
-        builder.id(dbOffer.getId());
-        builder.hotelName(Objects.requireNonNullElseGet(this.getHotelName(), dbOffer::getHotelName));
-        builder.city(Objects.requireNonNullElseGet(this.getCity(), dbOffer::getCity));
-        builder.country(Objects.requireNonNullElseGet(this.getCountry(), dbOffer::getCountry));
-        builder.ownerEmail(Objects.requireNonNullElseGet(this.getOwnerEmail(), dbOffer::getOwnerEmail));
-        builder.description(Objects.requireNonNullElseGet(this.getDescription(), dbOffer::getDescription));
-        builder.comment(Objects.requireNonNullElseGet(this.getComment(), dbOffer::getComment));
-        builder.price(Objects.requireNonNullElseGet(this.getPrice(), dbOffer::getPrice));
-        builder.roomCapacity(Objects.requireNonNullElseGet(this.getRoomCapacity(), dbOffer::getRoomCapacity));
-        builder.photoPath(Objects.requireNonNullElseGet(this.getPhotoPath(), dbOffer::getPhotoPath));
-
-        return builder.build();
+    public void applyTo(Offer storedOffer) {
+        storedOffer.setHotelName(Objects.requireNonNullElseGet(this.hotelName, storedOffer::getHotelName));
+        storedOffer.setCity(Objects.requireNonNullElseGet(this.city, storedOffer::getCity));
+        storedOffer.setCountry(Objects.requireNonNullElseGet(this.country, storedOffer::getCountry));
+        storedOffer.setDescription(Objects.requireNonNullElseGet(this.description, storedOffer::getDescription));
+        storedOffer.setComment(Objects.requireNonNullElseGet(this.comment, storedOffer::getComment));
+        storedOffer.setPrice(Objects.requireNonNullElseGet(this.price, storedOffer::getPrice));
+        storedOffer.setRoomCapacity(Objects.requireNonNullElseGet(this.roomCapacity, storedOffer::getRoomCapacity));
+        storedOffer.setExternalPhotoUrl(
+                Objects.requireNonNullElseGet(this.externalPhotoUrl, storedOffer::getExternalPhotoUrl));
     }
 }

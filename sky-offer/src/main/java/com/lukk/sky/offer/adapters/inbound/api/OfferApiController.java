@@ -1,11 +1,10 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
-import com.google.gson.Gson;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
-import com.lukk.sky.common.openapi.ApiCommonSuccessResponses;
+import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -24,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,37 +35,41 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.databind.ObjectMapper;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
-@Tag(name = "Offers", description = "Offer lifecycle — browse, create, edit, delete, and search flight/booking offers.")
+@Tag(name = "Offers", description = "Offer lifecycle: browse, create, edit, delete, and search flight/booking offers.")
 @ApiCommonErrorResponses
-@ApiCommonSuccessResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping(path = "${sky.apiPrefix}", version = "1")
 public class OfferApiController {
 
-    private static final Gson GSON = new Gson();
-
-    private static final int MAGIC_READ_LIMIT = 12;
     private static final int SEARCH_TERM_MAX_LENGTH = 100;
 
-    private static final byte[] JPEG_MAGIC = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
-    private static final byte[] PNG_MAGIC = {(byte) 0x89, 0x50, 0x4E, 0x47};
-    private static final byte[] GIF_MAGIC = {0x47, 0x49, 0x46, 0x38};
+    private static final String IMAGE_WEBP_VALUE = "image/webp";
+    private static final Set<String> SNIFFED_IMAGE_TYPES =
+            Set.of(MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, MediaType.IMAGE_GIF_VALUE);
+
+    private static final int WEBP_HEADER_LENGTH = 12;
+    private static final int WEBP_MARKER_OFFSET = 8;
     private static final byte[] WEBP_RIFF = {0x52, 0x49, 0x46, 0x46};
     private static final byte[] WEBP_MARKER = {0x57, 0x45, 0x42, 0x50};
 
     private final OfferService offerService;
     private final OfferNotificationService offerNotificationService;
+    private final ObjectMapper objectMapper;
 
     @Operation(summary = "Get all offers (paginated)")
     @ApiResponses(value = {
@@ -85,6 +89,7 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class))})
     })
+    @ApiSecuredErrorResponses
     @IsUser
     @GetMapping("/owner/offers")
     public ResponseEntity<Page<OfferDTO>> getOwnedOffers(
@@ -100,6 +105,7 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))})
     })
+    @ApiSecuredErrorResponses
     @IsUser
     @PostMapping("/owner/offers")
     public ResponseEntity<OfferDTO> addOffer(@Valid @RequestBody OfferDTO offer) {
@@ -109,7 +115,7 @@ public class OfferApiController {
         offer.setOwnerEmail(ownerEmail);
         OfferDTO addedOffer = offerService.addOffer(offer);
 
-        sendNotification(GSON.toJson(addedOffer), ownerEmail);
+        sendNotification(objectMapper.writeValueAsString(addedOffer), ownerEmail);
 
         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(addedOffer);
     }
@@ -122,16 +128,16 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @ApiSecuredErrorResponses
     @IsUser
     @PutMapping("/owner/offers")
     public ResponseEntity<OfferDTO> edit(@Valid @RequestBody OfferEditDTO offer) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Editing offer with ID: {} from owner:{}", offer.getId(), ownerEmail);
 
-        offer.setOwnerEmail(ownerEmail);
-        OfferDTO edited = offerService.editOffer(offer);
+        OfferDTO edited = offerService.editOffer(offer, ownerEmail);
 
-        sendNotification(GSON.toJson(edited), ownerEmail);
+        sendNotification(objectMapper.writeValueAsString(edited), ownerEmail);
 
         return ResponseEntity.ok(edited);
     }
@@ -143,6 +149,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @ApiSecuredErrorResponses
     @IsUser
     @DeleteMapping("/owner/offers/{offerId}")
     public ResponseEntity<Void> deleteOffer(@PathVariable UUID offerId) {
@@ -185,6 +192,9 @@ public class OfferApiController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Owner email returned",
                     content = {@Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized: missing or invalid bearer token. The body is empty.",
+                    content = @Content),
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
@@ -200,8 +210,11 @@ public class OfferApiController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Photo uploaded; updated offer returned with photoUrl",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))})
+                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Offer not found",
+                    content = @Content)
     })
+    @ApiSecuredErrorResponses
     @IsUser
     @PostMapping(value = "/owner/offers/{offerId}/photo", consumes = "multipart/form-data")
     public ResponseEntity<OfferDTO> uploadPhoto(
@@ -231,52 +244,53 @@ public class OfferApiController {
         return ResponseEntity.ok(updated);
     }
 
+    @Operation(summary = "Delete the stored photo of an offer (owner only)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Photo removed from storage and cleared on the offer",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Offer not found",
+                    content = @Content)
+    })
+    @ApiSecuredErrorResponses
+    @IsUser
+    @DeleteMapping("/owner/offers/{offerId}/photo")
+    public ResponseEntity<Void> deletePhoto(@PathVariable UUID offerId) {
+        String ownerEmail = SecurityUtils.currentUserEmail();
+        log.info("Deleting photo of offer ID: {} from owner: {}", offerId, ownerEmail);
+
+        offerService.deletePhoto(offerId, ownerEmail);
+
+        return ResponseEntity.noContent().build();
+    }
+
     private static String detectContentType(MultipartFile file) throws IOException {
-        byte[] header = new byte[MAGIC_READ_LIMIT];
-        int read;
+        try (InputStream content = new BufferedInputStream(file.getInputStream())) {
+            if (isWebP(content)) {
+                return IMAGE_WEBP_VALUE;
+            }
 
-        try (InputStream peek = file.getInputStream()) {
-            read = peek.read(header, 0, MAGIC_READ_LIMIT);
-        }
+            String sniffedContentType = URLConnection.guessContentTypeFromStream(content);
 
-        if (read < 4) {
-            throw new OfferException("Uploaded file is too small to be a valid image.");
-        }
-
-        if (startsWith(header, JPEG_MAGIC)) {
-            return "image/jpeg";
-        }
-
-        if (startsWith(header, PNG_MAGIC)) {
-            return "image/png";
-        }
-
-        if (startsWith(header, GIF_MAGIC)) {
-            return "image/gif";
-        }
-
-        if (startsWith(header, WEBP_RIFF) && read >= 12 && matchesAt(header, 8, WEBP_MARKER)) {
-            return "image/webp";
+            if (sniffedContentType != null && SNIFFED_IMAGE_TYPES.contains(sniffedContentType)) {
+                return sniffedContentType;
+            }
         }
 
         throw new OfferException(
                 "Unsupported image format. Allowed types: JPEG, PNG, GIF, WebP.");
     }
 
-    private static boolean startsWith(byte[] data, byte[] prefix) {
-        if (data.length < prefix.length) {
-            return false;
-        }
+    private static boolean isWebP(InputStream markSupportingContent) throws IOException {
+        byte[] header = new byte[WEBP_HEADER_LENGTH];
 
-        return Arrays.equals(data, 0, prefix.length, prefix, 0, prefix.length);
-    }
+        markSupportingContent.mark(WEBP_HEADER_LENGTH);
+        int read = markSupportingContent.readNBytes(header, 0, WEBP_HEADER_LENGTH);
+        markSupportingContent.reset();
 
-    private static boolean matchesAt(byte[] data, int offset, byte[] pattern) {
-        if (data.length < offset + pattern.length) {
-            return false;
-        }
-
-        return Arrays.equals(data, offset, offset + pattern.length, pattern, 0, pattern.length);
+        return read == WEBP_HEADER_LENGTH
+                && Arrays.equals(header, 0, WEBP_RIFF.length, WEBP_RIFF, 0, WEBP_RIFF.length)
+                && Arrays.equals(header, WEBP_MARKER_OFFSET, WEBP_HEADER_LENGTH,
+                WEBP_MARKER, 0, WEBP_MARKER.length);
     }
 
     private void sendNotification(String payload, String owner) {

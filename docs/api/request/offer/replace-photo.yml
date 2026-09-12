@@ -1,0 +1,78 @@
+info:
+  name: Replace Offer Photo
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/offer/api/owner/offers/{{offerId}}/photo"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - ../../../e2e/fixtures/offer-photo.png
+        contentType: image/png
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const marker = "SKY-OFFER-PHOTO-CANARY-4471";
+        const markerHex = marker.split("").map(function (c) { return ("0" + c.charCodeAt(0).toString(16)).slice(-2); }).join("");
+        const previousPhotoUrl = bru.getVar("storedPhotoUrl");
+        bru.setVar("replacedPhotoStatus", 0);
+        bru.setVar("secondPhotoStatus", 0);
+        bru.setVar("secondPhotoCanary", "presigned URL was not fetched");
+        if (res.status === 200 && res.body && res.body.photoUrl) {
+          bru.setVar("storedPhotoUrl", res.body.photoUrl);
+          try {
+            const stored = await bru.sendRequest({
+              method: "GET",
+              url: res.body.photoUrl,
+              responseType: "text",
+              responseEncoding: "hex"
+            });
+            bru.setVar("secondPhotoStatus", stored.status);
+            bru.setVar("secondPhotoCanary", String(stored.data).indexOf(markerHex) === -1
+              ? "stored object carries no canary marker"
+              : marker);
+          } catch (err) {
+            bru.setVar("secondPhotoStatus", (err && err.status) || 0);
+            bru.setVar("secondPhotoCanary", "presigned URL not fetchable: " + ((err && err.message) || "unknown error"));
+          }
+          try {
+            const replaced = await bru.sendRequest({
+              method: "GET",
+              url: previousPhotoUrl,
+              responseType: "text"
+            });
+            bru.setVar("replacedPhotoStatus", replaced.status);
+          } catch (err) {
+            bru.setVar("replacedPhotoStatus", (err && (err.status || (err.response && err.response.status))) || 0);
+          }
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.photoUrl
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.photoPath
+      operator: isUndefined
+    - expression: secondPhotoStatus
+      operator: eq
+      value: "200"
+    - expression: secondPhotoCanary
+      operator: eq
+      value: "SKY-OFFER-PHOTO-CANARY-4471"
+    - expression: replacedPhotoStatus
+      operator: eq
+      value: "404"

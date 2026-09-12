@@ -1,18 +1,16 @@
 package com.lukk.sky.offer.domain.service;
 
-import com.google.gson.Gson;
-import com.lukk.sky.offer.domain.model.Event;
+import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
-import com.lukk.sky.offer.domain.ports.outbound.EventSourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import tools.jackson.databind.ObjectMapper;
 
-import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -20,29 +18,40 @@ import java.time.Instant;
 @Primary
 public class EventSourceServicePrimary implements EventSourceService {
 
-    private static final Gson GSON = new Gson();
+    static final int MAX_APPEND_ATTEMPTS = 20;
 
-    private final EventSourceRepository eventSourceRepository;
+    private final OfferEventAppender offerEventAppender;
+    private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional
     public void saveEvent(Offer offer, EventType eventType) {
         Assert.notNull(offer.getId(), "Offer id must not be null when saving an event");
 
-        long lockKey = offer.getId().getMostSignificantBits() ^ offer.getId().getLeastSignificantBits();
-        eventSourceRepository.lockOfferEventStream(lockKey);
+        String payload = objectMapper.writeValueAsString(offer);
 
-        int lastSequence = eventSourceRepository.findLastSequenceNumberByOfferId(offer.getId())
-                .orElse(0);
+        appendRetryingSequenceConflicts(offer.getId(), eventType, payload);
+    }
 
-        Event event = Event.builder()
-                .offerId(offer.getId())
-                .sequenceNumber(lastSequence + 1)
-                .eventType(eventType)
-                .payload(GSON.toJson(offer))
-                .timestamp(Instant.now())
-                .build();
+    private void appendRetryingSequenceConflicts(UUID offerId, EventType eventType, String payload) {
+        EventSequenceConflictException lastConflict = null;
 
-        eventSourceRepository.save(event);
+        for (int attempt = 1; attempt <= MAX_APPEND_ATTEMPTS; attempt++) {
+            try {
+                offerEventAppender.appendNextEvent(offerId, eventType, payload);
+
+                return;
+
+            } catch (EventSequenceConflictException conflict) {
+                lastConflict = conflict;
+
+                log.warn("event_append_conflict offerId={} eventType={} attempt={} maxAttempts={}",
+                        offerId, eventType, attempt, MAX_APPEND_ATTEMPTS);
+            }
+        }
+
+        throw new EventSequenceConflictException(
+                "Gave up appending a %s event for offer %s after %d attempts"
+                        .formatted(eventType, offerId, MAX_APPEND_ATTEMPTS),
+                lastConflict);
     }
 }

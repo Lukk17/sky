@@ -21,10 +21,12 @@ public interface OfferService {
 
     Page<OfferDTO> searchOffers(String searched, Pageable pageable);
 
-    OfferDTO editOffer(OfferEditDTO offerEditDTO);
+    OfferDTO editOffer(OfferEditDTO offerEditDTO, String ownerEmail);
 
     String findOfferOwner(UUID offerId);
 
     OfferDTO uploadPhoto(UUID offerId, String ownerEmail, InputStream content, long contentLength,
                          String validatedContentType, String filename);
+
+    void deletePhoto(UUID offerId, String ownerEmail);
 }

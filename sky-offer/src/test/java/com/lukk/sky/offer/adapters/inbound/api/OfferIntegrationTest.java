@@ -2,7 +2,7 @@ package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.lukk.sky.offer.AbstractIntegrationTest;
-import com.lukk.sky.offer.Assemblers.OfferAssembler;
+import com.lukk.sky.offer.assemblers.OfferAssembler;
 import com.lukk.sky.offer.TestSecurityConfig;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
@@ -31,23 +31,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_CITY;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_COMMENT;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_COUNTRY;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_DESCRIPTION;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_HOTEL_NAME;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_PHOTO_PATH;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_PRICE;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.TEST_ROOM_CAPACITY;
-import static com.lukk.sky.offer.Assemblers.OfferAssembler.getPopulatedOffer;
-import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.offer.Assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_CITY;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_COMMENT;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_COUNTRY;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_DESCRIPTION;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_HOTEL_NAME;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_EXTERNAL_PHOTO_URL;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_PRICE;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_ROOM_CAPACITY;
+import static com.lukk.sky.offer.assemblers.OfferAssembler.getPopulatedOffer;
+import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL;
+import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Offer Integration Tests — full HTTP stack with embedded Kafka and H2 database")
+@DisplayName("Offer Integration Tests: full HTTP stack with Testcontainers Kafka and PostgreSQL")
 @Import(TestSecurityConfig.class)
 class OfferIntegrationTest extends AbstractIntegrationTest {
 
@@ -233,20 +235,146 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
         assertTrue(record.value().contains("was deleted"));
     }
 
+    @Test
+    @DisplayName("POST /api/v1/owner/offers ignores a client-supplied id and assigns a server-generated one")
+    void createOffer_whenClientSuppliesAnId_thenIgnoreItAndAssignAServerGeneratedOne() {
+        // given
+        UUID clientChosenId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+        OfferDTO offer = OfferDTO.of(OfferAssembler.getPopulatedOffer(clientChosenId));
+        HttpHeaders headers = createTestHttpHeaders();
+        HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
+
+        // when
+        ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/v1/owner/offers", request, OfferDTO.class);
+
+        // then
+        assertEquals(HttpStatus.CREATED, actual.getStatusCode());
+        assertNotEquals(clientChosenId, requireNonNull(actual.getBody()).getId());
+        assertTrue(offerRepository.findById(clientChosenId).isEmpty(),
+                "the identifier a caller asked for must never reach the database");
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/owner/offers with a garbage ownerEmail succeeds, because the server assigns it from the JWT")
+    void createOffer_whenOwnerEmailIsGarbage_thenIgnoreItAndUseTheJwtEmail() {
+        // given
+        OfferDTO offer = OfferDTO.of(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
+        offer.setId(null);
+        offer.setOwnerEmail("not-an-email");
+        HttpHeaders headers = createTestHttpHeaders();
+        HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
+
+        // when
+        ResponseEntity<OfferDTO> actual = restTemplate.postForEntity("/api/v1/owner/offers", request, OfferDTO.class);
+
+        // then
+        assertEquals(HttpStatus.CREATED, actual.getStatusCode());
+        assertEquals(TEST_OWNER_EMAIL, requireNonNull(actual.getBody()).getOwnerEmail());
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/owner/offers with a blank hotelName returns 400, never a 500 from the entity constraint")
+    void updateOffer_whenHotelNameIsBlank_thenReturn400() {
+        // given
+        UUID offerId = populateDatabase().getId();
+        OfferEditDTO updatedOffer = OfferAssembler.getPopulatedOfferEditDTO(offerId);
+        updatedOffer.setHotelName("   ");
+        HttpHeaders headers = createTestHttpHeaders();
+        HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, headers);
+
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/owner/offers",
+                HttpMethod.PUT,
+                request,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, actual.getStatusCode());
+        assertTrue(requireNonNull(actual.getBody()).contains("field-errors"));
+        assertTrue(actual.getBody().contains("hotelName"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/owner/offers by a user who does not own the offer returns 403 and leaves the owner unchanged")
+    void updateOffer_whenCallerDoesNotOwnTheOffer_thenReturn403() {
+        // given
+        UUID offerId = populateDatabase().getId();
+        OfferEditDTO updatedOffer = OfferAssembler.getPopulatedOfferEditDTO(offerId);
+        updatedOffer.setHotelName(UPDATED_NAME);
+        HttpHeaders headers = createTestHttpHeaders(TEST_OWNER_EMAIL_2);
+        HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, headers);
+
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/owner/offers",
+                HttpMethod.PUT,
+                request,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.FORBIDDEN, actual.getStatusCode());
+        Offer unchanged = offerRepository.findById(offerId).orElseThrow();
+        assertEquals(TEST_OWNER_EMAIL, unchanged.getOwnerEmail(),
+                "an edit by a non-owner must never transfer ownership");
+        assertEquals(TEST_HOTEL_NAME, unchanged.getHotelName());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/owner/offers/{id} by a user who does not own the offer returns 403, not 400")
+    void deleteOffer_whenCallerDoesNotOwnTheOffer_thenReturn403() {
+        // given
+        UUID offerId = populateDatabase().getId();
+        HttpHeaders headers = createTestHttpHeaders(TEST_OWNER_EMAIL_2);
+        HttpEntity<?> request = new HttpEntity<>(headers);
+
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/owner/offers/" + offerId,
+                HttpMethod.DELETE,
+                request,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.FORBIDDEN, actual.getStatusCode());
+        assertTrue(offerRepository.findById(offerId).isPresent());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/offers with an unknown sort property returns 400 naming it, not a 500")
+    void getAllOffers_whenSortPropertyIsUnknown_thenReturn400() {
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/offers?sort=hotelNamee",
+                HttpMethod.GET,
+                null,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, actual.getStatusCode());
+        assertTrue(requireNonNull(actual.getBody()).contains("hotelNamee"));
+    }
+
     private static HttpHeaders createTestHttpHeaders() {
+        return createTestHttpHeaders(TEST_OWNER_EMAIL);
+    }
+
+    private static HttpHeaders createTestHttpHeaders(String user) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(java.util.Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(TEST_OWNER_EMAIL.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                .encodeToString(user.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         return headers;
     }
 
     private Offer populateDatabase() {
         Offer offer = getPopulatedOffer(UUID.randomUUID());
         offer.setId(null);
+        offer.setPhotoObjectKey(null);
         offerRepository.save(offer);
 
         Offer offer1 = getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
         offer1.setId(null);
+        offer1.setPhotoObjectKey(null);
         return offerRepository.save(offer1);
     }
 
@@ -262,7 +390,8 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
         assertEquals(TEST_COMMENT, actual.getComment());
         assertEquals(TEST_COUNTRY, actual.getCountry());
         assertEquals(TEST_DESCRIPTION, actual.getDescription());
-        assertEquals(TEST_PHOTO_PATH, actual.getPhotoPath());
+        assertEquals(TEST_EXTERNAL_PHOTO_URL, actual.getExternalPhotoUrl());
+        assertEquals(TEST_EXTERNAL_PHOTO_URL, actual.getPhotoUrl());
         assertEquals(TEST_ROOM_CAPACITY, actual.getRoomCapacity());
         assertEquals(equal, TEST_PRICE.compareTo(actual.getPrice()));
     }
@@ -274,9 +403,100 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
         assertTrue(record.value().contains(actual.getComment()));
         assertTrue(record.value().contains(actual.getCountry()));
         assertTrue(record.value().contains(actual.getDescription()));
-        assertTrue(record.value().contains(actual.getPhotoPath()));
+        assertTrue(record.value().contains(actual.getExternalPhotoUrl()));
         assertTrue(record.value().contains(actual.getId().toString()));
         assertTrue(record.value().contains(actual.getRoomCapacity().toString()));
         assertTrue(record.value().contains(actual.getPrice().toString()));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/owner/offers cannot move the stored photo, whatever the payload carries")
+    void updateOffer_whenPayloadCarriesAnotherPhotoAddress_thenTheStoredObjectKeySurvives() {
+        // given
+        Offer stored = populateDatabase();
+        String storedKey = "offers/" + stored.getId() + "/11111111-1111-4111-8111-111111111111-hotel.png";
+        stored.setPhotoObjectKey(storedKey);
+        offerRepository.save(stored);
+        OfferEditDTO updatedOffer = OfferEditDTO.of(stored);
+        updatedOffer.setHotelName(UPDATED_NAME);
+        updatedOffer.setExternalPhotoUrl("https://images.example.com/somewhere-else.jpeg");
+        HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, createTestHttpHeaders());
+
+        // when
+        ResponseEntity<OfferDTO> actual = restTemplate.exchange(
+                "/api/v1/owner/offers",
+                HttpMethod.PUT,
+                request,
+                OfferDTO.class);
+
+        // then
+        assertEquals(HttpStatus.OK, actual.getStatusCode());
+        assertEquals(storedKey, offerRepository.findById(stored.getId()).orElseThrow().getPhotoObjectKey());
+        assertTrue(requireNonNull(actual.getBody()).getPhotoUrl().contains(storedKey));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/owner/offers rejects an external photo address that is not an absolute URL")
+    void updateOffer_whenExternalPhotoUrlIsNotAbsolute_thenReturn400() {
+        // given
+        Offer stored = populateDatabase();
+        OfferEditDTO updatedOffer = OfferEditDTO.of(stored);
+        updatedOffer.setExternalPhotoUrl("/images/grand-hotel-paris-new.jpg");
+        HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, createTestHttpHeaders());
+
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/owner/offers",
+                HttpMethod.PUT,
+                request,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, actual.getStatusCode());
+        assertEquals(TEST_EXTERNAL_PHOTO_URL,
+                offerRepository.findById(stored.getId()).orElseThrow().getExternalPhotoUrl());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/owner/offers/{offerId}/photo clears the stored key and returns 204")
+    void deletePhoto_whenOwnerDeletesPhoto_thenReturn204AndClearTheStoredKey() {
+        // given
+        Offer stored = populateDatabase();
+        stored.setPhotoObjectKey("offers/" + stored.getId() + "/11111111-1111-4111-8111-111111111111-hotel.png");
+        offerRepository.save(stored);
+        HttpEntity<?> request = new HttpEntity<>(createTestHttpHeaders());
+
+        // when
+        ResponseEntity<Void> actual = restTemplate.exchange(
+                "/api/v1/owner/offers/" + stored.getId() + "/photo",
+                HttpMethod.DELETE,
+                request,
+                Void.class);
+
+        // then
+        assertEquals(HttpStatus.NO_CONTENT, actual.getStatusCode());
+        assertNull(offerRepository.findById(stored.getId()).orElseThrow().getPhotoObjectKey());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/owner/offers/{offerId}/photo answers 403 for a caller who does not own the offer")
+    void deletePhoto_whenCallerIsNotOwner_thenReturn403AndKeepTheStoredKey() {
+        // given
+        Offer stored = populateDatabase();
+        String storedKey = "offers/" + stored.getId() + "/11111111-1111-4111-8111-111111111111-hotel.png";
+        stored.setPhotoObjectKey(storedKey);
+        offerRepository.save(stored);
+        HttpEntity<?> request = new HttpEntity<>(createTestHttpHeaders(TEST_OWNER_EMAIL_2));
+
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/owner/offers/" + stored.getId() + "/photo",
+                HttpMethod.DELETE,
+                request,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.FORBIDDEN, actual.getStatusCode());
+        assertEquals(storedKey, offerRepository.findById(stored.getId()).orElseThrow().getPhotoObjectKey());
     }
 }

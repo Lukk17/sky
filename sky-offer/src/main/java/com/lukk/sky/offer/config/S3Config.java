@@ -11,6 +11,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
@@ -24,35 +25,41 @@ import java.net.URI;
 public class S3Config {
 
     @Bean
-    public S3Client s3Client(S3Properties props) {
-        var credentials = StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(props.accessKey(), props.secretKey())
-        );
-
-        return S3Client.builder()
-                .endpointOverride(URI.create(props.endpoint()))
-                .region(Region.of(props.region()))
-                .credentialsProvider(credentials)
-                .forcePathStyle(props.pathStyleAccess())
+    public S3Configuration s3ServiceConfiguration(S3Properties props) {
+        return S3Configuration.builder()
+                .pathStyleAccessEnabled(props.pathStyleAccess())
                 .build();
     }
 
     @Bean
-    public S3Presigner s3Presigner(S3Properties props) {
-        var credentials = StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(props.accessKey(), props.secretKey())
-        );
-
-        return S3Presigner.builder()
+    public S3Client s3Client(S3Properties props, S3Configuration serviceConfiguration) {
+        return S3Client.builder()
                 .endpointOverride(URI.create(props.endpoint()))
                 .region(Region.of(props.region()))
-                .credentialsProvider(credentials)
+                .credentialsProvider(credentialsProvider(props))
+                .serviceConfiguration(serviceConfiguration)
+                .build();
+    }
+
+    @Bean
+    public S3Presigner s3Presigner(S3Properties props, S3Configuration serviceConfiguration) {
+        return S3Presigner.builder()
+                .endpointOverride(URI.create(props.resolvedPresignEndpoint()))
+                .region(Region.of(props.region()))
+                .credentialsProvider(credentialsProvider(props))
+                .serviceConfiguration(serviceConfiguration)
                 .build();
     }
 
     @Bean
     public BucketInitializer bucketInitializer(S3Client s3Client, S3Properties props) {
         return new BucketInitializer(s3Client, props.bucket());
+    }
+
+    private static StaticCredentialsProvider credentialsProvider(S3Properties props) {
+        return StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(props.accessKey(), props.secretKey())
+        );
     }
 
     public static class BucketInitializer {
@@ -74,8 +81,8 @@ public class S3Config {
                 s3Client.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
                 log.info("Created S3 bucket '{}'.", bucket);
             } catch (software.amazon.awssdk.core.exception.SdkClientException e) {
-                log.warn("Cannot reach S3 endpoint for bucket '{}' — MinIO may be unavailable. " +
-                        "Photo upload will fail until MinIO is reachable. Cause: {}", bucket, e.getMessage());
+                log.warn("Cannot reach S3 endpoint for bucket '{}'. The object store may be unavailable. " +
+                        "Photo upload will fail until it is reachable. Cause: {}", bucket, e.getMessage());
             } catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
                 log.warn("S3 error while verifying bucket '{}' (status {}). " +
                                 "Check credentials and endpoint configuration. Cause: {}",

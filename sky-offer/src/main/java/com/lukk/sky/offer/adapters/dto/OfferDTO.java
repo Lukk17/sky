@@ -1,7 +1,7 @@
 package com.lukk.sky.offer.adapters.dto;
 
+import com.lukk.sky.offer.adapters.dto.validation.ExternalPhotoUrl;
 import com.lukk.sky.offer.domain.model.Offer;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +21,7 @@ public class OfferDTO {
     private UUID id;
 
     @NotBlank
+    @Size(max = 255)
     private String hotelName;
 
     @Size(max = 3000)
@@ -33,7 +34,6 @@ public class OfferDTO {
     @Min(value = 0)
     private BigDecimal price;
 
-    @Email
     private String ownerEmail;
 
     @NotNull
@@ -41,14 +41,18 @@ public class OfferDTO {
     private Long roomCapacity;
 
     @NotBlank
+    @Size(max = 255)
     private String city;
 
     @NotBlank
+    @Size(max = 255)
     private String country;
-    private String photoPath;
+
+    @ExternalPhotoUrl
+    private String externalPhotoUrl;
 
     /**
-     * Presigned GET URL, populated by the service layer when returning DTOs to callers.
+     * Address a client fetches the photo from, derived per response and never persisted.
      */
     private String photoUrl;
 
@@ -63,7 +67,7 @@ public class OfferDTO {
                 .comment(offer.getComment())
                 .price(offer.getPrice())
                 .roomCapacity(offer.getRoomCapacity())
-                .photoPath(offer.getPhotoPath())
+                .externalPhotoUrl(offer.getExternalPhotoUrl())
                 .build();
     }
 
@@ -78,7 +82,7 @@ public class OfferDTO {
                 .comment(this.getComment())
                 .price(this.getPrice())
                 .roomCapacity(this.getRoomCapacity())
-                .photoPath(this.getPhotoPath())
+                .externalPhotoUrl(this.getExternalPhotoUrl())
                 .build();
     }
 

@@ -24,7 +24,7 @@ http:
         "roomCapacity": 2,
         "city": "Paris",
         "country": "France",
-        "photoPath": "/images/grand-hotel-paris.jpg"
+        "externalPhotoUrl": "https://images.example.com/grand-hotel-paris.jpg"
       }
 
 runtime:
@@ -60,3 +60,13 @@ runtime:
     - expression: res.body.ownerEmail
       operator: eq
       value: "lukk@sky.dev"
+    - expression: res.body.externalPhotoUrl
+      operator: eq
+      value: "https://images.example.com/grand-hotel-paris.jpg"
+    - expression: res.body.photoUrl
+      operator: eq
+      value: "https://images.example.com/grand-hotel-paris.jpg"
+    - expression: res.body.photoPath
+      operator: isUndefined
+    - expression: res.body.photoObjectKey
+      operator: isUndefined

@@ -13,7 +13,39 @@ http:
       value: application/json
 
 runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const marker = "SKY-OFFER-PHOTO-CANARY-4471";
+        const markerHex = marker.split("").map(function (c) { return ("0" + c.charCodeAt(0).toString(16)).slice(-2); }).join("");
+        const storedPhotoUrl = bru.getVar("storedPhotoUrl");
+        bru.setVar("photoStatusAfterOfferDelete", 0);
+        bru.setVar("photoCanaryAfterOfferDelete", "stored photo address was never captured");
+        if (res.status === 204 && storedPhotoUrl) {
+          try {
+            const stored = await bru.sendRequest({
+              method: "GET",
+              url: storedPhotoUrl,
+              responseType: "text",
+              responseEncoding: "hex"
+            });
+            bru.setVar("photoStatusAfterOfferDelete", stored.status);
+            bru.setVar("photoCanaryAfterOfferDelete", String(stored.data).indexOf(markerHex) === -1
+              ? "object gone"
+              : marker);
+          } catch (err) {
+            const failed = (err && (err.status || (err.response && err.response.status))) || 0;
+            bru.setVar("photoStatusAfterOfferDelete", failed);
+            bru.setVar("photoCanaryAfterOfferDelete", "object gone");
+          }
+        }
   assertions:
     - expression: res.status
       operator: eq
       value: "204"
+    - expression: photoStatusAfterOfferDelete
+      operator: eq
+      value: "404"
+    - expression: photoCanaryAfterOfferDelete
+      operator: eq
+      value: "object gone"

@@ -6,6 +6,7 @@ import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import static com.lukk.sky.offer.config.Constants.KAFKA_TOPIC;
 
@@ -19,8 +20,8 @@ public class OfferNotificationServicePrimary implements OfferNotificationService
 
     private final KafkaNotificationPublisher publisher;
 
-    public OfferNotificationServicePrimary(KafkaTemplate<String, String> kafkaTemplate) {
-        this.publisher = new KafkaNotificationPublisher(kafkaTemplate, KAFKA_TOPIC);
+    public OfferNotificationServicePrimary(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
+        this.publisher = new KafkaNotificationPublisher(kafkaTemplate, objectMapper, KAFKA_TOPIC);
     }
 
     @Override

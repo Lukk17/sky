@@ -65,7 +65,11 @@ public class Offer {
     @NotBlank
     private String country;
 
-    private String photoPath;
+    @Column(length = 512)
+    private String photoObjectKey;
+
+    @Column(length = 1024)
+    private String externalPhotoUrl;
 
     @Override
     public boolean equals(Object o) {

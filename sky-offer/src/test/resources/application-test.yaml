@@ -1,12 +1,12 @@
-# ==================================================================================================================
 sky:
   apiPrefix: api/v1
   s3:
     endpoint: http://localhost:9000
+    presign-endpoint: ""
     region: us-east-1
     bucket: sky-offers-test
-    access-key: minioadmin
-    secret-key: minioadmin
+    access-key: test-access-key
+    secret-key: test-secret-key
     path-style-access: true
     presign-ttl: PT15M
 
@@ -39,10 +39,8 @@ logging:
       controller:
         KafkaController: ERROR
         RequestSendThread: ERROR
-        ZkReplicaStateMachine: ERROR
         TopicDeletionManager: ERROR
       network: ERROR
-      zk: ERROR
       coordinator: ERROR
       log: ERROR
       server:
@@ -51,7 +49,6 @@ logging:
         BrokerToControllerRequestThread: ERROR
     org:
       apache:
-        zookeeper: ERROR
         kafka:
           server:
             ReplicaAlterLogDirsManager: ERROR

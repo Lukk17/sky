@@ -1,0 +1,51 @@
+info:
+  name: Delete Offer Photo
+  type: http
+  seq: 9
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/offer/api/owner/offers/{{offerId}}/photo"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const marker = "SKY-OFFER-PHOTO-CANARY-4471";
+        const markerHex = marker.split("").map(function (c) { return ("0" + c.charCodeAt(0).toString(16)).slice(-2); }).join("");
+        const storedPhotoUrl = bru.getVar("storedPhotoUrl");
+        bru.setVar("photoStatusAfterPhotoDelete", 0);
+        bru.setVar("photoCanaryAfterPhotoDelete", "stored photo address was never captured");
+        if (res.status === 204 && storedPhotoUrl) {
+          try {
+            const stored = await bru.sendRequest({
+              method: "GET",
+              url: storedPhotoUrl,
+              responseType: "text",
+              responseEncoding: "hex"
+            });
+            bru.setVar("photoStatusAfterPhotoDelete", stored.status);
+            bru.setVar("photoCanaryAfterPhotoDelete", String(stored.data).indexOf(markerHex) === -1
+              ? "object gone"
+              : marker);
+          } catch (err) {
+            const failed = (err && (err.status || (err.response && err.response.status))) || 0;
+            bru.setVar("photoStatusAfterPhotoDelete", failed);
+            bru.setVar("photoCanaryAfterPhotoDelete", "object gone");
+          }
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "204"
+    - expression: photoStatusAfterPhotoDelete
+      operator: eq
+      value: "404"
+    - expression: photoCanaryAfterPhotoDelete
+      operator: eq
+      value: "object gone"

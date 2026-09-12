@@ -29,7 +29,7 @@ spec:
           emptyDir: {}
       containers:
         - name: {{ .Values.deployment.container.name }}
-          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-offer:latest" }}"
+          image: "{{ required "deployment.image.repository must be set, see values.yaml" .Values.deployment.image.repository }}:{{ required "deployment.image.tag must be set, see values.yaml" .Values.deployment.image.tag }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           securityContext:
             allowPrivilegeEscalation: false
@@ -84,6 +84,8 @@ spec:
                   name: "{{ .Values.secret.name }}"
             - name: S3_ENDPOINT
               value: "{{ .Values.s3.endpoint }}"
+            - name: S3_PRESIGN_ENDPOINT
+              value: "{{ .Values.s3.presignEndpoint }}"
             - name: S3_BUCKET
               value: "{{ .Values.s3.bucket }}"
             - name: S3_ACCESS_KEY
