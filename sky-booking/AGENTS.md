@@ -68,6 +68,36 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
   from the shared test stack, and from the version catalogue.
 - Messaging: produces/consumes Kafka events via `spring-kafka`, serialised with the Spring-managed Jackson 3
   `ObjectMapper` (`tools.jackson.databind.ObjectMapper`). Gson is gone from this module and from its build file.
+- All five producer delivery-guarantee properties are set explicitly in `application.yaml` and none is left to a
+  client default: `acks: all` and `retries: 2147483647` as dedicated Spring Boot keys, and
+  `enable.idempotence: true`, `delivery.timeout.ms: 120000` and `max.in.flight.requests.per.connection: 5`
+  under `producer.properties`, because Spring Boot exposes no dedicated key for those three.
+  Three of the five interact, and none of the numbers is a free choice:
+  - `max.in.flight.requests.per.connection` is 5 because that is the ceiling the idempotent producer enforces.
+    `ProducerConfig.postProcessAndValidateIdempotenceConfigs` in kafka-clients 4.1.2 throws
+    `ConfigException("To use the idempotent producer, max.in.flight.requests.per.connection must be set to at most
+    5")` above that, so 6 fails producer construction instead of misbehaving at run time. Dropping to 1 would cost
+    throughput for nothing: the idempotent producer preserves order at any permitted value, which is what the
+    client's own `enable.idempotence` documentation says.
+  - `delivery.timeout.ms` is 120000 because the client requires it to be at least `linger.ms + request.timeout.ms`
+    and `KafkaProducer.configureDeliveryTimeout` throws `ConfigException("delivery.timeout.ms should be equal to or
+    larger than linger.ms + request.timeout.ms")` for an explicitly set value below that sum. Nothing in this
+    repository sets either of those two, so their 4.1.2 defaults apply, 5 and 30000, and the floor is 30005. Note
+    that `linger.ms` defaulted to 0 before Kafka 4.0, so the floor moved. Setting `linger.ms` or
+    `request.timeout.ms` here means rechecking that sum.
+  - `retries` is a pin rather than a guarantee, and saying so is the point. With `delivery.timeout.ms` set, that
+    timeout is the real bound on how long a send is retried, and the client documentation says to leave `retries`
+    unset and control retry behaviour through the timeout instead. The only behaviour the value still carries is
+    that an idempotent producer refuses 0, so every non-zero number behaves identically and a large one is not
+    tuning. It is set because the specification requires all five to be explicit and because a client default that
+    moved to 0 would silently disable idempotence.
+  All three of the values added here happen to equal the kafka-clients 4.1.2 default, which is exactly why they are
+  written down: a default that moves between client versions must not be able to change the durability of a write
+  without a line of this repository changing.
+  `KafkaProducerDeliveryGuaranteeTest` asserts the resolved `ProducerFactory.getConfigurationProperties()` map
+  the booted context builds, not the configuration source that feeds it, and builds a real `KafkaProducer` from
+  that map so both validations above actually run. sky-offer and sky-notify carry the identical five values, so
+  change all three or none.
 - API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`.
 
 ## Testing

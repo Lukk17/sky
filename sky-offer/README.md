@@ -170,6 +170,8 @@ Uses hexagonal (ports-and-adapters):
 
 Plain Spring MVC stack (`spring-boot-starter-web`). No WebFlux, and the same is now true of every service: `sky-gateway` is the only module on the reactive stack.
 
+The producer is configured for durability rather than for throughput, and all five delivery-guarantee properties are written down rather than inherited: `acks=all`, `enable.idempotence=true`, `retries=2147483647`, `delivery.timeout.ms=120000` and `max.in.flight.requests.per.connection=5`. Three of them constrain each other. The in-flight value is 5 because that is the most an idempotent producer is allowed, and kafka-clients 4.1.2 refuses to build a producer above it. The delivery timeout has to be at least `linger.ms + request.timeout.ms`, which is 30005 with the defaults this service leaves in place, and the client refuses an explicit value below that sum. `retries` is honestly a pin rather than a guarantee: once a delivery timeout is set, that timeout is what bounds retrying, and any non-zero retry count behaves the same. All three of those values equal the current client default, which is the reason they are written down at all: a default that moves between client versions must not be able to change the durability of a write silently. It is set in [src/main/resources/application.yaml](src/main/resources/application.yaml) and asserted by `KafkaProducerDeliveryGuaranteeTest` against the configuration the booted context resolves, not against the YAML file. sky-booking and sky-notify carry the same five values.
+
 Schema versioning via Flyway. Migrations in [src/main/resources/db/migration/](src/main/resources/db/migration/), against the shared `sky` database.
 
 ---

@@ -28,6 +28,9 @@ import java.util.Map;
 @Configuration
 public class KafkaConsumerConfig {
 
+    private static final int DLT_DELIVERY_TIMEOUT_MS = 120_000;
+    private static final int DLT_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION = 5;
+
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapAddress;
 
@@ -58,6 +61,9 @@ public class KafkaConsumerConfig {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        props.put(ProducerConfig.RETRIES_CONFIG, Integer.MAX_VALUE);
+        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, DLT_DELIVERY_TIMEOUT_MS);
+        props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, DLT_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION);
         return new DefaultKafkaProducerFactory<>(props);
     }
 

@@ -25,6 +25,8 @@ This service is stateless: no database, no JPA, no Flyway. It holds no persisten
 Both listeners are in `KafkaListeners`. Failed messages are retried via `FixedBackOff` and routed to a dead-letter
 topic (`<topic>.DLT`) after exhausting retries.
 
+The producer is configured for durability rather than for throughput, and all five delivery-guarantee properties are written down rather than inherited: `acks=all`, `enable.idempotence=true`, `retries=2147483647`, `delivery.timeout.ms=120000` and `max.in.flight.requests.per.connection=5`. Three of them constrain each other. The in-flight value is 5 because that is the most an idempotent producer is allowed, and kafka-clients 4.1.2 refuses to build a producer above it. The delivery timeout has to be at least `linger.ms + request.timeout.ms`, which is 30005 with the defaults this service leaves in place, and the client refuses an explicit value below that sum. `retries` is honestly a pin rather than a guarantee: once a delivery timeout is set, that timeout is what bounds retrying, and any non-zero retry count behaves the same. All three of those values equal the current client default, which is the reason they are written down at all: a default that moves between client versions must not be able to change the durability of a write silently. This module sets it in Java, in [src/main/java/com/lukk/sky/notify/config/kafka/KafkaConsumerConfig.java](src/main/java/com/lukk/sky/notify/config/kafka/KafkaConsumerConfig.java), because the dead-letter `ProducerFactory` is built by hand rather than auto-configured. `DltKafkaProducerDeliveryGuaranteeTest` asserts the configuration the booted context resolves. sky-booking and sky-offer carry the same five values.
+
 ---
 
 ### WebSocket endpoint

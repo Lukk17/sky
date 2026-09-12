@@ -78,8 +78,21 @@ Major. Four contracts this service publishes have changed shape, and a client bu
   ArchUnit layering suite, and a resilience test that proves the retry and the circuit breaker
   behave as configured.
 - Connection pool sizing (Hikari, maximum 20, minimum idle 5, five second connection timeout)
-  and a durable Kafka producer (`acks=all`, idempotence enabled). 1.x ran pool defaults and a
-  fire and forget producer, so a broker restart dropped notifications silently.
+  and a durable Kafka producer. 1.x ran pool defaults and a fire and forget producer, so a
+  broker restart dropped notifications silently. All five delivery-guarantee properties are now
+  set explicitly and none is left to a client default: `acks=all`, `enable.idempotence=true`,
+  `retries=2147483647`, `delivery.timeout.ms=120000` and
+  `max.in.flight.requests.per.connection=5`. The three that were missing all equal the current
+  kafka-clients default, which is exactly why they are written down: a default that moves
+  between client versions must not be able to change the durability of a write without a line of
+  this repository changing. `retries` is a pin rather than a guarantee, because the delivery
+  timeout is what actually bounds retrying, and the module documentation says so rather than
+  implying a large number is tuning.
+- `KafkaProducerDeliveryGuaranteeTest`, which asserts the five properties on the resolved
+  `ProducerFactory.getConfigurationProperties()` map the booted context builds rather than on the
+  YAML that feeds it, and builds a real `KafkaProducer` from that map so the two client startup
+  validations run: the idempotent producer's in-flight ceiling of 5, and the requirement that
+  `delivery.timeout.ms` be at least `linger.ms + request.timeout.ms`.
 - A local profile that starts without Keycloak, a per-service startup banner, and a structured
   startup log line naming the deployment it thinks it is in.
 

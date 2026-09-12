@@ -37,6 +37,41 @@ independently-deployable services. The module version is not restated here: the 
   `convertAndSendToUser(principal, ...)`, so no user reaches another user's notifications without knowing the other's
   principal name. Still missing, and worth adding when the framework allows it: a fine-grained per-principal subscribe
   guard, once Spring Security exposes a path-variable-to-principal matcher in the `SimpDestinationMessageMatcher` API.
+- The dead-letter producer sets all five delivery-guarantee properties explicitly and leaves none to a client
+  default. They live in `config/kafka/KafkaConsumerConfig.dltProducerFactory`, in Java rather than in
+  `application.yaml`, because this module builds its own `ProducerFactory` from a map instead of using Spring
+  Boot's auto-configured one: `ACKS_CONFIG` `all`, `ENABLE_IDEMPOTENCE_CONFIG` `true`, `RETRIES_CONFIG`
+  `Integer.MAX_VALUE`, `DELIVERY_TIMEOUT_MS_CONFIG` 120000 and `MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION` 5, the
+  last two as named constants rather than literals.
+  Three of the five interact, and none of the numbers is a free choice:
+  - `max.in.flight.requests.per.connection` is 5 because that is the ceiling the idempotent producer enforces.
+    `ProducerConfig.postProcessAndValidateIdempotenceConfigs` in kafka-clients 4.1.2 throws
+    `ConfigException("To use the idempotent producer, max.in.flight.requests.per.connection must be set to at most
+    5")` above that, so 6 fails producer construction instead of misbehaving at run time. Dropping to 1 would cost
+    throughput for nothing: the idempotent producer preserves order at any permitted value, which is what the
+    client's own `enable.idempotence` documentation says.
+  - `delivery.timeout.ms` is 120000 because the client requires it to be at least `linger.ms + request.timeout.ms`
+    and `KafkaProducer.configureDeliveryTimeout` throws `ConfigException("delivery.timeout.ms should be equal to or
+    larger than linger.ms + request.timeout.ms")` for an explicitly set value below that sum. Nothing in this
+    repository sets either of those two, so their 4.1.2 defaults apply, 5 and 30000, and the floor is 30005. Note
+    that `linger.ms` defaulted to 0 before Kafka 4.0, so the floor moved. Setting `linger.ms` or
+    `request.timeout.ms` here means rechecking that sum.
+  - `retries` is a pin rather than a guarantee, and saying so is the point. With `delivery.timeout.ms` set, that
+    timeout is the real bound on how long a send is retried, and the client documentation says to leave `retries`
+    unset and control retry behaviour through the timeout instead. The only behaviour the value still carries is
+    that an idempotent producer refuses 0, so every non-zero number behaves identically and a large one is not
+    tuning. It is set because the specification requires all five to be explicit and because a client default that
+    moved to 0 would silently disable idempotence.
+  All three of the values added here happen to equal the kafka-clients 4.1.2 default, which is exactly why they are
+  written down: a default that moves between client versions must not be able to change the durability of a write
+  without a line of this repository changing.
+  Java expresses one thing the two YAML producers cannot: `Integer.MAX_VALUE` by name, where
+  `application.yaml` in sky-booking and sky-offer has to carry the literal 2147483647. Nothing runs the other
+  way: every one of the five is expressible in both places, so the three producers do not drift.
+  `DltKafkaProducerDeliveryGuaranteeTest` asserts the resolved `ProducerFactory.getConfigurationProperties()`
+  map the booted context builds, not the configuration source that feeds it, and builds a real `KafkaProducer`
+  from that map so both validations above actually run. sky-booking and sky-offer carry the identical five
+  values, so change all three or none.
 - Messaging: consumes Kafka events via `spring-kafka`, deserialised with the Spring-managed Jackson 3
   `ObjectMapper` (`tools.jackson.databind.ObjectMapper`). Gson is gone from this module. No springdoc UI (no REST
   surface beyond the WebSocket handshake).

@@ -51,7 +51,20 @@ tests when changing code here or the build fails.
   will never parse
   (`JacksonException`, `IllegalArgumentException`) is not retried at all and goes straight to the
   dead letter topic. 1.x had no error handler, so one malformed message stalled the partition
-  behind it indefinitely.
+  behind it indefinitely. The dead-letter producer now sets all five delivery-guarantee
+  properties explicitly and leaves none to a client default: `acks=all`,
+  `enable.idempotence=true`, `retries=Integer.MAX_VALUE`, `delivery.timeout.ms=120000` and
+  `max.in.flight.requests.per.connection=5`. The three that were missing all equal the current
+  kafka-clients default, which is exactly why they are written down: a default that moves
+  between client versions must not be able to change the durability of a write without a line of
+  this repository changing. `retries` is a pin rather than a guarantee, because the delivery
+  timeout is what actually bounds retrying, and the module documentation says so rather than
+  implying a large number is tuning.
+- `DltKafkaProducerDeliveryGuaranteeTest`, which asserts the five properties on the resolved
+  `ProducerFactory.getConfigurationProperties()` map the booted context builds rather than on the
+  Java source that feeds it, and builds a real `KafkaProducer` from that map so the two client
+  startup validations run: the idempotent producer's in-flight ceiling of 5, and the requirement
+  that `delivery.timeout.ms` be at least `linger.ms + request.timeout.ms`.
 - Per-frame authorization through `@EnableWebSocketSecurity`, so every frame after the CONNECT
   is checked rather than only the handshake. Subscriptions to `/user/**` and sends to `/sky/**`
   both require an authenticated session.
