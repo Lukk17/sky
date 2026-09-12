@@ -1,0 +1,6 @@
+apiVersion: v2
+name: floci
+description: A Helm chart for floci, the local AWS emulator whose S3 API sky-offer uses for photo storage.
+type: application
+version: 1.0.0
+appVersion: "2.0.1"

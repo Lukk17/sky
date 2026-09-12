@@ -1,5 +1,6 @@
+@echo off
 :: Will work only if script is run from project main directory with:
-:: .\config\k8s\_deployment-scripts\helm\win\helm-app-remove.bat
+::   .\config\k8s\_deployment-scripts\helm\win\helm-app-remove.bat
 
 :: sealed secrets
 kubectl delete namespace sealed-secrets
@@ -10,6 +11,9 @@ kubectl delete -f .\config\k8s\secret\sealed\sealed-secrets.yaml
 kubectl delete -f .\config\k8s\secret\sealed\sealed-docker-cred.yaml
 kubectl delete -f .\config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
 
+:: identity provider
+helm uninstall keycloak
+
 :: api gateway
 helm uninstall oauth2-proxy
 
@@ -17,9 +21,12 @@ helm uninstall oauth2-proxy
 helm uninstall kafka-service
 kubectl delete pvc data-kafka-service-0
 
+:: object storage
+helm uninstall floci
+
 :: db
+helm uninstall postgres
 helm uninstall database-persistent-volume-claim
-helm uninstall mysql
 
 :: services
 helm uninstall sky-booking

@@ -1,14 +1,11 @@
 name: sky
 
-# Postgres, Keycloak, and MinIO are provided externally (local-dev stack / host install).
+# Postgres, Keycloak, and the S3 object store are provided externally (local-dev stack / host install).
 # Only Kafka and the application services are managed here.
 # Default datasource host: host.docker.internal:5432 (host Postgres reachable from container).
-#
-# The four JWT-validating services (offer, booking, message, notify) trust the local Keycloak
-# self-signed certificate via a mounted PKCS12 truststore (certs/sky-truststore.p12, password
-# "changeit" — a local-only, non-secret value). Generate it before "docker compose up" — see
-# config/keycloak/SETUP.md. The gateway does not validate JWTs in the default profile, so it
-# needs no truststore.
+# Default object-store host: s3.localhost:9070. The host resolver maps every name under .localhost to
+# 127.0.0.1 and the extra_hosts entry below maps the same name to the host gateway, so a path-style
+# presigned URL signed inside the network is fetchable from the host with its Host header and signature untouched.
 
 services:
 
@@ -46,7 +43,9 @@ services:
     build:
       dockerfile: sky-booking/docker/Dockerfile
       context: ../../
-    image: sky-booking:e2e
+      tags:
+        - "sky-booking:${SKY_VERSION:-2.0.0}"
+    image: sky-booking:latest
     networks:
       - sky-network
     ports:
@@ -56,12 +55,10 @@ services:
         condition: service_healthy
     extra_hosts:
       - "keycloak.test:host-gateway"
-    volumes:
-      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
-      POSTGRES_USER: ${POSTGRES_USER:-sky_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sky_pass}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local}
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
       OFFER_SERVICE_HOSTNAME: http://sky-offer
@@ -71,7 +68,6 @@ services:
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
       HIBERNATE_DEBUG: WARN
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5555/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -84,7 +80,9 @@ services:
     build:
       dockerfile: sky-offer/docker/Dockerfile
       context: ../../
-    image: sky-offer:e2e
+      tags:
+        - "sky-offer:${SKY_VERSION:-2.0.0}"
+    image: sky-offer:latest
     networks:
       - sky-network
     ports:
@@ -94,23 +92,22 @@ services:
         condition: service_healthy
     extra_hosts:
       - "keycloak.test:host-gateway"
-    volumes:
-      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
+      - "s3.localhost:host-gateway"
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
-      POSTGRES_USER: ${POSTGRES_USER:-sky_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sky_pass}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local}
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
       OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://host.docker.internal:9070}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-admin}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-password}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://s3.localhost:9070}
+      S3_PRESIGN_ENDPOINT: ${S3_PRESIGN_ENDPOINT:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-root}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-localdev}
       SPRING_PROFILES_ACTIVE: default
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
       HIBERNATE_DEBUG: WARN
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5552/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -123,25 +120,24 @@ services:
     build:
       dockerfile: sky-message/docker/Dockerfile
       context: ../../
-    image: sky-message:e2e
+      tags:
+        - "sky-message:${SKY_VERSION:-2.0.0}"
+    image: sky-message:latest
     networks:
       - sky-network
     ports:
       - "5553:5553"
     extra_hosts:
       - "keycloak.test:host-gateway"
-    volumes:
-      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
-      POSTGRES_USER: ${POSTGRES_USER:-sky_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sky_pass}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local}
       OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
       SPRING_PROFILES_ACTIVE: default
       SHOW_SQL_QUERIES: "false"
       SPRING_DEBUG: INFO
       HIBERNATE_DEBUG: WARN
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5553/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -154,7 +150,9 @@ services:
     build:
       dockerfile: sky-notify/docker/Dockerfile
       context: ../../
-    image: sky-notify:e2e
+      tags:
+        - "sky-notify:${SKY_VERSION:-2.0.0}"
+    image: sky-notify:latest
     networks:
       - sky-network
     ports:
@@ -164,15 +162,12 @@ services:
         condition: service_healthy
     extra_hosts:
       - "keycloak.test:host-gateway"
-    volumes:
-      - ./certs/sky-truststore.p12:/certs/sky-truststore.p12:ro
     environment:
       KAFKA_ADDRESS: kafka
       KAFKA_PORT: "9092"
       OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
       SPRING_PROFILES_ACTIVE: default
       SPRING_DEBUG: INFO
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djavax.net.ssl.trustStore=/certs/sky-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5554/actuator/health/readiness || exit 1"]
       interval: 15s
@@ -185,7 +180,9 @@ services:
     build:
       dockerfile: sky-gateway/docker/Dockerfile
       context: ../../
-    image: sky-gateway:e2e
+      tags:
+        - "sky-gateway:${SKY_VERSION:-2.0.0}"
+    image: sky-gateway:latest
     networks:
       - sky-network
     ports:
@@ -204,7 +201,7 @@ services:
       OFFER_URI: http://sky-offer:5552
       MESSAGE_URI: http://sky-message:5553
       NOTIFY_URI: http://sky-notify:5554
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: local
       SPRING_DEBUG: INFO
       GATEWAY_DEBUG: INFO
     healthcheck:

@@ -2,70 +2,65 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: minio-deployment
+  name: floci-deployment
   namespace: {{ .Release.Namespace }}
   labels:
-    component: minio
+    component: floci
 spec:
   replicas: 1
-  serviceName: minio-service
+  serviceName: floci-service
   selector:
     matchLabels:
-      component: minio
+      component: floci
   template:
     metadata:
       labels:
-        component: minio
+        component: floci
     spec:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 1000
+        runAsUser: 1001
+        runAsGroup: 0
+        fsGroup: 1001
       volumes:
-        - name: minio-storage
+        - name: floci-storage
           persistentVolumeClaim:
             claimName: {{ .Values.volume.claimName }}
         - name: tmp
           emptyDir: {}
       containers:
-        - name: minio
+        - name: floci
           image: {{ .Values.image.name }}
           imagePullPolicy: {{ .Values.image.imagePullPolicy }}
-          args:
-            - server
-            - /data
-            - --console-address
-            - ":{{ .Values.service.consolePort }}"
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
           ports:
             - name: api
               containerPort: {{ .Values.service.port }}
-            - name: console
-              containerPort: {{ .Values.service.consolePort }}
           volumeMounts:
-            - name: minio-storage
-              mountPath: /data
+            - name: floci-storage
+              mountPath: {{ .Values.storage.path }}
             - name: tmp
               mountPath: /tmp
           startupProbe:
             httpGet:
-              path: /minio/health/live
+              path: {{ .Values.health.path }}
               port: {{ .Values.service.port }}
             periodSeconds: 5
             failureThreshold: 24
           livenessProbe:
             httpGet:
-              path: /minio/health/live
+              path: {{ .Values.health.path }}
               port: {{ .Values.service.port }}
             initialDelaySeconds: 0
             periodSeconds: 30
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /minio/health/ready
+              path: {{ .Values.health.path }}
               port: {{ .Values.service.port }}
             initialDelaySeconds: 0
             periodSeconds: 10
@@ -73,13 +68,9 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: MINIO_ROOT_USER
-              valueFrom:
-                secretKeyRef:
-                  key: {{ .Values.secret.rootUserKey }}
-                  name: {{ .Values.secret.name }}
-            - name: MINIO_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: {{ .Values.secret.rootPasswordKey }}
-                  name: {{ .Values.secret.name }}
+            - name: FLOCI_STORAGE_MODE
+              value: {{ .Values.storage.mode | quote }}
+            - name: FLOCI_STORAGE_PERSISTENT_PATH
+              value: {{ .Values.storage.path | quote }}
+            - name: FLOCI_SERVICES_UI_ENABLED
+              value: {{ .Values.ui.enabled | quote }}
