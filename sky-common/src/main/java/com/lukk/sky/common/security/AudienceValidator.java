@@ -4,6 +4,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
     @Override
     public OAuth2TokenValidatorResult validate(Jwt jwt) {
         List<String> audiences = jwt.getClaimAsStringList(AUDIENCE_CLAIM);
-        if (audiences == null || audiences.isEmpty()) {
+        if (CollectionUtils.isEmpty(audiences)) {
             return OAuth2TokenValidatorResult.failure(MISSING_AUD_ERROR);
         }
         if (!audiences.contains(expectedAudience)) {

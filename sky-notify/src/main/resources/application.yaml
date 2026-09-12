@@ -1,4 +1,3 @@
-# ==================================================================================================================
 sky:
   kafka:
     consumer:
@@ -30,7 +29,7 @@ spring:
       resourceserver:
         jwt:
           # Keycloak realm issuer, e.g. https://<keycloak-host>/realms/<realm>.
-          # Mandatory in non-test runs — WebSocketAuthChannelInterceptor uses the
+          # Mandatory in non-test runs. WebSocketAuthChannelInterceptor uses the
           # JwtDecoder built from this value. Provider-neutral env var name so the
           # same property name works whether we point at Keycloak, Auth0, or any
           # other OIDC IdP.

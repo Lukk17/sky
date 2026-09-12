@@ -10,20 +10,6 @@ import org.junit.jupiter.api.Test;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-/**
- * sky-notify has no REST controllers or JPA entities — it consumes Kafka and
- * pushes to WebSocket. Its hexagonal contract is narrower: inbound (Kafka) and
- * outbound (WebSocket) adapters with a thin domain coordinating between them.
- *
- * <p>Known tech-debt the rules deliberately tolerate:
- * <ul>
- *   <li>{@code domain.service.NotificationTransmissionServicePrimary} imports
- *       {@code adapters.outbound.NotificationPublisherPrimary} and
- *       {@code adapters.dto.WebsocketPayloadModel}. The orchestrator should live
- *       in {@code adapters.outbound} or talk only through ports — track as a
- *       follow-up refactor.</li>
- * </ul>
- */
 @DisplayName("Hexagonal architecture constraints for sky-notify")
 class HexagonalArchitectureTest {
 
@@ -46,14 +32,27 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("Domain has no Spring Web / Reactor / RestTemplate / WebClient dependencies")
-    void domain_whenInspected_thenHasNoWebStackDependencies() {
+    @DisplayName("Domain never depends on an adapter")
+    void domain_whenInspected_thenDoesNotDependOnAdapters() {
+        noClasses()
+                .that().resideInAPackage("..domain..")
+                .should().dependOnClassesThat().resideInAPackage("..adapters..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("Domain never depends on transport or serialization frameworks")
+    void domain_whenInspected_thenHasNoTransportOrSerializationDependencies() {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAnyPackage(
-                        "org.springframework.web.client..",
-                        "org.springframework.web.reactive.function.client..",
-                        "reactor.netty.."
+                        "org.springframework.web..",
+                        "org.springframework.messaging..",
+                        "org.springframework.kafka..",
+                        "jakarta.servlet..",
+                        "tools.jackson..",
+                        "com.fasterxml.jackson..",
+                        "com.google.gson.."
                 )
                 .check(classes);
     }
@@ -64,6 +63,16 @@ class HexagonalArchitectureTest {
         classes()
                 .that().haveSimpleNameContaining("Listener")
                 .should().resideInAPackage("..adapters.inbound..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("WebSocket publishing stays in adapters.outbound")
+    void webSocketPublishing_whenInspected_thenResidesInOutboundAdaptersPackage() {
+        noClasses()
+                .that().resideOutsideOfPackage("..adapters.outbound..")
+                .should().dependOnClassesThat().haveFullyQualifiedName(
+                        "org.springframework.messaging.simp.SimpMessagingTemplate")
                 .check(classes);
     }
 }

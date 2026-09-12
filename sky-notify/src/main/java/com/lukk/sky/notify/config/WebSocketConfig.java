@@ -13,6 +13,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import java.util.List;
+
 /**
  * WebSocket message broker configuration for sky-notify.
  *
@@ -24,20 +26,18 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  * session cookies).
  *
  * <p>{@link WebSocketAuthChannelInterceptor} continues to run first on STOMP CONNECT
- * and resolves the principal from the Bearer token; subsequent frames are then
+ * and resolves the principal from the Bearer token. Subsequent frames are then
  * authorized by the {@link AuthorizationManager} bean below.
  *
  * <p>Per-user destination matching: Spring Security 6's
  * {@code MessageMatcherDelegatingAuthorizationManager} builder does not expose a
  * direct {@code simpSubscribeDestMatchers("/user/{principal}/**").hasUserPrincipal()}
  * predicate. Subscriptions to {@code /user/**} are therefore gated as
- * {@code .authenticated()} — any connected (hence already-JWT-validated) user may
+ * {@code .authenticated()}: any connected (hence already-JWT-validated) user may
  * subscribe to the {@code /user/**} namespace. The per-user isolation is enforced
  * structurally: the server only pushes to a user's own queue via
- * {@code convertAndSendToUser(principal, ...)} — no user can subscribe to
+ * {@code convertAndSendToUser(principal, ...)}. No user can subscribe to
  * another user's queue unless they know the other's principal name.
- * TODO: add fine-grained per-principal subscribe guard once Spring Security
- *       exposes a path-variable-to-principal matcher in the SimpDestinationMessageMatcher API.
  */
 @Configuration
 @EnableWebSocketMessageBroker
@@ -45,11 +45,19 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private static final String NOTIFY_ENDPOINT = "/notifyWebsocket";
+
+    private static final List<String> ALLOWED_ORIGINS = List.of(
+            "https://sky.luksarna.com",
+            "https://skycloud.luksarna.com",
+            "http://localhost:5777",
+            "http://localhost:4200");
+
     private final WebSocketAuthChannelInterceptor authInterceptor;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // /queue is the user-destination prefix; convertAndSendToUser("alice", "/queue/notify",
+        // /queue is the user-destination prefix. convertAndSendToUser("alice", "/queue/notify",
         // payload) routes to /user/alice/queue/notify under the hood.
         config.enableSimpleBroker("/queue");
         config.setApplicationDestinationPrefixes("/sky");
@@ -58,12 +66,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // CORS is defence-in-depth; STOMP CONNECT requires a JWT regardless of origin.
-        registry.addEndpoint("/notifyWebsocket")
-                .setAllowedOrigins("https://sky.luksarna.com", "https://skycloud.luksarna.com", "http://localhost:4200")
+        // CORS is defence-in-depth. STOMP CONNECT requires a JWT regardless of origin.
+        registry.addEndpoint(NOTIFY_ENDPOINT)
+                .setAllowedOrigins(allowedOrigins())
                 .withSockJS();
-        registry.addEndpoint("/notifyWebsocket")
-                .setAllowedOrigins("https://sky.luksarna.com", "https://skycloud.luksarna.com", "http://localhost:4200");
+        registry.addEndpoint(NOTIFY_ENDPOINT)
+                .setAllowedOrigins(allowedOrigins());
     }
 
     @Override
@@ -80,5 +88,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .anyMessage().authenticated();
 
         return messages.build();
+    }
+
+    private static String[] allowedOrigins() {
+        return ALLOWED_ORIGINS.toArray(String[]::new);
     }
 }

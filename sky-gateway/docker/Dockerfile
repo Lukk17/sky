@@ -1,12 +1,10 @@
-# Build from repo root:
-#   docker build -f sky-gateway/docker/Dockerfile -t sky-gateway:latest .
-
 # ===============> BUILD STAGE <===============
 FROM gradle:9-jdk25 AS build
 WORKDIR /workspace
 COPY settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle
 COPY buildSrc ./buildSrc
+COPY sky-common ./sky-common
 COPY sky-gateway ./sky-gateway
 RUN --mount=type=cache,id=gradle-sky-gateway,target=/home/gradle/.gradle gradle :sky-gateway:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-gateway/build/libs/sky-gateway.jar \
@@ -14,6 +12,15 @@ RUN --mount=type=cache,id=gradle-sky-gateway,target=/home/gradle/.gradle gradle 
 
 # ===============> RUN STAGE <===============
 FROM eclipse-temurin:25-jre-alpine AS runtime
+
+COPY config/keycloak/certs/localhost-ca.crt /tmp/local-dev-ca.crt
+RUN keytool -importcert -noprompt \
+      -alias local-dev-ca \
+      -file /tmp/local-dev-ca.crt \
+      -keystore "$JAVA_HOME/lib/security/cacerts" \
+      -storepass changeit \
+ && rm /tmp/local-dev-ca.crt
+
 RUN addgroup -S -g 1000 sky && adduser -S -u 1000 sky -G sky
 USER sky
 WORKDIR /app

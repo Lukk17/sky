@@ -1,7 +1,5 @@
 package com.lukk.sky.notify.config.kafka;
 
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -21,6 +19,7 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
+import tools.jackson.core.JacksonException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,8 +73,7 @@ public class KafkaConsumerConfig {
                 (record, ex) -> new TopicPartition(record.topic() + ".DLT", record.partition()));
         DefaultErrorHandler handler = new DefaultErrorHandler(recoverer, new FixedBackOff(1_000L, 3L));
         handler.addNotRetryableExceptions(
-                JsonSyntaxException.class,
-                JsonParseException.class,
+                JacksonException.class,
                 IllegalArgumentException.class);
         return handler;
     }

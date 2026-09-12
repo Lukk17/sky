@@ -11,17 +11,6 @@ spring:
   application:
     name: sky-gateway
 
-  # Cloud Gateway routes — mirror the nginx-ingress rewrite rules used in production.
-  #
-  # Production mapping (nginx annotation):
-  #   /booking/api(/|$)(.*)  ->  sky-booking:5555/api/v1/$2
-  #   /offer/api(/|$)(.*)    ->  sky-offer:5552/api/v1/$2
-  #   /msg/api(/|$)(.*)      ->  sky-message:5553/api/v1/$2
-  #   /notify/**             ->  sky-notify:5554   (WebSocket passthrough, no rewrite)
-  #
-  # In docker-compose the downstream URIs are overridden via BOOKING_URI / OFFER_URI /
-  # MESSAGE_URI / NOTIFY_URI env vars so the service names resolve inside the Docker
-  # network (e.g. BOOKING_URI=http://sky-booking:5555).
   cloud:
     gateway:
       server:
@@ -51,8 +40,7 @@ spring:
             - id: notify-route
               uri: ${sky-gateway.notify-uri}
               predicates:
-                - Path=/notify/**
-              # No rewrite — sky-notify exposes WebSocket paths at /notify/... natively.
+                - Path=/notifyWebsocket/**
 
 management:
   endpoints:
@@ -78,21 +66,10 @@ logging:
         web: ${SPRING_DEBUG:INFO}
 
 ---
-# ──────────────────────────────────────────────────────────────────────────────
-# Profile: secure
-#
-# Activates Keycloak OAuth2 login + TokenRelay filter so the gateway handles
-# OIDC authentication and forwards the bearer token to every upstream service.
-# Requires a running Keycloak instance and the env vars below:
-#
-#   KEYCLOAK_ISSUER_URI  — e.g. http://localhost:8090/realms/sky
-#   KEYCLOAK_CLIENT_ID   — client registered in Keycloak
-#   KEYCLOAK_CLIENT_SECRET — client secret
-# ──────────────────────────────────────────────────────────────────────────────
 spring:
   config:
     activate:
-      on-profile: secure
+      on-profile: "!local"
   security:
     oauth2:
       client:
@@ -139,6 +116,6 @@ spring:
             - id: notify-route
               uri: ${sky-gateway.notify-uri}
               predicates:
-                - Path=/notify/**
+                - Path=/notifyWebsocket/**
               filters:
                 - TokenRelay=

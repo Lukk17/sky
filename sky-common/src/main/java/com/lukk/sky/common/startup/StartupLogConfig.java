@@ -214,9 +214,13 @@ public class StartupLogConfig {
         }
     }
 
+    String resolveHostName() throws UnknownHostException {
+        return InetAddress.getLocalHost().getHostName();
+    }
+
     private String localHostName() {
         try {
-            return InetAddress.getLocalHost().getHostName();
+            return resolveHostName();
         } catch (UnknownHostException e) {
             log.debug("Could not resolve local hostname: {}", e.getMessage());
             return "localhost";

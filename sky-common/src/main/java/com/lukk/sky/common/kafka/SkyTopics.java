@@ -1,5 +1,8 @@
 package com.lukk.sky.common.kafka;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 /**
  * Canonical Kafka topic names shared across sky-booking (producer),
  * sky-offer (producer), and sky-notify (consumer).
@@ -8,11 +11,9 @@ package com.lukk.sky.common.kafka;
  * as an {@code implementation} dependency in its own build; sky-common keeps
  * it {@code compileOnly} so non-Kafka consumers are not affected.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SkyTopics {
 
     public static final String BOOKING_TOPIC = "bookingTopic-1";
     public static final String OFFER_TOPIC = "offerTopic-1";
-
-    private SkyTopics() {
-    }
 }

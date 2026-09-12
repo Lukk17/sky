@@ -1,8 +1,8 @@
 # sky-notify
 
-*Real-time notification service for the Sky platform.*
+Real-time notification service for the Sky platform.
 
-Port: **5554** | Transport: WebSocket (STOMP over SockJS)
+Port: 5554, transport STOMP over WebSocket, with a SockJS fallback.
 
 ---
 
@@ -29,25 +29,41 @@ topic (`<topic>.DLT`) after exhausting retries.
 
 ### WebSocket endpoint
 
-Clients connect at `/notifyWebsocket` using STOMP over SockJS. After connecting, subscribe to:
+Clients connect at `/notifyWebsocket`, registered twice in
+[src/main/java/com/lukk/sky/notify/config/WebSocketConfig.java](src/main/java/com/lukk/sky/notify/config/WebSocketConfig.java),
+once with SockJS and once as a plain WebSocket. After connecting, subscribe to:
 
-```
+```text
 /user/{email}/queue/notify
 ```
 
 Spring's user-destination machinery resolves the `{email}` prefix from the authenticated STOMP principal. Clients
 subscribe to `/user/queue/notify` and the broker rewrites it to the correct per-user destination automatically.
 
-Allowed origins (CORS): `https://sky.luksarna.com`, `https://skycloud.luksarna.com`, `http://localhost:4200`.
+Allowed origins (CORS): `https://sky.luksarna.com`, `https://skycloud.luksarna.com`, `http://localhost:5777`,
+`http://localhost:4200`. CORS is defence in depth here, a STOMP `CONNECT` needs a valid JWT regardless of origin.
+`http://localhost:5777` covers a page served from the gateway port or from the local k3d ingress, and
+`http://localhost:4200` covers the Angular dev server, so neither is refused at the origin check.
+
+Reaching the endpoint works the same way in every environment. Locally, `sky-gateway` passes `/notifyWebsocket/**`
+through to this service, so a client connects at `ws://localhost:5777/notifyWebsocket` through the gateway, or at
+`ws://localhost:5554/notifyWebsocket` straight to the published port. In a cluster the Helm chart at
+[../config/k8s/helm/service/sky-notify/](../config/k8s/helm/service/sky-notify/) templates an Ingress on
+`/notifyWebsocket` with `pathType: Prefix` and no rewrite, so the same path reaches a browser: `localhost` with the
+`dev-ssl-cert` secret locally, `skycloud.luksarna.com` with `sky-tls-cert` in production. The Ingress carries no
+oauth2-proxy auth annotations, because the JWT check belongs on the STOMP `CONNECT` frame and not on the HTTP
+handshake, and it raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not drop an idle
+socket after its default 60.
 
 ---
 
 ### Authentication
 
-`sky-notify` validates JWTs itself, unlike the other three services that rely entirely on the `oauth2-proxy` ingress.
-The STOMP CONNECT frame must carry a Bearer token in an `Authorization` header. `WebSocketAuthChannelInterceptor`
-extracts and validates the token using the `JwtDecoder` built from `OAUTH2_ISSUER_URI`. Any STOMP frame without a
-valid JWT is rejected.
+All four services validate JWTs themselves through `ResourceServerJwtAutoConfiguration` in `sky-common`, so this one
+is no longer the exception it used to be. What is specific here is where the check happens: not on an HTTP request but
+on the STOMP CONNECT frame, which must carry a Bearer token in an `Authorization` header.
+`WebSocketAuthChannelInterceptor` extracts and validates it with the `JwtDecoder` built from `OAUTH2_ISSUER_URI` and
+sets the resulting principal on the session. Any STOMP frame without a valid JWT is rejected.
 
 ---
 
@@ -55,9 +71,9 @@ valid JWT is rejected.
 
 Uses hexagonal (ports-and-adapters):
 
-- `domain/ports`, `domain/service`: core. `NotificationTransmissionService` is the primary port.
-- `adapters/inbound`: `KafkaListeners` (Kafka consumers).
-- `adapters/outbound`: `WebSocketService` (STOMP push via `SimpMessagingTemplate`), `NotificationPublisherPrimary`.
+- `domain/ports` and `domain/service`: the core. There is no `domain/model` package, this service relays events rather than owning entities.
+- `adapters/inbound`: `KafkaListeners`, the Kafka consumers.
+- `adapters/outbound`: the STOMP push through `SimpMessagingTemplate`.
 - `adapters/dto`: `WebsocketPayloadModel`.
 - `config`, `config/kafka`, `config/propertyBind`: Spring, security, and Kafka wiring.
 
@@ -67,7 +83,8 @@ Uses hexagonal (ports-and-adapters):
 
 | Variable | Notes |
 |---|---|
-| `OAUTH2_ISSUER_URI` | OIDC issuer URI, e.g. `https://lukk17.eu.auth0.com/`. Required; no default. |
+| `OAUTH2_ISSUER_URI` | OIDC issuer, for example `https://keycloak.test:9443/realms/sky`, which is also the default |
+| `OAUTH2_AUDIENCE` | Set to `sky-backend` to enforce the audience claim. Unset by default |
 | `NOTIFY_PORT` | Default `5554` |
 | `KAFKA_ADDRESS` | Default `kafka-service` |
 | `KAFKA_PORT` | Default `9092` |
@@ -82,10 +99,9 @@ Run from the repo root:
 ./gradlew :sky-notify:test
 ```
 
-Integration tests use Testcontainers Kafka only (no MySQL). Docker must be running.
+Integration tests use a Testcontainers Kafka container only, wired through `@ServiceConnection`. There is no database container, this service has no datastore. Docker must be running.
 
-This module has low test coverage. The JaCoCo gate is intentionally not wired into `check` yet. When changing code
-here, add tests.
+The coverage backfill landed. The last JaCoCo run reports no missed lines and no missed branches at all, across `KafkaListeners`, `NotificationPublisherPrimary`, `NotificationTransmissionServicePrimary`, and `WebSocketService`. The report excludes `config/**`, `adapters/dto/**`, the application class, and `Constants`, so `WebSocketConfig`, `SecurityConfig`, and `WebSocketAuthChannelInterceptor` do not count towards that figure even though each has its own test class. `jacocoTestCoverageVerification` is wired into `check`, with a floor of 0.90 line and 0.90 branch over that measured set, so a drop below it fails the build here rather than waiting for a review to notice.
 
 ---
 
@@ -93,5 +109,7 @@ here, add tests.
 
 | Document | What it covers |
 |---|---|
-| [../README.md](../README.md) | Root README: full platform overview, build, deployment |
-| [AGENTS.md](AGENTS.md) | Module-local agent/coding conventions |
+| [../README.md](../README.md) | Platform overview, modules, build, ports |
+| [AGENTS.md](AGENTS.md) | Module-local agent and coding conventions |
+| [../config/local-dev/local_README.md](../config/local-dev/local_README.md) | Running the platform locally |
+| [../sky-common/README.md](../sky-common/README.md) | The shared Kafka envelope and security auto-configurations this service uses |

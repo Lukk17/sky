@@ -16,22 +16,15 @@ import java.lang.annotation.Target;
 @ApiResponses({
         @ApiResponse(
                 responseCode = "400",
-                description = "Bad Request — invalid input or constraint violation",
-                content = @Content(
-                        mediaType = "application/problem+json",
-                        schema = @Schema(implementation = ProblemDetail.class))),
-        @ApiResponse(
-                responseCode = "401",
-                description = "Unauthorized — missing or invalid bearer token",
+                description = "Bad Request: invalid input or a rejected domain rule",
                 content = @Content(
                         mediaType = "application/problem+json",
                         schema = @Schema(implementation = ProblemDetail.class))),
         @ApiResponse(
                 responseCode = "500",
-                description = "Internal Server Error — unexpected failure",
-                content = @Content(
-                        mediaType = "application/problem+json",
-                        schema = @Schema(implementation = ProblemDetail.class)))
+                description = "Internal Server Error: unexpected failure. The body is Spring Boot's "
+                        + "default error object, not a problem detail, so treat a 500 as opaque.",
+                content = @Content)
 })
 public @interface ApiCommonErrorResponses {
 }

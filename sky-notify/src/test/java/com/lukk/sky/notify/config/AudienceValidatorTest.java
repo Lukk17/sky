@@ -11,7 +11,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("AudienceValidator — JWT audience claim validation")
+@DisplayName("AudienceValidator: JWT audience claim validation")
 class AudienceValidatorTest {
 
     private static final String EXPECTED_AUDIENCE = "sky-notify-api";

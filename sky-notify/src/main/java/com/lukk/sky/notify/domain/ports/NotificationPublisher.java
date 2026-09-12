@@ -1,18 +1,17 @@
 package com.lukk.sky.notify.domain.ports;
 
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
+
 /**
- * Port for emitting a serialized notification to a specific user's WebSocket destination.
+ * Port for delivering a consumed event to the notification channel of a single user.
  */
 public interface NotificationPublisher {
 
-    /**
-     * Publish the provided JSON payload to the named user's notification queue.
-     *
-     * @param targetUser principal name (matches the JWT {@code sub} or configured claim)
-     *                   the broker uses to route to {@code /user/{targetUser}/queue/notify}.
-     *                   Must not be {@code null}.
-     * @param data       JSON payload. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code targetUser} or {@code data} is {@code null}.
-     */
-    void publish(String targetUser, String data);
+    void publish(String targetUser,
+                 KafkaPayloadModel payload,
+                 String partition,
+                 String topic,
+                 String groupId,
+                 String timestamp,
+                 String offset);
 }
