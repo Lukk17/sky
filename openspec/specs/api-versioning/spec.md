@@ -2,7 +2,9 @@
 
 ## Purpose
 Keeps every REST endpoint explicitly versioned and consistently named, so a breaking payload change can ship as a new version instead of silently altering the contract callers already depend on.
+
 ## Requirements
+
 ### Requirement: Header-based API versioning via Spring Framework 7 native mechanism
 Every REST service (sky-booking, sky-offer, sky-message) MUST configure API versioning through `WebMvcConfigurer.configureApiVersioning(ApiVersionConfigurer)` using the `X-API-Version` request header as the primary resolver. Every controller method or class MUST declare its version via `@RequestMapping(version = "1")` (or a method-level override).
 
@@ -15,11 +17,11 @@ Every REST service (sky-booking, sky-offer, sky-message) MUST configure API vers
 - **THEN** the server returns a 4xx response (per Spring Framework 7's `NotAcceptableApiVersionException` default handling)
 
 ### Requirement: REST resource paths use plural nouns consistently
-Every collection endpoint MUST use a plural-noun path segment (`/offers`, `/messages`, `/bookings`). Singular paths (`/api/owner/offer`, `/api/message`) MUST be renamed to their plural equivalents.
+Every collection endpoint MUST use a plural-noun path segment, as `/offers`, `/messages` and `/bookings` do, and a singular collection path such as `/api/owner/offer` or `/api/message` MUST be renamed to its plural equivalent. Two shapes are deliberately outside the rule rather than exceptions to it. A path segment that names a single-valued sub-resource of one parent stays singular, as the owner of one offer does at `/offers/{offerId}/owner`, because pluralising it would claim an offer has several owners. A path segment that is a namespace rather than a collection is likewise not pluralised, as the owner-scoped prefix in `/owner/offers` is not.
 
 #### Scenario: Auditing REST paths
 - **WHEN** an operator inspects the Swagger UI for any service
-- **THEN** every collection-style endpoint shows a plural noun in its path; no singular collection paths remain
+- **THEN** every collection-style endpoint shows a plural noun in its path, and no singular collection path remains
 
 ### Requirement: Internal endpoints are versioned and namespaced
 Service-to-service REST endpoints (e.g., sky-booking's lookup against sky-offer) MUST live under `/api/internal/...` and carry the same versioning as public endpoints.
@@ -27,4 +29,3 @@ Service-to-service REST endpoints (e.g., sky-booking's lookup against sky-offer)
 #### Scenario: sky-booking calls sky-offer for offer ownership
 - **WHEN** sky-booking's REST client calls the offer service to verify ownership
 - **THEN** the request targets `/api/internal/owner/offers/{id}` with `X-API-Version: 1`; the route is not exposed at the root path
-

@@ -1,9 +1,4 @@
-# spring-boot-hygiene Specification
-
-## Purpose
-Keeps each service's configuration honest: only the starters actually used on the classpath, no credential committed as a default, and a cross-origin policy that does not answer every origin.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Only the starters actually used are on the classpath
 No module may declare a Spring Boot starter it does not use. Three rules make that checkable. `spring-boot-starter-data-rest` MUST NOT be declared anywhere. A module on the servlet stack MUST NOT declare `spring-boot-starter-webflux`, which leaves sky-gateway as the one reactive module, and it is reactive through `spring-cloud-starter-gateway-server-webflux` rather than through the Spring Boot starter, because Spring Cloud Gateway requires Netty and breaks when Tomcat reaches the classpath. Exactly one springdoc-openapi UI starter MUST be on the classpath of a module that serves a REST API and none MUST be on the classpath of a module that does not, which is achieved by declaring it once in the shared web convention plugin rather than per module, so the three REST services get a Swagger UI by applying that plugin and sky-notify and sky-gateway get none by not applying it.

@@ -1,9 +1,4 @@
-# helm-charts Specification
-
-## Purpose
-Keeps the charts deployable in more than one environment by holding environment-specific values out of the defaults, pinning image tags rather than tracking a moving one, and naming a secret for what it actually contains.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Helm charts have no environment-specific values in defaults
 Default `values.yaml` files in every Helm chart MUST NOT contain environment-specific literals. That covers hostnames, TLS secret names, namespaces, and the oauth2-proxy `auth-url` and `auth-signin` ingress annotations, each of which names a concrete environment's front door. Environment specifics MUST live in `values-<env>.yaml` overlay files passed via `-f` at deploy time, so the chart itself carries no answer to the question of which environment it is for.
@@ -22,10 +17,3 @@ Helm chart values MUST set `image.tag` to a specific version rather than to `lat
 #### Scenario: Pod scheduling reuses cached images
 - **WHEN** a pod is scheduled on a node that already has the image
 - **THEN** Kubernetes does not re-pull from the registry, and the pod starts immediately from the cached image
-
-### Requirement: TLS secret names are not misleading
-TLS secret references in chart values MUST be named for what they are (e.g., `sky-tls-cert`), not legacy environment-specific names (e.g., `dev-ssl-cert` in a prod context).
-
-#### Scenario: Inspecting prod TLS configuration
-- **WHEN** an operator runs `kubectl get secrets -n sky-prod`
-- **THEN** the TLS secret has a name that reflects its purpose, not its historical environment of origin
