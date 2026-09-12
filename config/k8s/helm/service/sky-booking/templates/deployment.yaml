@@ -29,7 +29,7 @@ spec:
           emptyDir: {}
       containers:
         - name: {{ .Values.deployment.container.name }}
-          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default "lukk17/sky-booking:latest" }}"
+          image: "{{ required "deployment.image.repository must be set, see values.yaml" .Values.deployment.image.repository }}:{{ required "deployment.image.tag must be set, see values.yaml" .Values.deployment.image.tag }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           securityContext:
             allowPrivilegeEscalation: false
