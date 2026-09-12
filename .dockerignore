@@ -1,6 +1,5 @@
 **/build/
 **/.gradle/
-.gradle/
 .git/
 .github/
 .idea/
