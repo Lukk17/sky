@@ -1,20 +1,4 @@
-# architecture Specification
-
-## Purpose
-Holds the four hexagonal services to one package layout and one dependency direction, with the parts a build can check asserted by each service's own ArchUnit test rather than by review, so an adapter cannot quietly reach past a port into a domain service.
-
-## Requirements
-
-### Requirement: Hexagonal layer separation is enforced by ArchUnit
-Every service MUST run ArchUnit tests that fail the build when the hexagonal dependency direction is violated. Specifically: `adapters` may depend on `domain` and `sky.common`; `domain` may depend only on itself, `sky.common`, and `java.*`; `config` may depend on both `adapters` and `domain`. No cross-service imports are permitted.
-
-#### Scenario: A controller bypasses the service layer
-- **WHEN** a developer adds a field injecting a `*Repository` directly into a controller (skipping the service/use-case layer)
-- **THEN** the service's ArchUnit test fails the build with a layer-violation message
-
-#### Scenario: A domain class imports a Spring web type
-- **WHEN** a developer adds `import org.springframework.web.client.RestClient` to a class in `domain.*`
-- **THEN** the ArchUnit cross-cutting rule fails the build
+## MODIFIED Requirements
 
 ### Requirement: Canonical package layout per service
 Each of the four hexagonal services (sky-booking, sky-offer, sky-message, sky-notify) MUST organise its source under one root package named for the service, holding `adapters`, `domain` and `config` and nothing else at that level. Within `adapters`, wire types MUST live in `adapters.dto`, a driving adapter MUST live under `adapters.inbound` and a driven adapter under `adapters.outbound`, and each driven adapter MUST sit in a subpackage named for what it adapts, as `adapters.outbound.persistence`, `adapters.outbound.rest`, `adapters.outbound.notification` and `adapters.outbound.storage` do. There MUST NOT be a package named `adapters.api` or `adapters.persistence` directly under `adapters`, because an adapter's direction is the first thing a reader needs from its package name and a technology name at that level hides it. Within `domain`, entities MUST live in `domain.model`, domain exceptions in `domain.exception`, port interfaces under `domain.ports` split into `domain.ports.inbound` for the ports a controller calls and `domain.ports.outbound` for the ports an adapter implements, and the implementations of those ports in `domain.service`. Spring wiring MUST live in `config`, with bound property records in `config.propertyBind` and Kafka wiring in `config.kafka`. Three of these locations MUST be enforced by an ArchUnit rule in the service's own test source rather than left to review: a class annotated `@RestController` or `@Controller` resides in `adapters.inbound.api`, a class annotated `@Entity` resides in `domain.model`, and a repository interface resides in `domain.ports.outbound`. On naming, a REST controller MUST end in `Controller`, and the single implementation of an interface MUST take that interface's name with the suffix `Primary`, which holds in `adapters.outbound` exactly as it does in `domain.service`. A port interface MUST NOT carry a `Port` suffix, because its package already says it is a port and it is named for what it does instead.

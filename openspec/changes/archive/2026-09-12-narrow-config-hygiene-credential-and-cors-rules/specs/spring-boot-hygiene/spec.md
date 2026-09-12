@@ -1,16 +1,12 @@
-# spring-boot-hygiene Specification
+## RENAMED Requirements
 
-## Purpose
-Keeps each service's configuration honest: only the starters actually used on the classpath, no credential defaulted outside the deliberately relaxed local profile, and a cross-origin list that names its origins instead of admitting every one with a wildcard.
+- FROM: `### Requirement: No default credentials in committed config`
+- TO: `### Requirement: No default credentials in committed config outside the local profile`
 
-## Requirements
+- FROM: `### Requirement: CORS defaults are restrictive`
+- TO: `### Requirement: Cross-origin configuration never allows every origin`
 
-### Requirement: Only the starters actually used are on the classpath
-No module may declare a Spring Boot starter it does not use. Three rules make that checkable. `spring-boot-starter-data-rest` MUST NOT be declared anywhere. A module on the servlet stack MUST NOT declare `spring-boot-starter-webflux`, which leaves sky-gateway as the one reactive module, and it is reactive through `spring-cloud-starter-gateway-server-webflux` rather than through the Spring Boot starter, because Spring Cloud Gateway requires Netty and breaks when Tomcat reaches the classpath. Exactly one springdoc-openapi UI starter MUST be on the classpath of a module that serves a REST API and none MUST be on the classpath of a module that does not, which is achieved by declaring it once in the shared web convention plugin rather than per module, so the three REST services get a Swagger UI by applying that plugin and sky-notify and sky-gateway get none by not applying it.
-
-#### Scenario: Auditing dependencies
-- **WHEN** a contributor runs `./gradlew :sky-booking:dependencies`, and the same for the other modules
-- **THEN** `spring-boot-starter-data-rest` appears nowhere, `spring-boot-starter-webflux` appears in no servlet-stack module, and exactly one springdoc starter appears for each of the three REST services and none for the other modules
+## MODIFIED Requirements
 
 ### Requirement: No default credentials in committed config outside the local profile
 No `application.yaml`, and no profile-specific configuration file beside it, may carry a default value for a credential, a secret, a password or a username that forms part of one. The environment variable reference MUST stand alone, as `${POSTGRES_PASSWORD}` does, so a missing value cannot fall back to something a deployment did not choose, and a missing credential MUST fail startup loudly rather than surfacing later as a connection failure that names no property. Exactly one exemption exists, and it is the `local` profile: a configuration file activated only by that profile MAY default a development credential. The reason is part of the rule rather than something to rediscover. This project is for local use, its development credentials are deliberately committed so that a fresh checkout runs with no setup, and the `local` profile is already this repository's one deliberately relaxed branch, because the same profile installs a JWT decoder that verifies neither signature, issuer nor expiry, and the gateway's `local` chain permits every exchange. A defaulted development password is the smaller of the relaxations already accepted under that name. Three boundaries keep the exemption where it is and none of them is negotiable. It MUST reach only a file whose own name carries the `local` profile, so a file with no profile in its name is never covered, whatever profile is active when it loads. It MUST NOT extend to any other profile, named or composed. And the `local` profile MUST NOT be activated in a deployed environment, because an exemption attached to a file is worth nothing if that file can be loaded in the cluster. A value defaulted under the exemption MUST be a development value that grants nothing beyond a developer's own machine.
