@@ -119,3 +119,13 @@ single composite `./gradlew`, e.g. `./gradlew :sky-booking:test`.
 - Keep the hexagonal direction: controllers and adapters depend inward on `domain/ports/inbound` and `domain/ports/outbound`;
   `domain/service` implementations depend on those port interfaces. Adapters must never import from `domain/service`
   directly. ArchUnit enforces this. A violation fails the build, do not weaken the rule.
+- Four more rules landed in `HexagonalArchitectureTest` alongside the older ones, and each was proved to fail on a
+  deliberate violation before it was trusted. No class under `adapters.inbound` may reach a Spring Data repository or
+  a `Repository`-suffixed interface, so a controller cannot skip the domain service. Every class under `domain` may
+  reach only the packages an allow list in that test names, which is the persistence and validation API the model
+  genuinely carries plus Lombok, SLF4J and a short set of Spring annotations, and nothing else. The one
+  `@RestControllerAdvice` is carved out by annotation and bounded to that list plus `org.springframework.http`, the
+  package `org.springframework.web` itself and `org.springframework.web.bind.annotation`, so it cannot reach an HTTP
+  client. Nothing may reach another service's classes. A new framework dependency in the domain therefore fails the
+  build: admit it in `openspec/specs/architecture/spec.md` through the change workflow first, and never by adding an
+  exclusion to the test.

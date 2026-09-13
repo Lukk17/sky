@@ -1,9 +1,4 @@
-# architecture Specification
-
-## Purpose
-Holds the four hexagonal services to one package layout and one dependency direction, with the parts a build can check asserted by each service's own ArchUnit test rather than by review, so an adapter cannot quietly reach past a port into a domain service.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Hexagonal layer separation is enforced by ArchUnit
 Each of the four hexagonal services (sky-booking, sky-offer, sky-message, sky-notify) MUST carry an ArchUnit test in its own test source, and every guarantee stated here MUST name the thing that enforces it, which is either a rule in those tests or the Gradle module graph. A guarantee that nothing enforces MUST NOT be written as though a test enforced it. The dependency direction is that `adapters` MAY depend on `domain` and on `sky-common`, that `config` MAY depend on both `adapters` and `domain` because it is the composition root that wires one to the other, and that `domain` MUST depend only on the packages the allow list below names. The `config` permission carries no rule and MUST NOT be described as enforced, because a permission has nothing for a rule to fail on.
@@ -33,24 +28,3 @@ Every rule named here MUST have been observed failing on a deliberate violation 
 #### Scenario: The domain gains a framework the specification has not admitted
 - **WHEN** a developer adds a dependency on a package outside the allow list to any class under `domain`, in any of the four services
 - **THEN** that service's ArchUnit test fails the build, and admitting the package requires changing this requirement first rather than adding an exclusion to the test
-
-### Requirement: Canonical package layout per service
-Each of the four hexagonal services (sky-booking, sky-offer, sky-message, sky-notify) MUST organise its source under one root package named for the service, holding `adapters`, `domain` and `config` and nothing else at that level. Within `adapters`, wire types MUST live in `adapters.dto`, a driving adapter MUST live under `adapters.inbound` and a driven adapter under `adapters.outbound`, and each driven adapter MUST sit in a subpackage named for what it adapts, as `adapters.outbound.persistence`, `adapters.outbound.rest`, `adapters.outbound.notification` and `adapters.outbound.storage` do. There MUST NOT be a package named `adapters.api` or `adapters.persistence` directly under `adapters`, because an adapter's direction is the first thing a reader needs from its package name and a technology name at that level hides it. Within `domain`, entities MUST live in `domain.model`, domain exceptions in `domain.exception`, port interfaces under `domain.ports` split into `domain.ports.inbound` for the ports a controller calls and `domain.ports.outbound` for the ports an adapter implements, and the implementations of those ports in `domain.service`. Spring wiring MUST live in `config`, with bound property records in `config.propertyBind` and Kafka wiring in `config.kafka`. Three of these locations MUST be enforced by an ArchUnit rule in the service's own test source rather than left to review: a class annotated `@RestController` or `@Controller` resides in `adapters.inbound.api`, a class annotated `@Entity` resides in `domain.model`, and a repository interface resides in `domain.ports.outbound`. On naming, a REST controller MUST end in `Controller`, and the single implementation of an interface MUST take that interface's name with the suffix `Primary`, which holds in `adapters.outbound` exactly as it does in `domain.service`. A port interface MUST NOT carry a `Port` suffix, because its package already says it is a port and it is named for what it does instead.
-
-A package named above MAY be absent from a service that has no such concern, and the absence MUST follow from the service's shape rather than from a different layout. Four such absences hold today and each is accounted for. sky-message has no `adapters.outbound`, because it has no driven adapter left, and no `config.kafka`, because it publishes no events. sky-notify has neither `domain.model` nor `domain.exception`, because it relays events and stores nothing. sky-notify also keeps one flat `domain.ports` package instead of the inbound and outbound split and carries no `adapters.inbound.api`, because it exposes no REST surface and holds a single port, and its own ArchUnit rules gate `adapters.inbound` and `adapters.outbound` without naming an `api` subpackage. A new service MUST follow the split layout rather than sky-notify's, and sky-notify's shape MUST NOT be read as a second sanctioned layout.
-
-One present divergence is recorded rather than blessed. sky-notify holds `adapters.outbound.service`, whose name says neither the technology nor the concern it adapts, and which reads as a second `service` package alongside `domain.service`. Its own ArchUnit rule permits it, because that rule gates `adapters.outbound` as a whole. Nothing in the code explains the name, so it is named here as a deviation to be resolved rather than as an exception to the rule, and no new adapter MAY be added under it.
-
-`sky-gateway` and `sky-common` are outside this requirement. `sky-gateway` is an edge proxy whose routing table is configuration rather than code, holding no domain model and carrying no ArchUnit test, so imposing the layout on it would create empty packages. `sky-common` is a shared library organised by the concern each package serves rather than by the hexagon.
-
-#### Scenario: New contributor navigating across services
-- **WHEN** a contributor finds the booking controller at `sky-booking/src/main/java/com/lukk/sky/booking/adapters/inbound/api/BookingController.java`
-- **THEN** the equivalent controller in another service sits at the same relative path, as sky-offer's `OfferApiController` and sky-message's `MessageController` both do under `adapters/inbound/api`
-
-#### Scenario: A controller placed outside the inbound adapter package fails the build
-- **WHEN** a developer adds a class annotated `@RestController` anywhere outside `adapters.inbound.api` in sky-booking, sky-offer or sky-message
-- **THEN** that service's own ArchUnit test fails the build, because the rule asserts the location rather than documenting it
-
-#### Scenario: Comparing the four services against the layout
-- **WHEN** an auditor lists the packages of all four services and checks each one against the layout named here
-- **THEN** every package either carries a name this requirement gives or is a subpackage of one of them named for the concern it holds, and the only gaps and deviations are the ones this requirement names, which are sky-message missing `adapters.outbound` and `config.kafka`, sky-notify missing `domain.model`, `domain.exception` and `adapters.inbound.api` while keeping one flat `domain.ports`, and sky-notify's `adapters.outbound.service`

@@ -95,3 +95,12 @@ Integration tests use Testcontainers Kafka only. Run from the repo root, e.g. `.
 - Bump dependency versions in the root `gradle/libs.versions.toml`, never here.
 - Keep the hexagonal direction: `adapters/inbound` and `adapters/outbound` depend inward on `domain/ports`, never the
   reverse. ArchUnit enforces this.
+- Two of those four rules landed in `HexagonalArchitectureTest` here rather than all four, and both were proved to
+  fail on a deliberate violation before they were trusted. Every class under `domain` may reach only the packages an
+  allow list in that test names, and that list is shorter than the one the three stateful services carry because this
+  service stores nothing, so it holds no persistence, validation or Spring Data entry. Nothing may reach another
+  service's classes. The repository rule and the `@RestControllerAdvice` rule are deliberately absent, because this
+  module has neither, and a rule whose selector matches nothing reads as enforcement while checking nothing. A new
+  framework dependency in the domain therefore fails the build: admit it in
+  `openspec/specs/architecture/spec.md` through the change workflow first, and never by adding an exclusion to the
+  test.

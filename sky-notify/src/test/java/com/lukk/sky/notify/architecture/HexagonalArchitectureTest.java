@@ -1,5 +1,7 @@
 package com.lukk.sky.notify.architecture;
 
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -12,6 +14,19 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 @DisplayName("Hexagonal architecture constraints for sky-notify")
 class HexagonalArchitectureTest {
+
+    private static final String[] OWN_MONOREPO_PACKAGES = {
+            "com.lukk.sky.notify..",
+            "com.lukk.sky.common.."};
+
+    private static final String[] DOMAIN_ALLOWED_PACKAGES = {
+            "com.lukk.sky.notify.domain..",
+            "com.lukk.sky.common..",
+            "java..",
+            "lombok..",
+            "org.slf4j..",
+            "org.springframework.context.annotation..",
+            "org.springframework.stereotype.."};
 
     private static JavaClasses classes;
 
@@ -37,6 +52,27 @@ class HexagonalArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAPackage("..adapters..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("Nothing imports another service: only sky-common is shared")
+    void allClasses_whenInspected_thenImportNoOtherServiceModule() {
+        noClasses()
+                .should().dependOnClassesThat(areOtherServiceModules())
+                .because("sky-common is the only module a service may share code through, and a second"
+                        + " project dependency in the build file is what makes the import compile in the first place")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("Domain depends only on the packages the architecture specification sanctions")
+    void domain_whenInspected_thenDependsOnlyOnSanctionedPackages() {
+        classes()
+                .that().resideInAPackage("..domain..")
+                .should().onlyDependOnClassesThat(areSanctionedDomainDependencies())
+                .because("this service stores nothing, so its domain needs no persistence API and the allow list"
+                        + " is shorter than the one the three stateful services carry")
                 .check(classes);
     }
 
@@ -74,5 +110,25 @@ class HexagonalArchitectureTest {
                 .should().dependOnClassesThat().haveFullyQualifiedName(
                         "org.springframework.messaging.simp.SimpMessagingTemplate")
                 .check(classes);
+    }
+
+    private static DescribedPredicate<JavaClass> areOtherServiceModules() {
+        return JavaClass.Predicates.resideInAPackage("com.lukk.sky..")
+                .and(DescribedPredicate.not(JavaClass.Predicates.resideInAnyPackage(OWN_MONOREPO_PACKAGES)))
+                .as("belong to another module of this monorepo");
+    }
+
+    private static DescribedPredicate<JavaClass> areSanctionedDomainDependencies() {
+        DescribedPredicate<JavaClass> allowedPackages =
+                JavaClass.Predicates.resideInAnyPackage(DOMAIN_ALLOWED_PACKAGES);
+
+        return new DescribedPredicate<>("are sanctioned by the domain allow list") {
+            @Override
+            public boolean test(JavaClass javaClass) {
+                JavaClass target = javaClass.isArray() ? javaClass.getBaseComponentType() : javaClass;
+
+                return target.isPrimitive() || allowedPackages.test(target);
+            }
+        };
     }
 }
