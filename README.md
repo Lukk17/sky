@@ -393,8 +393,6 @@ Agent and tooling documentation:
 | [docs/GLOBAL_SETUP.md](docs/GLOBAL_SETUP.md) | Installing the agent standards into your home directory |
 | [docs/AGENTS-UPDATE.md](docs/AGENTS-UPDATE.md) | Refreshing the imported agent standards |
 
-Two more files exist and are deliberately left out of the tables above, because they document abandoned experiments rather than anything the platform runs: [config/k8s/Xperimantal/kong/kong_README.md](config/k8s/Xperimantal/kong/kong_README.md) and [config/k8s/Xperimantal/keycloak/keycloak_README.md](config/k8s/Xperimantal/keycloak/keycloak_README.md). Both say so in their first line.
-
 ---
 
 ### License
