@@ -95,7 +95,7 @@ spec:
                   key: {{ .Values.secret.dbPasswordKey }}
                   name: {{ .Values.secret.name }}
             - name: KC_HOSTNAME
-              value: {{ .Values.hostname }}
+              value: {{ required "hostname must be set by a values-<env>.yaml overlay" .Values.hostname }}
             - name: KC_HOSTNAME_STRICT
               value: "false"
             - name: KC_HTTP_ENABLED

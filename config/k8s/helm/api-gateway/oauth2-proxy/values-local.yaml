@@ -1,4 +1,20 @@
 # Local-environment overlay for oauth2-proxy.
-# values.yaml already targets the local k3d cluster, so this overlay adds nothing.
-# It exists so `ENV=local` resolves the same -f values-<env>.yaml path as every
-# other chart the deployment scripts install.
+#
+# Apply on top of values.yaml:
+#   helm upgrade --install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy -f ./config/k8s/helm/api-gateway/oauth2-proxy/values-local.yaml
+
+args:
+  cookieSecure: "false"
+  oidcIssuerUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky"
+  redirectUrl: "http://localhost:5777/oauth2/callback"
+
+ingress:
+  tls:
+    secretName: dev-ssl-cert
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: localhost
+      paths:
+        - path: "/oauth2(/|$)(.*)"
+          pathType: ImplementationSpecific

@@ -271,7 +271,7 @@ The development certificate and key at [config/k8s/secret/ssl/](../secret/ssl/) 
     kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
     ```
 
-The `tls` block that consumes it is templated by each chart from `ingress.tls.secretName`, which the production overlays point at `sky-tls-cert` and the defaults at `dev-ssl-cert`.
+The `tls` block that consumes it is templated by each chart from `ingress.tls.secretName`, which the production overlays point at `sky-tls-cert` and the local overlays at `dev-ssl-cert`. No chart default names either one: the value is empty behind `required`, so a chart rendered with no overlay fails and names it rather than picking an environment's certificate for you.
 
 #### Generate a self-signed certificate
 

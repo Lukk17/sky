@@ -97,6 +97,9 @@ oauth2:
   issuerUri: ""
   audience: "sky-backend"
 
+crossOrigin:
+  allowed: ""
+
 actuator:
   startupProbe:
     path: "/actuator/health/liveness"

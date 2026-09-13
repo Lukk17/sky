@@ -113,6 +113,9 @@ oauth2:
   issuerUri: ""
   audience: "sky-backend"
 
+crossOrigin:
+  allowed: ""
+
 s3:
   endpoint: "http://floci-service:4566"
   presignEndpoint: ""

@@ -23,9 +23,9 @@ spec:
             - --upstream={{ .Values.args.upstream }}
             - --http-address={{ .Values.args.httpAddress }}
             - --cookie-secure={{ .Values.args.cookieSecure }}
-            - --oidc-issuer-url={{ .Values.args.oidcIssuerUrl }}
+            - --oidc-issuer-url={{ required "args.oidcIssuerUrl must be set by a values-<env>.yaml overlay" .Values.args.oidcIssuerUrl }}
             - --insecure-oidc-allow-unverified-email={{ .Values.args.insecureOidcAllowUnverifiedEmail }}
-            - --redirect-url={{ .Values.args.redirectUrl }}
+            - --redirect-url={{ required "args.redirectUrl must be set by a values-<env>.yaml overlay" .Values.args.redirectUrl }}
             - --scope={{ .Values.args.scope }}
             - --set-xauthrequest={{ .Values.args.setXauthrequest }}
             - --pass-authorization-header={{ .Values.args.passAuthorizationHeader }}

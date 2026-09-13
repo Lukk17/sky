@@ -67,7 +67,7 @@ spec:
             - name: BOOKING_PORT
               value: "{{ .Values.service.port }}"
             - name: OFFER_SERVICE_HOSTNAME
-              value: "{{ .Values.offerService.hostname }}"
+              value: "{{ tpl .Values.offerService.hostname . }}"
             - name: OFFER_SERVICE_HOST_PORT
               value: "{{ .Values.offerService.port }}"
             - name: KAFKA_ADDRESS
@@ -96,3 +96,5 @@ spec:
               value: "{{ required "oauth2.issuerUri must be set by a values-<env>.yaml overlay" .Values.oauth2.issuerUri }}"
             - name: OAUTH2_AUDIENCE
               value: "{{ .Values.oauth2.audience }}"
+            - name: ACCESS_CONTROL_ALLOW_ORIGIN
+              value: "{{ required "crossOrigin.allowed must be set by a values-<env>.yaml overlay" .Values.crossOrigin.allowed }}"

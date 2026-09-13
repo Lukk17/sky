@@ -96,12 +96,15 @@ oauth2:
   issuerUri: ""
   audience: "sky-backend"
 
+crossOrigin:
+  allowed: ""
+
 kafka:
   address: "kafka-service"
   port: "9092"
 
 offerService:
-  hostname: "http://sky-offer-service.default.svc.cluster.local"
+  hostname: "http://sky-offer-service.{{ .Release.Namespace }}.svc.cluster.local"
   port: "5552"
 
 actuator:

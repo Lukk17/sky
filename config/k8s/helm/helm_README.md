@@ -90,14 +90,14 @@ Every chart has a default `values.yaml`. Charts that differ per environment also
 
 | Chart | Default `values.yaml` targets | Overlays |
 |---|---|---|
-| oauth2-proxy | The local k3d cluster: issuer `http://keycloak.127.0.0.1.nip.io/realms/sky`, redirect `http://localhost:5777/oauth2/callback` | [values-local.yaml](api-gateway/oauth2-proxy/values-local.yaml) is empty on purpose, [values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml) swaps in the production issuer, redirect URL, host, and TLS secret |
-| Keycloak | Hostname `keycloak.luksarna.com` | [values-local.yaml](infra/keycloak/values-local.yaml) swaps the hostname to the nip.io one and turns off SSL redirect, [values-prod.yaml](infra/keycloak/values-prod.yaml) swaps the TLS secret name |
-| Services | No environment at all: the ingress host, the TLS secret name and the OIDC issuer are empty and the templates wrap each one in `required`, so a render with no overlay fails instead of pointing somewhere real | `values-local.yaml` per chart points at locally built `:latest` images with `pullPolicy: Never`, hosts `localhost`, the nip.io issuer, and nulls out the auth annotations, `values-prod.yaml` carries the production host, the production issuer, `sky-tls-cert`, and the oauth2-proxy auth annotations |
+| oauth2-proxy | No environment at all: the OIDC issuer, the redirect URL, the ingress host and the TLS secret name are empty and the templates wrap each one in `required` | [values-local.yaml](api-gateway/oauth2-proxy/values-local.yaml) carries the nip.io issuer, the `http://localhost:5777` callback, host `localhost`, `dev-ssl-cert`, and turns off cookie-secure and the SSL redirect, [values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml) carries the production issuer, callback, host and `sky-tls-cert` |
+| Keycloak | No environment at all: the hostname, the ingress host and the TLS secret name are empty and the templates wrap each one in `required` | [values-local.yaml](infra/keycloak/values-local.yaml) carries the nip.io hostname, `dev-ssl-cert` and no SSL redirect, [values-prod.yaml](infra/keycloak/values-prod.yaml) carries `keycloak.luksarna.com` and `sky-tls-cert` |
+| Services | No environment at all: the ingress host, the TLS secret name, the OIDC issuer and the cross-origin allow-list are empty and the templates wrap each one in `required`, so a render with no overlay fails instead of pointing somewhere real | `values-local.yaml` per chart points at locally built `:latest` images with `pullPolicy: Never`, hosts `localhost`, the nip.io issuer, the two local browser origins, and nulls out the auth annotations, `values-prod.yaml` carries the production host, the production issuer, the production frontend origin, `sky-tls-cert`, and the oauth2-proxy auth annotations |
 | Kafka | Both environments: the single-node KRaft broker is identical either way | [values-local.yaml](kafka/values-local.yaml) and [values-prod.yaml](kafka/values-prod.yaml) are both deliberately empty of overrides, so the `-f values-<env>.yaml` argument the scripts pass resolves for this chart too |
 | floci | Both environments, with the public ingress off by default | [values-local.yaml](infra/floci/values-local.yaml) turns the ingress on for host `s3.localhost`, [values-prod.yaml](infra/floci/values-prod.yaml) states the off position explicitly |
 | PostgreSQL, PVC, Sealed Secrets | Both environments | No overlay, the defaults are environment-neutral |
 
-Namespace is never a value. Every template uses `.Release.Namespace`, so `-n <namespace>` on the Helm command decides where a release lands.
+Namespace is never a value. Every template uses `.Release.Namespace`, so `-n <namespace>` on the Helm command decides where a release lands. The one cross-service address a chart holds follows the same rule: `offerService.hostname` in [service/sky-booking/values.yaml](service/sky-booking/values.yaml) is written as `http://sky-offer-service.{{ .Release.Namespace }}.svc.cluster.local` and the deployment template renders it through `tpl`, so installing the pair into another namespace points `sky-booking` at the `sky-offer` beside it rather than at the one in `default`.
 
 ---
 
@@ -193,6 +193,8 @@ python3 -c "import os,base64; print(base64.b64encode(os.urandom(32)).decode())"
 
 Keycloak 26 runs with a dedicated backing PostgreSQL managed inside the same chart. Do not point it at the app database. The `sky` realm is imported on first boot from [infra/keycloak/files/sky-realm.json](infra/keycloak/files/sky-realm.json), which the chart publishes as a ConfigMap mounted at `/opt/keycloak/data/import`. That file is the only copy of the realm in the repository, so `helm install` and `helm template` both work straight from a clean checkout with no copy step.
 
+The hostname is not in the chart default. `hostname` reaches the container as `KC_HOSTNAME` and also fills the Ingress host, and both, together with the TLS secret name, are empty behind `required`, so an install with no overlay fails the render instead of announcing itself as the production identity provider. Keycloak builds every issuer, authorization and token URL from `KC_HOSTNAME`, so a wrong value here mints tokens no service will accept.
+
 ```shell
 helm install keycloak ./config/k8s/helm/infra/keycloak/ -f ./config/k8s/helm/infra/keycloak/values-prod.yaml
 ```
@@ -215,10 +217,16 @@ In production Keycloak answers at `https://keycloak.luksarna.com`, with the admi
 
 `oauth2-proxy` sits in front of the authenticated routes. nginx delegates to it through `auth-url` annotations, it validates the OIDC session against Keycloak, and it forwards the caller's identity in the `x-auth-request-email`, `x-auth-request-access-token`, and `authorization` headers so each downstream resource server can verify the bearer token independently.
 
-The chart uses provider `keycloak-oidc` against the `sky` realm. Its default `values.yaml` is aimed at the local k3d cluster, so a production install must pass the production overlay:
+The chart uses provider `keycloak-oidc` against the `sky` realm. Its default `values.yaml` names no environment: the issuer, the callback URL, the ingress host and the TLS secret name are empty behind `required`, and `cookie-secure` defaults to the safe `true`. Every install therefore passes an overlay, and a forgotten one fails the render rather than quietly building a session cookie for the wrong front door.
 
 ```shell
 helm install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/ -f ./config/k8s/helm/api-gateway/oauth2-proxy/values-prod.yaml
+```
+
+The local equivalent, which turns `cookie-secure` back off because the local cluster answers on plain HTTP:
+
+```shell
+helm install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/ -f ./config/k8s/helm/api-gateway/oauth2-proxy/values-local.yaml
 ```
 
 ---
@@ -300,7 +308,7 @@ image: "{{ required "deployment.image.repository must be set, see values.yaml" .
 
 So an overlay or a `--set` that empties either value fails the render and names the value, instead of producing a pod spec with a half-formed image reference that only fails at pull time. `values.yaml` supplies both for every chart, `values-local.yaml` overrides them to the locally built `:latest` tag, and the release pipeline rewrites the tag in `values.yaml`. The overlay uses `latest` rather than a version because the local loop rebuilds and reimports the same tag on every change, so a version pin there would need editing in four values files and in the import command on every bump.
 
-Three more values are wrapped the same way, and these are empty in `values.yaml` rather than supplied by it: `ingress.tls.secretName`, every `hosts[].host`, and `oauth2.issuerUri`. Each one names a concrete environment, so the chart holds none of them and only an overlay can fill them in. A `helm template` or a `helm install` with no `-f` therefore exits non-zero on the first of the three, naming it:
+Four more values are wrapped the same way, and these are empty in `values.yaml` rather than supplied by it: `ingress.tls.secretName`, every `hosts[].host`, `oauth2.issuerUri`, and `crossOrigin.allowed`. Each one names a concrete environment, so the chart holds none of them and only an overlay can fill them in. A `helm template` or a `helm install` with no `-f` therefore exits non-zero on the first of the four, naming it:
 
 ```text
 Error: execution error at (sky-offer/templates/ingress.yaml:19:13): ingress hosts[].host must be set by a values-<env>.yaml overlay
@@ -351,15 +359,39 @@ The third names no environment and stays in `values.yaml`. Each `values-local.ya
 
 ---
 
+### Cross-origin origins
+
+The frontend and the API answer on different hosts, `https://sky.luksarna.com` and `https://skycloud.luksarna.com`, so every call the frontend makes is cross-origin and each service has to answer with that exact origin or the browser throws the response away. A wildcard is not an option: the calls carry a bearer token, and a browser refuses a wildcard on a credentialed request.
+
+`sky-booking`, `sky-offer` and `sky-message` read the allow-list from `sky.crossOrigin.allowed`, which takes its value from the `ACCESS_CONTROL_ALLOW_ORIGIN` environment variable. Each chart holds it as `crossOrigin.allowed`, empty in `values.yaml` behind `required`, and the deployment template renders it into that variable.
+
+| Overlay | Value | Why |
+|---|---|---|
+| `values-prod.yaml` | `https://sky.luksarna.com` | The deployed frontend, and nothing else |
+| `values-local.yaml` | `http://localhost:5777,http://localhost:4200` | The two origins a browser loads a page from locally: the ingress on host port 5777, and the Angular dev server |
+
+The per-service ports are deliberately absent from the local list. In a cluster the four Services are `ClusterIP` with no host publishing, so nothing reaches `localhost:5552` and friends from a browser, and under Docker Compose, where those ports are published, a page served by a service calling that same service is same-origin and never consults the allow-list.
+
+Until this value existed in the charts nothing set the variable anywhere, so every deployed service fell back to the committed default in its own `application.yaml`, which names the API host plus three localhost origins. That default is unchanged and still applies to a bare `bootRun` or a Compose run. What changed is that a chart-installed service no longer uses it.
+
+`sky-notify` is not in the table and cannot be. Its allowed origins are a hardcoded list in `WebSocketConfig`, pinned by a test, and no chart value reaches them. Narrowing it is a source change, tracked separately.
+
+The ingress carries a second, independent allow-list. `nginx.ingress.kubernetes.io/cors-allow-origin` on the `sky-offer` owner, swagger and swagger-resource ingresses names the same production frontend, and lives in [service/sky-offer/values-prod.yaml](service/sky-offer/values-prod.yaml) beside `enable-cors`. The two move together: enabling CORS at the ingress without naming an origin makes nginx answer with a wildcard.
+
+---
+
 ### Changing the application hostname
 
 Every hostname the production environment answers on lives in an overlay, so this is an edit to `values-prod.yaml` files and never to a chart default:
 
 1. Update every `hosts[].host` under `ingress.service`, `ingress.serviceOwner`, `ingress.swagger`, and `ingress.swaggerResource` in each service chart's `values-prod.yaml`.
 2. Update the `auth-url` and `auth-signin` annotations in the same files.
-3. Update `args.redirectUrl` in [api-gateway/oauth2-proxy/values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml).
-4. Add the new callback URL to the `sky-backend` client's redirect URIs in [infra/keycloak/files/sky-realm.json](infra/keycloak/files/sky-realm.json), and to the running Keycloak if the realm is already imported.
-5. Update the Bruno environments in [docs/api/request/environments/](../../../docs/api/request/environments/).
+3. Update `args.redirectUrl` and `args.oidcIssuerUrl` in [api-gateway/oauth2-proxy/values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml).
+4. Update `hostname` and `ingress.hosts[].host` in [infra/keycloak/values-prod.yaml](infra/keycloak/values-prod.yaml) if the identity provider moves with it, and `oauth2.issuerUri` in each service chart's `values-prod.yaml` to match.
+5. Add the new callback URL to the `sky-backend` client's redirect URIs in [infra/keycloak/files/sky-realm.json](infra/keycloak/files/sky-realm.json), and to the running Keycloak if the realm is already imported.
+6. Update the Bruno environments in [docs/api/request/environments/](../../../docs/api/request/environments/).
+
+Moving the frontend is a separate edit, because the frontend and the API answer on different hosts. It touches `crossOrigin.allowed` in each service chart's `values-prod.yaml` and the `cors-allow-origin` annotations in [service/sky-offer/values-prod.yaml](service/sky-offer/values-prod.yaml). See the cross-origin section below.
 
 ---
 

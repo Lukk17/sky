@@ -9,6 +9,9 @@ imagePullSecrets: []
 oauth2:
   issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"
 
+crossOrigin:
+  allowed: "http://localhost:5777,http://localhost:4200"
+
 s3:
   presignEndpoint: "http://s3.localhost:5777"
 

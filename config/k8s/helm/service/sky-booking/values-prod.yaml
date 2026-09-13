@@ -10,6 +10,9 @@ deployment:
 oauth2:
   issuerUri: "https://keycloak.luksarna.com/realms/sky"
 
+crossOrigin:
+  allowed: "https://sky.luksarna.com"
+
 ingress:
   tls:
     secretName: sky-tls-cert

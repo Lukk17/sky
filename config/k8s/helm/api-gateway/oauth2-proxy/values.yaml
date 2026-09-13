@@ -8,10 +8,10 @@ args:
   emailDomain: "*"
   upstream: "file:///dev/null"
   httpAddress: "0.0.0.0:4180"
-  cookieSecure: "false"
-  oidcIssuerUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky"
+  cookieSecure: "true"
+  oidcIssuerUrl: ""
   insecureOidcAllowUnverifiedEmail: "true"
-  redirectUrl: "http://localhost:5777/oauth2/callback"
+  redirectUrl: ""
   setAuthorizationHeader: "true"
   scope: "openid email"
   setXauthrequest: "true"
@@ -34,14 +34,14 @@ service:
 ingress:
   name: oauth2-ingress
   tls:
-    secretName: dev-ssl-cert
+    secretName: ""
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 
   controller: "nginx"
   hosts:
-    - host: localhost
+    - host: ""
       paths:
         - path: "/oauth2(/|$)(.*)"
           pathType: ImplementationSpecific

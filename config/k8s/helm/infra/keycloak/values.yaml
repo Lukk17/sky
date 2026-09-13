@@ -2,7 +2,7 @@ image:
   name: "quay.io/keycloak/keycloak:26.5.7"
   imagePullPolicy: "IfNotPresent"
 
-hostname: "keycloak.luksarna.com"
+hostname: ""
 
 secret:
   name: "sky-secrets"
@@ -17,7 +17,7 @@ service:
 
 ingress:
   tls:
-    secretName: dev-ssl-cert
+    secretName: ""
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
@@ -25,7 +25,7 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
   controller: "nginx"
   hosts:
-    - host: "keycloak.luksarna.com"
+    - host: ""
       paths:
         - path: "/"
           pathType: "Prefix"
