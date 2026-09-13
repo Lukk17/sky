@@ -16,13 +16,13 @@ spec:
   tls:
     - hosts:
         {{- range .Values.ingress.swagger.hosts }}
-        - {{ .host | quote }}
+        - {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
         {{- end }}
-      secretName: {{ .Values.ingress.tls.secretName }}
+      secretName: {{ required "ingress.tls.secretName must be set by a values-<env>.yaml overlay" .Values.ingress.tls.secretName }}
 
   rules:
     {{- range .Values.ingress.swagger.hosts }}
-    - host: {{ .host | quote }}
+    - host: {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
       http:
         paths:
           {{- range .paths }}

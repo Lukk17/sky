@@ -92,7 +92,7 @@ Every chart has a default `values.yaml`. Charts that differ per environment also
 |---|---|---|
 | oauth2-proxy | The local k3d cluster: issuer `http://keycloak.127.0.0.1.nip.io/realms/sky`, redirect `http://localhost:5777/oauth2/callback` | [values-local.yaml](api-gateway/oauth2-proxy/values-local.yaml) is empty on purpose, [values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml) swaps in the production issuer, redirect URL, host, and TLS secret |
 | Keycloak | Hostname `keycloak.luksarna.com` | [values-local.yaml](infra/keycloak/values-local.yaml) swaps the hostname to the nip.io one and turns off SSL redirect, [values-prod.yaml](infra/keycloak/values-prod.yaml) swaps the TLS secret name |
-| Services | Host `skycloud.luksarna.com`, Docker Hub images, oauth2-proxy auth annotations | `values-local.yaml` per chart points at locally built `:latest` images with `pullPolicy: Never`, hosts `localhost`, and nulls out the auth annotations, `values-prod.yaml` swaps the TLS secret name |
+| Services | No environment at all: the ingress host, the TLS secret name and the OIDC issuer are empty and the templates wrap each one in `required`, so a render with no overlay fails instead of pointing somewhere real | `values-local.yaml` per chart points at locally built `:latest` images with `pullPolicy: Never`, hosts `localhost`, the nip.io issuer, and nulls out the auth annotations, `values-prod.yaml` carries the production host, the production issuer, `sky-tls-cert`, and the oauth2-proxy auth annotations |
 | Kafka | Both environments: the single-node KRaft broker is identical either way | [values-local.yaml](kafka/values-local.yaml) and [values-prod.yaml](kafka/values-prod.yaml) are both deliberately empty of overrides, so the `-f values-<env>.yaml` argument the scripts pass resolves for this chart too |
 | floci | Both environments, with the public ingress off by default | [values-local.yaml](infra/floci/values-local.yaml) turns the ingress on for host `s3.localhost`, [values-prod.yaml](infra/floci/values-prod.yaml) states the off position explicitly |
 | PostgreSQL, PVC, Sealed Secrets | Both environments | No overlay, the defaults are environment-neutral |
@@ -284,7 +284,7 @@ Topic creation no longer goes through the Bitnami provisioning Job. `provisionin
 
 Both [kafka/values-local.yaml](kafka/values-local.yaml) and [kafka/values-prod.yaml](kafka/values-prod.yaml) are deliberately empty of overrides: `values.yaml` already renders the broker both environments run. They exist so `ENV=local` and `ENV=prod` resolve the same `-f values-<env>.yaml` path the scripts pass to every other chart, and all four deployment scripts now do pass it for Kafka. The command above is what the scripts run, not a workaround for them.
 
-Two definitions of this same single-node broker now exist. The chart is one; [config/k8s/local/kafka-local.yaml](../local/kafka-local.yaml) is the other, a hand-written ConfigMap plus StatefulSet plus two Services with a nearly identical `server.properties` and the same `apache/kafka:3.7.1` image, differing mainly in using an `emptyDir` for the log directory. [config/k8s/local_README.md](../local_README.md) still applies that manifest. Use the chart, since it is what the deployment scripts install and what production runs, and treat the standalone manifest as the fallback for a cluster where you do not want Helm involved. Neither is deleted here, because collapsing them is a change with its own decision to make: say which one survives first.
+This chart is the only definition of the broker. A hand-written standalone manifest used to sit beside it at `config/k8s/local/kafka-local.yaml` and named its Service and its StatefulSet `kafka-service`, exactly as this chart does under `fullnameOverride`, so whichever was applied second collided with the first. It has been deleted and [config/k8s/local_README.md](../local_README.md) now installs the chart in both environments.
 
 ---
 
@@ -299,6 +299,14 @@ image: "{{ required "deployment.image.repository must be set, see values.yaml" .
 ```
 
 So an overlay or a `--set` that empties either value fails the render and names the value, instead of producing a pod spec with a half-formed image reference that only fails at pull time. `values.yaml` supplies both for every chart, `values-local.yaml` overrides them to the locally built `:latest` tag, and the release pipeline rewrites the tag in `values.yaml`. The overlay uses `latest` rather than a version because the local loop rebuilds and reimports the same tag on every change, so a version pin there would need editing in four values files and in the import command on every bump.
+
+Three more values are wrapped the same way, and these are empty in `values.yaml` rather than supplied by it: `ingress.tls.secretName`, every `hosts[].host`, and `oauth2.issuerUri`. Each one names a concrete environment, so the chart holds none of them and only an overlay can fill them in. A `helm template` or a `helm install` with no `-f` therefore exits non-zero on the first of the three, naming it:
+
+```text
+Error: execution error at (sky-offer/templates/ingress.yaml:19:13): ingress hosts[].host must be set by a values-<env>.yaml overlay
+```
+
+That is deliberate and it is the loud half of the design. A placeholder hostname would render a complete set of manifests that `kubectl apply` accepts, leaving a forgotten overlay to surface as an Ingress nobody can reach rather than as a failed command. `helm lint` does not exercise `required`, so `helm template` is the check that proves it.
 
 ```shell
 helm install sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values-prod.yaml
@@ -331,7 +339,7 @@ Using `sky-offer` as the example:
 | `/offer/swagger-ui(/\|$)(.*)` | `/swagger-ui/$2` | Through oauth2-proxy |
 | `/offer/v3/api-docs(/\|$)(.*)` | `/v3/api-docs/$2` | Through oauth2-proxy |
 
-The annotations that delegate to oauth2-proxy:
+The annotations that delegate to oauth2-proxy, which live in each service chart's `values-prod.yaml` because the first two name a concrete environment's front door:
 
 ```yaml
 nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
@@ -339,15 +347,15 @@ nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/s
 nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
 ```
 
-Each `values-local.yaml` sets those three to `~`, and the ingress templates skip nil-valued annotations, so a local install gets the same paths with no auth hop.
+The third names no environment and stays in `values.yaml`. Each `values-local.yaml` sets all three to `~`, and the ingress templates skip nil-valued annotations, so a local install gets the same paths with no auth hop.
 
 ---
 
 ### Changing the application hostname
 
-When moving from one hostname to another, for example `sky.luksarna.com` to `skycloud.luksarna.com`:
+Every hostname the production environment answers on lives in an overlay, so this is an edit to `values-prod.yaml` files and never to a chart default:
 
-1. Update every `hosts[].host` under `ingress.service`, `ingress.serviceOwner`, `ingress.swagger`, and `ingress.swaggerResource` in each service chart's `values.yaml`.
+1. Update every `hosts[].host` under `ingress.service`, `ingress.serviceOwner`, `ingress.swagger`, and `ingress.swaggerResource` in each service chart's `values-prod.yaml`.
 2. Update the `auth-url` and `auth-signin` annotations in the same files.
 3. Update `args.redirectUrl` in [api-gateway/oauth2-proxy/values-prod.yaml](api-gateway/oauth2-proxy/values-prod.yaml).
 4. Add the new callback URL to the `sky-backend` client's redirect URIs in [infra/keycloak/files/sky-realm.json](infra/keycloak/files/sky-realm.json), and to the running Keycloak if the realm is already imported.
@@ -361,7 +369,7 @@ When moving from one hostname to another, for example `sky.luksarna.com` to `sky
 helm upgrade sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values-prod.yaml
 ```
 
-Omitting the `-f` overlay silently reverts that release to the chart defaults, which for the service charts means the production host with production auth annotations. Always pass the same overlay you installed with. The upgrade scripts listed at the top of this document do that for you.
+Omitting the `-f` overlay reverts that release to the chart defaults, and for a service chart those defaults name no environment, so the upgrade fails on the first `required` value instead of quietly moving the release to another environment's hostname. Always pass the same overlay you installed with. The upgrade scripts listed at the top of this document do that for you.
 
 ---
 

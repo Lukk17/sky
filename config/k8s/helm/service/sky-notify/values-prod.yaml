@@ -1,10 +1,22 @@
 # Production-environment overlay for sky-notify.
-# See sky-booking/values-prod.yaml header for the rationale.
+#
+# Apply on top of values.yaml:
+#   helm upgrade --install sky-notify ./config/k8s/helm/service/sky-notify -f ./config/k8s/helm/service/sky-notify/values-prod.yaml
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"
+
+oauth2:
+  issuerUri: "https://keycloak.luksarna.com/realms/sky"
 
 ingress:
   tls:
     secretName: sky-tls-cert
 
-deployment:
-  image:
-    pullPolicy: "IfNotPresent"
+  service:
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/notifyWebsocket"
+            pathType: "Prefix"

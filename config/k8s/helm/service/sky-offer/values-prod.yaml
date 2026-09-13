@@ -1,10 +1,58 @@
 # Production-environment overlay for sky-offer.
-# See sky-booking/values-prod.yaml header for the rationale.
+#
+# Apply on top of values.yaml:
+#   helm upgrade --install sky-offer ./config/k8s/helm/service/sky-offer -f ./config/k8s/helm/service/sky-offer/values-prod.yaml
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"
+
+oauth2:
+  issuerUri: "https://keycloak.luksarna.com/realms/sky"
 
 ingress:
   tls:
     secretName: sky-tls-cert
 
-deployment:
-  image:
-    pullPolicy: "IfNotPresent"
+  service:
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/offer/api(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  serviceOwner:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/offer/api/owner(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swagger:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/offer/swagger-ui(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swaggerResource:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/offer/v3/api-docs(/|$)(.*)"
+            pathType: "ImplementationSpecific"

@@ -1,17 +1,45 @@
 # Production-environment overlay for sky-booking.
 #
 # Apply on top of values.yaml:
-#   helm upgrade --install sky-booking ./config/k8s/helm/service/sky-booking \
-#     -f values.yaml -f values-prod.yaml
-#
-# Defaults in values.yaml are also production-ready today; this file exists so
-# future non-prod environments can fork via a values-dev.yaml / values-staging.yaml
-# without editing the chart's default.
+#   helm upgrade --install sky-booking ./config/k8s/helm/service/sky-booking -f ./config/k8s/helm/service/sky-booking/values-prod.yaml
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"
+
+oauth2:
+  issuerUri: "https://keycloak.luksarna.com/realms/sky"
 
 ingress:
   tls:
     secretName: sky-tls-cert
 
-deployment:
-  image:
-    pullPolicy: "IfNotPresent"
+  service:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/booking/api(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swagger:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/booking/swagger-ui(/|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swaggerResource:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/booking/v3/api-docs(/|$)(.*)"
+            pathType: "ImplementationSpecific"

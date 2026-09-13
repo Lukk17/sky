@@ -73,7 +73,7 @@ Run once. Skip if the cluster already exists. Traefik is disabled because the st
 k3d cluster create sky --port "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
 ```
 
-If every `kubectl` command from here on fails to connect while the cluster itself is healthy, the kubeconfig address k3d just wrote is the likely cause. See item 7 under [Known issues](#known-issues-and-design-notes).
+If every `kubectl` command from here on fails to connect while the cluster itself is healthy, the kubeconfig address k3d just wrote is the likely cause. See item 6 under [Known issues](#known-issues-and-design-notes).
 
 ---
 
@@ -209,21 +209,11 @@ Scaling the `floci-deployment` StatefulSet to zero replicas is the supported way
 helm upgrade --install keycloak config/k8s/helm/infra/keycloak -f config/k8s/helm/infra/keycloak/values-local.yaml -n default
 ```
 
-Kafka has two definitions in this repository and each one stands up the same single-node KRaft broker. Install the chart at [config/k8s/helm/kafka/](helm/kafka/), because that is what the deployment scripts install and what the GCP cluster runs:
+Kafka has one definition, the chart at [config/k8s/helm/kafka/](helm/kafka/), which is what the deployment scripts install and what the GCP cluster runs. It stands up a single-node KRaft broker on `apache/kafka:3.7.1` with a storage-format init container and auto-create topics:
 
 ```bash
 helm upgrade --install kafka-service config/k8s/helm/kafka -f config/k8s/helm/kafka/values-local.yaml -n default
 ```
-
-The standalone manifest at [config/k8s/local/kafka-local.yaml](local/kafka-local.yaml) is the Helm-free alternative, for when you want Kafka in the cluster without Helm touching it:
-
-```bash
-kubectl apply -f config/k8s/local/kafka-local.yaml
-```
-
-The chart was repointed at `apache/kafka:3.7.1` with the same single-node KRaft `server.properties`, its own storage-format init container, and auto-create topics, so the reason this page once reached for a hand-written manifest is gone and both now describe the same broker.
-
-Do not run both. The chart sets `fullnameOverride: kafka-service` and the manifest names its Service and StatefulSet `kafka-service` as well, so whichever goes second collides with the first. Collapsing the two into one definition is worth doing and is left as an open decision rather than made here, see [Known issues](#known-issues-and-design-notes).
 
 Wait for infrastructure to be ready, one wait per command:
 
@@ -247,7 +237,7 @@ kubectl wait pod -l component=floci --for=condition=Ready --timeout=120s
 kubectl wait pod -l app.kubernetes.io/name=kafka --for=condition=Ready --timeout=120s
 ```
 
-That last selector belongs to the Helm chart, which labels its pod `app.kubernetes.io/name=kafka` and sets no plain `component` label. The standalone manifest labels the same pod `component=kafka` instead, so if you applied the manifest rather than the chart, wait on `-l component=kafka`. Getting this wrong is silent: `kubectl wait` prints `error: no matching resources found` and returns immediately, and the next step starts against a broker that is not up yet. Every other wait on this page was checked against the chart that creates the pod.
+That last selector is the odd one out because the Kafka chart labels its pod `app.kubernetes.io/name=kafka` and sets no plain `component` label, while every other chart on this page sets `component`. Getting a selector wrong is silent: `kubectl wait` prints `error: no matching resources found` and returns immediately, and the next step starts against a broker that is not up yet. Every wait on this page was checked against the chart that creates the pod.
 
 ---
 
@@ -407,16 +397,10 @@ helm uninstall sky-offer sky-booking sky-message sky-notify keycloak floci postg
 
 That line takes the stored photos with it. [config/k8s/helm/infra/floci/templates/floci-pvc.yaml](helm/infra/floci/templates/floci-pvc.yaml) is a plain template rather than a StatefulSet volume claim template, so Helm owns `floci-pvc` and `helm uninstall floci` deletes the claim and every object in the store. To pause work and keep the objects, do not tear down at all, use `k3d cluster stop sky` from the section above.
 
-Then remove Kafka, using whichever of the two definitions you installed in step 7. The chart:
+Then remove Kafka:
 
 ```bash
 helm uninstall kafka-service -n default
-```
-
-Or the standalone manifest:
-
-```bash
-kubectl delete -f config/k8s/local/kafka-local.yaml
 ```
 
 ```bash
@@ -441,15 +425,13 @@ k3d cluster delete sky
 
 2. Keycloak ingress class. The upstream keycloak example used the deprecated `kubernetes.io/ingress.class` annotation. The chart template at [config/k8s/helm/infra/keycloak/templates/keycloak-ingress.yaml](helm/infra/keycloak/templates/keycloak-ingress.yaml) sets `spec.ingressClassName: nginx` instead.
 
-3. Two Kafka definitions. The chart at [config/k8s/helm/kafka/](helm/kafka/) used to pin `bitnami/kafka:3.5.0-debian-11-r7`, which Docker Hub stopped serving when Bitnami delisted its public image catalogue, and that is why the standalone manifest at [config/k8s/local/kafka-local.yaml](local/kafka-local.yaml) was written. The chart has since been repointed at `apache/kafka:3.7.1` with a real KRaft configuration, a storage-format init container, and auto-create topics, so the two now describe the same single-node broker in two places. The chart is the one the deployment scripts install, and the manifest is the Helm-free fallback. Deleting one of them is a real decision and has not been taken.
+3. Spring Boot 4 breaking change. The `SPRING_SECURITY_USER` environment variable maps to `spring.security.user`, which Spring Boot 4 requires to be a structured object rather than a plain string. The variable was a leftover from the basic-auth era and has been removed from all four service deployment templates, along with the matching `spring.securityUser` and `spring.securityPass` values keys.
 
-4. Spring Boot 4 breaking change. The `SPRING_SECURITY_USER` environment variable maps to `spring.security.user`, which Spring Boot 4 requires to be a structured object rather than a plain string. The variable was a leftover from the basic-auth era and has been removed from all four service deployment templates, along with the matching `spring.securityUser` and `spring.securityPass` values keys.
+4. Auth annotations. The nginx `auth-url` and `auth-signin` annotations that route to the production oauth2-proxy live in `values-prod.yaml`, not in the default `values.yaml`, so a local install never sees them. Each `values-local.yaml` still nulls them out for every affected ingress section, and the ingress templates skip nil-valued annotations, which keeps the local overlay correct on its own rather than by relying on what the defaults happen to hold.
 
-5. Auth annotations. The default `values.yaml` files carry nginx `auth-url` and `auth-signin` annotations that route to the production oauth2-proxy. Each `values-local.yaml` nulls them out for every affected ingress section, and the ingress templates skip nil-valued annotations so the null override takes effect.
+5. Image user UID. Kubernetes requires a numeric UID when `runAsNonRoot: true` is set, and the deployment templates set `runAsUser: 1000`. The Dockerfiles pin the `sky` runtime user to a fixed UID and GID of 1000 (`adduser -S -u 1000 sky`), so the container's user matches the `runAsUser` value deterministically across rebuilds rather than relying on the base image's auto-assigned UID.
 
-6. Image user UID. Kubernetes requires a numeric UID when `runAsNonRoot: true` is set, and the deployment templates set `runAsUser: 1000`. The Dockerfiles pin the `sky` runtime user to a fixed UID and GID of 1000 (`adduser -S -u 1000 sky`), so the container's user matches the `runAsUser` value deterministically across rebuilds rather than relying on the base image's auto-assigned UID.
-
-7. Stale `host.docker.internal` in the kubeconfig address. Not a defect in this repository, and it stops every command on the page dead, so it is written up here. The symptom is that every `kubectl` command fails at once, naming an address you never typed:
+6. Stale `host.docker.internal` in the kubeconfig address. Not a defect in this repository, and it stops every command on the page dead, so it is written up here. The symptom is that every `kubectl` command fails at once, naming an address you never typed:
 
     ```text
     Unable to connect to the server: dial tcp 192.168.1.10:51639: connectex: No connection could be made because the target machine actively refused it.

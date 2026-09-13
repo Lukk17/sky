@@ -158,7 +158,7 @@ Run it without `sudo`. Running it as root leaves the private key owned by root w
 
 #### Deploy the controller
 
-The chart install is in [config/k8s/helm/helm_README.md](../helm/helm_README.md). A vendored plain manifest is also committed, with the namespace already changed from `kube-system`, which GKE does not allow, to `sealed-secrets`:
+The controller comes from the vendored chart at [config/k8s/helm/api-gateway/sealed-secrets-controller/](../helm/api-gateway/sealed-secrets-controller/), which is what the deploy script installs. The chart parameter reference is in [config/k8s/helm/helm_README.md](../helm/helm_README.md). Create the namespace first, because GKE does not allow the upstream default of `kube-system`:
 
 ```shell
 kubectl create namespace sealed-secrets
@@ -169,13 +169,7 @@ kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-p
 ```
 
 ```shell
-kubectl apply -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
-```
-
-The upstream manifest is the alternative:
-
-```shell
-kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.22.0/controller.yaml
+helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secrets-controller/ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 ```
 
 #### Create new sealed secrets
@@ -353,8 +347,10 @@ The remove script listed at the top of this document is the whole teardown. To d
 kubectl delete -f config/k8s/secret/sealed --recursive
 ```
 
+The controller itself is a Helm release, so it goes the same way as the others:
+
 ```shell
-kubectl delete -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
+helm uninstall sealed-secrets-controller -n sealed-secrets
 ```
 
 ---

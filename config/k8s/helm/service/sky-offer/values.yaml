@@ -40,7 +40,7 @@ service:
 
 ingress:
   tls:
-    secretName: dev-ssl-cert
+    secretName: ""
 
   service:
     name: "sky-offer-ingress"
@@ -53,7 +53,7 @@ ingress:
 
     controller: "nginx"
     hosts:
-      - host: "skycloud.luksarna.com"
+      - host: ""
         paths:
           - path: "/offer/api(/|$)(.*)"
             pathType: "ImplementationSpecific"
@@ -64,17 +64,13 @@ ingress:
       nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/owner/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
-      nginx.ingress.kubernetes.io/enable-cors: "true"
-      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
 
     controller: "nginx"
     hosts:
-      - host: "skycloud.luksarna.com"
+      - host: ""
         paths:
           - path: "/offer/api/owner(/|$)(.*)"
             pathType: "ImplementationSpecific"
@@ -85,17 +81,13 @@ ingress:
       nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
-      nginx.ingress.kubernetes.io/enable-cors: "true"
-      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
 
     controller: "nginx"
     hosts:
-      - host: "skycloud.luksarna.com"
+      - host: ""
         paths:
           - path: "/offer/swagger-ui(/|$)(.*)"
             pathType: "ImplementationSpecific"
@@ -106,23 +98,19 @@ ingress:
       nginx.ingress.kubernetes.io/rewrite-target: "/v3/api-docs/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
-      nginx.ingress.kubernetes.io/enable-cors: "true"
-      nginx.ingress.kubernetes.io/cors-allow-origin: "https://sky.luksarna.com"
 
     controller: "nginx"
     hosts:
-      - host: "skycloud.luksarna.com"
+      - host: ""
         paths:
           - path: "/offer/v3/api-docs(/|$)(.*)"
             pathType: "ImplementationSpecific"
 
 oauth2:
-  issuerUri: "https://keycloak.luksarna.com/realms/sky"
+  issuerUri: ""
   audience: "sky-backend"
 
 s3:

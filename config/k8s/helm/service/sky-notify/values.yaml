@@ -29,7 +29,7 @@ service:
 
 ingress:
   tls:
-    secretName: dev-ssl-cert
+    secretName: ""
 
   service:
     name: "sky-notify-ingress"
@@ -40,13 +40,13 @@ ingress:
 
     controller: "nginx"
     hosts:
-      - host: "skycloud.luksarna.com"
+      - host: ""
         paths:
           - path: "/notifyWebsocket"
             pathType: "Prefix"
 
 oauth2:
-  issuerUri: "https://keycloak.luksarna.com/realms/sky"
+  issuerUri: ""
   audience: "sky-backend"
 
 kafka:

@@ -93,6 +93,6 @@ spec:
             - name: SHOW_SQL_QUERIES
               value: "{{ .Values.deployment.env.hibernate.showSqlQueries }}"
             - name: OAUTH2_ISSUER_URI
-              value: "{{ .Values.oauth2.issuerUri }}"
+              value: "{{ required "oauth2.issuerUri must be set by a values-<env>.yaml overlay" .Values.oauth2.issuerUri }}"
             - name: OAUTH2_AUDIENCE
               value: "{{ .Values.oauth2.audience }}"
