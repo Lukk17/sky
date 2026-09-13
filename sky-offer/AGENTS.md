@@ -42,6 +42,13 @@ independently-deployable services. The module version is not restated here: the 
   The object store is floci, the same AWS emulator and the same pinned image digest as the local developer stack,
   installed by `config/k8s/helm/infra/floci`. It authenticates nobody and verifies no signature, so
   `S3_ACCESS_KEY` and `S3_SECRET_KEY` exist only because the AWS SDK refuses to build a client without them.
+  Neither carries a default in `application.yaml`, because that file has no profile in its name and the
+  `spring-boot-hygiene` specification grants its one credential-default exemption to `local` profile files alone.
+  The development values live in `application-local.yaml` instead, so a `local` run still needs nothing exported.
+  `S3Config` runs both through `RequiredCredentials` from sky-common before building the client, so an unset
+  variable on any other profile fails the boot naming the property and the variable rather than turning into a
+  store rejection on the first upload. Do not put the defaults back in `application.yaml`, and do not add a
+  default to a new credential anywhere except a `local` profile file.
 - Photo keys are namespaced as `offers/{offerId}/{uuid}-{filename}`, and `S3PhotoStorage.delete` refuses any
   key outside the prefix for the offer it was handed. That closes a cross-tenant deletion hole, so do not relax it.
 - Persistence: PostgreSQL (`org.postgresql:postgresql`, runtime, with `flyway-database-postgresql`) against the
@@ -51,6 +58,12 @@ independently-deployable services. The module version is not restated here: the 
   DML never share a migration: V3 adds `photo_object_key`, renames `photo_path` to `external_photo_url` and widens
   it, and V4 classifies the rows written before the split. `PhotoColumnMigrationTest` drives both against a
   Testcontainers Postgres, with rows inserted at V2, and pins what each kind of old value becomes.
+- `POSTGRES_USER` and `POSTGRES_PASSWORD` have no default in `application.yaml` and must not gain one: the
+  `spring-boot-hygiene` specification grants its credential-default exemption to `local` profile files alone, and
+  `application-local.yaml` already defaults both. An unset variable now fails startup through
+  `DatasourceCredentialsAutoConfiguration` in sky-common, naming the variable and the property, instead of
+  binding the literal placeholder text as the password. `DatasourceCredentialsStartupTest` pins that behaviour
+  against this module's own configuration files, so do not delete it when touching the datasource block.
 - The server owns the photo key and a client never sees it. `photo_object_key` is written only by
   `POST /owner/offers/{offerId}/photo` and cleared only by `DELETE` on that same path. It is absent from `OfferDTO`
   and `OfferEditDTO`, so no request body reaches it, and `OfferEditDTO.applyTo` mutates the loaded entity field by

@@ -1,5 +1,6 @@
 package com.lukk.sky.offer.config;
 
+import com.lukk.sky.common.config.RequiredCredentials;
 import com.lukk.sky.offer.config.propertyBind.S3Properties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -57,6 +58,11 @@ public class S3Config {
     }
 
     private static StaticCredentialsProvider credentialsProvider(S3Properties props) {
+        RequiredCredentials.check()
+                .and("sky.s3.access-key", props.accessKey())
+                .and("sky.s3.secret-key", props.secretKey())
+                .orFailStartup();
+
         return StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(props.accessKey(), props.secretKey())
         );

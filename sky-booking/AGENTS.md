@@ -66,6 +66,12 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
   shared `sky` database, versioned with Flyway (`src/main/resources/db/migration/`, now V1 and V2). Tests run
   against a Testcontainers `postgres:17-alpine` container, never an in-memory database. H2 is gone from this module,
   from the shared test stack, and from the version catalogue.
+- `POSTGRES_USER` and `POSTGRES_PASSWORD` have no default in `application.yaml` and must not gain one: the
+  `spring-boot-hygiene` specification grants its credential-default exemption to `local` profile files alone, and
+  `application-local.yaml` already defaults both. An unset variable now fails startup through
+  `DatasourceCredentialsAutoConfiguration` in sky-common, naming the variable and the property, instead of
+  binding the literal placeholder text as the password. `DatasourceCredentialsStartupTest` pins that behaviour
+  against this module's own configuration files, so do not delete it when touching the datasource block.
 - Messaging: produces/consumes Kafka events via `spring-kafka`, serialised with the Spring-managed Jackson 3
   `ObjectMapper` (`tools.jackson.databind.ObjectMapper`). Gson is gone from this module and from its build file.
 - All five producer delivery-guarantee properties are set explicitly in `application.yaml` and none is left to a

@@ -73,6 +73,25 @@ contract changed. A client built against 1.x will not work against it.
   `gradle/libs.versions.toml` and shared build logic from the `buildSrc` convention plugins.
 
 ### Added
+
+- A missing `POSTGRES_USER` or `POSTGRES_PASSWORD` now fails startup with a message naming the
+  variable and the property it feeds, instead of starting with the literal text `${POSTGRES_PASSWORD}`
+  as the password and failing later on a database authentication error that names neither. The check
+  arrives from sky-common as `DatasourceCredentialsAutoConfiguration` and needs no wiring here.
+  `DatasourceCredentialsStartupTest` pins the three cases against this module's own configuration
+  files: both variables supplied starts, either one absent fails with the new message, and the `local`
+  profile starts with no variables set at all because its own file defaults them.
+- The object store credentials no longer carry a development default in `application.yaml`.
+  `S3_ACCESS_KEY` defaulted to `root` and `S3_SECRET_KEY` to `localdev` in a file with no profile in
+  its name, which the `spring-boot-hygiene` specification forbids: the one exemption it grants is for
+  a file whose own name carries the `local` profile. Both are bare `${S3_ACCESS_KEY}` and
+  `${S3_SECRET_KEY}` placeholders now, and the two development values moved to
+  `application-local.yaml`, where the exemption applies and where a local run still picks them up with
+  nothing exported. `S3Config` validates both through `RequiredCredentials` before it builds the S3
+  client, so an unset variable on the default profile fails the boot naming `sky.s3.secret-key` and
+  `S3_SECRET_KEY` rather than producing a 403 from the store on the first upload. Nothing else
+  depended on the removed defaults: both compose files set the two variables explicitly, the Helm
+  chart takes them from the `sky-secrets` secret, and the test configuration sets its own values.
 - `S3_PRESIGN_ENDPOINT` (`sky.s3.presign-endpoint`) separates the address the service uploads to
   from the address a presigned URL names. `S3_ENDPOINT` stays the first, and keeps the whole of
   its old meaning for every S3 call this service makes. The new variable is the second, and it is

@@ -88,8 +88,8 @@ Schema versioning via Flyway. Migrations in [src/main/resources/db/migration/](s
 |---|---|---|
 | `MESSAGE_PORT` | `5553` | Service port |
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://host.docker.internal:5432/sky` | JDBC URL |
-| `POSTGRES_USER` | none, required | Database username |
-| `POSTGRES_PASSWORD` | none, required | Database password |
+| `POSTGRES_USER` | none, required | Database username. Unset, the service refuses to start and names the variable |
+| `POSTGRES_PASSWORD` | none, required | Database password. Unset, the service refuses to start and names the variable |
 | `OAUTH2_ISSUER_URI` | `https://keycloak.test:9443/realms/sky` | OIDC issuer used to validate bearer tokens |
 | `OAUTH2_AUDIENCE` | unset | Set to `sky-backend` to enforce the audience claim |
 

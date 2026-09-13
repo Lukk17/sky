@@ -43,6 +43,9 @@ It builds with the `sky.java-library-conventions` plugin rather than `sky.spring
 `com.lukk.sky.common.config`
 
 - `CommonConfigPropertiesAutoConfiguration` binding the shared server, management, and logging-level property records.
+- `DatasourceCredentialsAutoConfiguration`, which refuses to start a service whose database username or password is still an unresolved `${VARIABLE}` placeholder. Spring Boot leaves such a placeholder in place rather than failing, so without it a service boots with the literal text as its password and fails much later on a database authentication error that names neither the property nor the variable. It is gated on `JdbcConnectionDetails` being on the classpath, which only a JDBC or JPA starter brings, so it never loads in sky-notify or sky-gateway.
+- `RequiredCredentials`, the same check for any other credential a service binds. sky-offer uses it for its object store keys.
+- `MissingCredentialException` and `MissingCredentialFailureAnalyzer`, which turn the failure into Spring Boot's `APPLICATION FAILED TO START` block naming every missing variable, the property each one feeds, and what to do about it. The analyzer is registered in `META-INF/spring.factories`, the one thing in this module that does not go through the auto-configuration imports file.
 
 `com.lukk.sky.common.startup`
 
@@ -53,6 +56,8 @@ It builds with the `sky.java-library-conventions` plugin rather than `sky.spring
 ### Dependency discipline
 
 Every Spring dependency here is declared `compileOnly`, on purpose. A consumer that is not a web service must not end up with Spring MVC on its classpath, and a consumer with no broker must not end up with `spring-kafka`, just because it depends on this library. Tests re-add the real dependencies with `testImplementation`.
+
+The same rule covers `spring-boot-jdbc`, added for `JdbcConnectionDetails`. A consumer with no datasource must not gain a JDBC dependency by depending on this library, and the credential check that needs the type is guarded so it does not exist there either.
 
 Do not promote a `compileOnly` dependency to `implementation` without checking every consumer first.
 

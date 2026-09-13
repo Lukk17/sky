@@ -11,6 +11,33 @@ label the release workflow does not read. If the two disagree, this file wins.
 ## [2.0.0]
 
 ### Added
+
+- A startup credential check, so a missing environment variable fails the boot loudly instead of
+  surfacing much later as a connection error that names nothing. Spring Boot's
+  `PropertySourcesPlaceholdersResolver` builds its placeholder helper with unresolvable placeholders
+  ignored, hardcoded, so `password: ${POSTGRES_PASSWORD}` with the variable unset binds as that
+  literal text rather than failing. `DatasourceCredentialsAutoConfiguration` registers a
+  `BeanPostProcessor` that reads the effective `JdbcConnectionDetails` and refuses to continue when
+  the username or the password is still a bare placeholder. It is gated on
+  `@ConditionalOnClass(JdbcConnectionDetails.class)`, which `spring-boot-jdbc` supplies and which
+  neither sky-notify nor sky-gateway carries, so it never loads in a module with no datasource. It
+  reads the connection details rather than the raw property because Testcontainers supplies the real
+  credentials through that same interface, so an integration test with no environment variable stays
+  silent. It hooks `postProcessAfterInitialization` rather than the earlier callback, because the
+  Testcontainers implementation refuses to hand out a credential before its own initialization has
+  run, and it still beats Flyway and every connection attempt because the `DataSource` depends on the
+  bean being checked.
+- `RequiredCredentials`, the entry point any service can use for a credential of its own, and
+  `MissingCredentialException`, which names every missing variable at once rather than one per
+  restart, names the property each one feeds, quotes the literal text the reader is looking at, and
+  explains the framework behaviour behind it. `MissingCredentialFailureAnalyzer`, registered in a new
+  `META-INF/spring.factories`, renders that as Spring Boot's `APPLICATION FAILED TO START` block with
+  a Description and an Action instead of a stack trace. The `local` profile is unaffected: its
+  configuration files default both database credentials, so the check finds a value and says nothing.
+- `spring-boot-jdbc` as a `compileOnly` dependency, for `JdbcConnectionDetails`. It is already on the
+  runtime classpath of the three stateful services through the JPA starter, and the `compileOnly`
+  declaration keeps it off sky-notify and sky-gateway exactly as the rest of this module's
+  dependencies are kept off consumers that do not need them.
 - This module is new in 2.0.0. Before it, each of the four services carried its own copy of
   the same wire types, property bindings, exception handling and security wiring, and the
   copies had already drifted: three different `KafkaPayloadModel` records, three different

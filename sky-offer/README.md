@@ -182,14 +182,14 @@ Schema versioning via Flyway. Migrations in [src/main/resources/db/migration/](s
 |---|---|---|
 | `OFFER_PORT` | `5552` | Service port |
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://host.docker.internal:5432/sky` | JDBC URL |
-| `POSTGRES_USER` | none, required | Database username |
-| `POSTGRES_PASSWORD` | none, required | Database password |
+| `POSTGRES_USER` | none, required | Database username. Unset, the service refuses to start and names the variable |
+| `POSTGRES_PASSWORD` | none, required | Database password. Unset, the service refuses to start and names the variable |
 | `KAFKA_ADDRESS` | `kafka-service` | Kafka host |
 | `KAFKA_PORT` | `9092` | Kafka port |
 | `OAUTH2_ISSUER_URI` | `https://keycloak.test:9443/realms/sky` | OIDC issuer used to validate bearer tokens |
 | `OAUTH2_AUDIENCE` | unset | Set to `sky-backend` to enforce the audience claim |
 
-Photo storage against the object store. The defaults below are the committed local-development values and need no export:
+Photo storage against the object store. The defaults below are the committed local-development values and need no export, with one exception: `S3_ACCESS_KEY` and `S3_SECRET_KEY` have no default on the default profile. They are defaulted only in `application-local.yaml`, so a `local` run needs nothing exported and any other profile has to supply them or the service refuses to start.
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -197,8 +197,8 @@ Photo storage against the object store. The defaults below are the committed loc
 | `S3_PRESIGN_ENDPOINT` | unset | What a presigned URL names for the client that fetches it. Falls back to `S3_ENDPOINT` when empty |
 | `S3_REGION` | `us-east-1` | AWS region, which a local emulator ignores but the SDK requires |
 | `S3_BUCKET` | `sky-offers` | Bucket name, created on startup if missing |
-| `S3_ACCESS_KEY` | `root` | S3 access key |
-| `S3_SECRET_KEY` | `localdev` | S3 secret key |
+| `S3_ACCESS_KEY` | `root` under the `local` profile, otherwise required | S3 access key. An unset value on any other profile fails startup |
+| `S3_SECRET_KEY` | `localdev` under the `local` profile, otherwise required | S3 secret key. An unset value on any other profile fails startup |
 | `S3_PATH_STYLE` | `true` | Force path-style URLs, required by floci and by MinIO |
 | `S3_PRESIGN_TTL` | `PT15M` | Presigned URL lifetime (ISO-8601 duration) |
 

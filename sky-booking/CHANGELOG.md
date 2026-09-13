@@ -65,6 +65,14 @@ Major. Four contracts this service publishes have changed shape, and a client bu
   `gradle/libs.versions.toml` and shared build logic from the `buildSrc` convention plugins.
 
 ### Added
+
+- A missing `POSTGRES_USER` or `POSTGRES_PASSWORD` now fails startup with a message naming the
+  variable and the property it feeds, instead of starting with the literal text `${POSTGRES_PASSWORD}`
+  as the password and failing later on a database authentication error that names neither. The check
+  arrives from sky-common as `DatasourceCredentialsAutoConfiguration` and needs no wiring here.
+  `DatasourceCredentialsStartupTest` pins the three cases against this module's own configuration
+  files: both variables supplied starts, either one absent fails with the new message, and the `local`
+  profile starts with no variables set at all because its own file defaults them.
 - Resilience on the sky-offer lookup: three attempts with exponential backoff and jitter, a
   circuit breaker over a ten call window that opens at a 50 percent failure rate, and a
   fallback. A slow or dead sky-offer previously hung the booking request until the socket gave

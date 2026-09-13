@@ -136,8 +136,8 @@ the conflict means another writer advanced the sequence and repeating the same w
 |---|---|---|
 | `BOOKING_PORT` | `5555` | Service port |
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://host.docker.internal:5432/sky` | JDBC URL |
-| `POSTGRES_USER` | none, required | Database username |
-| `POSTGRES_PASSWORD` | none, required | Database password |
+| `POSTGRES_USER` | none, required | Database username. Unset, the service refuses to start and names the variable |
+| `POSTGRES_PASSWORD` | none, required | Database password. Unset, the service refuses to start and names the variable |
 | `KAFKA_ADDRESS` | `kafka-service` | Kafka host |
 | `KAFKA_PORT` | `9092` | Kafka port |
 | `OFFER_SERVICE_HOSTNAME` | `sky-offer-service` | Internal hostname for sky-offer |

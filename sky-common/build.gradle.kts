@@ -42,6 +42,8 @@ dependencies {
     // The handler bean is guarded by @ConditionalOnClass so it simply does not exist there.
     compileOnly("org.springframework.data:spring-data-commons")
 
+    compileOnly("org.springframework.boot:spring-boot-jdbc")
+
     // Tests run with the real deps.
     testImplementation("org.springframework:spring-web")
     testImplementation("org.springframework:spring-webmvc")
@@ -53,6 +55,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-autoconfigure")
     testImplementation(libs.spring.boot.starter.oauth2.resource.server)
     testImplementation("org.springframework.data:spring-data-commons")
+    testImplementation("org.springframework.boot:spring-boot-jdbc")
     // Gson is the oracle for KafkaNotificationPublisher's wire-parity test. Drop it once every
     // module has moved off Gson.
     testImplementation(libs.gson)
