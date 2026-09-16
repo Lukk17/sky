@@ -23,14 +23,15 @@ the cosmetic `version` in `build.gradle.kts`.
     this service makes no outbound call of any kind.
   - `config`, `config/propertyBind`: Spring wiring and bound properties.
 - MVC stack: plain Spring Web (`spring-boot-starter-web`).
-- No receiver validation, and that is deliberate. `POST /messages` accepts any `receiverEmail` that passes Bean
+- No receiver validation runs, and that is deliberate. `POST /messages` accepts any `receiverEmail` that passes Bean
   Validation and stores the message. Nothing checks the address against an identity realm or against the `message`
   table, so a message to an address nobody owns is accepted as 201 and sits in the sender's sent box unread forever.
-  That is the accepted consequence of a decision the owner took after seeing the cost of the alternative: the earlier
-  check asked Keycloak's administration interface for a user with that email, which bought a 503 on a write path
-  whenever Keycloak was slow, a `realm-management` `view-users` grant on a business service, a client secret in a
-  service that otherwise needs none, and a user enumeration oracle one send at a time. Do not reintroduce it, by that
-  route or any other, without the owner saying so.
+  That is the accepted consequence of a decision the owner took after seeing what the alternative cost. The rest of
+  this bullet is history, and describes a check this module no longer has. The removed check asked Keycloak's
+  administration interface for a user with that email. It bought four things this module no longer carries: a 503 on
+  a write path whenever Keycloak was slow, a `realm-management` `view-users` grant on a business service, a client
+  secret in a service that otherwise needs none, and a user enumeration oracle one send at a time. Do not reintroduce
+  it, by that route or any other, without the owner saying so.
 - The only reason this service contacts Keycloak is token validation. It is an OAuth2 resource server and nothing
   more: `ResourceServerJwtAutoConfiguration` in `sky-common` fetches the signing keys from `OAUTH2_ISSUER_URI` and that
   is the whole of it. The service holds no client credential, has no `spring-security-oauth2-client` on the classpath,

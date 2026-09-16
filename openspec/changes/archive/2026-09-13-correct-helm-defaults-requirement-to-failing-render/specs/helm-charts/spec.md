@@ -1,23 +1,4 @@
-# helm-charts Specification
-
-## Purpose
-Keeps the charts deployable in more than one environment by holding environment-specific values out of the defaults, pinning image tags rather than tracking a moving one, and naming a secret for what it actually contains.
-
-## Requirements
-
-### Requirement: Image tags are pinned, pull policy is cache-friendly
-Helm chart values MUST set `image.tag` to a specific version rather than to `latest`, and that version MUST correspond to the `version` field of the module the image is built from, so a deployed pod can be traced back to a source revision. The four service charts set `tag: "v2.0.0"` and every module declares `version = "2.0.0"`, which is the same value carrying a `v` prefix in the registry. `image.pullPolicy` MUST default to `IfNotPresent`, so a node that already holds the image does not go back to the registry for it.
-
-#### Scenario: Pod scheduling reuses cached images
-- **WHEN** a pod is scheduled on a node that already has the image
-- **THEN** Kubernetes does not re-pull from the registry, and the pod starts immediately from the cached image
-
-### Requirement: TLS secret names are not misleading
-TLS secret references in chart values MUST be named for what they are (e.g., `sky-tls-cert`), not legacy environment-specific names (e.g., `dev-ssl-cert` in a prod context).
-
-#### Scenario: Inspecting prod TLS configuration
-- **WHEN** an operator runs `kubectl get secrets -n sky-prod`
-- **THEN** the TLS secret has a name that reflects its purpose, not its historical environment of origin
+## ADDED Requirements
 
 ### Requirement: Chart defaults name no environment and a missing overlay fails the render
 Default `values.yaml` files in every Helm chart MUST NOT contain environment-specific literals. Six categories are held out of the defaults and the list is exhaustive as written: ingress hostnames, TLS secret names, namespaces, the oauth2-proxy `auth-url` and `auth-signin` ingress annotations, the identity provider issuer and redirect URL, and the cross origin allow list. Each of the six ties a rendered manifest to one concrete environment. A value that names no environment keeps its safe default instead, which is why the oauth2-proxy cookie security and TLS redirect flags default to `"true"` and are relaxed by the local overlay rather than the reverse. Environment specifics MUST live in `values-<env>.yaml` overlay files passed via `-f` at deploy time, so the chart itself carries no answer to the question of which environment it is for.
@@ -41,3 +22,9 @@ The namespace is the one of the six not held behind `required`, because it is no
 #### Scenario: The same chart renders into two namespaces
 - **WHEN** an operator renders `sky-booking` with the same overlay twice, once with `--namespace sky-prod` and once with `--namespace sky-dev`
 - **THEN** the address it calls `sky-offer` on renders as `http://sky-offer-service.sky-prod.svc.cluster.local` and as `http://sky-offer-service.sky-dev.svc.cluster.local`, so neither the chart nor the overlay carries a namespace literal
+
+## REMOVED Requirements
+
+### Requirement: Helm charts have no environment-specific values in defaults
+**Reason**: Superseded by `Chart defaults name no environment and a missing overlay fails the render`, which carries every prohibition this requirement held and adds the mechanism the charts now enforce. Its scenario `Default values are obviously placeholders` expects a render with no overlay to produce manifests carrying an obviously fake value, for example `host: example.com`, so a person notices. Commits `e2f4c41` and `4970536` replaced that with something stronger: every environment-specific value now sits behind Helm's `required` with an empty default, so the render produces nothing and exits naming the value that is missing. Leaving the scenario in place would sanction the weaker design it describes, because a placeholder renders a manifest set `kubectl` accepts and a forgotten overlay then surfaces days later rather than at the command.
+**Migration**: None for an operator. Every deploy command is unchanged, and all eleven charts already behave as the replacement requirement describes. Nothing this requirement forbade becomes allowed. A later delta against this capability matches on the new header.
