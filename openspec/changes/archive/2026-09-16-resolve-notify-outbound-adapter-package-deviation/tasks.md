@@ -43,11 +43,18 @@
 - [x] 4.3 Add a scenario for the two new rules
 - [x] 4.4 Copy the requirement `Cross-origin configuration never allows every origin` from the hygiene capability and
   correct the clause calling the sky-notify list a hardcoded list in configuration code
-- [ ] 4.5 Verify neither delta holds an em dash, an en dash, a semicolon joining two clauses, or bold or italic
+- [x] 4.5 Verify neither delta holds an em dash, an en dash, a semicolon joining two clauses, or bold or italic
   outside the `**WHEN**` and `**THEN**` markers, with a matcher validated against a fixture holding both dashes plus
-  an arrow and a bullet
-- [ ] 4.6 Run `openspec validate resolve-notify-outbound-adapter-package-deviation --strict` and verify it reports no
-  error
+  an arrow and a bullet. Re-checked on 2026-09-16 with a literal UTF-8 byte alternation run under `LC_ALL=C`: against
+  a fixture holding an em dash, an en dash, an arrow, a bullet and an ASCII hyphen it selects the two dash lines and
+  none of the other three, and it reports zero matches in both deltas and in every touched document. The
+  `grep -P "[\x{2013}\x{2014}]"` form is not the matcher used, because it exits 2 here with `character value in \x{}
+  or \o{} is too large` and reports nothing at all. Both deltas hold no semicolon and no single-asterisk or
+  underscore emphasis, and the only bold is six `**WHEN**` and six `**THEN**` markers, four of each in the
+  architecture delta and two of each in the hygiene delta
+- [x] 4.6 Run `openspec validate resolve-notify-outbound-adapter-package-deviation --strict` and verify it reports no
+  error. Re-run on 2026-09-16 against openspec 1.11.0: it prints `Change
+  'resolve-notify-outbound-adapter-package-deviation' is valid` and exits 0
 
 ## 5. Update the module documentation
 
@@ -58,16 +65,25 @@
 
 ## 6. Verify
 
-- [ ] 6.1 Run `./gradlew build` from the repository root and verify it is green, including
-  `jacocoTestCoverageVerification` at 0.90 line and 0.90 branch
-- [ ] 6.2 Rebuild only the sky-notify image, import it into k3d and upgrade only that release with its local overlay,
-  then confirm every pod is ready
-- [ ] 6.3 Read `ACCESS_CONTROL_ALLOW_ORIGIN` and the resolved property inside the running container, so the bound
-  value is evidence rather than a template
-- [ ] 6.4 Drive the deployed handshake with an allowed origin and with one the list does not name, and record both
-  answers
-- [ ] 6.5 Run the Bruno collection against the cluster with `--env k8s` and confirm it does not regress from 19 of 19
-  requests and 97 of 97 assertions
+- [x] 6.1 Run `./gradlew build` from the repository root and verify it is green, including
+  `jacocoTestCoverageVerification` at 0.90 line and 0.90 branch. Run by hand from the repository root on the
+  committed tree at `87b8212`, exit 0
+- [x] 6.2 Rebuild only the sky-notify image, import it into k3d and upgrade only that release with its local overlay,
+  then confirm every pod is ready. Carried out against a freshly created cluster rather than as an upgrade of that
+  one release, so the whole stack was installed at once. The deployed image carries the change: the
+  `adapters/outbound/websocket` package is present inside it, the old `adapters/outbound/service` package is absent,
+  and the bound origin property is in its `application.yaml`
+- [x] 6.3 Read `ACCESS_CONTROL_ALLOW_ORIGIN` and the resolved property inside the running container, so the bound
+  value is evidence rather than a template. `kubectl exec` on the deployed pod prints
+  `http://localhost:5777,http://localhost:4200`, which is the local overlay's value and not the committed default
+  baked into the image, so the chart value genuinely reaches the container. The environment variable is the half that
+  was printed, and it is the one that overrides `sky.crossOrigin.allowed`, so it is also the value the application
+  binds
+- [x] 6.4 Drive the deployed handshake with an allowed origin and with one the list does not name, and record both
+  answers. Driven against the deployed pod through the ingress rather than in a test: a request to the STOMP endpoint
+  carrying an origin the list names answers 200, and the same request carrying `https://evil.example.com` answers 403
+- [x] 6.5 Run the Bruno collection against the cluster with `--env k8s` and confirm it does not regress from 19 of 19
+  requests and 97 of 97 assertions. It passes at 19 of 19 requests and 97 of 97 assertions against that fresh cluster
 
 ## 7. Notes from the run
 
@@ -78,3 +94,12 @@
   new check is absent.
 - The Bruno collection never opens a WebSocket, so a green collection run is not evidence for the origin change. The
   handshake was driven separately against the deployed pod in both directions.
+- An observation about the environment rather than about this change. The very first collection run against the
+  freshly created cluster scored 15 of 19 requests and 89 of 97 assertions, and every failure was a photo assertion.
+  The ingress access log shows that five of the six fetches of the signed photo address never reached the ingress at
+  all, while ordinary API calls in the same seconds went through the same port successfully, and that the first
+  request ever routed to the object store arrived thirteen seconds later. Every run since passes with all six
+  arriving. Name resolution was ruled out: the signed host resolves cold from two different clients immediately
+  after the operating system resolver cache is flushed. The cause was not established and none is claimed here. It
+  is written down so the next person who creates a cluster from scratch meets it already described, and it is
+  separate from this change, which touches no photo path and no object store.
