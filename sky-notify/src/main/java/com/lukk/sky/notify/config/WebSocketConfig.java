@@ -1,6 +1,6 @@
 package com.lukk.sky.notify.config;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
@@ -42,18 +42,19 @@ import java.util.List;
 @Configuration
 @EnableWebSocketMessageBroker
 @EnableWebSocketSecurity
-@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private static final String NOTIFY_ENDPOINT = "/notifyWebsocket";
-
-    private static final List<String> ALLOWED_ORIGINS = List.of(
-            "https://sky.luksarna.com",
-            "https://skycloud.luksarna.com",
-            "http://localhost:5777",
-            "http://localhost:4200");
+    private static final String ORIGIN_SEPARATOR = "\\s*,\\s*";
 
     private final WebSocketAuthChannelInterceptor authInterceptor;
+    private final List<String> allowedOrigins;
+
+    public WebSocketConfig(WebSocketAuthChannelInterceptor authInterceptor,
+                           @Value("${sky.crossOrigin.allowed}") String allowedOrigins) {
+        this.authInterceptor = authInterceptor;
+        this.allowedOrigins = List.of(allowedOrigins.split(ORIGIN_SEPARATOR));
+    }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -90,7 +91,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         return messages.build();
     }
 
-    private static String[] allowedOrigins() {
-        return ALLOWED_ORIGINS.toArray(String[]::new);
+    private String[] allowedOrigins() {
+        return allowedOrigins.toArray(String[]::new);
     }
 }

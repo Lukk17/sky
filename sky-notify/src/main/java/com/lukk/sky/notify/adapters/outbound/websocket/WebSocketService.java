@@ -1,4 +1,4 @@
-package com.lukk.sky.notify.adapters.outbound.service;
+package com.lukk.sky.notify.adapters.outbound.websocket;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

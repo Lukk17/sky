@@ -18,8 +18,20 @@ independently-deployable services. The module version is not restated here: the 
 - Hexagonal layout (`com.lukk.sky.notify`):
   - `domain/ports`, `domain/service`: the core (no `domain/model` package; this service is event-relay, not an entity
     store).
-  - `adapters/inbound`: Kafka consumers; `adapters/outbound`: WebSocket push; `adapters/dto`: wire DTOs.
+  - `adapters/inbound`: Kafka consumers; `adapters/outbound/websocket`: the WebSocket push adapter;
+    `adapters/dto`: wire DTOs. That subpackage was called `adapters/outbound/service` until it was renamed for
+    the transport it adapts, because the old name said neither a technology nor a concern and read as a second
+    `domain.service` package.
   - `config`, `config/kafka`, `config/propertyBind`: Spring wiring and bound properties.
+- Allowed browser origins are a bound property, not a list in the code. `WebSocketConfig` takes
+  `sky.crossOrigin.allowed` through its constructor and splits it on commas, exactly as the `CorsConfig` of the three
+  REST services does, and the value comes from `ACCESS_CONTROL_ALLOW_ORIGIN`. The Helm chart supplies it per
+  environment: empty in `values.yaml` behind a `required`, so a render with no overlay fails and names the value,
+  `https://sky.luksarna.com` in `values-prod.yaml` and the two local origins in `values-local.yaml`. No per-service
+  port belongs on that list: in the cluster nothing publishes one so a browser can never originate there, and under
+  compose a page calling its own service is same origin and never consults the list. The committed default in
+  `application.yaml` names the production frontend and the two local origins, and it is a fallback for a run outside
+  the chart rather than the value the cluster runs on.
 - Stateless: no JPA, no database, no Flyway, and there is no `db/migration` directory and no JDBC driver on the
   classpath. Do not add a datastore without a design decision: this service holds no persistent state.
 - Security on the STOMP channel, not on an HTTP request: all four services validate JWTs themselves through
@@ -104,3 +116,9 @@ Integration tests use Testcontainers Kafka only. Run from the repo root, e.g. `.
   framework dependency in the domain therefore fails the build: admit it in
   `openspec/specs/architecture/spec.md` through the change workflow first, and never by adding an exclusion to the
   test.
+- Two further rules gate the shape of the outbound tree, and both were proved to fail on a deliberate violation before
+  they were trusted. The class depending on `SimpMessagingTemplate` must live under `adapters.outbound.websocket`
+  rather than anywhere under `adapters.outbound`, and no package under `adapters` may be named `service`, `impl` or
+  `util`. The second rule is an approximation of the specification sentence it enforces, which asks for a subpackage
+  named for what it adapts: a rule cannot judge whether a name describes a transport, so it forbids the names that
+  describe nothing.

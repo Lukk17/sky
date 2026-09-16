@@ -29,8 +29,13 @@ tests when changing code here or the build fails.
   is the visible half of this break. The isolation is structural: the server only ever addresses
   a user's own queue, so there is no destination a client can subscribe to in order to read
   somebody else's notifications.
-- `http://localhost:5777` joins the allowed origins, which is where the new sky-gateway serves
-  the local stack.
+- The allowed browser origins are configuration rather than a list compiled into
+  `WebSocketConfig`. The value binds from `sky.crossOrigin.allowed`, overridden by
+  `ACCESS_CONTROL_ALLOW_ORIGIN`, which is the same property and the same variable the three REST
+  services already read, and the Helm chart sets it per environment. A deployed 1.x and an early
+  2.0.0 build accepted `http://localhost:5777` and `http://localhost:4200` in the cluster, because
+  the list was fixed at compile time and no chart value could change it. The committed default
+  names the production frontend and those two local origins for a run outside the chart.
 - Kafka offsets are committed by hand after the notification has been delivered, not
   automatically on poll. 1.x ran with auto-commit on, so a consumer that died between the poll
   and the push lost those notifications permanently. The container is on

@@ -28,6 +28,11 @@ class HexagonalArchitectureTest {
             "org.springframework.context.annotation..",
             "org.springframework.stereotype.."};
 
+    private static final String[] NON_DESCRIPTIVE_ADAPTER_PACKAGES = {
+            "..adapters..service..",
+            "..adapters..impl..",
+            "..adapters..util.."};
+
     private static JavaClasses classes;
 
     @BeforeAll
@@ -103,12 +108,24 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("WebSocket publishing stays in adapters.outbound")
-    void webSocketPublishing_whenInspected_thenResidesInOutboundAdaptersPackage() {
+    @DisplayName("WebSocket publishing stays in adapters.outbound.websocket")
+    void webSocketPublishing_whenInspected_thenResidesInTheWebSocketAdapterPackage() {
         noClasses()
-                .that().resideOutsideOfPackage("..adapters.outbound..")
+                .that().resideOutsideOfPackage("..adapters.outbound.websocket..")
                 .should().dependOnClassesThat().haveFullyQualifiedName(
                         "org.springframework.messaging.simp.SimpMessagingTemplate")
+                .because("a driven adapter sits in a subpackage named for what it adapts, and gating"
+                        + " the whole of adapters.outbound is what let the earlier name drift")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("No adapter package is named for nothing")
+    void adapterPackages_whenInspected_thenNoneCarriesANonDescriptiveName() {
+        noClasses()
+                .should().resideInAnyPackage(NON_DESCRIPTIVE_ADAPTER_PACKAGES)
+                .because("an adapter subpackage is named for the technology or the concern it adapts, as"
+                        + " websocket does, and a name like service reads as a second domain.service package")
                 .check(classes);
     }
 

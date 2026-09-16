@@ -1,7 +1,7 @@
 package com.lukk.sky.notify.adapters.outbound;
 
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
-import com.lukk.sky.notify.adapters.outbound.service.WebSocketService;
+import com.lukk.sky.notify.adapters.outbound.websocket.WebSocketService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

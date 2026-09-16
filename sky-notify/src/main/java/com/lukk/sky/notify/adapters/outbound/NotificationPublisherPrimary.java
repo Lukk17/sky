@@ -2,7 +2,7 @@ package com.lukk.sky.notify.adapters.outbound;
 
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.notify.adapters.dto.WebsocketPayloadModel;
-import com.lukk.sky.notify.adapters.outbound.service.WebSocketService;
+import com.lukk.sky.notify.adapters.outbound.websocket.WebSocketService;
 import com.lukk.sky.notify.domain.ports.NotificationPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;

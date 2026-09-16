@@ -49,6 +49,9 @@ oauth2:
   issuerUri: ""
   audience: "sky-backend"
 
+crossOrigin:
+  allowed: ""
+
 kafka:
   address: "kafka-service"
   port: "9092"

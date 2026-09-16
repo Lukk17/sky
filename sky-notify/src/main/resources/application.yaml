@@ -1,4 +1,6 @@
 sky:
+  crossOrigin:
+    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://sky.luksarna.com,http://localhost:5777,http://localhost:4200}
   kafka:
     consumer:
       concurrency: 1
