@@ -191,15 +191,48 @@ The raw OpenAPI JSON is at `/v3/api-docs` on each service.
 
 ### OpenAPI specs
 
-The three specs in [openapi/](openapi/) document the contract derived from the controller and DTO source
-files. Each spec carries component schemas built from the Java DTO fields, the Spring Data `Page<T>`
-envelope shape, and the problem-detail error shape the shared exception handler in `sky-common` produces.
+The three specs in [openapi/](openapi/) are generated output. Never edit one by hand, the next build overwrites
+it. They are produced by the springdoc Gradle plugin, wired once in the
+[sky.openapi-conventions](../../buildSrc/src/main/kotlin/sky.openapi-conventions.gradle.kts) convention plugin and
+applied by the three REST service build files. Each spec carries the component schemas springdoc derives from the
+Java DTO fields, the Spring Data `Page<T>` envelope shape, and the problem-detail error shape the shared exception
+handler in `sky-common` produces, and nothing beyond what the annotations on the controllers declare.
 
-| Spec file | Service |
-|---|---|
-| [openapi/sky-booking.openapi.yaml](openapi/sky-booking.openapi.yaml) | sky-booking (port 5555) |
-| [openapi/sky-offer.openapi.yaml](openapi/sky-offer.openapi.yaml) | sky-offer (port 5552) |
-| [openapi/sky-message.openapi.yaml](openapi/sky-message.openapi.yaml) | sky-message (port 5553) |
+| Spec file | Service | Gradle task | Generation port |
+|---|---|---|---|
+| [openapi/sky-booking.openapi.yaml](openapi/sky-booking.openapi.yaml) | sky-booking (port 5555) | `:sky-booking:generateOpenApiDocs` | 7971 |
+| [openapi/sky-offer.openapi.yaml](openapi/sky-offer.openapi.yaml) | sky-offer (port 5552) | `:sky-offer:generateOpenApiDocs` | 7972 |
+| [openapi/sky-message.openapi.yaml](openapi/sky-message.openapi.yaml) | sky-message (port 5553) | `:sky-message:generateOpenApiDocs` | 7973 |
+
+Regenerate all three, from the repository root:
+
+```bash
+./gradlew generateOpenApiDocs
+```
+
+```powershell
+.\gradlew.bat generateOpenApiDocs
+```
+
+`build` depends on `generateOpenApiDocs` in each of the three services, so a full build refreshes the specs and a
+stale spec shows up as a dirty working tree. Skip generation when you do not want it:
+
+```bash
+./gradlew build -x generateOpenApiDocs
+```
+
+```powershell
+.\gradlew.bat build -x generateOpenApiDocs
+```
+
+Generation forks the service under the `local,openapi` profile pair on the port in the table above. The `openapi`
+profile in each service's `src/main/resources/application-openapi.yaml` is what makes that fork need nothing
+running: it points the datasource and the Kafka and object-store endpoints at a dead port, turns Flyway off, names
+the Hibernate dialect and switches off JDBC metadata access at boot, and tells HikariCP not to open a connection at
+startup. The `local` half supplies the unverified JWT decoder, so no Keycloak is needed either. That profile also
+moves the springdoc document path under `/v3/api-docs/generated`, because the shared permit-list in `sky-common`
+opens `/v3/api-docs/**` and the grouped YAML document otherwise answers on `/v3/api-docs.yaml/public`, which that
+pattern does not match.
 
 To generate a client from a spec:
 

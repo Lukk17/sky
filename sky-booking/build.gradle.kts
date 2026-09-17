@@ -2,10 +2,15 @@ plugins {
     id("sky.spring-service-conventions")
     id("sky.web-conventions")
     id("sky.kafka-conventions")
+    id("sky.openapi-conventions")
 }
 
 version = "2.0.0"
 description = "sky-booking"
+
+skyOpenApi {
+    docsPort.set(7971)
+}
 
 dependencies {
     implementation(project(":sky-common"))

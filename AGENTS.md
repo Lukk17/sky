@@ -60,7 +60,7 @@ Use multiline prompts when you need to include logs or detailed context with a c
 - `sky-notify` (port 5554): push notifications to clients
 - `sky-gateway` (port 5777): local-development edge proxy, not deployed to the cluster
 
-Shared build configuration lives in the `buildSrc/` convention plugins (`sky.java-conventions`, `sky.java-library-conventions`, `sky.spring-service-conventions`, `sky.web-conventions`, `sky.kafka-conventions`) with all versions pinned in the `gradle/libs.versions.toml` version catalogue. Helm charts, local-dev compose, and deployment scripts live under `config/`. The Bruno API collection lives under `docs/api/request/`.
+Shared build configuration lives in the `buildSrc/` convention plugins (`sky.java-conventions`, `sky.java-library-conventions`, `sky.spring-service-conventions`, `sky.web-conventions`, `sky.kafka-conventions`, `sky.openapi-conventions`) with all versions pinned in the `gradle/libs.versions.toml` version catalogue. Helm charts, local-dev compose, and deployment scripts live under `config/`. The Bruno API collection lives under `docs/api/request/`.
 
 Two more modules complete the build. `sky-common` is a shared library (not a deployable service): it holds wire types, Spring auto-configurations, security defaults, and web utilities consumed by the other five modules, `sky-gateway` included. `sky-gateway` is a Spring Cloud Gateway edge proxy: it reproduces the production ingress path rewrites so the whole stack answers on one port under docker-compose, and it builds a container image but ships no Helm chart. Each module also carries its own `AGENTS.md` with module-local detail. See [Module guides](#module-guides) below.
 

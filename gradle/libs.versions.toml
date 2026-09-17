@@ -15,6 +15,7 @@ java = "25"
 # Tooling
 lombok = "1.18.38"
 springdoc = "3.0.3"
+springdoc-gradle-plugin = "1.9.0"
 resilience4j = "2.4.0"
 
 # Test
