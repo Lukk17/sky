@@ -142,6 +142,28 @@ class OfferApiDocumentTest {
     }
 
     @Test
+    @DisplayName("search states the blank and length rules in its operation description, which is the only "
+            + "place a caller can read them")
+    void search_describesWhatMakesATermInvalid() {
+        String description = operationOf("search").path("description").asString();
+
+        assertThat(description)
+                .contains("must not be blank")
+                .contains("100 characters")
+                .contains("400");
+    }
+
+    @Test
+    @DisplayName("the 400 on search keeps the shared description, because a class-level entry for a status "
+            + "wins over a method-level one")
+    void searchBadRequest_keepsTheSharedDescription() {
+        JsonNode badRequest = responsesOf("search").get("400");
+
+        assertThat(badRequest.path("description").asString())
+                .isEqualTo("Bad Request: invalid input or a rejected domain rule");
+    }
+
+    @Test
     @DisplayName("getOfferOwner declares 401 but not 403, because it needs a token and no realm role")
     void getOfferOwner_declares401ButNot403() {
         JsonNode responses = responsesOf("getOfferOwner");

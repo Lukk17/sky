@@ -174,13 +174,14 @@ public class OfferApiController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Search for offers (paginated)")
+    @Operation(summary = "Search for offers (paginated)",
+            description = "Searches the offer inventory for the term sent as the request body. "
+                    + "The term must not be blank, and it must not be longer than "
+                    + SEARCH_TERM_MAX_LENGTH + " characters. A term that breaks either rule is answered with 400.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Offers found",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Page.class))}),
-            @ApiResponse(responseCode = "400", description = "Search term is blank or exceeds 100 characters",
-                    content = @Content)
+                            schema = @Schema(implementation = Page.class))})
     })
     @Tag(name = OFFERS_TAG, description = OFFERS_TAG_DESCRIPTION)
     @SecurityRequirements
