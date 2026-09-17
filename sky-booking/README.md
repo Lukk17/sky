@@ -11,7 +11,8 @@ Port: 5555, API prefix `/api/v1`, caller identity from the JWT `email` claim.
 `sky-booking` manages bookings placed by authenticated users against offers. It exposes REST endpoints for listing,
 creating, and deleting bookings. On each mutation it calls `sky-offer` over internal REST to resolve offer ownership,
 persists the booking to PostgreSQL, and publishes a Kafka event so `sky-notify` can push a real-time update to the
-user's browser.
+user's browser. The domain service publishes that event, not the controller, so it is ordered against the domain's own
+steps and a request the domain rejects announces nothing.
 
 ---
 
@@ -68,7 +69,7 @@ Uses the hexagonal (ports-and-adapters) pattern:
 - `domain/service`: `BookingServicePrimary`, `BookingPersister`, and the event-source services.
 - `adapters/inbound/api`: the REST controller. Reads the caller from the validated JWT through `SecurityUtils.currentUserEmail()`, never from a request header.
 - `adapters/outbound/rest`: the client, caller, and URI strategy for the call to sky-offer.
-- `adapters/outbound/notification`: the Kafka producer that wraps events in `KafkaPayloadModel` from `sky-common`.
+- `adapters/outbound/notification`: the Kafka producer. It wraps events in `KafkaPayloadModel` from `sky-common`, mints the envelope timestamp and serialises the payload, so the driven port names the event and the domain never touches the wire shape.
 - `adapters/dto`: wire DTOs.
 - `config`, `config/kafka`, `config/propertyBind`: Spring and Kafka wiring.
 

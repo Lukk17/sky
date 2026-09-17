@@ -156,8 +156,8 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("deleteBooking removes the booking and returns 204 No Content when the booking exists")
-    void deleteBooking_whenBookingExists_thenRemoveAndReturn204() {
+    @DisplayName("deleteBooking removes the booking, returns 204 No Content, and publishes a Kafka event")
+    void deleteBooking_whenBookingExists_thenRemoveAndReturn204AndPublishKafkaEvent() {
         // given
         UUID bookingId = populateDatabase().getId();
         HttpHeaders headers = createTestHttpHeaders();
@@ -180,6 +180,12 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
 
         assertEquals(HttpStatus.NO_CONTENT, actual.getStatusCode());
         assertEquals(0, requireNonNull(savedBookings.getBody()).content().size());
+
+        ConsumerRecord<String, String> record =
+                KafkaTestUtils.getSingleRecord(consumer, BOOKING_TOPIC, Duration.ofSeconds(20));
+        JsonNode envelope = objectMapper.readTree(record.value());
+        assertEquals(TEST_USER_EMAIL, envelope.get("userInfo").asString());
+        assertEquals("Booking removed by user", envelope.get("payload").asString());
     }
 
     @Test

@@ -63,6 +63,20 @@ Major. Four contracts this service publishes have changed shape, and a client bu
   The per-module wrapper, `settings.gradle.kts` and Gradle directory are gone: build from the
   repository root with `./gradlew :sky-booking:test`. Dependency versions come from
   `gradle/libs.versions.toml` and shared build logic from the `buildSrc` convention plugins.
+- Kafka events are published by the domain service, not by the controller. `BookingController`
+  used to inject `BookingNotificationService`, build the `KafkaPayloadModel` itself and publish
+  after `BookingService` returned. `BookingServicePrimary` publishes now, at the end of
+  `bookOffer` and at the end of each branch of `removeBooking`, and the controller injects no
+  driven port at all. The driven port names the event (`publishCreated`, `publishRemoved`) rather
+  than taking a prebuilt envelope, so the outbound adapter owns the envelope, the timestamp and
+  the serialisation. No event payload changed on the wire. One ordering relationship did:
+  `removeBooking` is `@Transactional`, so its event is now handed to the producer inside the
+  transaction that deletes the booking rather than after that transaction committed. `bookOffer`
+  is unaffected, because its transaction sits one bean deeper in `BookingPersister`. The accepted
+  residual is recorded in [AGENTS.md](AGENTS.md).
+- `BookingService.removeBooking` returns `void` rather than a confirmation `String`. Nothing read
+  the string except the controller's own publish call, which no longer exists. The HTTP contract is
+  unchanged: `DELETE /bookings/{bookingId}` already answered 204 with no body.
 
 ### Added
 

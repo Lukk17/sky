@@ -125,6 +125,17 @@ class HexagonalArchitectureTest {
     }
 
     @Test
+    @DisplayName("An inbound adapter never reaches a driven port: a controller publishes no event of its own")
+    void inboundAdapters_whenInspected_thenDependOnNoOutboundPort() {
+        noClasses()
+                .that().resideInAPackage("..adapters.inbound..")
+                .should().dependOnClassesThat().resideInAPackage("..domain.ports.outbound..")
+                .because("a controller calls a driving port under domain.ports.inbound, and reaching a driven port"
+                        + " skips the domain service that owns whether the side effect happens at all")
+                .check(classes);
+    }
+
+    @Test
     @DisplayName("Nothing imports another service: only sky-common is shared")
     void allClasses_whenInspected_thenImportNoOtherServiceModule() {
         noClasses()

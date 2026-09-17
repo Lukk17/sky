@@ -39,11 +39,10 @@ public interface BookingService {
     BookingDTO bookOffer(UUID offerID, LocalDate dateToBook, String userEmail) throws BookingException;
 
     /**
-     * Removes a booking.
+     * Removes a booking and announces the removal.
      *
      * @param bookingId The ID of the booking to be removed.
      * @param userEmail The email of the user making the request.
-     * @return A confirmation message.
      */
-    String removeBooking(UUID bookingId, String userEmail);
+    void removeBooking(UUID bookingId, String userEmail);
 }

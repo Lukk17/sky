@@ -8,9 +8,7 @@ import com.lukk.sky.booking.domain.exception.EventSequenceConflictException;
 import com.lukk.sky.booking.domain.exception.OfferNotFoundException;
 import com.lukk.sky.booking.domain.exception.OfferServiceBadResponseException;
 import com.lukk.sky.booking.domain.exception.OfferServiceUnavailableException;
-import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +44,6 @@ import static com.lukk.sky.booking.assemblers.BookingAssembler.TEST_DEFAULT_OFFE
 import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_USER_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -72,9 +69,6 @@ class BookingControllerTest {
     @MockitoBean
     private BookingService bookingService;
 
-    @MockitoBean
-    private BookingNotificationService bookingNotificationService;
-
     private final String API_PREFIX;
 
     BookingControllerTest(@Value("${sky.apiPrefix}") String apiPrefix) {
@@ -99,11 +93,6 @@ class BookingControllerTest {
 
     private static SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor jwtWithoutRole() {
         return jwt().jwt(builder -> builder.claim("email", TEST_USER_EMAIL));
-    }
-
-    @BeforeEach
-    void setUp() {
-        doNothing().when(bookingNotificationService).sendMessage(any());
     }
 
     @Test
@@ -187,10 +176,6 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 200 OK when the booking exists and a valid JWT is present")
     void deleteBooking_whenBookingExistsAndJwtIsPresent_thenReturnOk() throws Exception {
-        // given
-        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL))
-                .thenReturn("Booking removed by user");
-
         // when / then
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -235,10 +220,6 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 401 Unauthorized when no JWT is supplied")
     void deleteBooking_whenNoJwt_thenReturn401() throws Exception {
-        // given
-        when(bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL))
-                .thenReturn("Booking removed by user");
-
         // when / then
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON))

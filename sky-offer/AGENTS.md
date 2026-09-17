@@ -84,6 +84,25 @@ independently-deployable services. The module version is not restated here: the 
     row change, so a commit failure in the instant after the delete leaves the object gone and the row still naming
     it. The window is one commit wide and the alternative is an after-commit listener nobody asked for. Do not
     reorder the delete to run before the save, which would widen the window rather than close it.
+- The domain service publishes the Kafka event, never the controller. `OfferServicePrimary` calls
+  `OfferNotificationService` at the end of `addOffer`, `editOffer` and `deleteOffer`, and `OfferApiController` injects
+  no outbound port at all. It used to inject one, build the `KafkaPayloadModel` itself, serialise the DTO and format
+  the delete sentence, which put the decision to announce an offer one layer above the rules that decide whether the
+  offer changed. The driven port now names the event (`publishCreated`, `publishEdited`, `publishDeleted`) and the
+  adapter owns the envelope, the timestamp, the serialisation and the `Offer with ID: %s was deleted.` sentence, so
+  `KafkaPayloadModel` and the `ObjectMapper` are gone from both the controller and the domain. The port takes
+  `OfferDTO` rather than `Offer` on purpose: `photoUrl` is derived per response by `OfferServicePrimary.toDto`, which
+  presigns the stored object, so an adapter mapping the entity itself would either drop that field from the wire
+  payload or call `PhotoStorage` from inside a second driven adapter.
+- Moving the call put all three publications inside the class-level `@Transactional` on `OfferServicePrimary`, where
+  they used to run after the commit. The residual that creates is the mirror of the old one. Before, a committed write
+  could end up with no event, because `KafkaNotificationPublisher` logs a failed send at warn and swallows it. Now, an
+  event can be handed to the producer and the commit can then fail, leaving an event naming an offer that does not
+  exist or naming one that was never deleted. The window is one commit wide, and it is the same family as the
+  accepted storage residual recorded above, where both storage deletions run inside the transaction that commits the
+  row change. The fix for it is a transactional outbox that nobody has asked for. Keep the publish last in the method,
+  after the event-store append and after the storage cleanup, so anything the domain rejects still publishes nothing.
+  Do not move it earlier, which widens the window rather than closing it.
 - Messaging: produces/consumes Kafka events via `spring-kafka`, serialised with the Spring-managed Jackson 3
   `ObjectMapper` (`tools.jackson.databind.ObjectMapper`). Gson is gone from this module and from its build file.
 - All five producer delivery-guarantee properties are set explicitly in `application.yaml` and none is left to a
@@ -176,3 +195,10 @@ Keep those inverse assertions: a leak shows up as a 200 where the collection dem
   client. Nothing may reach another service's classes. A new framework dependency in the domain therefore fails the
   build: admit it in `openspec/specs/architecture/spec.md` through the change workflow first, and never by adding an
   exclusion to the test.
+- A fifth rule landed beside those four, proved the same way. No class under `adapters.inbound` may depend on a class
+  under `domain.ports.outbound`, which is what stops a controller injecting a notification port and publishing its own
+  event. It subsumes the repository rule above, because a repository is one driven port among several, and the
+  repository rule is kept anyway for the sharper message it gives on the mistake it names. sky-notify cannot carry
+  this rule, because it holds no `domain.ports.outbound` package and a selector matching nothing reads as enforcement
+  while checking nothing. sky-message could carry it and does not yet, which
+  `openspec/specs/architecture/spec.md` records as a gap rather than as enforcement.

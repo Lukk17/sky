@@ -1,16 +1,33 @@
 package com.lukk.sky.offer.domain.ports.outbound;
 
-import com.lukk.sky.common.kafka.KafkaPayloadModel;
+import com.lukk.sky.offer.adapters.dto.OfferDTO;
+
+import java.util.UUID;
 
 /**
- * This interface defines the contract for sending notifications related to offers.
- * The notification messages are constructed from the {@link KafkaPayloadModel}.
+ * Driven port the domain calls to announce an offer change.
+ * The adapter owns the wire envelope and the serialisation, so the domain names the event and nothing else.
  */
 public interface OfferNotificationService {
+
     /**
-     * Sends a message constructed from the given {@link KafkaPayloadModel}.
+     * Announces an offer the domain has just persisted.
      *
-     * @param message the message to be sent
+     * @param ownerEmail the identity the notification is addressed to
      */
-    void sendMessage(KafkaPayloadModel message);
+    void publishCreated(OfferDTO offer, String ownerEmail);
+
+    /**
+     * Announces an offer the domain has just updated.
+     *
+     * @param ownerEmail the identity the notification is addressed to
+     */
+    void publishEdited(OfferDTO offer, String ownerEmail);
+
+    /**
+     * Announces an offer the domain has just deleted.
+     *
+     * @param ownerEmail the identity the notification is addressed to
+     */
+    void publishDeleted(UUID offerId, String ownerEmail);
 }

@@ -8,9 +8,7 @@ import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.exception.PhotoStorageBadResponseException;
 import com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException;
-import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -102,9 +100,6 @@ class OfferApiControllerTest {
     @MockitoBean
     private OfferService offerService;
 
-    @MockitoBean
-    private OfferNotificationService offerNotificationService;
-
     private final String API_PREFIX;
 
     OfferApiControllerTest(@Value("${sky.apiPrefix}") String apiPrefix) {
@@ -125,11 +120,6 @@ class OfferApiControllerTest {
 
     private MockHttpServletRequestBuilder delete(String uri) {
         return MockMvcRequestBuilders.delete("/" + API_PREFIX + uri);
-    }
-
-    @BeforeEach
-    void beforeAll() {
-        doNothing().when(offerNotificationService).sendMessage(any());
     }
 
     @Test

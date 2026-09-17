@@ -1,7 +1,6 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
-import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,9 +39,6 @@ class OfferApiDocumentTest {
 
     @MockitoBean
     private OfferService offerService;
-
-    @MockitoBean
-    private OfferNotificationService offerNotificationService;
 
     private JsonNode document;
 

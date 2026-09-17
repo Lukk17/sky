@@ -6,6 +6,7 @@ import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.exception.BookingNotFoundException;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
+import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import com.lukk.sky.booking.domain.ports.outbound.RestClient;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class BookingServicePrimary implements BookingService {
     private final BookingRepository bookingRepository;
     private final BookingPersister bookingPersister;
     private final RestClient restClient;
+    private final BookingNotificationService bookingNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -58,12 +60,15 @@ public class BookingServicePrimary implements BookingService {
         log.info("Offer with ID: {} booked for date: {} by user: {}",
                 offerId, dateToBook.format(DATE_FORMAT), userEmail);
 
-        return BookingDTO.of(saved);
+        BookingDTO bookingDTO = BookingDTO.of(saved);
+        bookingNotificationService.publishCreated(bookingDTO, userEmail);
+
+        return bookingDTO;
     }
 
     @Override
     @Transactional
-    public String removeBooking(UUID bookingId, String userEmail) {
+    public void removeBooking(UUID bookingId, String userEmail) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(String.format("No booking with ID: %s found.", bookingId)));
 
@@ -71,13 +76,13 @@ public class BookingServicePrimary implements BookingService {
             bookingRepository.delete(booking);
             log.info("Booking removed by user");
 
-            return "Booking removed by user";
+            bookingNotificationService.publishRemoved("Booking removed by user", userEmail);
 
         } else if (booking.getOwnerEmail().equals(userEmail)) {
             bookingRepository.delete(booking);
             log.info("Booking removed by owner");
 
-            return "Booking removed by owner";
+            bookingNotificationService.publishRemoved("Booking removed by owner", userEmail);
 
         } else {
             throw new BookingAccessDeniedException(

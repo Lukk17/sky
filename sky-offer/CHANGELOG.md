@@ -71,6 +71,17 @@ contract changed. A client built against 1.x will not work against it.
   per-module wrapper, `settings.gradle.kts` and Gradle directory are gone: build from the
   repository root with `./gradlew :sky-offer:test`. Dependency versions come from
   `gradle/libs.versions.toml` and shared build logic from the `buildSrc` convention plugins.
+- Kafka events are published by the domain service, not by the controller. `OfferApiController`
+  used to inject `OfferNotificationService`, serialise the DTO, format the delete sentence and
+  build the `KafkaPayloadModel` itself. `OfferServicePrimary` publishes now, at the end of
+  `addOffer`, `editOffer` and `deleteOffer`, and the controller injects no driven port at all. The
+  driven port names the event (`publishCreated`, `publishEdited`, `publishDeleted`) rather than
+  taking a prebuilt envelope, so the outbound adapter owns the envelope, the timestamp, the
+  serialisation and the `Offer with ID: %s was deleted.` sentence. No event payload changed on the
+  wire. The ordering relationship did: `OfferServicePrimary` is `@Transactional` at class level, so
+  all three events are now handed to the producer inside the transaction that commits the change
+  they announce rather than after it committed. The accepted residual is recorded in
+  [AGENTS.md](AGENTS.md).
 
 ### Added
 

@@ -10,7 +10,9 @@ Port: 5552, API prefix `/api/v1`, caller identity from the JWT `email` claim.
 
 `sky-offer` is the inventory service. It owns the CRUD lifecycle of flight/hotel offers. Browsing and searching need
 no token at all, and only the offer's owner can create, edit or delete one. When an offer is created, edited, or
-deleted the service publishes a Kafka event so `sky-notify` can push a notification to the acting user's browser.
+deleted the service publishes a Kafka event so `sky-notify` can push a notification to the acting user's browser. The
+domain service publishes that event, not the controller, so it is ordered against the domain's own steps and a request
+the domain rejects announces nothing.
 
 `sky-booking` calls `GET /api/v1/offers/{offerId}/owner` to resolve offer ownership during booking creation. That path
 has no Ingress rule of its own, so it is reachable only from inside the cluster, and it still requires a valid token.
@@ -163,7 +165,7 @@ Uses hexagonal (ports-and-adapters):
 - `domain/ports/outbound`: `OfferRepository`, `EventSourceRepository`, `OfferNotificationService`, and `PhotoStorage`, the driven ports the adapters implement.
 - `domain/service`: `OfferServicePrimary` and the event-source services.
 - `adapters/inbound/api`: `OfferApiController`, which serves the public, owner, and cluster-internal paths including photo upload and photo delete.
-- `adapters/outbound/notification`: the Kafka producer.
+- `adapters/outbound/notification`: the Kafka producer. It wraps events in `KafkaPayloadModel` from `sky-common`, mints the envelope timestamp, serialises the payload and writes the delete sentence, so the driven port names the event and the domain never touches the wire shape.
 - `adapters/outbound/storage`: `S3PhotoStorage`, the AWS SDK v2 adapter implementing `PhotoStorage` with `S3Client` and `S3Presigner`. The same adapter serves the cluster and a laptop, both of which run floci, and would serve a managed S3 unchanged, because the only contract is the S3 API.
 - `adapters/dto`: the `OfferDTO` and `OfferEditDTO` wire types. `OfferDTO` carries the derived `photoUrl`, neither carries the object key, and `OfferEditDTO.applyTo` merges a partial update onto the stored entity without touching the key or the owner.
 - `config`, `config/kafka`, `config/propertyBind`: Spring, Kafka, and S3 wiring.

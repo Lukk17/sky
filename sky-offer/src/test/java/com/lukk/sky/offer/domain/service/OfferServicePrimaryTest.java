@@ -9,6 +9,7 @@ import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
+import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
 import com.lukk.sky.offer.domain.ports.outbound.OfferSearch;
 import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -50,6 +52,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -71,6 +75,9 @@ class OfferServicePrimaryTest {
 
     @Mock
     PhotoStorage photoStorage;
+
+    @Mock
+    OfferNotificationService offerNotificationService;
 
     @InjectMocks
     OfferServicePrimary offerService;
@@ -727,5 +734,101 @@ class OfferServicePrimaryTest {
 
         // when / then
         assertThrows(PhotoStorageUnavailableException.class, () -> offerService.getAllOffers(pageable));
+    }
+
+    @Test
+    @DisplayName("addOffer publishes the created offer only after the event append, so a failed append publishes nothing")
+    void addOffer_whenOfferIsPersisted_thenPublishCreatedAfterTheEventAppend() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        OfferDTO input = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        when(offerRepository.save(any())).thenReturn(offer);
+
+        // when
+        OfferDTO actual = offerService.addOffer(input);
+
+        // then
+        InOrder order = inOrder(offerRepository, eventSourceService, offerNotificationService);
+        order.verify(offerRepository).save(any(Offer.class));
+        order.verify(eventSourceService).saveEvent(any(Offer.class), eq(EventType.OFFER_CREATED));
+        order.verify(offerNotificationService).publishCreated(actual, TEST_OWNER_EMAIL);
+    }
+
+    @Test
+    @DisplayName("addOffer publishes nothing when the event append loses the sequence race")
+    void addOffer_whenTheEventAppendConflicts_thenPublishNothing() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        OfferDTO input = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        when(offerRepository.save(any())).thenReturn(offer);
+        doThrow(new IllegalStateException("sequence conflict"))
+                .when(eventSourceService).saveEvent(any(), any());
+
+        // when / then
+        assertThrows(IllegalStateException.class, () -> offerService.addOffer(input));
+        verifyNoInteractions(offerNotificationService);
+    }
+
+    @Test
+    @DisplayName("editOffer publishes the edited offer only after the event append")
+    void editOffer_whenOfferIsSaved_thenPublishEditedAfterTheEventAppend() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        OfferEditDTO input = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
+        when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
+        when(offerRepository.save(any())).thenReturn(offer);
+
+        // when
+        OfferDTO actual = offerService.editOffer(input, TEST_OWNER_EMAIL);
+
+        // then
+        InOrder order = inOrder(eventSourceService, offerNotificationService);
+        order.verify(eventSourceService).saveEvent(any(Offer.class), eq(EventType.OFFER_UPDATED));
+        order.verify(offerNotificationService).publishEdited(actual, TEST_OWNER_EMAIL);
+    }
+
+    @Test
+    @DisplayName("editOffer publishes nothing when the caller does not own the offer")
+    void editOffer_whenCallerIsNotOwner_thenPublishNothing() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        OfferEditDTO input = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
+        when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
+
+        // when / then
+        assertThrows(OfferAccessDeniedException.class,
+                () -> offerService.editOffer(input, SECOND_TEST_USER_EMAIL));
+        verifyNoInteractions(offerNotificationService);
+    }
+
+    @Test
+    @DisplayName("deleteOffer publishes the deletion naming the offer id, after the row and the object are gone")
+    void deleteOffer_whenOfferIsRemoved_thenPublishDeletedLast() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
+
+        // when
+        offerService.deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL);
+
+        // then
+        InOrder order = inOrder(offerRepository, eventSourceService, photoStorage, offerNotificationService);
+        order.verify(offerRepository).delete(offer);
+        order.verify(eventSourceService).saveEvent(offer, EventType.OFFER_DELETED);
+        order.verify(photoStorage).delete(TEST_DEFAULT_OFFER_ID, testPhotoObjectKey(TEST_DEFAULT_OFFER_ID));
+        order.verify(offerNotificationService).publishDeleted(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL);
+    }
+
+    @Test
+    @DisplayName("deleteOffer publishes nothing when the caller does not own the offer")
+    void deleteOffer_whenCallerIsNotOwner_thenPublishNothing() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        when(offerRepository.findById(offer.getId())).thenReturn(Optional.of(offer));
+
+        // when / then
+        assertThrows(OfferAccessDeniedException.class,
+                () -> offerService.deleteOffer(TEST_DEFAULT_OFFER_ID, SECOND_TEST_USER_EMAIL));
+        verifyNoInteractions(offerNotificationService);
     }
 }

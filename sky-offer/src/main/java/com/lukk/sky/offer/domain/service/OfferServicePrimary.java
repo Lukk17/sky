@@ -9,6 +9,7 @@ import com.lukk.sky.offer.domain.exception.PhotoStorageException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
+import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
 import com.lukk.sky.offer.domain.ports.outbound.OfferSearch;
 import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
@@ -34,6 +35,7 @@ public class OfferServicePrimary implements OfferService {
     private final OfferSearch offerSearch;
     private final EventSourceService eventSourceService;
     private final PhotoStorage photoStorage;
+    private final OfferNotificationService offerNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -53,7 +55,10 @@ public class OfferServicePrimary implements OfferService {
         log.info("Saved offer with ID: {} from user: {}", savedOffer.getId(), savedOffer.getOwnerEmail());
         eventSourceService.saveEvent(savedOffer, EventType.OFFER_CREATED);
 
-        return toDto(savedOffer);
+        OfferDTO created = toDto(savedOffer);
+        offerNotificationService.publishCreated(created, savedOffer.getOwnerEmail());
+
+        return created;
     }
 
     @Override
@@ -67,6 +72,8 @@ public class OfferServicePrimary implements OfferService {
             log.info("Deleted offer with ID: {}", offerToDelete.getId());
             eventSourceService.saveEvent(offerToDelete, EventType.OFFER_DELETED);
             removeStoredPhoto(offerToDelete.getId(), offerToDelete.getPhotoObjectKey());
+
+            offerNotificationService.publishDeleted(offerID, userEmail);
 
         } else {
             throw new OfferAccessDeniedException("You can only delete offers you own.");
@@ -106,7 +113,10 @@ public class OfferServicePrimary implements OfferService {
         log.info("Offer with ID: {} edited.", savedOffer.getId());
         eventSourceService.saveEvent(savedOffer, EventType.OFFER_UPDATED);
 
-        return toDto(savedOffer);
+        OfferDTO edited = toDto(savedOffer);
+        offerNotificationService.publishEdited(edited, ownerEmail);
+
+        return edited;
     }
 
     @Override

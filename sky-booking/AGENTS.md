@@ -72,6 +72,25 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
   `DatasourceCredentialsAutoConfiguration` in sky-common, naming the variable and the property, instead of
   binding the literal placeholder text as the password. `DatasourceCredentialsStartupTest` pins that behaviour
   against this module's own configuration files, so do not delete it when touching the datasource block.
+- The domain service publishes the Kafka event, never the controller. `BookingServicePrimary` calls
+  `BookingNotificationService` at the end of `bookOffer` and at the end of each branch of `removeBooking`, and
+  `BookingController` injects no outbound port at all. It used to inject one, build the `KafkaPayloadModel` itself and
+  publish after the service returned, which put the decision to announce a booking one layer above the rules that
+  decide whether there is a booking. The driven port now names the event (`publishCreated`, `publishRemoved`) and the
+  adapter owns the envelope, the timestamp and the serialisation, so `KafkaPayloadModel` and the `ObjectMapper` are
+  gone from both the controller and the domain. `removeBooking` returns `void` for the same reason: the confirmation
+  string it used to return existed only so the controller could publish it.
+- Moving the call changed the ordering on one of the two sites, and the difference is deliberate rather than an
+  oversight. `bookOffer` carries no `@Transactional`: its transaction lives one bean deeper in
+  `BookingPersister.saveAndPublish`, which is a separate bean and therefore a real proxy boundary, so publishing after
+  that call still happens after the commit, exactly as the controller's did. `removeBooking` is `@Transactional` on
+  the method, so its publication now runs inside the transaction where it used to run after it. The residual that
+  creates is the mirror of the old one. Before, a committed delete could end up with no event, because
+  `KafkaNotificationPublisher` logs a failed send at warn and swallows it. Now, an event can be handed to the producer
+  and the commit can then fail, leaving an event for a booking that still exists. The window is one commit wide, it is
+  the same family as the accepted storage residual in sky-offer's guide, and the fix for it is a transactional outbox
+  that nobody has asked for. Keep the publish last in the method, after every domain step, so anything the domain
+  rejects still publishes nothing. Do not move it earlier, which widens the window rather than closing it.
 - Messaging: produces/consumes Kafka events via `spring-kafka`, serialised with the Spring-managed Jackson 3
   `ObjectMapper` (`tools.jackson.databind.ObjectMapper`). Gson is gone from this module and from its build file.
 - All five producer delivery-guarantee properties are set explicitly in `application.yaml` and none is left to a
@@ -129,3 +148,10 @@ single composite `./gradlew`, e.g. `./gradlew :sky-booking:test`.
   client. Nothing may reach another service's classes. A new framework dependency in the domain therefore fails the
   build: admit it in `openspec/specs/architecture/spec.md` through the change workflow first, and never by adding an
   exclusion to the test.
+- A fifth rule landed beside those four, proved the same way. No class under `adapters.inbound` may depend on a class
+  under `domain.ports.outbound`, which is what stops a controller injecting a notification port and publishing its own
+  event. It subsumes the repository rule above, because a repository is one driven port among several, and the
+  repository rule is kept anyway for the sharper message it gives on the mistake it names. sky-notify cannot carry
+  this rule, because it holds no `domain.ports.outbound` package and a selector matching nothing reads as enforcement
+  while checking nothing. sky-message could carry it and does not yet, which
+  `openspec/specs/architecture/spec.md` records as a gap rather than as enforcement.

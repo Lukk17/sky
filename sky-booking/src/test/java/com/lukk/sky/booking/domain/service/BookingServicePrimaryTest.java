@@ -5,11 +5,13 @@ import com.lukk.sky.booking.domain.exception.BookingAccessDeniedException;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.exception.BookingNotFoundException;
 import com.lukk.sky.booking.domain.model.Booking;
+import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import com.lukk.sky.booking.domain.ports.outbound.RestClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,6 +42,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @DisplayName("BookingServicePrimary unit tests")
@@ -55,6 +58,9 @@ class BookingServicePrimaryTest {
 
     @Mock
     RestClient restClient;
+
+    @Mock
+    BookingNotificationService bookingNotificationService;
 
     @InjectMocks
     BookingServicePrimary bookingService;
@@ -144,6 +150,7 @@ class BookingServicePrimaryTest {
         assertThrows(com.lukk.sky.booking.domain.exception.BookingDateAlreadyBookedException.class, () ->
                 bookingService.bookOffer(booking.getOfferId(), TEST_DATE, booking.getBookingUser())
         );
+        verifyNoInteractions(bookingNotificationService);
     }
 
     @Test
@@ -158,38 +165,39 @@ class BookingServicePrimaryTest {
                 bookingService.bookOffer(booking.getOfferId(), LocalDate.of(1201, 6, 20),
                         booking.getBookingUser())
         );
+        verifyNoInteractions(bookingNotificationService);
     }
 
     @Test
-    @DisplayName("removeBooking deletes the booking and returns confirmation when called by the booking user")
-    void removeBooking_whenCalledByBookingUser_thenDeleteAndReturnMessage() {
+    @DisplayName("removeBooking deletes the booking and announces the removal when called by the booking user")
+    void removeBooking_whenCalledByBookingUser_thenDeleteAndAnnounceIt() {
         // given
-        String expected = "Booking removed by user";
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
         // when
-        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL);
+        bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL);
 
         // then
-        verify(bookingRepository, times(1)).delete(booking);
-        assertEquals(expected, actual);
+        InOrder order = inOrder(bookingRepository, bookingNotificationService);
+        order.verify(bookingRepository, times(1)).delete(booking);
+        order.verify(bookingNotificationService).publishRemoved("Booking removed by user", TEST_USER_EMAIL);
     }
 
     @Test
-    @DisplayName("removeBooking deletes the booking and returns confirmation when called by the offer owner")
-    void removeBooking_whenCalledByOwner_thenDeleteAndReturnMessage() {
+    @DisplayName("removeBooking deletes the booking and announces the removal when called by the offer owner")
+    void removeBooking_whenCalledByOwner_thenDeleteAndAnnounceIt() {
         // given
-        String expected = "Booking removed by owner";
         Booking booking = getPopulatedBooked();
         when(bookingRepository.findById(TEST_DEFAULT_BOOKED_ID)).thenReturn(Optional.of(booking));
 
         // when
-        String actual = bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_OWNER_EMAIL);
+        bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_OWNER_EMAIL);
 
         // then
-        verify(bookingRepository, times(1)).delete(booking);
-        assertEquals(expected, actual);
+        InOrder order = inOrder(bookingRepository, bookingNotificationService);
+        order.verify(bookingRepository, times(1)).delete(booking);
+        order.verify(bookingNotificationService).publishRemoved("Booking removed by owner", TEST_OWNER_EMAIL);
     }
 
     @Test
@@ -203,6 +211,7 @@ class BookingServicePrimaryTest {
         assertThrows(BookingAccessDeniedException.class, () ->
                 bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, "other@user.com")
         );
+        verifyNoInteractions(bookingNotificationService);
     }
 
     @Test
@@ -215,5 +224,23 @@ class BookingServicePrimaryTest {
         assertThrows(BookingNotFoundException.class, () ->
                 bookingService.removeBooking(TEST_DEFAULT_BOOKED_ID, TEST_USER_EMAIL)
         );
+        verifyNoInteractions(bookingNotificationService);
+    }
+
+    @Test
+    @DisplayName("bookOffer publishes the booking only after the persister has committed it")
+    void bookOffer_whenBookingIsPersisted_thenPublishCreatedAfterThePersisterCall() {
+        // given
+        Booking booking = getPopulatedBooked();
+        when(restClient.requestOfferOwner(booking.getOfferId())).thenReturn(TEST_OWNER_EMAIL);
+        when(bookingPersister.saveAndPublish(any(), any(), any())).thenReturn(booking);
+
+        // when
+        BookingDTO actual = bookingService.bookOffer(booking.getOfferId(), TEST_DATE, TEST_USER_EMAIL);
+
+        // then
+        InOrder order = inOrder(bookingPersister, bookingNotificationService);
+        order.verify(bookingPersister).saveAndPublish(any(), any(), eq(TEST_DATE));
+        order.verify(bookingNotificationService).publishCreated(actual, TEST_USER_EMAIL);
     }
 }

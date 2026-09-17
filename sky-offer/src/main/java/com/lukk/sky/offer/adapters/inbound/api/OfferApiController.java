@@ -1,6 +1,5 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
-import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
@@ -8,7 +7,6 @@ import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
-import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,18 +33,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import tools.jackson.databind.ObjectMapper;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
-
-import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Tag(name = "Offers", description = "Offer lifecycle: browse, create, edit, delete, and search flight/booking offers.")
 @ApiCommonErrorResponses
@@ -68,8 +62,6 @@ public class OfferApiController {
     private static final byte[] WEBP_MARKER = {0x57, 0x45, 0x42, 0x50};
 
     private final OfferService offerService;
-    private final OfferNotificationService offerNotificationService;
-    private final ObjectMapper objectMapper;
 
     @Operation(summary = "Get all offers (paginated)")
     @ApiResponses(value = {
@@ -115,8 +107,6 @@ public class OfferApiController {
         offer.setOwnerEmail(ownerEmail);
         OfferDTO addedOffer = offerService.addOffer(offer);
 
-        sendNotification(objectMapper.writeValueAsString(addedOffer), ownerEmail);
-
         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(addedOffer);
     }
 
@@ -137,8 +127,6 @@ public class OfferApiController {
 
         OfferDTO edited = offerService.editOffer(offer, ownerEmail);
 
-        sendNotification(objectMapper.writeValueAsString(edited), ownerEmail);
-
         return ResponseEntity.ok(edited);
     }
 
@@ -157,8 +145,6 @@ public class OfferApiController {
         log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
 
         offerService.deleteOffer(offerId, ownerEmail);
-
-        sendNotification(String.format("Offer with ID: %s was deleted.", offerId), ownerEmail);
 
         return ResponseEntity.noContent().build();
     }
@@ -291,16 +277,5 @@ public class OfferApiController {
                 && Arrays.equals(header, 0, WEBP_RIFF.length, WEBP_RIFF, 0, WEBP_RIFF.length)
                 && Arrays.equals(header, WEBP_MARKER_OFFSET, WEBP_HEADER_LENGTH,
                 WEBP_MARKER, 0, WEBP_MARKER.length);
-    }
-
-    private void sendNotification(String payload, String owner) {
-        log.info("Publishing to Kafka");
-
-        KafkaPayloadModel model = new KafkaPayloadModel(
-                payload,
-                DATE_TIME_FORMAT.format(Instant.now()),
-                owner
-        );
-        offerNotificationService.sendMessage(model);
     }
 }

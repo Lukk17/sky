@@ -2,9 +2,7 @@ package com.lukk.sky.booking.adapters.inbound.api;
 
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.adapters.dto.BookingPayload;
-import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
-import com.lukk.sky.common.kafka.KafkaPayloadModel;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
@@ -30,12 +28,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tools.jackson.databind.ObjectMapper;
 
-import java.time.Instant;
 import java.util.UUID;
-
-import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 
 @Tag(name = "Bookings", description = "Booking lifecycle: create, list, and cancel bookings placed against offers.")
 @ApiCommonErrorResponses
@@ -47,8 +41,6 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 public class BookingController {
 
     private final BookingService bookingService;
-    private final BookingNotificationService bookingNotificationService;
-    private final ObjectMapper objectMapper;
 
     @Operation(summary = "Get all user's bookings (paginated)")
     @ApiResponses(value = {
@@ -83,8 +75,6 @@ public class BookingController {
         BookingDTO bookingDTO = bookingService.bookOffer(
                 bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser);
 
-        sendNotification(objectMapper.writeValueAsString(bookingDTO), bookingUser);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingDTO);
     }
 
@@ -101,16 +91,8 @@ public class BookingController {
         String userEmail = SecurityUtils.currentUserEmail();
         log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);
 
-        String removeMessage = bookingService.removeBooking(bookingId, userEmail);
-        sendNotification(removeMessage, userEmail);
+        bookingService.removeBooking(bookingId, userEmail);
 
         return ResponseEntity.noContent().build();
-    }
-
-    private void sendNotification(String payload, String userId) {
-        KafkaPayloadModel model =
-                new KafkaPayloadModel(payload, DATE_TIME_FORMAT.format(Instant.now()), userId);
-
-        bookingNotificationService.sendMessage(model);
     }
 }
