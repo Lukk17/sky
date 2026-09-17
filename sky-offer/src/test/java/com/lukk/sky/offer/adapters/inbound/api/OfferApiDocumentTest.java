@@ -104,15 +104,41 @@ class OfferApiDocumentTest {
     }
 
     @Test
-    @DisplayName("the public browse and search operations declare neither 401 nor 403, because they are open")
-    void publicOperations_declareNeither401Nor403() {
+    @DisplayName("the public browse and search operations declare 401 but not 403, because an "
+            + "unverifiable token reaches them too while no realm role is ever checked")
+    void publicOperations_declare401ButNot403() {
         JsonNode browse = responsesOf("getAllOffers");
         JsonNode search = responsesOf("search");
 
-        assertThat(browse.has("401")).as("browse declares %s", browse.propertyNames()).isFalse();
+        assertThat(browse.has("401")).as("browse declares %s", browse.propertyNames()).isTrue();
         assertThat(browse.has("403")).as("browse declares %s", browse.propertyNames()).isFalse();
-        assertThat(search.has("401")).as("search declares %s", search.propertyNames()).isFalse();
+        assertThat(search.has("401")).as("search declares %s", search.propertyNames()).isTrue();
         assertThat(search.has("403")).as("search declares %s", search.propertyNames()).isFalse();
+    }
+
+    @Test
+    @DisplayName("the public browse and search operations stay anonymous, declaring an empty security list")
+    void publicOperations_declareEmptySecurity() {
+        assertThat(operationOf("getAllOffers").get("security")).isEmpty();
+        assertThat(operationOf("search").get("security")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("every operation declares a 401 carrying the bearer challenge header")
+    void everyOperation_declares401WithChallengeHeader() {
+        for (JsonNode pathItem : document.get("paths")) {
+            for (JsonNode operation : pathItem) {
+                String operationId = operation.path("operationId").asString();
+                JsonNode unauthorized = operation.get("responses").get("401");
+
+                assertThat(unauthorized)
+                        .as("%s declares no 401", operationId)
+                        .isNotNull();
+                assertThat(unauthorized.path("headers").has("WWW-Authenticate"))
+                        .as("the 401 of %s carries no WWW-Authenticate header", operationId)
+                        .isTrue();
+            }
+        }
     }
 
     @Test
@@ -125,10 +151,14 @@ class OfferApiDocumentTest {
     }
 
     private JsonNode responsesOf(String operationId) {
+        return operationOf(operationId).get("responses");
+    }
+
+    private JsonNode operationOf(String operationId) {
         for (JsonNode pathItem : document.get("paths")) {
             for (JsonNode operation : pathItem) {
                 if (operationId.equals(operation.path("operationId").asString())) {
-                    return operation.get("responses");
+                    return operation;
                 }
             }
         }

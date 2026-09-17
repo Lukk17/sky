@@ -123,6 +123,18 @@ label the release workflow does not read. If the two disagree, this file wins.
   `@ConditionalOnWebApplication`, which would either gate nothing or take the log away from the gateway.
 
 ### Fixed
+- The 401 moved from `@ApiSecuredErrorResponses` to `@ApiCommonErrorResponses`, which every controller in
+  the three REST services applies at class level, so every published operation now declares it and
+  `@ApiSecuredErrorResponses` carries the 403 alone. Any endpoint can be called with a token that does not
+  verify, the anonymous ones included, because the resource-server filter chain rejects that token before a
+  handler is reached, so the 401 belongs to every operation rather than to the secured ones. Leaving it on
+  the secured annotation left `GET /api/v1/offers` and `POST /api/v1/search` in sky-offer publishing a
+  contract that was silent about a status those two really answer. The response moved as it stood, an empty
+  body with the `WWW-Authenticate` challenge header, and only its description changed, to cover both cases in
+  one sentence: an operation that requires a token answers this when the token is missing or invalid, and an
+  operation that requires none answers it only when a token arrived and failed to verify. The 403 stays where
+  it was, with its own header, because a realm role check is the one thing an anonymous endpoint never
+  performs. No operation gained or lost a 403, and the two anonymous ones still publish `security: []`.
 - `@ApiCommonErrorResponses` documents the 500 as the problem detail it now is, with the
   `application/problem+json` media type and the `ProblemDetail` schema the 400 already carried. It
   still told every reader of every service's Swagger UI that a 500 is Spring Boot's default error

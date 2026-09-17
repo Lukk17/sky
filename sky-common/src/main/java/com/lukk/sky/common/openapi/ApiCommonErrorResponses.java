@@ -1,5 +1,6 @@
 package com.lukk.sky.common.openapi;
 
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,6 +21,18 @@ import java.lang.annotation.Target;
                 content = @Content(
                         mediaType = "application/problem+json",
                         schema = @Schema(implementation = ProblemDetail.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "Unauthorized: an operation that requires a token answers this when the "
+                        + "token is missing or invalid, and an operation that requires none answers it "
+                        + "only when a token arrived and failed to verify. The body is empty. "
+                        + "Spring Security answers with the status and a WWW-Authenticate header only.",
+                content = @Content,
+                headers = @Header(
+                        name = "WWW-Authenticate",
+                        description = "Bearer challenge, carrying error and error_description "
+                                + "when the token was present but invalid.",
+                        schema = @Schema(type = "string"))),
         @ApiResponse(
                 responseCode = "500",
                 description = "Internal Server Error: unexpected failure. The body is a problem detail "

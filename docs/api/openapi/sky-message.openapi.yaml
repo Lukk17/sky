@@ -35,8 +35,10 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
           description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          description: "Unauthorized: missing or invalid bearer token. The body is\
-            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
             \ header only."
           headers:
             WWW-Authenticate:
@@ -104,8 +106,10 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
           description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          description: "Unauthorized: missing or invalid bearer token. The body is\
-            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
             \ header only."
           headers:
             WWW-Authenticate:
@@ -166,8 +170,10 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
           description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          description: "Unauthorized: missing or invalid bearer token. The body is\
-            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
             \ header only."
           headers:
             WWW-Authenticate:
@@ -225,8 +231,10 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
           description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          description: "Unauthorized: missing or invalid bearer token. The body is\
-            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
             \ header only."
           headers:
             WWW-Authenticate:

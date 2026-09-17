@@ -199,7 +199,13 @@ independently-deployable services. The module version is not restated here: the 
   that can be refused by a store that answered. The 413 stays inline here, because the 5 MB file and 6 MB
   request limits are this module's own. `GET /offers` and `POST /search` each carry `@SecurityRequirements`
   with no value, which is what makes springdoc publish `security: []` on them: the document-level bearer
-  requirement from sky-common would otherwise mark two anonymous endpoints as needing a token. The two tags
+  requirement from sky-common would otherwise mark two anonymous endpoints as needing a token. They still
+  publish a 401, from the class-level `@ApiCommonErrorResponses`, because the resource-server filter chain
+  rejects an unverifiable bearer token before either handler runs, and they publish no 403, because neither
+  one checks a realm role. An anonymous endpoint here is one that needs no token, not one that ignores a bad
+  token. That class-level annotation is also why the inline 401 left on `getOfferOwner` no longer reaches the
+  document: springdoc applies the class-level `@ApiResponses` over a method-level one for the same status, so
+  all nine operations publish the single shared description and the inline block is dead text. The two tags
   are declared per method rather than on the class, because springdoc unions the class tag with the method
   tag, so a class-level `@Tag` would put every owner operation under `Offers` as well.
 

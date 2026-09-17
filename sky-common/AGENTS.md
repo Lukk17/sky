@@ -50,9 +50,22 @@ the cosmetic `version` in `build.gradle.kts`.
     `ApiVersioningAutoConfiguration`, and `DateTimeConstants`.
   - `common.kafka`: `KafkaPayloadModel` (the wire envelope), `KafkaNotificationPublisher` (the shared producer,
     serialising through the injected Jackson 3 `ObjectMapper`), and `SkyTopics`.
-  - `common.openapi`: `OpenApiAutoConfiguration`, `OpenApiSecurityAutoConfiguration`, and two response annotations:
-    `@ApiCommonErrorResponses` (400 and 500) and `@ApiSecuredErrorResponses` (401 and 403, for an endpoint that needs
-    a token). There is no `@ApiCommonSuccessResponses`.
+  - `common.openapi`: `OpenApiAutoConfiguration`, `OpenApiSecurityAutoConfiguration`, and six response
+    annotations. `@ApiCommonErrorResponses` carries 400, 401 and 500, and every controller in the three REST
+    services applies it at class level, which is why the 401 sits there and not on the secured annotation: any
+    endpoint can be called with a token that does not verify, the anonymous ones included, because the
+    resource-server filter chain rejects that token before a handler is reached. Its 401 declares an empty body
+    and the `WWW-Authenticate` challenge header, and its description covers both cases in one sentence, a
+    missing or invalid token on an operation that requires one, and a token that arrived and failed to verify
+    on an operation that requires none. `@ApiSecuredErrorResponses` carries the 403 alone, with its own
+    `WWW-Authenticate` header, because a realm role check is the one thing an anonymous endpoint never
+    performs. It is class level on `sky-booking` and `sky-message` and per method on `sky-offer`, which is the
+    only module with anonymous endpoints. The other four each carry one status: `@ApiConflictResponse` (409),
+    `@ApiUnsupportedMediaTypeResponse` (415), `@ApiDependencyUnavailableResponse` (503, naming `Retry-After`
+    and its fixed value of 10 in the description rather than declaring the header) and
+    `@ApiDependencyBadGatewayResponse` (502). There is no `@ApiCommonSuccessResponses`: every endpoint declares
+    the one success status it actually returns, and a blanket annotation would publish success codes an
+    endpoint cannot produce.
   - `common.config`: `CommonConfigPropertiesAutoConfiguration` binding the shared server, management and
     logging-level property records, plus the startup credential check covered in its own section below:
     `MissingCredential`, `MissingCredentialException`, `RequiredCredentials`, `DatasourceCredentialsValidator`,
