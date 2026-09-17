@@ -57,7 +57,13 @@ the cosmetic `version` in `build.gradle.kts`.
     logging-level property records, plus the startup credential check covered in its own section below:
     `MissingCredential`, `MissingCredentialException`, `RequiredCredentials`, `DatasourceCredentialsValidator`,
     `DatasourceCredentialsAutoConfiguration` and `MissingCredentialFailureAnalyzer`.
-  - `common.startup`: `StartupLogConfig`, which emits the whole startup readiness block in one `log.info` call.
+  - `common.startup`: `StartupLogConfig`, which emits the whole startup readiness block in one `log.info` call. It
+    is `@ConditionalOnClass({RestClient.class, SimpleClientHttpRequestFactory.class})`, both from Spring Web, which
+    this module declares `compileOnly`: the JWK-set probe builds a `RestClient` on a
+    `SimpleClientHttpRequestFactory`, so a consumer without Spring Web cannot run that method and must do without
+    the log rather than fail on it. The condition is not `@ConditionalOnWebApplication`: `sky-gateway` is reactive
+    and carries Spring Web through WebFlux, so a servlet condition would take the startup log away from a module
+    that emits it today, and every consumer is a web application anyway, so an `ANY` condition would gate nothing.
 - Dependency discipline: Spring Web, Spring MVC, Jakarta Servlet, Jakarta Validation, SLF4J, JSpecify, Spring
   Kafka, Jackson Databind, springdoc, `spring-boot-autoconfigure`, `spring-boot-jdbc` and
   `spring-boot-starter-oauth2-resource-server` are all declared `compileOnly` on purpose. A consumer that is not a web service (or not a Kafka service, or has no
@@ -229,8 +235,11 @@ deployed service, and the blast radius of a false positive is a deployment that 
   A new auto-config class must be added there to take effect in consumers.
 - A shared type that needs a runtime dependency still follows the `compileOnly` rule, and it must be guarded by a
   condition the container can actually check. `@ConditionalOnClass` on a type only a real consumer's classpath
-  carries is the pattern `SpringDataExceptionHandler` and `DatasourceCredentialsAutoConfiguration` both use. A
-  condition on a module name, on a property every module happens to set, or on a profile is not equivalent.
+  carries is the pattern `SpringDataExceptionHandler`, `DatasourceCredentialsAutoConfiguration` and
+  `StartupLogConfig` all use. A condition on a module name, on a property every module happens to set, or on a
+  profile is not equivalent. `StartupLogConfig` names both Spring Web types it touches rather than one standing in
+  for the other, because the condition is what the reader checks the class against and a type reachable only from a
+  method body is the easiest one to lose in a later edit.
 - This is a library: there is no `application.yaml` and nothing to run standalone. It does have its own test suite
   (`ApplicationContextRunner`-style slices for the auto-configurations, plain unit tests for the rest), so verify a
   change here and in at least one consuming service's tests, because the `compileOnly` split means a class can

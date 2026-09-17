@@ -3,6 +3,7 @@ package com.lukk.sky.common.startup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.availability.AvailabilityChangeEvent;
 import org.springframework.boot.availability.ReadinessState;
 import org.springframework.context.event.EventListener;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @AutoConfiguration
+@ConditionalOnClass({RestClient.class, SimpleClientHttpRequestFactory.class})
 @RequiredArgsConstructor
 @Slf4j
 public class StartupLogConfig {

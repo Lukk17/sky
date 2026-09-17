@@ -102,6 +102,12 @@ label the release workflow does not read. If the two disagree, this file wins.
   MVC transitively just by depending on this module, and sky-notify in particular must not
   get Spring Data or springdoc. Promoting one of these to `implementation` changes the
   classpath of all five services, so check every consumer before doing it.
+- `StartupLogConfig` is now `@ConditionalOnClass({RestClient.class, SimpleClientHttpRequestFactory.class})`,
+  the two Spring Web types its JWK-set probe builds. Spring Web is `compileOnly` here, so the class
+  reached a consumer that could not run that method, and the `catch (Exception e)` around the probe does
+  not catch the `NoClassDefFoundError` that would follow. Every consumer carries Spring Web today,
+  sky-gateway through WebFlux, so no module loses the startup log. The condition is not
+  `@ConditionalOnWebApplication`, which would either gate nothing or take the log away from the gateway.
 
 ### Fixed
 - Event timestamps are written as `timestamptz` rather than a naive local type, so a
