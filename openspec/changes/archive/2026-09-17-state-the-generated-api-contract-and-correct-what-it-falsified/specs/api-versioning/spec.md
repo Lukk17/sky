@@ -1,16 +1,4 @@
-# api-versioning Specification
-
-## Purpose
-Keeps every REST endpoint explicitly versioned and consistently named, so a breaking payload change can ship as a new version instead of silently altering the contract callers already depend on.
-
-## Requirements
-
-### Requirement: REST resource paths use plural nouns consistently
-Every collection endpoint MUST use a plural-noun path segment, as `/offers`, `/messages` and `/bookings` do, and a singular collection path such as `/api/owner/offer` or `/api/message` MUST be renamed to its plural equivalent. Two shapes are deliberately outside the rule rather than exceptions to it. A path segment that names a single-valued sub-resource of one parent stays singular, as the owner of one offer does at `/offers/{offerId}/owner`, because pluralising it would claim an offer has several owners. A path segment that is a namespace rather than a collection is likewise not pluralised, as the owner-scoped prefix in `/owner/offers` is not.
-
-#### Scenario: Auditing REST paths
-- **WHEN** an operator inspects the Swagger UI for any service
-- **THEN** every collection-style endpoint shows a plural noun in its path, and no singular collection path remains
+## MODIFIED Requirements
 
 ### Requirement: Path-segment API versioning via the Spring Framework 7 native mechanism
 Every REST service (sky-booking, sky-offer, sky-message) MUST resolve the API version from a path segment, configured once in the shared library through `WebMvcConfigurer.configureApiVersioning(ApiVersionConfigurer)` so that every service installing it versions the same way. The resolver MUST read the second path segment, MUST treat it as a version only when it reads `v` followed by a digit, and MUST otherwise resolve no version, so a resource name is never mistaken for one. A configured default version MUST apply when the path carries no version, and exactly one version MUST be supported, which is version 1 and is also the default. Every controller class or method MUST declare the version it serves through the version attribute of its own mapping annotation, which keeps the version a request asks for and the version a handler serves two separate facts the framework compares rather than one fact restated. A request header MUST NOT be the resolver. The header was the design this capability originally carried and it was rejected rather than forgotten: the version is kept in the URL so the public addresses stay `/api/v1/...`, which left the frontend and every saved request working unchanged. Reintroducing a header resolver is therefore a contract change needing its own decision, not a gap to be filled in.
@@ -32,14 +20,3 @@ The literal that declaration carries MUST be the text the public path carries in
 #### Scenario: The declared literal is the one the published document carries
 - **WHEN** the API document for a service is produced from that service's controller annotations
 - **THEN** the version segment of every operation path in it reads the declared literal exactly, so it reads `v1` and names an address the service answers, and a declaration reading `1` would publish `/api/1/...` for a service still serving `/api/v1/...`
-
-### Requirement: Service-to-service endpoints share the public version prefix and are guarded by authorization
-An endpoint that exists for another service to call, such as sky-booking's lookup of an offer's owner, MUST carry the same `/api/v1` version prefix as a public endpoint, and MUST NOT live in a separate URL namespace such as `/api/internal`. The access concern MUST be carried by an authorization rule in front of the route rather than by the address, so the address says what the resource is and the security configuration says who may read it. Where the data belongs to an existing resource, the endpoint MUST be modelled as a sub-resource of it, so an offer's owner is read at `/api/v1/offers/{offerId}/owner` rather than at an address naming the caller or the access level. The authorization rule MUST be ordered ahead of any broader permit rule covering the same resource, because a permit-all on the parent collection would otherwise match the sub-resource first and leave it open. Such an endpoint MUST require an authenticated caller and MUST NOT additionally require a realm role, because the caller is a service acting for a user rather than a person holding a role, and the calling service MUST forward the incoming caller's bearer token rather than minting a credential of its own.
-
-#### Scenario: sky-booking calls sky-offer for offer ownership
-- **WHEN** sky-booking resolves the owner of an offer while placing a booking
-- **THEN** it calls `GET /api/v1/offers/{offerId}/owner` on sky-offer, and it forwards the bearer token of the caller who asked for the booking
-
-#### Scenario: The sub-resource is closed while the collection above it is open
-- **WHEN** an unauthenticated request arrives at `GET /api/v1/offers/{offerId}/owner`
-- **THEN** sky-offer answers 401, even though an unauthenticated `GET /api/v1/offers` succeeds, because the authenticated rule on the sub-resource is ordered ahead of the permit rule on the collection
