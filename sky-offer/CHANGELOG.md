@@ -167,6 +167,24 @@ contract changed. A client built against 1.x will not work against it.
   `propertyBind` classes, all of which now come from sky-common.
 
 ### Fixed
+- A partial edit against an offer whose optional column was already empty answered 500 with Spring
+  Boot's default error body rather than a problem detail. `OfferEditDTO.applyTo` merged each field
+  through `Objects.requireNonNullElseGet`, which throws a `NullPointerException` when the fallback
+  supplier itself yields null, so a payload that omitted `description`, `comment` or
+  `externalPhotoUrl` on a row where that column was null threw out of the merge before any handler
+  could see it. Those three are the fields that carry it, because every other column the merge
+  touches is NOT NULL in the schema and so can never supply a null fallback. The merge now writes a
+  field only when the payload supplies one, which is the same intent stated in a form that cannot
+  throw, and it still names neither the owner nor the photo object key. The Bruno collection never
+  reached it because every request it sends carries a full payload against a fully populated row, so
+  the case is now covered by an integration test that sends a genuinely partial payload against a
+  genuinely sparse row.
+
+  Absent still means keep, which leaves a contract gap this fix deliberately does not close: no
+  field can be set back to null through this endpoint. `description` and `comment` accept an empty
+  string and store an empty string, `externalPhotoUrl` rejects one against its absolute-URL rule,
+  and an explicit null is indistinguishable from an omission. The only photo a caller can clear is
+  the uploaded object, through `DELETE /owner/offers/{offerId}/photo`.
 - An unreachable object store answered 400 Bad Request, telling a caller its photo upload was
   malformed when the truth was that a dependency was down, and telling every client not to retry at
   the one moment retrying was right. `S3PhotoStorage` wrapped every `SdkException` in

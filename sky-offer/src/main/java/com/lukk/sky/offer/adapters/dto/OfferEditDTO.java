@@ -11,8 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @Builder
 @Data
@@ -67,14 +67,21 @@ public class OfferEditDTO {
     }
 
     public void applyTo(Offer storedOffer) {
-        storedOffer.setHotelName(Objects.requireNonNullElseGet(this.hotelName, storedOffer::getHotelName));
-        storedOffer.setCity(Objects.requireNonNullElseGet(this.city, storedOffer::getCity));
-        storedOffer.setCountry(Objects.requireNonNullElseGet(this.country, storedOffer::getCountry));
-        storedOffer.setDescription(Objects.requireNonNullElseGet(this.description, storedOffer::getDescription));
-        storedOffer.setComment(Objects.requireNonNullElseGet(this.comment, storedOffer::getComment));
-        storedOffer.setPrice(Objects.requireNonNullElseGet(this.price, storedOffer::getPrice));
-        storedOffer.setRoomCapacity(Objects.requireNonNullElseGet(this.roomCapacity, storedOffer::getRoomCapacity));
-        storedOffer.setExternalPhotoUrl(
-                Objects.requireNonNullElseGet(this.externalPhotoUrl, storedOffer::getExternalPhotoUrl));
+        applyIfSupplied(this.hotelName, storedOffer::setHotelName);
+        applyIfSupplied(this.city, storedOffer::setCity);
+        applyIfSupplied(this.country, storedOffer::setCountry);
+        applyIfSupplied(this.description, storedOffer::setDescription);
+        applyIfSupplied(this.comment, storedOffer::setComment);
+        applyIfSupplied(this.price, storedOffer::setPrice);
+        applyIfSupplied(this.roomCapacity, storedOffer::setRoomCapacity);
+        applyIfSupplied(this.externalPhotoUrl, storedOffer::setExternalPhotoUrl);
+    }
+
+    private static <T> void applyIfSupplied(T suppliedValue, Consumer<T> storedFieldSetter) {
+        if (suppliedValue == null) {
+            return;
+        }
+
+        storedFieldSetter.accept(suppliedValue);
     }
 }

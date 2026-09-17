@@ -84,6 +84,23 @@ independently-deployable services. The module version is not restated here: the 
     row change, so a commit failure in the instant after the delete leaves the object gone and the row still naming
     it. The window is one commit wide and the alternative is an after-commit listener nobody asked for. Do not
     reorder the delete to run before the save, which would widen the window rather than close it.
+- `PUT /owner/offers` is a partial update, and absent means keep the stored value. `OfferEditDTO.applyTo`
+  writes a field only when the payload supplies one, through the `applyIfSupplied` helper, and it names neither
+  `photoObjectKey` nor `ownerEmail`, so neither is reachable from a request body. Two rules hold here:
+  - Do not merge through `Objects.requireNonNullElseGet`. That was the previous shape and it threw a
+    `NullPointerException` whenever the stored value was also null, which is the exact case a partial payload
+    reaches: the supplier form of that method rejects a null result. `description`, `comment` and
+    `external_photo_url` are the three nullable columns the merge touches, so those three carried the defect,
+    and the failure surfaced as a bare 500 with Spring Boot's default error body because nothing maps a
+    `NullPointerException` to a problem detail. `OfferEditDTOTest` pins all three, and
+    `OfferIntegrationTest.updateOffer_whenPayloadIsPartialAndTheStoredRowIsSparse_thenReturn200AndKeepTheAbsentFieldsNull`
+    pins it over the whole HTTP stack, because the Bruno collection only ever sends full payloads against fully
+    populated rows and so cannot see this class of defect.
+  - Nothing can be cleared back to null through this endpoint, and that is a known contract gap rather than an
+    oversight. An explicit null is indistinguishable from an omission, `description` and `comment` accept an empty
+    string and store an empty string, and `externalPhotoUrl` accepts neither, because `@ExternalPhotoUrl` demands
+    an absolute URL. Closing it means a tri-state payload shape, which is a contract decision the owner has not
+    taken: do not add one field-clearing convention on its own.
 - The domain service publishes the Kafka event, never the controller. `OfferServicePrimary` calls
   `OfferNotificationService` at the end of `addOffer`, `editOffer` and `deleteOffer`, and `OfferApiController` injects
   no outbound port at all. It used to inject one, build the `KafkaPayloadModel` itself, serialise the DTO and format

@@ -45,6 +45,16 @@ Cluster-internal, no ingress rule of its own, still authenticated:
 |---|---|---|---|
 | `GET` | `/api/v1/offers/{offerId}/owner` | Resolve an offer's owner email, called by sky-booking | |
 
+The edit is a partial update even though the method is `PUT`. Only `id` is required, and a field is written only
+when the payload carries one, so everything you leave out keeps whatever the offer already holds, a stored null
+included. `ownerEmail` in the body is ignored and the photo object key is not part of the body at all, so an edit can
+neither move an offer to another owner nor touch its photo.
+
+Nothing can be set back to null through the edit. An explicit `null` reads the same as an omission, `description` and
+`comment` accept an empty string and store an empty string, and `externalPhotoUrl` rejects an empty value because it
+has to be an absolute `http` or `https` URL. The one photo a caller can clear is the uploaded object, with `DELETE` on
+the photo path.
+
 Photo upload accepts a `multipart/form-data` request with a single part named `file`. The uploaded bytes are stored in the S3-compatible object store under the key `offers/{offerId}/{uuid}-{filename}`, and that key is persisted in the `photo_object_key` column of the `offer` table. There is no separate photo table. The response is the updated `OfferDTO` that includes a `photoUrl` field containing a time-limited presigned GET URL (default 15 minutes, configurable via `S3_PRESIGN_TTL`).
 
 #### The server owns the key, a client refers to the photo by the offer id

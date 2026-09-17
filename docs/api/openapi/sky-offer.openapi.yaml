@@ -482,9 +482,15 @@ paths:
       operationId: editOffer
       summary: Update an offer
       description: |
-        Partial update despite being a PUT. Only `id` is required; every other field that is absent
-        or null keeps its stored value, merged through `Objects.requireNonNullElseGet`. There is no
-        way to clear a field back to null through this operation.
+        Partial update despite being a PUT. Only `id` is required; a field is written only when the
+        payload supplies it, and every field that is absent or null keeps whatever the row already
+        holds, including a stored null.
+
+        No field can be set back to null through this operation. `description` and `comment` accept
+        an empty string, which stores an empty string rather than a null, and `externalPhotoUrl`
+        accepts neither: an empty value fails its absolute-URL rule with a 400. The only stored photo
+        a caller can clear is the uploaded object, through
+        `DELETE /owner/offers/{offerId}/photo`.
 
         Absent and blank are not the same thing. `hotelName`, `city`, and `country` are NOT NULL
         columns, so a present but whitespace-only value is rejected with a 400 rather than silently

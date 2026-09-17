@@ -22,9 +22,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -69,6 +71,9 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -199,6 +204,66 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
         assertEquals(HttpStatus.OK, actual.getStatusCode());
         assertOfferFields(requireNonNull(actual.getBody()), UPDATED_NAME);
         assertKafkaPayload(actual.getBody(), record);
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/owner/offers with a partial payload against a sparse row returns 200 and keeps the absent fields null")
+    void updateOffer_whenPayloadIsPartialAndTheStoredRowIsSparse_thenReturn200AndKeepTheAbsentFieldsNull() {
+        // given
+        UUID offerId = populateSparseDatabase().getId();
+        OfferEditDTO partialEdit = OfferEditDTO.builder()
+                .id(offerId)
+                .hotelName(UPDATED_NAME)
+                .build();
+        HttpEntity<OfferEditDTO> request = new HttpEntity<>(partialEdit, createTestHttpHeaders());
+
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/owner/offers",
+                HttpMethod.PUT,
+                request,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.OK, actual.getStatusCode(), "response body was: " + actual.getBody());
+
+        OfferDTO body = objectMapper.readValue(requireNonNull(actual.getBody()), OfferDTO.class);
+        assertEquals(UPDATED_NAME, body.getHotelName());
+        assertNull(body.getDescription());
+        assertNull(body.getComment());
+        assertNull(body.getExternalPhotoUrl());
+        assertNull(body.getPhotoUrl());
+
+        Offer stored = offerRepository.findById(offerId).orElseThrow();
+        assertEquals(UPDATED_NAME, stored.getHotelName());
+        assertEquals(TEST_CITY, stored.getCity());
+        assertEquals(TEST_COUNTRY, stored.getCountry());
+        assertNull(stored.getDescription());
+        assertNull(stored.getComment());
+        assertNull(stored.getExternalPhotoUrl());
+        assertNull(stored.getPhotoObjectKey());
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/owner/offers with an unparseable body returns a 400 problem detail, never the default error body")
+    void updateOffer_whenBodyIsUnparseable_thenReturnAProblemDetail() {
+        // given
+        HttpHeaders headers = createTestHttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> request = new HttpEntity<>("{\"id\":", headers);
+
+        // when
+        ResponseEntity<String> actual = restTemplate.exchange(
+                "/api/v1/owner/offers",
+                HttpMethod.PUT,
+                request,
+                String.class);
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, actual.getStatusCode());
+        assertTrue(requireNonNull(actual.getBody()).contains("\"title\""),
+                "every failure of this endpoint is an RFC 9457 problem detail, body was: " + actual.getBody());
+        assertTrue(actual.getBody().contains("\"status\":400"));
     }
 
     @Test
@@ -376,6 +441,17 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
         offer1.setId(null);
         offer1.setPhotoObjectKey(null);
         return offerRepository.save(offer1);
+    }
+
+    private Offer populateSparseDatabase() {
+        Offer offer = getPopulatedOffer(UUID.randomUUID());
+        offer.setId(null);
+        offer.setPhotoObjectKey(null);
+        offer.setDescription(null);
+        offer.setComment(null);
+        offer.setExternalPhotoUrl(null);
+
+        return offerRepository.save(offer);
     }
 
     private void clearDatabase() {
