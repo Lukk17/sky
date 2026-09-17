@@ -18,6 +18,9 @@ Developmentkafka*
 kafka-logs/
 zookeeper-data/
 
+# Python bytecode the agent hooks in .agents/hooks write beside themselves
+__pycache__/
+
 # AWS Elastic Beanstalk leftovers (project no longer targets EB)
 Dockerrun.aws.json
 
