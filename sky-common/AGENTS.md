@@ -65,7 +65,11 @@ the cosmetic `version` in `build.gradle.kts`.
     and its fixed value of 10 in the description rather than declaring the header) and
     `@ApiDependencyBadGatewayResponse` (502). There is no `@ApiCommonSuccessResponses`: every endpoint declares
     the one success status it actually returns, and a blanket annotation would publish success codes an
-    endpoint cannot produce.
+    endpoint cannot produce. How these combine with a controller's own `@ApiResponses` is the part that is not
+    obvious: a class-level response wins over a method-level one for the same status, so an inline
+    `@ApiResponse` for a status one of these annotations already declares never reaches the document. Declare a
+    status inline only when no shared annotation on the class covers it, and when a shared annotation is wrong
+    for one operation, fix it here rather than trying to override it per method.
   - `common.config`: `CommonConfigPropertiesAutoConfiguration` binding the shared server, management and
     logging-level property records, plus the startup credential check covered in its own section below:
     `MissingCredential`, `MissingCredentialException`, `RequiredCredentials`, `DatasourceCredentialsValidator`,

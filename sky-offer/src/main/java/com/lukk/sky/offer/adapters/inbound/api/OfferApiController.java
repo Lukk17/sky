@@ -206,9 +206,6 @@ public class OfferApiController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Owner email returned",
                     content = {@Content(mediaType = "application/json")}),
-            @ApiResponse(responseCode = "401",
-                    description = "Unauthorized: missing or invalid bearer token. The body is empty.",
-                    content = @Content),
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })

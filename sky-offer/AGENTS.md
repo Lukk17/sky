@@ -203,9 +203,10 @@ independently-deployable services. The module version is not restated here: the 
   publish a 401, from the class-level `@ApiCommonErrorResponses`, because the resource-server filter chain
   rejects an unverifiable bearer token before either handler runs, and they publish no 403, because neither
   one checks a realm role. An anonymous endpoint here is one that needs no token, not one that ignores a bad
-  token. That class-level annotation is also why the inline 401 left on `getOfferOwner` no longer reaches the
-  document: springdoc applies the class-level `@ApiResponses` over a method-level one for the same status, so
-  all nine operations publish the single shared description and the inline block is dead text. The two tags
+  token. All nine operations publish that one shared 401 description, and no method here declares a 401 of its
+  own: springdoc applies the class-level `@ApiResponses` over a method-level one for the same status, so an
+  inline entry for a status a class-level annotation already declares contributes nothing. `getOfferOwner`
+  carried one until it was removed, and removing it left the generated document byte identical. The two tags
   are declared per method rather than on the class, because springdoc unions the class tag with the method
   tag, so a class-level `@Tag` would put every owner operation under `Offers` as well.
 
