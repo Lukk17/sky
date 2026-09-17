@@ -40,7 +40,7 @@ Windows:
 Two things they do not do:
 
 - They do not install an ingress controller. Do that first, see step 2 below.
-- They always install the Sealed Secrets controller and apply the sealed secrets, including under `ENV=local`. They do not generate the `sky-secrets` SealedSecret, which is not committed, so work through step 3 below before running the deploy script or it stops at that `kubectl apply`. A local k3d cluster has no key material for any of this, so follow [config/k8s/local_README.md](../local_README.md) instead of running these scripts against it.
+- They always install the Sealed Secrets controller and apply the sealed secrets, including under `ENV=local`. They do not generate the `sky-secrets` SealedSecret, which is not committed, so work through step 3 below first. Both deploy scripts check that the file is there before they touch the cluster and stop with a message naming the section that produces it, so a skipped step costs you one line of output rather than a half-installed controller. A local k3d cluster has no key material for any of this, so follow [config/k8s/local_README.md](../local_README.md) instead of running these scripts against it.
 
 One thing to know before running the deploy script: it installs the Kafka chart with its default values, and that chart pins an image tag Docker Hub no longer serves. See the Kafka section of [config/k8s/helm/helm_README.md](../helm/helm_README.md) for the overlay to pass by hand.
 
@@ -130,7 +130,9 @@ Sealed Secrets needs to create service accounts, which requires the Kubernetes E
 
 ### 3. Sealed secrets
 
-Sealed Secrets lets the encrypted form of a Kubernetes Secret live in the repository. The controller in the cluster holds the private key and decrypts it into a real Secret at apply time. The private key is never committed: [config/.gitignore](../../.gitignore) excludes `secret/sealed-private.key`, `secret/secrets.yaml`, and `secret/docker-cred.yaml`, and nothing else under `config/`.
+Sealed Secrets lets the encrypted form of a Kubernetes Secret live in the repository. The controller in the cluster holds the private key and decrypts it into a real Secret at apply time. [config/.gitignore](../../.gitignore) excludes four files, and they are the only deployment files it excludes: the two plaintext Secrets `secret/secrets.yaml` and `secret/docker-cred.yaml`, the sealing private key `secret/sealed-private.key`, and the generated `secret/sealed/sealed-secrets.yaml`.
+
+The first three are plaintext or key material, so excluding them needs no argument. The fourth runs against the tool and is worth one honest sentence: a SealedSecret is encrypted to one controller's public key, it is safe to commit by design, and committing it is the normal workflow. This repository does not, because this deploy is a script run by hand from a maintainer's own machine rather than a pipeline reading the repository, so the file only has to exist at the moment it is applied. Committing it is what produced the last one, sealed against a 2023 controller and carrying credentials from two migrations ago, still looking deployable years after it had stopped being so. Generate it, apply it, and leave it out of the history.
 
 #### Install kubeseal
 
@@ -174,7 +176,7 @@ helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secr
 
 #### Create the sealed secrets
 
-This is a prerequisite of every production deploy, not a step you take only when a credential changes. No SealedSecret for `sky-secrets` is committed: the repository ships sealed forms of the registry credential and the development TLS certificate and nothing else. Until this section has been worked through, the deploy script has nothing to apply and stops at its first `kubectl apply`.
+This is a prerequisite of every production deploy, not a step you take only when a credential changes. No SealedSecret for `sky-secrets` is committed: the repository ships sealed forms of the registry credential and the development TLS certificate and nothing else. Until this section has been worked through, the deploy script stops before it touches the cluster and points back here. The file is gitignored, so it stays untracked once you generate it, which is deliberate and is explained at the top of this section.
 
 1. Write the plain Secret to `config/k8s/secret/secrets.yaml`, which is gitignored and has never been committed. The key inventory, and what reads each key, is in [config/k8s/helm/helm_README.md](../helm/helm_README.md).
 

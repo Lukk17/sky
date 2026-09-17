@@ -7,13 +7,20 @@
 set -euo pipefail
 
 ENV="${ENV:-prod}"
+SEALED_SECRETS_FILE="./config/k8s/secret/sealed/sealed-secrets.yaml"
+
+# sealed secret preflight
+if [[ ! -f "$SEALED_SECRETS_FILE" ]]; then
+  echo "Missing $SEALED_SECRETS_FILE. It is generated per cluster and is not committed: follow \"Create the sealed secrets\" in section 3 of config/k8s/_deployment-scripts/deployment_README.md, then run this script again." >&2
+  exit 1
+fi
 
 # sealed secrets
 kubectl create namespace sealed-secrets
 kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-public.crt --key=./config/k8s/secret/sealed-private.key -n sealed-secrets
 helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secrets-controller/ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 
-kubectl apply -f ./config/k8s/secret/sealed/sealed-secrets.yaml
+kubectl apply -f "$SEALED_SECRETS_FILE"
 kubectl apply -f ./config/k8s/secret/sealed/sealed-docker-cred.yaml
 kubectl apply -f ./config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
 
