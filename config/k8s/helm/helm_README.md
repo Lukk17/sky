@@ -49,7 +49,7 @@ Then run the script as above.
 Two things the deploy scripts do not do, so plan around them:
 
 - They do not install an ingress controller. Install nginx-ingress first, see [config/k8s/local_README.md](../local_README.md) for a local cluster or [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md) for GKE.
-- They always install the Sealed Secrets controller and apply the sealed secrets from [config/k8s/secret/sealed/](../secret/sealed/), including under `ENV=local`. A local k3d cluster has no sealed-secrets key material, so use the plain committed secret and the step-by-step runbook in [config/k8s/local_README.md](../local_README.md) instead of the scripts.
+- They always install the Sealed Secrets controller and apply the sealed secrets from [config/k8s/secret/sealed/](../secret/sealed/), including under `ENV=local`. One of those three, `sealed-secrets.yaml`, is not committed, so generate it with the command in section 2 first or the deploy script stops at that `kubectl apply`. A local k3d cluster has no sealed-secrets key material at all, so use the plain committed secret and the step-by-step runbook in [config/k8s/local_README.md](../local_README.md) instead of the scripts.
 
 The upgrade script skips the sealed secrets and reinstalls nothing, it only runs `helm upgrade` per release. The remove script deletes every release plus the `sealed-secrets` namespace and the Kafka PVC.
 
@@ -133,11 +133,7 @@ helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
 helm install sealed-secrets-controller sealed-secrets/sealed-secrets -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 ```
 
-Apply the sealed secrets, which are committed:
-
-```shell
-kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
-```
+Apply the two sealed secrets that are committed:
 
 ```shell
 kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
@@ -147,11 +143,13 @@ kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
 kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
 ```
 
+The third one, `sky-secrets`, is not committed. Generate it in section 2 below and apply it there. Nothing that needs a credential starts until it exists.
+
 ---
 
 ### 2. The sky-secrets key inventory
 
-Every chart that needs a credential reads it from one Secret named `sky-secrets`. In a cluster with sealed secrets that is the decrypted [config/k8s/secret/sealed/sealed-secrets.yaml](../secret/sealed/sealed-secrets.yaml). On a local cluster it is the plain committed [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml).
+Every chart that needs a credential reads it from one Secret named `sky-secrets`. In a cluster with sealed secrets it is what the controller decrypts from the SealedSecret you generate below, which lands in [config/k8s/secret/sealed/](../secret/sealed/) as `sealed-secrets.yaml`. On a local cluster it is the plain committed [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml).
 
 | Key | Read by | Purpose |
 |---|---|---|
@@ -167,12 +165,12 @@ Every chart that needs a credential reads it from one Secret named `sky-secrets`
 | `keycloak-client-secret` | oauth2-proxy | OIDC client secret |
 | `keycloak-client-cookie-secret` | oauth2-proxy | Cookie encryption secret, 32 random bytes base64-encoded |
 
-The committed [config/k8s/secret/sealed/sealed-secrets.yaml](../secret/sealed/sealed-secrets.yaml) does not match that table. It predates both the MySQL-to-PostgreSQL move and the Auth0-to-Keycloak move, and still carries `mysql-username`, `mysql-password`, `mysql-root-user`, `mysql-root-pass`, `auth0-client-id`, `auth0-client-secret`, `auth0-client-cookie-secret`, `spring-security-user`, `spring-security-pass`, `keycloak-user`, `keycloak-pass` and `postgres-pass`. Of the eleven keys the charts read, only `postgres-user` is present. Applying it as it stands gives every pod a `CreateContainerConfigError`, so re-seal it with the command below before a production deploy and treat that as a prerequisite rather than a cleanup task. The local path is unaffected: [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml) carries all eleven current keys. `minio-root-user` and `minio-root-password` are gone from both the table and the command: the floci chart needs no credentials, so nothing read them any more, and the next reseal drops them.
+No SealedSecret for `sky-secrets` is committed, so generating one is a prerequisite of every production deploy rather than something you do when a credential changes. The file that used to sit here was sealed in July 2023, before the MySQL-to-PostgreSQL move and before the Auth0-to-Keycloak move: of the eleven keys above it carried only `postgres-user`, alongside twelve dead ones left over from MySQL, Auth0, the basic auth era, and the pre-rename `postgres-pass`. Applying it gave every pod a `CreateContainerConfigError`, so it was deleted rather than resealed with placeholder values, on the grounds that a file which looks deployable and is not costs more than an explicit step. Until the command below has been run there is nothing to apply. Neither local path is affected: a local cluster uses the plain committed [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml), which carries all eleven keys, and Docker Compose reads its credentials from inline fallbacks in [config/docker/docker-compose.yaml](../../docker/docker-compose.yaml). `minio-root-user` and `minio-root-password` appear in neither the table nor the command: the floci chart needs no credentials, so nothing reads them.
 
-Re-create and re-seal the whole Secret whenever any one credential changes. Substitute real values:
+Create the Secret and seal it, and repeat the whole command whenever any single credential changes. Seal against the certificate the target cluster's controller is using right now. The committed [config/k8s/secret/sealed-public.crt](../secret/sealed-public.crt) dates from July 2023, and a controller that has been reinstalled since then no longer holds the matching private key, so the command below omits `--cert` and lets `kubeseal` fetch the certificate through the two controller flags it already passes. The reasoning is in [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md). Substitute real values:
 
 ```shell
-kubectl create secret generic sky-secrets --from-literal=postgres-user=<postgres-user> --from-literal=postgres-password=<postgres-password> --from-literal=s3-access-key=<s3-access-key> --from-literal=s3-secret-key=<s3-secret-key> --from-literal=keycloak-admin=admin --from-literal=keycloak-admin-password=<keycloak-admin-password> --from-literal=keycloak-db-user=keycloak_user --from-literal=keycloak-db-password=<keycloak-db-password> --from-literal=keycloak-client-id=sky-backend --from-literal=keycloak-client-secret=<client-secret> --from-literal=keycloak-client-cookie-secret=<32-byte-random-base64> --dry-run=client -o yaml | kubeseal --controller-namespace sealed-secrets --controller-name sealed-secrets-controller --cert config/k8s/secret/sealed-public.crt -o yaml > config/k8s/secret/sealed/sealed-secrets.yaml
+kubectl create secret generic sky-secrets --from-literal=postgres-user=<postgres-user> --from-literal=postgres-password=<postgres-password> --from-literal=s3-access-key=<s3-access-key> --from-literal=s3-secret-key=<s3-secret-key> --from-literal=keycloak-admin=admin --from-literal=keycloak-admin-password=<keycloak-admin-password> --from-literal=keycloak-db-user=keycloak_user --from-literal=keycloak-db-password=<keycloak-db-password> --from-literal=keycloak-client-id=sky-backend --from-literal=keycloak-client-secret=<client-secret> --from-literal=keycloak-client-cookie-secret=<32-byte-random-base64> --dry-run=client -o yaml | kubeseal --controller-namespace sealed-secrets --controller-name sealed-secrets-controller -o yaml > config/k8s/secret/sealed/sealed-secrets.yaml
 ```
 
 Apply the result:
@@ -437,7 +435,7 @@ kubectl delete -f config/k8s/secret/sealed --recursive
 
 ### Troubleshooting
 
-`CreateContainerConfigError` on a pod. The pod cannot read a key from `sky-secrets`. Three causes, in the order worth checking: the committed sealed secret still has the old MySQL and Auth0 key names (see the key inventory above, this is the likely one today), the sealed secrets were never applied, or the Sealed Secrets controller was reinstalled with a new key and every secret needs re-encrypting. See [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md).
+`CreateContainerConfigError` on a pod. The pod cannot read a key from `sky-secrets`. Three causes, in the order worth checking: the `sky-secrets` SealedSecret was never generated and applied, since none is committed and generating it is a prerequisite (see the key inventory above, this is the likely one today), it was applied but the controller holds no private key matching the certificate it was sealed against so nothing decrypted, or it decrypted into a Secret that is missing a key the chart reads. See [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md).
 
 `cannot unmarshal number into Go struct field EnvVar...value of type string`. An environment value in a values file or a deployment template is unquoted. Wrap numeric-looking values in double quotes.
 

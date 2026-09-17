@@ -242,7 +242,7 @@ Sky is a deliberate learning platform rather than a production SaaS, which shape
 
 Where it wins: low infrastructure cost, since every component is self-hosted on one node pool, a hexagonal structure that is enforced rather than aspirational, a coverage floor the build enforces rather than a review, and a complete path from a commit to a real TLS domain.
 
-Where it loses: the shared database means one bad migration can affect all three stateful services, there is no per-service data isolation, there is no distributed tracing so a slow request has to be followed by correlation id across four log streams by hand, and the committed sealed secret under [config/k8s/secret/sealed/](config/k8s/secret/sealed/) still carries the MySQL-era key names, so a fresh production deploy needs it re-sealed first.
+Where it loses: the shared database means one bad migration can affect all three stateful services, there is no per-service data isolation, there is no distributed tracing so a slow request has to be followed by correlation id across four log streams by hand, and the `sky-secrets` SealedSecret is not committed at all, so a fresh production deploy has to generate and seal it before anything else, see [config/k8s/_deployment-scripts/deployment_README.md](config/k8s/_deployment-scripts/deployment_README.md).
 
 ---
 
@@ -346,7 +346,7 @@ Windows:
 .\config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
 ```
 
-The script installs, in order: the Sealed Secrets controller and the sealed secrets, Keycloak with its own backing PostgreSQL, oauth2-proxy, the app PostgreSQL and its PVC, floci, Kafka, and the four service charts. What each of those charts does is [config/k8s/helm/helm_README.md](config/k8s/helm/helm_README.md), and the surrounding GCP and sealed-secret work is [config/k8s/_deployment-scripts/deployment_README.md](config/k8s/_deployment-scripts/deployment_README.md).
+The script installs, in order: the Sealed Secrets controller and the sealed secrets, Keycloak with its own backing PostgreSQL, oauth2-proxy, the app PostgreSQL and its PVC, floci, Kafka, and the four service charts. It does not generate the `sky-secrets` SealedSecret, which is not committed and has to exist before the script runs. What each of those charts does is [config/k8s/helm/helm_README.md](config/k8s/helm/helm_README.md), and the surrounding GCP and sealed-secret work, generating that Secret included, is [config/k8s/_deployment-scripts/deployment_README.md](config/k8s/_deployment-scripts/deployment_README.md).
 
 CI is at [.github/workflows/ci.yaml](.github/workflows/ci.yaml): it builds and tests every module when a pull request is opened or reopened, on every push to a branch with an open pull request, and on demand. One run per pull request is in flight at a time, so a rapid series of pushes cancels the superseded runs. Cancellation is off for a manual dispatch and for the release gate below, so a release waiting on its tests cannot be killed by someone pushing to a pull request.
 

@@ -198,7 +198,7 @@ Deleting a pod that belongs to a Deployment or StatefulSet only makes the contro
 
 ### Secrets
 
-The cluster reads one Secret, `sky-secrets`. Its keys and what reads each of them are in [config/k8s/helm/helm_README.md](helm/helm_README.md). Creating and sealing it is in [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md).
+The cluster reads one Secret, `sky-secrets`. Its keys and what reads each of them are in [config/k8s/helm/helm_README.md](helm/helm_README.md). No sealed copy of it is committed, so it is created and sealed per cluster before the first deploy, which is in [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md).
 
 Check that a key is present without printing its value:
 

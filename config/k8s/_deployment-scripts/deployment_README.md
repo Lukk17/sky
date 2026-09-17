@@ -40,7 +40,7 @@ Windows:
 Two things they do not do:
 
 - They do not install an ingress controller. Do that first, see step 2 below.
-- They always install the Sealed Secrets controller and apply the sealed secrets, including under `ENV=local`. A local k3d cluster has no key material for that, so follow [config/k8s/local_README.md](../local_README.md) instead of running these scripts against it.
+- They always install the Sealed Secrets controller and apply the sealed secrets, including under `ENV=local`. They do not generate the `sky-secrets` SealedSecret, which is not committed, so work through step 3 below before running the deploy script or it stops at that `kubectl apply`. A local k3d cluster has no key material for any of this, so follow [config/k8s/local_README.md](../local_README.md) instead of running these scripts against it.
 
 One thing to know before running the deploy script: it installs the Kafka chart with its default values, and that chart pins an image tag Docker Hub no longer serves. See the Kafka section of [config/k8s/helm/helm_README.md](../helm/helm_README.md) for the overlay to pass by hand.
 
@@ -172,9 +172,11 @@ kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-p
 helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secrets-controller/ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 ```
 
-#### Create new sealed secrets
+#### Create the sealed secrets
 
-1. Write the plain Secret to `config/k8s/secret/secrets.yaml`, which is gitignored. The key inventory, and what reads each key, is in [config/k8s/helm/helm_README.md](../helm/helm_README.md).
+This is a prerequisite of every production deploy, not a step you take only when a credential changes. No SealedSecret for `sky-secrets` is committed: the repository ships sealed forms of the registry credential and the development TLS certificate and nothing else. Until this section has been worked through, the deploy script has nothing to apply and stops at its first `kubectl apply`.
+
+1. Write the plain Secret to `config/k8s/secret/secrets.yaml`, which is gitignored and has never been committed. The key inventory, and what reads each key, is in [config/k8s/helm/helm_README.md](../helm/helm_README.md).
 
     ```yaml
     ---
@@ -213,27 +215,33 @@ helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secr
       docker-password: "<your-password>"
     ```
 
-3. Seal both. Unix shell:
+3. Seal both against the certificate the target cluster's controller is using right now.
+
+    Sealing needs the public certificate of the sealed-secrets controller in that cluster, and [config/k8s/secret/sealed-public.crt](../secret/sealed-public.crt) is the copy generated in July 2023. A controller keeps its older private keys, so anything sealed against that certificate still decrypts for as long as the controller is the same installation it has always been. If it was ever reinstalled, its keys are new, the old private key is gone, and a Secret sealed against the committed copy will never decrypt, with nothing to see until a pod fails to start. So omit `--cert` and let `kubeseal` pull the certificate from the controller itself. `--cert` overrides `--controller-namespace` and `--controller-name`, so passing all three silently uses the file and never contacts the cluster.
+
+    Unix shell:
 
     ```shell
-    kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/secrets.yaml > config/k8s/secret/sealed/sealed-secrets.yaml
+    kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller < config/k8s/secret/secrets.yaml > config/k8s/secret/sealed/sealed-secrets.yaml
     ```
 
     ```shell
-    kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/docker-cred.yaml > config/k8s/secret/sealed/sealed-docker-cred.yaml
+    kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller < config/k8s/secret/docker-cred.yaml > config/k8s/secret/sealed/sealed-docker-cred.yaml
     ```
 
     PowerShell, where `<` is not a redirection operator:
 
     ```powershell
-    Get-Content config\k8s\secret\secrets.yaml | kubeseal --format=yaml --cert=config\k8s\secret\sealed-public.crt | Set-Content config\k8s\secret\sealed\sealed-secrets.yaml
+    Get-Content config\k8s\secret\secrets.yaml | kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller | Set-Content config\k8s\secret\sealed\sealed-secrets.yaml
     ```
 
     ```powershell
-    Get-Content config\k8s\secret\docker-cred.yaml | kubeseal --format=yaml --cert=config\k8s\secret\sealed-public.crt | Set-Content config\k8s\secret\sealed\sealed-docker-cred.yaml
+    Get-Content config\k8s\secret\docker-cred.yaml | kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller | Set-Content config\k8s\secret\sealed\sealed-docker-cred.yaml
     ```
 
-4. Apply the sealed forms, which are the ones committed:
+    Sealing offline against the committed certificate still works, by adding `--cert` back. Only do that for a controller you know has not been reinstalled since that certificate was made.
+
+4. Apply the sealed forms. `sealed-docker-cred.yaml` is committed, `sealed-secrets.yaml` is the one you just generated and is not:
 
     ```shell
     kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
@@ -253,16 +261,16 @@ The development certificate and key at [config/k8s/secret/ssl/](../secret/ssl/) 
     kubectl create secret tls dev-ssl-cert --cert=config/k8s/secret/ssl/dev-ssl-cert.crt --key=config/k8s/secret/ssl/dev-ssl-cert.key --dry-run=client -o yaml > config/k8s/secret/ssl/dev-ssl-cert.yaml
     ```
 
-2. Seal it. Unix shell:
+2. Seal it against the live controller, for the reason given in step 3 of the previous section. Unix shell:
 
     ```shell
-    kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/ssl/dev-ssl-cert.yaml > config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
+    kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller < config/k8s/secret/ssl/dev-ssl-cert.yaml > config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
     ```
 
     PowerShell:
 
     ```powershell
-    Get-Content config\k8s\secret\ssl\dev-ssl-cert.yaml | kubeseal --format=yaml --cert=config\k8s\secret\sealed-public.crt | Set-Content config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
+    Get-Content config\k8s\secret\ssl\dev-ssl-cert.yaml | kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller | Set-Content config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
     ```
 
 3. Apply it:
@@ -357,7 +365,7 @@ helm uninstall sealed-secrets-controller -n sealed-secrets
 
 ### Troubleshooting
 
-Fetching the controller's public certificate. You should be sealing with the `sealed-public.crt` you generated, but if you need to pull the certificate the controller is actually using:
+Fetching the controller's public certificate. Step 3 above seals against the live controller directly, which is the habit to keep. To hold a copy for an offline seal with `--cert`, pull it like this, and pull it again after any controller reinstall, because a stale copy produces a SealedSecret that never decrypts:
 
 ```shell
 kubeseal --fetch-cert --controller-name=sealed-secrets-controller --controller-namespace=sealed-secrets > config/k8s/secret/sky-sealed-secrets.pem
