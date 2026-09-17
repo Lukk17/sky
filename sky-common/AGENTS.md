@@ -44,6 +44,7 @@ the cosmetic `version` in `build.gradle.kts`.
     `MethodSecurityAutoConfiguration` with the `@IsUser` meta-annotation, and `SecurityUtils.currentUserEmail()`.
   - `common.web`: `SkyRestExceptionHandler` and `RestExceptionHandlerAutoConfiguration` (RFC 9457 problem details for
     every service. There is no exception-handler base class to extend, the handler is auto-configured),
+    `UnhandledExceptionResolver` (the last-resort 500, covered in its own section below),
     `CorrelationId`, `CorrelationIdFilter`, `CorrelationIdClientHttpRequestInterceptor` and
     `CorrelationIdAutoConfiguration` (read or mint `X-Correlation-Id`, put it in the MDC, pass it outbound),
     `ApiVersioningAutoConfiguration`, and `DateTimeConstants`.
@@ -66,6 +67,81 @@ the cosmetic `version` in `build.gradle.kts`.
   `KafkaNotificationPublisherTest` to prove the Jackson output is byte-identical to what the old Gson code produced.
   Every `main` source set across every module is Gson-free. Drop the test dependency and the catalogue alias once that
   wire-parity check is no longer worth keeping.
+
+## The last-resort 500
+
+`UnhandledExceptionResolver` closes the one gap left after every deliberate failure in this repository became an
+RFC 9457 problem detail: an exception nobody mapped fell through to Spring Boot's flat
+`{timestamp, status, error, path}` body on `application/json`, so one API answered in two shapes. Read this before
+moving it, because where it sits is the whole of it.
+
+### Why it is not a `@ControllerAdvice`
+
+A catch-all in an advice is the fastest way to undo every 503, 502, 409 and 404 in this repository.
+`ExceptionHandlerExceptionResolver` walks advices in `OrderComparator` order and returns from the first one whose
+resolver matches the exception at all, so a catch-all in a higher-priority advice wins over a more specific handler
+in a lower-priority one. `SkyRestExceptionHandler` and `SpringDataExceptionHandler` are both `@Order(0)`, and the
+three service `GlobalExceptionHandler` classes declare no order at all, which `ControllerAdviceBean.getOrder()`
+resolves to `Ordered.LOWEST_PRECEDENCE`. There is no order value below that, so no second advice can sort behind
+them and ties fall back to bean discovery order, which is not a contract. An advice therefore cannot be last.
+
+### Where it sits instead
+
+It is a `HandlerExceptionResolver` bean at `Ordered.LOWEST_PRECEDENCE`. `DispatcherServlet` detects every
+`HandlerExceptionResolver` bean, sorts them, and tries each until one answers. Every advice lives inside
+`ExceptionHandlerExceptionResolver`, which lives inside the `HandlerExceptionResolverComposite` that
+`WebMvcConfigurationSupport` registers at order 0. So the whole advice set, at any order, is consulted before this
+resolver runs. That is a structural guarantee rather than an ordering convention, and it is why the order value is
+the one thing about this class that must not change.
+
+Sitting outside the advice set buys one more case. `SpringDataExceptionHandler.handleUnstorableValue` rethrows a
+`DataIntegrityViolationException` it declines, and a rethrow from an `@ExceptionHandler` makes
+`ExceptionHandlerExceptionResolver` return null without trying the next advice. A catch-all advice would never see
+that exception. This resolver does, because it is a separate top-level resolver.
+
+### What it answers, and what it refuses to say
+
+500 with `application/problem+json`, `title` `Internal Server Error`, `instance` set to `request.getRequestURI()`
+the same way `RequestResponseBodyMethodProcessor` sets it for every other error, and a fixed `detail` that names no
+exception type, no message, no class and no package. An unanticipated failure is exactly where an internal message
+is most likely to carry something internal, which is the lesson `sky-offer` learned when an object store rejection
+put its vendor message into a 400 body. It carries no `Retry-After`: nothing here knows that waiting would help.
+
+The body is written through the converters of the application's own `RequestMappingHandlerAdapter`, taken lazily
+through an `ObjectProvider`, so the response uses the same Jackson setup as every other response rather than a
+second one. When no converter can write a problem detail, or the write fails, the resolver declines and the
+container error page takes over, which is the behaviour that existed before this class.
+
+### Logging
+
+It logs `unhandled_exception` at error with the full stack, the method and the path, because resolving the
+exception stops Tomcat logging it and this is now the only place the failure is visible. It puts no correlation id
+in the message, exactly like the other handlers, because every service's `logback-spring.xml` already renders
+`[%X{correlationId}]` in its pattern. That id is present here and would not be on the `/error` dispatch, where
+`CorrelationIdFilter` has already cleared the MDC, which is a second reason the resolver runs where it does. The
+same id is on the `X-Correlation-Id` response header, so the log line and the response the caller holds join on one
+value.
+
+### Where it is registered, and where it is not
+
+It is a `@Bean` on `RestExceptionHandlerAutoConfiguration`, so it inherits that class's two gates unchanged:
+`@ConditionalOnWebApplication(SERVLET)` and `@ConditionalOnClass(ResponseEntityExceptionHandler.class)`. Neither is
+a module name. `sky-gateway` is reactive and carries no spring-webmvc, so the auto-configuration class never loads
+there and the type cannot even link. `sky-notify` does have a servlet container, for its WebSocket handshake, so
+the bean exists there exactly as `SkyRestExceptionHandler` already did, and it is inert because the module maps no
+request. `UnhandledExceptionResolverInertTest` and `ServletExceptionHandlingAbsentTest` pin both halves.
+
+Registration goes in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` only when a
+new auto-configuration class is added. This is a bean on a class already listed there, so that file is unchanged,
+and `META-INF/spring.factories` is for the one `FailureAnalyzer` and nothing else.
+
+### The residual
+
+An exception thrown inside the servlet filter chain never reaches `DispatcherServlet`, so it still lands on the
+container error page with the flat body. Nothing in this repository throws there today: the security chain answers
+401 and 403 by setting a status with no body, and `CorrelationIdFilter` only reads a header. Covering it would mean
+replacing `BasicErrorController`, which would also change the shape of every static-resource 404 and remove the
+whitelabel page. That trade was not taken.
 
 ## The startup credential check
 

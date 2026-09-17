@@ -538,8 +538,9 @@ components:
         RFC 9457 problem detail, served as `application/problem+json`. Produced by
         `SkyRestExceptionHandler` in sky-common for framework and validation failures,
         `SpringDataExceptionHandler` in sky-common for an unknown sort property and for a value the
-        database cannot store (both 400), and `GlobalExceptionHandler` in this service for `MessageException` (400),
-        `MessageAccessDeniedException` (403), and `MessageNotFoundException` (404).
+        database cannot store (both 400), `GlobalExceptionHandler` in this service for `MessageException` (400),
+        `MessageAccessDeniedException` (403), and `MessageNotFoundException` (404), and
+        `UnhandledExceptionResolver` in sky-common for anything all three decline (500).
       required:
         - title
         - status
@@ -585,39 +586,6 @@ components:
           example:
             receiverEmail: "must not be blank"
 
-    ServerErrorBody:
-      type: object
-      description: |
-        Spring Boot's default error body, rendered by `BasicErrorController` for any exception the
-        shared handlers decline. It is not an RFC 9457 problem detail and it is not served as
-        `application/problem+json`, which is the one inconsistency in this API's error contract.
-      required:
-        - timestamp
-        - status
-        - error
-        - path
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-          description: When the failure was rendered, in UTC.
-          example: "2026-09-11T07:11:30.719Z"
-        status:
-          type: integer
-          format: int32
-          description: The HTTP status code, repeated in the body.
-          example: 500
-        error:
-          type: string
-          description: Reason phrase of the status code.
-          example: "Internal Server Error"
-        path:
-          type: string
-          format: uri-reference
-          description: |
-            Path of the request that failed, as the service saw it after the gateway rewrite. It is
-            the same value a problem detail carries in `instance`.
-          example: "/api/v1/messages"
 
   responses:
     UnknownSortProperty:
@@ -701,24 +669,26 @@ components:
 
     ServerError:
       description: |
-        Unexpected failure. This is the one error on this API that is not a problem detail: the shared
-        handlers turn the failures they recognise into `application/problem+json`, and everything they
-        decline falls through to Spring Boot's default error handling, which answers
-        `application/json` with the object below. Branch on the status and the `Content-Type`, never
-        on the body alone.
+        Unexpected failure. It is a problem detail like every other error on this API, so one parser
+        covers the whole surface: `UnhandledExceptionResolver` in sky-common answers anything the
+        shared handlers and this service's own handler decline.
 
-        The body carries no exception message, no constraint name, and no SQL, so there is nothing in
-        it to act on. Treat a 500 as opaque, retry once, and quote the `X-Correlation-Id` when
-        reporting it.
+        The `detail` is a fixed sentence. It carries no exception type, no exception message, no
+        constraint name, and no SQL, because an unanticipated failure is where an internal message is
+        most likely to leak. There is nothing in it to act on. Treat a 500 as opaque, retry once, and
+        quote the `X-Correlation-Id` when reporting it.
       headers:
         X-Correlation-Id:
           $ref: "#/components/headers/CorrelationId"
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ServerErrorBody"
+            $ref: "#/components/schemas/ProblemDetail"
           example:
-            timestamp: "2026-09-11T07:11:30.719Z"
+            title: "Internal Server Error"
             status: 500
-            error: "Internal Server Error"
-            path: "/api/v1/messages"
+            detail: >-
+              The server failed to complete the request for a reason it did not anticipate. The
+              failure is logged against the X-Correlation-Id this response carries. Nothing in the
+              request needs changing before it is retried.
+            instance: "/api/v1/messages"

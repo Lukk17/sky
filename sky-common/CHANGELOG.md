@@ -12,6 +12,25 @@ label the release workflow does not read. If the two disagree, this file wins.
 
 ### Added
 
+- A last-resort 500, so an exception nobody mapped stops answering in a second shape.
+  `UnhandledExceptionResolver` answers `application/problem+json` with `title` `Internal Server Error`,
+  `instance` set to the request URI, and a fixed `detail` that names no exception type, no message, no
+  class and no package, replacing Spring Boot's flat `{timestamp, status, error, path}` body on
+  `application/json`. It logs `unhandled_exception` at error with the full stack, the method and the
+  path, because resolving the exception stops Tomcat logging it and this becomes the only record of the
+  failure. The correlation id reaches the line through the `[%X{correlationId}]` each service already
+  has in its logback pattern, which is why the message does not repeat it. It is a `HandlerExceptionResolver` at `Ordered.LOWEST_PRECEDENCE` rather
+  than a `@ControllerAdvice`: `ExceptionHandlerExceptionResolver` returns from the first advice that
+  matches at all, the three service `GlobalExceptionHandler` classes declare no order and therefore sit
+  at `Ordered.LOWEST_PRECEDENCE` already, and no advice can sort behind them, so a catch-all advice
+  would have turned every 503, 502, 409 and 404 into a 500. A top-level resolver runs after the whole
+  `HandlerExceptionResolverComposite`, which holds every advice, and it also catches the
+  `DataIntegrityViolationException` that `SpringDataExceptionHandler` rethrows when it declines, which
+  no advice can see. It is a bean on `RestExceptionHandlerAutoConfiguration` and inherits that class's
+  `@ConditionalOnWebApplication(SERVLET)` and `@ConditionalOnClass(ResponseEntityExceptionHandler.class)`
+  gates unchanged, so it never loads in sky-gateway, where spring-webmvc is absent, and is inert in
+  sky-notify, which maps no request.
+
 - A startup credential check, so a missing environment variable fails the boot loudly instead of
   surfacing much later as a connection error that names nothing. Spring Boot's
   `PropertySourcesPlaceholdersResolver` builds its placeholder helper with unresolvable placeholders

@@ -10,12 +10,15 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,6 +56,44 @@ class RestExceptionHandlerAutoConfigurationTest {
         runner.run(context -> assertThat(context)
                 .hasSingleBean(SkyRestExceptionHandler.class)
                 .hasSingleBean(SpringDataExceptionHandler.class));
+    }
+
+    @Test
+    @DisplayName("registersTheLastResortResolver_whenTheApplicationIsAServletWebApplication")
+    void registersTheLastResortResolver_whenTheApplicationIsAServletWebApplication() {
+        runner.run(context -> assertThat(context).hasSingleBean(UnhandledExceptionResolver.class));
+    }
+
+    @Test
+    @DisplayName("registersNothing_whenTheApplicationIsNotAWebApplication")
+    void registersNothing_whenTheApplicationIsNotAWebApplication() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(RestExceptionHandlerAutoConfiguration.class))
+                .run(context -> assertThat(context)
+                        .as("a consumer with no servlet stack must not gain a servlet resolver")
+                        .doesNotHaveBean(UnhandledExceptionResolver.class)
+                        .doesNotHaveBean(SkyRestExceptionHandler.class));
+    }
+
+    @Test
+    @DisplayName("registersNothing_whenTheApplicationIsReactiveRatherThanServlet")
+    void registersNothing_whenTheApplicationIsReactiveRatherThanServlet() {
+        new ReactiveWebApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(RestExceptionHandlerAutoConfiguration.class))
+                .run(context -> assertThat(context)
+                        .as("sky-gateway runs on Netty, where a servlet resolver would be wired into nothing")
+                        .doesNotHaveBean(UnhandledExceptionResolver.class)
+                        .doesNotHaveBean(SkyRestExceptionHandler.class));
+    }
+
+    @Test
+    @DisplayName("registersNothing_whenSpringWebMvcIsAbsentFromTheClasspath")
+    void registersNothing_whenSpringWebMvcIsAbsentFromTheClasspath() {
+        runner.withClassLoader(new FilteredClassLoader(ResponseEntityExceptionHandler.class))
+                .run(context -> assertThat(context)
+                        .as("the whole auto-configuration is gated on a type only spring-webmvc carries")
+                        .doesNotHaveBean(UnhandledExceptionResolver.class)
+                        .doesNotHaveBean(SkyRestExceptionHandler.class));
     }
 
     @Test

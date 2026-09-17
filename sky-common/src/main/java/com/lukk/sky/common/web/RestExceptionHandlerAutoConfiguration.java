@@ -1,5 +1,6 @@
 package com.lukk.sky.common.web;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @AutoConfiguration(beforeName = "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration")
@@ -19,6 +21,14 @@ public class RestExceptionHandlerAutoConfiguration {
     @ConditionalOnMissingBean(ResponseEntityExceptionHandler.class)
     public SkyRestExceptionHandler skyRestExceptionHandler() {
         return new SkyRestExceptionHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(UnhandledExceptionResolver.class)
+    public UnhandledExceptionResolver unhandledExceptionResolver(
+            ObjectProvider<RequestMappingHandlerAdapter> handlerAdapters) {
+
+        return new UnhandledExceptionResolver(handlerAdapters);
     }
 
     @Configuration(proxyBeanMethods = false)
