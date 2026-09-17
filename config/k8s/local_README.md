@@ -4,7 +4,7 @@ Single source of commands for standing the full sky backend stack up on a local 
 
 The cluster is named `k3d-sky`. Host port 5777 maps to the cluster load balancer port 80. All traffic enters through nginx-ingress. Keycloak is the OIDC provider at `http://keycloak.127.0.0.1.nip.io:5777`. The nip.io domain resolves to 127.0.0.1 on the host without touching the hosts file, and CoreDNS resolves it to the nginx-ingress ClusterIP inside the cluster so services can reach Keycloak for OIDC discovery.
 
-Every command below is a single line and runs unchanged in a Unix shell and in PowerShell 7. Run all of them from the repository root. The CoreDNS patch in step 6 is the one exception, and it says so where it happens: it carries JSON inside an argument, so it ships one form per shell, and Windows PowerShell 5.1 can run neither of them.
+Every command below is a single line and runs unchanged in a Unix shell and in PowerShell 7. Run all of them from the repository root.
 
 For running the services without Kubernetes (Gradle or Docker Compose) see [config/local-dev/local_README.md](../local-dev/local_README.md). For the chart-by-chart reference see [config/k8s/helm/helm_README.md](helm/helm_README.md).
 
@@ -145,44 +145,32 @@ The certificate carries `CN=localhost` and is valid for ten years. Its subject a
 
 ---
 
-### 6. Patch CoreDNS for in-cluster Keycloak resolution
+### 6. Give CoreDNS an in-cluster record for Keycloak
 
-Get the nginx-ingress ClusterIP:
+`keycloak.127.0.0.1.nip.io` resolves to 127.0.0.1 everywhere, which is right on the host and wrong in a pod, where 127.0.0.1 is the pod itself. Without a record of its own, a service fetching the token signing keys asks itself for them. CoreDNS has to send that name to nginx-ingress instead.
 
-```bash
-kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}'
-```
-
-Print the host records CoreDNS already holds, because a merge patch on `NodeHosts` replaces that whole value rather than adding a line to it:
+The record is committed at [config/k8s/local/coredns-custom-local.yaml](local/coredns-custom-local.yaml), so there is no address to look up and nothing to paste:
 
 ```bash
-kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}'
-```
-
-k3d puts one record per cluster node plus `192.168.65.254 host.k3d.internal` in there, and a patch that sends only the Keycloak line deletes every one of them. So the new value has to carry all of those plus one more. The command below reads the current records, drops any Keycloak record left by an earlier run so it is safe to repeat, and appends one line. Replace `NGINX_CLUSTER_IP` with the ClusterIP from the command above. Unix shell:
-
-```bash
-kubectl patch configmap coredns -n kube-system --type merge -p "{\"data\":{\"NodeHosts\":\"$(kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}' | grep -v ' keycloak.127.0.0.1.nip.io$' | awk '{printf "%s\\\\n", $0}')NGINX_CLUSTER_IP keycloak.127.0.0.1.nip.io\\n\"}}"
-```
-
-PowerShell 7:
-
-```powershell
-kubectl patch configmap coredns -n kube-system --type merge -p ('{"data":{"NodeHosts":"' + ((((kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}') -notmatch ' keycloak\.127\.0\.0\.1\.nip\.io$') | ForEach-Object { $_ + '\n' }) -join '') + 'NGINX_CLUSTER_IP keycloak.127.0.0.1.nip.io\n"}}')
-```
-
-If you would rather see the exact value you are sending, write the patch out by hand with every record from the printout, each one followed by `\n`, and the Keycloak line last.
-
-Two routes do not work here, and neither failure message points at why. `kubectl patch --patch-file /dev/stdin` fails in Git Bash on Windows with `error: unable to read patch file: open /proc/self/fd/0: The system cannot find the path specified.`, so the patch has to go in inline through `-p`. And Windows PowerShell 5.1 strips the inner double quotes when it passes a JSON argument to a native executable, so every form of this patch fails there, the plain one with `error decoding patch: invalid character 'd' looking for beginning of object key string`. Use Git Bash, WSL or PowerShell 7 for this step.
-
-Check the merged value before restarting. Every record from the printout must still be there, with one Keycloak line added:
-
-```bash
-kubectl get configmap coredns -n kube-system -o jsonpath='{.data.NodeHosts}'
+kubectl apply -f config/k8s/local/coredns-custom-local.yaml
 ```
 
 ```bash
 kubectl rollout restart deployment coredns -n kube-system
+```
+
+It goes into a ConfigMap named `coredns-custom` rather than into the `NodeHosts` key of the `coredns` ConfigMap, and that is the whole reason a cluster restart no longer breaks authentication. The k3s Corefile ends with `import /etc/coredns/custom/*.override` inside the server block and `import /etc/coredns/custom/*.server` outside it, and both read a directory the CoreDNS Deployment mounts from `coredns-custom` as an optional volume. k3d neither creates that ConfigMap nor touches it, while it rewrites `NodeHosts` on every `k3d cluster start`. A record put in `NodeHosts` is therefore gone by the next start, and item 7 under [Known issues](#known-issues-and-design-notes) is what that looks like from the caller's side.
+
+The record is a rewrite to the ingress controller's Service name, not a host record pointing at its ClusterIP. The upstream chart allocates no fixed address, its `controller.service.clusterIP` is empty, so reinstalling nginx-ingress hands out a different ClusterIP and any pasted address goes stale. `ingress-nginx-controller.ingress-nginx.svc.cluster.local` is fixed by the release name and namespace step 3 installs under, so it survives that.
+
+Verifying needs a pod, so run this once the service pods are up in step 8. Any of the four answers the same, and the address must be the ingress controller's ClusterIP rather than 127.0.0.1:
+
+```bash
+kubectl exec deploy/sky-offer-deployment -- getent hosts keycloak.127.0.0.1.nip.io
+```
+
+```bash
+kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}'
 ```
 
 ---
@@ -383,6 +371,8 @@ k3d cluster stop sky
 k3d cluster start sky
 ```
 
+That claim is only true because the Keycloak record lives in the `coredns-custom` ConfigMap from step 6. k3d rewrites the `NodeHosts` key of the `coredns` ConfigMap on every start, so the same record put there instead is gone the moment the cluster comes back, and the stack answers 401 on every authenticated call while looking healthy. That is item 7 under [Known issues](#known-issues-and-design-notes).
+
 Docker Desktop will not show the k3d containers as one grouped stack with a single toggle, because k3d does not tag them as a Compose project and labelling them as one would fight k3d's own lifecycle management. The two commands above are the equivalent single control.
 
 ---
@@ -456,6 +446,18 @@ k3d cluster delete sky
     ```bash
     kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'
     ```
+
+7. Every authenticated call answers 401 while the token endpoint still answers 200, after a cluster restart, on a cluster that was working. Nothing was redeployed and nothing in the charts changed. Minting a token keeps succeeding because the collection asks the host ingress for it, so authentication looks healthy right up to the point it is not, and the symptom points at Keycloak while the cause is DNS.
+
+    CoreDNS has no record for `keycloak.127.0.0.1.nip.io`, so the name falls through to public nip.io and resolves to 127.0.0.1. In a pod that is the pod itself, so every service fetches the token signing keys from its own port 80, gets nothing, and rejects every token it is handed.
+
+    One command tells it apart, and any answer other than the ingress controller's ClusterIP is this issue, 127.0.0.1 above all:
+
+    ```bash
+    kubectl exec deploy/sky-offer-deployment -- getent hosts keycloak.127.0.0.1.nip.io
+    ```
+
+    The fix is step 6: apply the `coredns-custom` ConfigMap and restart CoreDNS. Do not put the record back into the `NodeHosts` key of the `coredns` ConfigMap, which is where this page used to send it. k3d re-injects its own host records into that key on every `k3d cluster start`, saying so in its own startup log as injecting records for host aliases and network members into the CoreDNS configmap, and the added line goes with them. That is what makes this reappear on a cluster that was fine the day before.
 
 ---
 
