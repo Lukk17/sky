@@ -110,6 +110,11 @@ label the release workflow does not read. If the two disagree, this file wins.
   `@ConditionalOnWebApplication`, which would either gate nothing or take the log away from the gateway.
 
 ### Fixed
+- `@ApiCommonErrorResponses` documents the 500 as the problem detail it now is, with the
+  `application/problem+json` media type and the `ProblemDetail` schema the 400 already carried. It
+  still told every reader of every service's Swagger UI that a 500 is Spring Boot's default error
+  object and not a problem detail, which stopped being true when `UnhandledExceptionResolver`
+  landed, so the live documentation contradicted the behaviour on all four services.
 - Event timestamps are written as `timestamptz` rather than a naive local type, so a
   timestamp no longer shifts meaning when the writer and the reader disagree about the
   server time zone.

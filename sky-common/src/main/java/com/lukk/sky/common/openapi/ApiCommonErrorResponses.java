@@ -22,9 +22,13 @@ import java.lang.annotation.Target;
                         schema = @Schema(implementation = ProblemDetail.class))),
         @ApiResponse(
                 responseCode = "500",
-                description = "Internal Server Error: unexpected failure. The body is Spring Boot's "
-                        + "default error object, not a problem detail, so treat a 500 as opaque.",
-                content = @Content)
+                description = "Internal Server Error: unexpected failure. The body is a problem detail "
+                        + "like every other error on this API. Its detail is a fixed sentence carrying no "
+                        + "exception type, no message and no class name, so treat a 500 as opaque, retry "
+                        + "once, and quote the X-Correlation-Id when reporting it.",
+                content = @Content(
+                        mediaType = "application/problem+json",
+                        schema = @Schema(implementation = ProblemDetail.class)))
 })
 public @interface ApiCommonErrorResponses {
 }
