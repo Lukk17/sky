@@ -57,6 +57,19 @@ label the release workflow does not read. If the two disagree, this file wins.
   runtime classpath of the three stateful services through the JPA starter, and the `compileOnly`
   declaration keeps it off sky-notify and sky-gateway exactly as the rest of this module's
   dependencies are kept off consumers that do not need them.
+- Four more OpenAPI response annotations in `common.openapi`, so a status that two services both answer is
+  described once rather than copied into each controller. `@ApiConflictResponse` carries the 409 both
+  sky-booking and sky-offer raise when a well-formed write loses a race, `@ApiUnsupportedMediaTypeResponse`
+  the 415 every operation with a request body can answer, `@ApiDependencyUnavailableResponse` the 503
+  sky-booking answers for an unreachable sky-offer and sky-offer answers for an unusable object store, and
+  `@ApiDependencyBadGatewayResponse` the 502 each of them answers when that dependency replies in a way it
+  cannot act on. Their wording names no particular dependency on purpose, because one annotation has to read
+  correctly above an offer lookup and above an object store alike. They join `@ApiCommonErrorResponses` and
+  `@ApiSecuredErrorResponses`, and they are registered nowhere: a plain annotation is not an
+  auto-configuration, so
+  `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` is unchanged. The 503
+  names `Retry-After` and its fixed value of 10 in its description rather than declaring the header, because
+  the response headers across this contract are a separate piece of work nobody has taken yet.
 - This module is new in 2.0.0. Before it, each of the four services carried its own copy of
   the same wire types, property bindings, exception handling and security wiring, and the
   copies had already drifted: three different `KafkaPayloadModel` records, three different

@@ -1,744 +1,380 @@
-openapi: "3.1.0"
-
+openapi: 3.1.0
 info:
+  description: Sky platform REST API secured with Keycloak JWT bearer tokens.
   title: sky-booking
   version: v1
-  description: |
-    Booking service for the Sky platform. Authenticated users book offers held by sky-offer and
-    manage the bookings they created.
-
-    Identity is never sent by the caller. Every operation resolves the acting user from the `email`
-    claim of the validated Keycloak JWT (`SecurityUtils.currentUserEmail()`). There is no
-    `x-auth-request-email` header and no user identifier in any request body or path.
-
-    Every identifier in this API is a UUID. Booking ids and offer ids are `uuid` strings on the wire
-    and `UUID` columns in PostgreSQL. Nothing in this contract is a numeric id.
-
-    Versioning: the major version lives in the path. Services publish `/api/v1/**` and the gateway
-    rewrites `/booking/api/**` onto it. Only version `1` is currently supported; the default version
-    is also `1`. A breaking change gets a new path segment rather than a change to this one.
-
-    See [docs/api/README.md](../README.md) for how to mint a token and run the Bruno collection.
-
 servers:
-  - url: http://localhost:5777/booking/api
-    description: Local, through sky-gateway on port 5777 (rewrites to /api/v1)
-  - url: https://skycloud.luksarna.com/booking/api
-    description: Production, GCP via nginx-ingress (rewrites to /api/v1)
-  - url: http://localhost:5555/api/v1
-    description: Local, straight at the service, bypassing the gateway
-
+- description: Generated server url
+  url: http://localhost:7971
 security:
-  - bearerAuth: []
-
+- bearerAuth: []
 tags:
-  - name: Bookings
-    description: Booking lifecycle. Create, list, and cancel bookings placed against offers.
-
+- description: "Booking lifecycle: create, list, and cancel bookings placed against\
+    \ offers."
+  name: Bookings
 paths:
-  /user/bookings:
-    get:
-      tags: [Bookings]
-      operationId: getUserBookings
-      summary: List the authenticated user's bookings
-      description: |
-        Returns a page of the bookings whose `bookingUser` equals the `email` claim of the caller's
-        JWT. Never returns another user's bookings, and there is no way to ask for them.
-
-        Requires the realm role `user` or `admin`. A valid token without either role gets 403.
-      parameters:
-        - $ref: "#/components/parameters/Page"
-        - $ref: "#/components/parameters/Size"
-        - $ref: "#/components/parameters/Sort"
-        - $ref: "#/components/parameters/CorrelationId"
-      responses:
-        "200":
-          description: A page of the caller's bookings. `content` is empty when the user has none.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageOfBookingDTO"
-              example:
-                content:
-                  - id: "9b1f6b2a-7c3d-4e58-8a91-2f0c5d7e4b31"
-                    offerId: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                    bookedDate: "2027-08-15"
-                    bookingUser: "traveller@example.com"
-                    ownerEmail: "owner@example.com"
-                totalElements: 1
-                totalPages: 1
-                size: 20
-                number: 0
-                first: true
-                last: true
-                numberOfElements: 1
-                empty: false
-        "400":
-          $ref: "#/components/responses/UnknownSortProperty"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "500":
-          $ref: "#/components/responses/ServerError"
-
-  /bookings:
+  /api/v1/bookings:
     post:
-      tags: [Bookings]
-      operationId: createBooking
-      summary: Book an offer for a date
-      description: |
-        Books the offer identified by `offerId` for the authenticated user on `dateToBook`.
-
-        `dateToBook` is bound as a date, so a value that is not `yyyy-MM-dd` fails while the body is
-        being read and never reaches the service.
-
-        The service first resolves the offer owner by calling
-        `GET /api/v1/offers/{offerId}/owner` on sky-offer, forwarding the caller's bearer token,
-        wrapped in a Resilience4j retry and circuit breaker. It then rejects a date in the past with a
-        400 and a date already booked on that offer with a 409, saves the booking with a `BOOKED`
-        event, and publishes a Kafka notification consumed by sky-notify.
-
-        Four outcomes of that lookup are distinguishable by status, and none of them is a 400. An
-        offer sky-offer does not hold is a 404. An unreachable sky-offer, meaning a refused
-        connection, a connect or read timeout, a 5xx after the retries are exhausted, or an open
-        circuit breaker, is a 503 with `Retry-After: 10`. Any other status sky-offer answers with is a
-        502. A 400 on this operation always means the request itself was wrong.
-
-        Requires the realm role `user` or `admin`.
-      parameters:
-        - $ref: "#/components/parameters/CorrelationId"
+      operationId: bookOffer
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/BookingPayload"
-            example:
-              offerId: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-              dateToBook: "2027-08-15"
+        required: true
       responses:
         "201":
-          description: Booking created.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/BookingDTO"
-              example:
-                id: "9b1f6b2a-7c3d-4e58-8a91-2f0c5d7e4b31"
-                offerId: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                bookedDate: "2027-08-15"
-                bookingUser: "traveller@example.com"
-                ownerEmail: "owner@example.com"
+          description: Booking created
         "400":
-          description: |
-            The body could not be read, Bean Validation rejected the payload, or the domain rejected
-            the booking.
-
-            A `dateToBook` that is not a `yyyy-MM-dd` date fails at bind time and carries
-            `detail: "Failed to read request"` with no `field-errors`, because the value never became
-            a field. A missing or null `dateToBook`, or a missing `offerId`, fails Bean Validation and
-            carries `detail: "Validation failed"` with a `field-errors` object.
-
-            Domain failures (`BookingException`) carry the message in `detail` and no `field-errors`.
-            The one domain case left here is a date in the past, which really is a malformed request.
-            A date the offer already holds a booking on is a 409, not a 400, because the request is
-            well formed and only lost a race. An offer that does not exist is a 404, and an offer
-            service that is unreachable or answers an unusable status is a 503 or a 502, never a
-            400.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              examples:
-                validationFailure:
-                  summary: Bean Validation rejected the payload
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Validation failed"
-                    instance: "/api/v1/bookings"
-                    field-errors:
-                      offerId: "must not be null"
-                      dateToBook: "must not be null"
-                unparseableDate:
-                  summary: dateToBook is not a yyyy-MM-dd date
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Failed to read request"
-                    instance: "/api/v1/bookings"
+          description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          description: sky-offer has no offer with that id, so there is nothing to book.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Not Found"
-                status: 404
-                detail: "Offer not found for offerId=3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                instance: "/api/v1/bookings"
-        "409":
-          description: |
-            The request is well formed and lost a race. Two causes land here and both mean the
-            caller should look at the current state before trying again, so neither carries
-            `Retry-After`: waiting changes nothing, a fresh read does.
-
-            The offer already holds a booking on `dateToBook`
-            (`BookingDateAlreadyBookedException`). Somebody booked that date first, so the caller
-            should pick another date rather than repeat this request. This case used to answer 400,
-            which told a client its request was malformed when it was not.
-
-            The booking's event sequence moved while the write was in flight
-            (`EventSequenceConflictException`), after twenty append attempts against the event log.
-            The `detail` is fixed and says to re-read before retrying, because repeating the same
-            write against a stale sequence loses the same race again.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              examples:
-                alreadyBooked:
-                  summary: The offer already has a booking on that date
-                  value:
-                    title: "Conflict"
-                    status: 409
-                    detail: "Offer you try to book was already booked on that date."
-                    instance: "/api/v1/bookings"
-                eventSequenceConflict:
-                  summary: A concurrent write advanced the event sequence
-                  value:
-                    title: "Conflict"
-                    status: 409
-                    detail: "A concurrent write advanced the booking event sequence. Re-read the booking and retry the change against its current state."
-                    instance: "/api/v1/bookings"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "500":
-          $ref: "#/components/responses/ServerError"
-        "502":
-          description: |
-            sky-offer answered with a status the booking flow cannot act on, which is any client-error
-            status other than 404, for example a 400 or a 403 on the owner lookup. The caller's own
-            request was well formed, so retrying it unchanged will not help: the cause is between the
-            two services.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Bad Gateway"
-                status: 502
-                detail: "Could not resolve offer owner for offerId=3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                instance: "/api/v1/bookings"
-        "503":
-          description: |
-            sky-offer could not be reached, so the owner of the offer is unknown and no booking was
-            written. Covers a refused connection, a connect timeout, a read timeout, a 5xx after the
-            three retry attempts are exhausted, and an open circuit breaker.
-
-            The request itself was well formed. Retry it unchanged after the number of seconds in
-            `Retry-After`.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying the same request. Always `10`.
-              schema:
-                type: integer
-              example: 10
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Service Unavailable"
-                status: 503
-                detail: "Offer service unavailable for offerId=3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                instance: "/api/v1/bookings"
-
-  /bookings/{bookingId}:
-    delete:
-      tags: [Bookings]
-      operationId: deleteBooking
-      summary: Cancel a booking
-      description: |
-        Deletes the booking and publishes a Kafka notification. The caller must be either the user
-        who made the booking or the owner of the booked offer, both compared against the JWT `email`
-        claim. Any other authenticated caller gets 403.
-
-        Returns 204 with an empty body. Nothing is echoed back.
-
-        Requires the realm role `user` or `admin`.
-      parameters:
-        - name: bookingId
-          in: path
-          required: true
-          description: Identifier of the booking to cancel.
-          schema:
-            type: string
-            format: uuid
-          example: "9b1f6b2a-7c3d-4e58-8a91-2f0c5d7e4b31"
-        - $ref: "#/components/parameters/CorrelationId"
-      responses:
-        "204":
-          description: Booking deleted. Empty body.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-        "400":
-          description: |
-            `bookingId` is not a UUID.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Bad Request"
-                status: 400
-                detail: "Failed to convert 'bookingId' with value: 'not-a-uuid'"
-                instance: "/api/v1/bookings/not-a-uuid"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          description: |
-            Either the token carries no `user` or `admin` realm role, which Spring Security answers
-            with an empty body, or the caller neither booked the offer nor owns it, which the service
-            answers with the problem detail below.
-
-            The detail names neither the caller nor the booking: a denial is never a place to hand
-            out an email address.
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
           headers:
             WWW-Authenticate:
-              description: |
-                Bearer challenge with `error="insufficient_scope"`. Present only on the realm-role
-                denial, absent when the service itself refused the operation.
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
               schema:
                 type: string
-              example: 'Bearer error="insufficient_scope", error_description="The request requires higher privileges than provided by the access token."'
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+              style: simple
+        "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Forbidden"
-                status: 403
-                detail: "You neither booked this offer nor own it, so you cannot cancel this booking."
-                instance: "/api/v1/bookings/9b1f6b2a-7c3d-4e58-8a91-2f0c5d7e4b31"
-        "404":
-          description: No booking with that id exists.
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
           headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: No offer with that id exists in sky-offer
+        "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Not Found"
-                status: 404
-                detail: "No booking with ID: 9b1f6b2a-7c3d-4e58-8a91-2f0c5d7e4b31 found."
-                instance: "/api/v1/bookings/9b1f6b2a-7c3d-4e58-8a91-2f0c5d7e4b31"
+          description: "Conflict: the request is well formed and lost a race. Either\
+            \ another writer advanced the event sequence of the resource, or another\
+            \ caller already claimed the state this request asked for. There is no\
+            \ Retry-After, because waiting changes nothing: re-read the resource and\
+            \ send the change again against its current state. The detail is a fixed\
+            \ sentence rather than the internal message."
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Unsupported Media Type: the request body was not sent in the\
+            \ media type this operation consumes."
         "500":
-          $ref: "#/components/responses/ServerError"
-
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: |
-        Keycloak-issued access token, validated by the service itself as an OAuth2 resource server
-        against the issuer in `OAUTH2_ISSUER_URI`. Locally that is
-        `https://keycloak.test:9443/realms/sky`, in production
-        `https://keycloak.luksarna.com/realms/sky`.
-
-        Mint one with the password grant against
-        `{issuer}/protocol/openid-connect/token` using the `sky-backend` client, or with the
-        client-credentials grant for machine callers. Tokens live 300 seconds.
-
-        Two claims matter:
-
-        - `email` identifies the acting user. Every operation reads it; a token without it fails
-          the request. The Keycloak realm needs the email mapper on the client scope.
-        - `realm_access.roles` carries the realm roles. `KeycloakRealmRoleConverter` uppercases each
-          one and prefixes `ROLE_`, so realm role `user` becomes `ROLE_USER`. Every operation here
-          requires `user` or `admin`.
-
-  headers:
-    CorrelationId:
-      description: |
-        Echo of the request's `X-Correlation-Id`, or a freshly generated UUID when the request did
-        not carry one. Present on every response, including errors. Quote it in a bug report.
-      schema:
-        type: string
-      example: "0d6d4e3b-2c9a-4e77-b0a1-7b4c5d6e7f80"
-
-  parameters:
-    Page:
-      name: page
-      in: query
-      required: false
-      description: Zero-based page index.
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
-      example: 0
-    Size:
-      name: size
-      in: query
-      required: false
-      description: |
-        Page size. Defaults to 20 when omitted and is capped server-side at 2000; a larger value is
-        silently reduced rather than rejected.
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 2000
-        default: 20
-      example: 20
-    Sort:
-      name: sort
-      in: query
-      required: false
-      description: |
-        Spring Data sort expression, `property,(asc|desc)`, for example `bookedDate,desc`. Repeat
-        the parameter for a multi-property sort. Sortable properties are the persisted `Booking`
-        fields: `id`, `offerId`, `bookedDate`, `bookingUser`, `ownerEmail`. Unsorted by default, so
-        page order is not guaranteed stable across pages without a `sort`.
-
-        A property the entity does not have is a 400. `SpringDataExceptionHandler` in sky-common
-        turns Spring Data's `PropertyReferenceException` into a problem detail whose `detail` names
-        the offending property, for example `Unknown sort property 'bookedDatee'.`
-      schema:
-        type: array
-        items:
-          type: string
-      style: form
-      explode: true
-      example: ["bookedDate,desc"]
-    CorrelationId:
-      name: X-Correlation-Id
-      in: header
-      required: false
-      description: |
-        Optional request correlation id. When absent the service generates a UUID. Either way the
-        value is echoed on the response and stamped on every log line for the request.
-      schema:
-        type: string
-      example: "0d6d4e3b-2c9a-4e77-b0a1-7b4c5d6e7f80"
-
-  schemas:
-    BookingPayload:
-      type: object
-      description: |
-        Request body of `POST /bookings`. Java record `BookingPayload(UUID offerId, LocalDate dateToBook)`.
-        There is no field for the booking user; it comes from the JWT.
-      required:
-        - offerId
-        - dateToBook
-      properties:
-        offerId:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+        "502":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Gateway: a dependency this operation needs answered, and\
+            \ answered in a way the service cannot act on. The caller's own request\
+            \ was well formed and retrying it unchanged will not help, so there is\
+            \ no Retry-After. The cause is between the service and its dependency."
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      summary: Create new booking
+      tags:
+      - Bookings
+  /api/v1/bookings/{bookingId}:
+    delete:
+      operationId: removeBooking
+      parameters:
+      - in: path
+        name: bookingId
+        required: true
+        schema:
           type: string
           format: uuid
-          description: |
-            Identifier of the offer to book, as returned by sky-offer. `@NotNull`. A string that is
-            not a UUID is rejected while parsing the body, which is a 400 without `field-errors`.
-          example: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-        dateToBook:
-          type: string
-          format: date
-          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
-          description: |
-            Date to book, `yyyy-MM-dd`. Bound to a `LocalDate` by Jackson, so a value that is not a
-            date is rejected while the body is read and returns 400 with
-            `detail: "Failed to read request"`. `@NotNull`, so omitting it returns 400 with a
-            `field-errors` entry. Must not be in the past, which the domain checks and reports as a
-            400 carrying its own message.
-          example: "2027-08-15"
-
+      responses:
+        "204":
+          description: Booking deleted
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Booking not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Delete booking
+      tags:
+      - Bookings
+  /api/v1/user/bookings:
+    get:
+      operationId: getBookedOffers
+      parameters:
+      - in: query
+        name: pageable
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: Found user bookings
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Get all user's bookings (paginated)
+      tags:
+      - Bookings
+components:
+  schemas:
     BookingDTO:
       type: object
-      description: |
-        A booking as returned by every successful read and by `POST /bookings`. Serialized with
-        `@JsonInclude(NON_NULL)`, so a null field is omitted from the JSON rather than sent as null.
-      required:
-        - id
-        - offerId
-        - bookedDate
-        - bookingUser
-        - ownerEmail
       properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-          description: Booking identifier, generated by the database (`GenerationType.UUID`).
-          example: "9b1f6b2a-7c3d-4e58-8a91-2f0c5d7e4b31"
-        offerId:
-          type: string
-          format: uuid
-          description: Identifier of the booked offer, the same UUID sky-offer uses.
-          example: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
         bookedDate:
           type: string
           format: date
-          description: |
-            Booked date rendered by `LocalDate.toString()`, which is ISO-8601 `yyyy-MM-dd`.
-          example: "2027-08-15"
+          minLength: 1
         bookingUser:
           type: string
           format: email
-          readOnly: true
-          description: Email of the user who created the booking, taken from the JWT `email` claim.
-          example: "traveller@example.com"
+          minLength: 1
+        id:
+          type: string
+          format: uuid
+        offerId:
+          type: string
+          format: uuid
         ownerEmail:
           type: string
           format: email
-          readOnly: true
-          description: Email of the offer owner, resolved from sky-offer when the booking was created.
-          example: "owner@example.com"
-
-    PageOfBookingDTO:
-      type: object
-      description: |
-        Spring Data `Page<BookingDTO>`, serialized directly by Jackson. The fields below are the
-        stable part of the envelope. The serialization also emits Spring Data internals such as
-        `pageable` and `sort`; treat those as framework detail and do not build against them.
-      additionalProperties: true
       required:
-        - content
-        - totalElements
-        - totalPages
-        - size
-        - number
+      - bookedDate
+      - bookingUser
+      - id
+      - offerId
+      - ownerEmail
+    BookingPayload:
+      type: object
+      properties:
+        dateToBook:
+          type: string
+          format: date
+        offerId:
+          type: string
+          format: uuid
+      required:
+      - dateToBook
+      - offerId
+    Page:
+      type: object
       properties:
         content:
           type: array
-          items:
-            $ref: "#/components/schemas/BookingDTO"
-        totalElements:
-          type: integer
-          format: int64
-          description: Total number of bookings matching the query across every page.
-          example: 5
-        totalPages:
-          type: integer
-          format: int32
-          example: 1
-        size:
-          type: integer
-          format: int32
-          description: Requested page size.
-          example: 20
+          items: {}
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
         number:
           type: integer
           format: int32
-          description: Zero-based index of this page.
-          example: 0
-        first:
-          type: boolean
-          example: true
-        last:
-          type: boolean
-          example: true
         numberOfElements:
           type: integer
           format: int32
-          description: Number of entries in `content` on this page.
-          example: 5
-        empty:
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        paged:
           type: boolean
-          example: false
-
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
     ProblemDetail:
       type: object
-      description: |
-        RFC 9457 problem detail, served as `application/problem+json`. Produced by
-        `SkyRestExceptionHandler` in sky-common for framework and validation failures,
-        `SpringDataExceptionHandler` in sky-common for an unknown sort property (400),
-        `GlobalExceptionHandler` in this service for `BookingException` (400),
-        `BookingAccessDeniedException` (403), and both `BookingNotFoundException` and
-        `OfferNotFoundException` (404), and `UnhandledExceptionResolver` in sky-common for anything
-        all three decline (500).
-      required:
-        - title
-        - status
       properties:
-        type:
+        detail:
           type: string
-          format: uri-reference
-          description: |
-            Absent from every response the services send. Spring Framework 7 leaves the member unset,
-            and RFC 9457 says a consumer assumes `about:blank` when it is absent. The services publish
-            no per-problem type URIs, so branch on `status` plus the presence of `field-errors`.
-        title:
+        instance:
           type: string
-          description: Reason phrase of the status code, for example `Bad Request` or `Not Found`.
-          example: "Bad Request"
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
         status:
           type: integer
           format: int32
-          description: The HTTP status code, repeated in the body.
-          example: 400
-        detail:
+        title:
           type: string
-          description: |
-            What went wrong on this occurrence. Bean Validation failures always use the fixed string
-            `Validation failed` and put the per-field messages in `field-errors`. Domain failures put
-            the exception message here.
-          example: "Validation failed"
-        instance:
+        type:
           type: string
-          format: uri-reference
-          description: |
-            Path of the request that failed, as the service saw it after the gateway rewrite. It is
-            `/api/v1/...`, not the `/booking/api/...` path the caller used.
-          example: "/api/v1/bookings"
-        field-errors:
-          type: object
-          description: |
-            Present only on a Bean Validation failure. One entry per rejected field, keyed by the
-            field name, valued with the constraint message. The key is the property path Spring
-            reports, so a nested field appears as `parent.child`.
-          additionalProperties:
-            type: string
-          example:
-            offerId: "must not be null"
-            dateToBook: "must not be null"
-
-
-  responses:
-    UnknownSortProperty:
-      description: |
-        The `sort` parameter names a property the entity does not have. `SpringDataExceptionHandler`
-        in sky-common turns Spring Data's `PropertyReferenceException` into the problem detail below.
-        The `detail` quotes the property only when the name is made of letters, digits, underscores,
-        and dots; any other name is described generically so nothing a caller sent is reflected back.
-        `instance` is the path of the request that failed.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          examples:
-            unknownProperty:
-              summary: sort named a property the entity does not have
-              value:
-                title: "Bad Request"
-                status: 400
-                detail: "Unknown sort property 'bookedDatee'."
-                instance: "/api/v1/user/bookings"
-            unquotableProperty:
-              summary: The property name was not safe to quote back
-              value:
-                title: "Bad Request"
-                status: 400
-                detail: "The requested sort property is not a sortable property of this resource."
-                instance: "/api/v1/user/bookings"
-
-    Unauthorized:
-      description: |
-        No bearer token, or a token that failed signature, issuer, expiry, or audience validation.
-        The body is empty; Spring Security's `BearerTokenAuthenticationEntryPoint` answers with the
-        status and a `WWW-Authenticate` header only.
-      headers:
-        WWW-Authenticate:
-          description: |
-            Bearer challenge. With no token it carries the `resource_metadata` link Spring Security 7
-            advertises; with a token that failed validation it carries `error` and
-            `error_description` instead.
-          schema:
-            type: string
-          example: 'Bearer resource_metadata="https://skycloud.luksarna.com/.well-known/oauth-protected-resource"'
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-
-    Forbidden:
-      description: |
-        The token is valid but carries neither the `user` nor the `admin` realm role, so
-        `@PreAuthorize("hasAnyRole('USER','ADMIN')")` denied the call. The body is empty.
-
-        A denial raised by the service itself rather than by the role check carries a problem detail.
-        That case is documented on the operation it applies to.
-      headers:
-        WWW-Authenticate:
-          description: Bearer challenge with `error="insufficient_scope"`.
-          schema:
-            type: string
-          example: 'Bearer error="insufficient_scope", error_description="The request requires higher privileges than provided by the access token."'
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-
-    UnsupportedMediaType:
-      description: The request body was not sent as `application/json`.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          example:
-            title: "Unsupported Media Type"
-            status: 415
-            detail: "Content-Type 'text/plain' is not supported."
-            instance: "/api/v1/bookings"
-
-    ServerError:
-      description: |
-        Unexpected failure. It is a problem detail like every other error on this API, so one parser
-        covers the whole surface: `UnhandledExceptionResolver` in sky-common answers anything the
-        shared handlers and this service's own handler decline.
-
-        The `detail` is a fixed sentence. It carries no exception type, no exception message, no
-        constraint name, and no SQL, because an unanticipated failure is where an internal message is
-        most likely to leak. There is nothing in it to act on. Treat a 500 as opaque, retry once, and
-        quote the `X-Correlation-Id` when reporting it.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          example:
-            title: "Internal Server Error"
-            status: 500
-            detail: >-
-              The server failed to complete the request for a reason it did not anticipate. The
-              failure is logged against the X-Correlation-Id this response carries. Nothing in the
-              request needs changing before it is retried.
-            instance: "/api/v1/bookings"
+          format: uri
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: Paste a Keycloak access token obtained via the Authorization Code
+        flow.
+      scheme: bearer
+      type: http

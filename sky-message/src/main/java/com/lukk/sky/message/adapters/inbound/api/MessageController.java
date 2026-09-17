@@ -4,6 +4,7 @@ import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
 import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
+import com.lukk.sky.common.openapi.ApiUnsupportedMediaTypeResponse;
 import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.domain.ports.inbound.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,7 +40,7 @@ import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping(path = "${sky.apiPrefix}", version = "1")
+@RequestMapping(path = "${sky.apiPrefix}", version = "v1")
 public class MessageController {
 
     private final MessageService messageService;
@@ -50,6 +51,7 @@ public class MessageController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = MessageDTO.class))})
     })
+    @ApiUnsupportedMediaTypeResponse
     @IsUser
     @PostMapping("/messages")
     public ResponseEntity<?> sendMessage(@Valid @RequestBody MessageDTO message) {

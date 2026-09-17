@@ -6,7 +6,11 @@ import com.lukk.sky.booking.domain.ports.inbound.BookingService;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
+import com.lukk.sky.common.openapi.ApiConflictResponse;
+import com.lukk.sky.common.openapi.ApiDependencyBadGatewayResponse;
+import com.lukk.sky.common.openapi.ApiDependencyUnavailableResponse;
 import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
+import com.lukk.sky.common.openapi.ApiUnsupportedMediaTypeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -37,7 +41,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping(path = "${sky.apiPrefix}", version = "1")
+@RequestMapping(path = "${sky.apiPrefix}", version = "v1")
 public class BookingController {
 
     private final BookingService bookingService;
@@ -66,6 +70,10 @@ public class BookingController {
             @ApiResponse(responseCode = "404", description = "No offer with that id exists in sky-offer",
                     content = @Content)
     })
+    @ApiConflictResponse
+    @ApiUnsupportedMediaTypeResponse
+    @ApiDependencyBadGatewayResponse
+    @ApiDependencyUnavailableResponse
     @IsUser
     @PostMapping("/bookings")
     public ResponseEntity<BookingDTO> bookOffer(@Valid @RequestBody BookingPayload bookingPayload) {

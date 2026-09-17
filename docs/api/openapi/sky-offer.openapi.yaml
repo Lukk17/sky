@@ -1,1560 +1,831 @@
-openapi: "3.1.0"
-
+openapi: 3.1.0
 info:
+  description: Sky platform REST API secured with Keycloak JWT bearer tokens.
   title: sky-offer
   version: v1
-  description: |
-    Offer service for the Sky platform. It owns the inventory the other services book against:
-    public browsing and search, plus authenticated create, edit, delete, and photo upload for the
-    owner of an offer.
-
-    Public, no token needed:
-
-    - `GET /offers`, browse every offer, paginated
-    - `POST /search`, keyword search over hotel name, city, and country, paginated
-
-    Authenticated, any valid token, no role needed:
-
-    - `GET /offers/{offerId}/owner`, the service-to-service lookup sky-booking makes when creating
-      a booking. It forwards the caller's own bearer token.
-
-    Authenticated with the `user` or `admin` realm role: everything under `/owner/**`.
-
-    Ownership is never sent by the caller. `ownerEmail` is set server-side from the `email` claim of
-    the validated Keycloak JWT (`SecurityUtils.currentUserEmail()`) on create, kept as stored on
-    update, and carries no constraint on the wire, so a value the server discards can never make a
-    request fail. There is no `x-auth-request-email` header.
-
-    An offer can never change hands. Update, delete, and photo upload all require the caller to be
-    the stored owner and answer 403 otherwise.
-
-    Every identifier in this API is a UUID. Offer ids are `uuid` strings on the wire and `UUID`
-    columns in PostgreSQL. Nothing in this contract is a numeric id.
-
-    Versioning: the major version lives in the path. Services publish `/api/v1/**` and the gateway
-    rewrites `/offer/api/**` onto it. Only version `1` is currently supported; the default version is
-    also `1`. A breaking change gets a new path segment rather than a change to this one.
-
-    See [docs/api/README.md](../README.md) for how to mint a token and run the Bruno collection.
-
 servers:
-  - url: http://localhost:5777/offer/api
-    description: Local, through sky-gateway on port 5777 (rewrites to /api/v1)
-  - url: https://skycloud.luksarna.com/offer/api
-    description: Production, GCP via nginx-ingress (rewrites to /api/v1)
-  - url: http://localhost:5552/api/v1
-    description: Local, straight at the service, bypassing the gateway
-
+- description: Generated server url
+  url: http://localhost:7972
 security:
-  - bearerAuth: []
-
+- bearerAuth: []
 tags:
-  - name: Offers
-    description: Public browsing and search over the offer inventory.
-  - name: Owner offers
-    description: Create, edit, delete, and photograph the offers the caller owns.
-
+- description: Public browsing and search over the offer inventory.
+  name: Offers
+- description: "Create, edit, delete, and photograph the offers the caller owns."
+  name: Owner offers
 paths:
-  /offers:
+  /api/v1/offers:
     get:
-      tags: [Offers]
       operationId: getAllOffers
-      summary: Browse every offer
-      description: |
-        Returns a page of every offer in the system. No token required.
-
-        Sorted by `id` when no `sort` is given, so paging is stable. Each entry carries a freshly
-        signed `photoUrl` when the offer has a photo.
-      security: []
       parameters:
-        - $ref: "#/components/parameters/Page"
-        - $ref: "#/components/parameters/Size"
-        - $ref: "#/components/parameters/Sort"
-        - $ref: "#/components/parameters/CorrelationId"
-      responses:
-        "200":
-          description: A page of offers.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageOfOfferDTO"
-              example:
-                content:
-                  - id: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                    hotelName: "Grand Hotel Paris"
-                    description: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-                    comment: "Breakfast included. Check-in after 15:00."
-                    price: 249.99
-                    ownerEmail: "owner@example.com"
-                    roomCapacity: 2
-                    city: "Paris"
-                    country: "France"
-                    externalPhotoUrl: null
-                    photoUrl: "http://localhost:9070/sky-offers/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/8c2a5f1e-64b7-4a90-9d3c-0e5f7a1b2c3d-hotel.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=900&X-Amz-Signature=1f0c9a"
-                totalElements: 47
-                totalPages: 3
-                size: 20
-                number: 0
-                first: true
-                last: false
-                numberOfElements: 20
-                empty: false
-        "400":
-          $ref: "#/components/responses/UnknownSortProperty"
-        "401":
-          description: |
-            A bearer token was sent and it failed validation. The token is optional on this
-            operation, but a token that is present is always verified, so a stale one turns a public
-            call into a 401. Omit the `Authorization` header rather than sending an expired token.
-          headers:
-            WWW-Authenticate:
-              description: Bearer challenge carrying `error` and `error_description`.
-              schema:
-                type: string
-              example: 'Bearer error="invalid_token", error_description="An error occurred while attempting to decode the Jwt: Expired JWT"'
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-        "500":
-          $ref: "#/components/responses/ServerError"
-        "503":
-          $ref: "#/components/responses/PhotoStorageUnavailable"
-
-  /search:
-    post:
-      tags: [Offers]
-      operationId: searchOffers
-      summary: Search offers by keyword
-      description: |
-        Case-insensitive substring search over `hotelName`, `city`, and `country`, matching an offer
-        when any of the three contains the term. No token required.
-
-        The body is the raw search term, not JSON. Send it as `text/plain`. Any content type is in
-        fact accepted, because the body is read verbatim into a `String` before any JSON parser sees
-        it, but `text/plain` is the honest one.
-
-        The term must be non-blank and at most 100 characters. Both violations return 400.
-
-        The result is a page, not a flat array, sorted by `id` when no `sort` is given.
-      security: []
-      parameters:
-        - $ref: "#/components/parameters/Page"
-        - $ref: "#/components/parameters/Size"
-        - $ref: "#/components/parameters/Sort"
-        - $ref: "#/components/parameters/CorrelationId"
-      requestBody:
+      - in: query
+        name: pageable
         required: true
-        description: The search term, sent as a bare string with no quoting and no JSON envelope.
-        content:
-          text/plain:
-            schema:
-              type: string
-              minLength: 1
-              maxLength: 100
-            example: "Paris"
+        schema:
+          $ref: "#/components/schemas/Pageable"
       responses:
         "200":
-          description: A page of matching offers. `content` is empty when nothing matches.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageOfOfferDTO"
-              example:
-                content:
-                  - id: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                    hotelName: "Grand Hotel Paris"
-                    description: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-                    comment: "Breakfast included. Check-in after 15:00."
-                    price: 249.99
-                    ownerEmail: "owner@example.com"
-                    roomCapacity: 2
-                    city: "Paris"
-                    country: "France"
-                    externalPhotoUrl: null
-                    photoUrl: null
-                totalElements: 1
-                totalPages: 1
-                size: 20
-                number: 0
-                first: true
-                last: true
-                numberOfElements: 1
-                empty: false
+                $ref: "#/components/schemas/Page"
+          description: Found offers
         "400":
-          description: |
-            The search term is blank, longer than 100 characters, or the body is missing entirely.
-
-            Two more causes reach this status: a `sort` parameter naming a property the entity does
-            not have, and a term carrying a character PostgreSQL cannot encode, such as a raw NUL
-            byte. The term is bound straight from the body with no JSON parser in the way, so a NUL
-            in it survives as far as the query parameter and is rejected here.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              examples:
-                blankTerm:
-                  summary: Blank term
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Search term must not be blank."
-                    instance: "/api/v1/search"
-                tooLong:
-                  summary: Term over 100 characters
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Search term must not exceed 100 characters."
-                    instance: "/api/v1/search"
-                unknownSortProperty:
-                  summary: sort named a property the entity does not have
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Unknown sort property 'hotelNamee'."
-                    instance: "/api/v1/search"
-                unstorableCharacter:
-                  summary: The term carried a NUL byte
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "A text field contains a character the database cannot store, such as the NUL character U+0000. Remove it and send the request again."
-                    instance: "/api/v1/search"
-        "401":
-          description: |
-            A bearer token was sent and it failed validation. The token is optional on this
-            operation, but a token that is present is always verified, so a stale one turns a public
-            call into a 401. Omit the `Authorization` header rather than sending an expired token.
-          headers:
-            WWW-Authenticate:
-              description: Bearer challenge carrying `error` and `error_description`.
-              schema:
-                type: string
-              example: 'Bearer error="invalid_token", error_description="An error occurred while attempting to decode the Jwt: Expired JWT"'
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+          description: "Bad Request: invalid input or a rejected domain rule"
         "500":
-          $ref: "#/components/responses/ServerError"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
         "503":
-          $ref: "#/components/responses/PhotoStorageUnavailable"
-
-  /offers/{offerId}/owner:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      security: []
+      summary: Get all offers (paginated)
+      tags:
+      - Offers
+  /api/v1/offers/{offerId}/owner:
     get:
-      tags: [Offers]
       operationId: getOfferOwner
-      summary: Look up the owner email of an offer
-      description: |
-        Returns the owner's email address as a bare JSON string, for example
-        `owner@example.com` with no quotes and no wrapping object.
-
-        This is the service-to-service call sky-booking makes while creating a booking, forwarding
-        the end user's bearer token. It needs a valid token but no particular realm role, which is
-        the one authenticated path here that is not under `/owner/**`.
-      security:
-        - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/OfferId"
-        - $ref: "#/components/parameters/CorrelationId"
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
-          description: The owner email, as a bare string body.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json: {}
+          description: Owner email returned
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty."
+        "404":
+          description: Offer not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Get the owner email for an offer
+      tags:
+      - Offers
+  /api/v1/owner/offers:
+    get:
+      operationId: getOwnedOffers
+      parameters:
+      - in: query
+        name: pageable
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: Found owned offers
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
               schema:
                 type: string
-                format: email
-              example: "owner@example.com"
-        "400":
-          description: "`offerId` is not a UUID."
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Bad Request"
-                status: 400
-                detail: "Failed to convert 'offerId' with value: 'not-a-uuid'"
-                instance: "/api/v1/offers/not-a-uuid/owner"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          description: No offer with that id exists.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Not Found"
-                status: 404
-                detail: "Offer with ID: 3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f not exist."
-                instance: "/api/v1/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/owner"
-        "500":
-          $ref: "#/components/responses/ServerError"
-
-  /owner/offers:
-    get:
-      tags: [Owner offers]
-      operationId: getOwnedOffers
-      summary: List the offers the caller owns
-      description: |
-        Returns a page of the offers whose `ownerEmail` equals the `email` claim of the caller's JWT.
-        Sorted by `id` when no `sort` is given.
-
-        Requires the realm role `user` or `admin`.
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/Page"
-        - $ref: "#/components/parameters/Size"
-        - $ref: "#/components/parameters/Sort"
-        - $ref: "#/components/parameters/CorrelationId"
-      responses:
-        "200":
-          description: A page of the caller's offers.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageOfOfferDTO"
-              example:
-                content:
-                  - id: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                    hotelName: "Grand Hotel Paris"
-                    description: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-                    comment: "Breakfast included. Check-in after 15:00."
-                    price: 249.99
-                    ownerEmail: "owner@example.com"
-                    roomCapacity: 2
-                    city: "Paris"
-                    country: "France"
-                    externalPhotoUrl: null
-                    photoUrl: null
-                totalElements: 1
-                totalPages: 1
-                size: 20
-                number: 0
-                first: true
-                last: true
-                numberOfElements: 1
-                empty: false
-        "400":
-          $ref: "#/components/responses/UnknownSortProperty"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+              style: simple
         "403":
-          $ref: "#/components/responses/Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
         "500":
-          $ref: "#/components/responses/ServerError"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
         "503":
-          $ref: "#/components/responses/PhotoStorageUnavailable"
-
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      summary: Get owned offers (paginated)
+      tags:
+      - Owner offers
     post:
-      tags: [Owner offers]
-      operationId: createOffer
-      summary: Create an offer
-      description: |
-        Creates an offer owned by the caller and publishes a Kafka notification consumed by
-        sky-notify.
-
-        `ownerEmail` is overwritten from the JWT `email` claim, so whatever the body carries is
-        discarded. It carries no constraint, so a malformed value is ignored rather than rejected.
-
-        `id` is discarded the same way. The identifier is assigned by the database, so sending one
-        neither reserves it nor fails the request; the response carries the id the server chose.
-
-        Requires the realm role `user` or `admin`.
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/CorrelationId"
+      operationId: addOffer
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/OfferDTO"
-            example:
-              hotelName: "Grand Hotel Paris"
-              description: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-              comment: "Breakfast included. Check-in after 15:00."
-              price: 249.99
-              roomCapacity: 2
-              city: "Paris"
-              country: "France"
+        required: true
       responses:
         "201":
-          description: Offer created. The body is the stored offer, including its generated `id`.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferDTO"
-              example:
-                id: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                hotelName: "Grand Hotel Paris"
-                description: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-                comment: "Breakfast included. Check-in after 15:00."
-                price: 249.99
-                ownerEmail: "owner@example.com"
-                roomCapacity: 2
-                city: "Paris"
-                country: "France"
-                externalPhotoUrl: null
-                photoUrl: null
+          description: Offer created
         "400":
-          description: |
-            Bean Validation rejected the payload: a blank `hotelName`, `city`, or `country`, one of
-            those over 255 characters, a missing or negative `price`, a `roomCapacity` below 1, a
-            `description` over 3000 characters, or a `comment` over 1000.
-
-            A payload that passes validation and still carries a value PostgreSQL refuses is rejected
-            here too rather than failing at the database: a text field holding a character the
-            database cannot encode, such as the JSON escape for NUL, and a `price` with more than ten
-            digits before the decimal point, which overflows `NUMERIC(12,2)`. Neither case carries
-            `field-errors`, because the database names a bind position rather than a field.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              examples:
-                validationFailure:
-                  summary: Bean Validation rejected the payload
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Validation failed"
-                    instance: "/api/v1/owner/offers"
-                    field-errors:
-                      hotelName: "must not be blank"
-                      price: "must not be null"
-                unstorableCharacter:
-                  summary: A text field carried the JSON escape for NUL
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "A text field contains a character the database cannot store, such as the NUL character U+0000. Remove it and send the request again."
-                    instance: "/api/v1/owner/offers"
-                priceOutOfRange:
-                  summary: price does not fit NUMERIC(12,2)
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "A numeric field is outside the range the database column that stores it allows."
-                    instance: "/api/v1/owner/offers"
+          description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
         "403":
-          $ref: "#/components/responses/Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
         "409":
-          $ref: "#/components/responses/EventSequenceConflict"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Conflict: the request is well formed and lost a race. Either\
+            \ another writer advanced the event sequence of the resource, or another\
+            \ caller already claimed the state this request asked for. There is no\
+            \ Retry-After, because waiting changes nothing: re-read the resource and\
+            \ send the change again against its current state. The detail is a fixed\
+            \ sentence rather than the internal message."
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Unsupported Media Type: the request body was not sent in the\
+            \ media type this operation consumes."
         "500":
-          $ref: "#/components/responses/ServerError"
-
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Create new offer
+      tags:
+      - Owner offers
     put:
-      tags: [Owner offers]
-      operationId: editOffer
-      summary: Update an offer
-      description: |
-        Partial update despite being a PUT. Only `id` is required; a field is written only when the
-        payload supplies it, and every field that is absent or null keeps whatever the row already
-        holds, including a stored null.
-
-        No field can be set back to null through this operation. `description` and `comment` accept
-        an empty string, which stores an empty string rather than a null, and `externalPhotoUrl`
-        accepts neither: an empty value fails its absolute-URL rule with a 400. The only stored photo
-        a caller can clear is the uploaded object, through
-        `DELETE /owner/offers/{offerId}/photo`.
-
-        Absent and blank are not the same thing. `hotelName`, `city`, and `country` are NOT NULL
-        columns, so a present but whitespace-only value is rejected with a 400 rather than silently
-        treated as absent.
-
-        The caller must be the stored owner, compared against the JWT `email` claim; any other
-        authenticated caller gets 403. `ownerEmail` in the body is ignored entirely: the merge always
-        keeps the stored owner, so this operation can never move an offer to someone else.
-
-        The response is the full offer after the merge, with a freshly signed `photoUrl`.
-
-        Requires the realm role `user` or `admin`.
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/CorrelationId"
+      operationId: edit
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/OfferEditDTO"
-            example:
-              id: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-              hotelName: "Grand Hotel Paris (Renovated)"
-              price: 299.99
+        required: true
       responses:
         "200":
-          description: Offer updated. The body is the full offer after the merge.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferDTO"
-              example:
-                id: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                hotelName: "Grand Hotel Paris (Renovated)"
-                description: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-                comment: "Breakfast included. Check-in after 15:00."
-                price: 299.99
-                ownerEmail: "owner@example.com"
-                roomCapacity: 2
-                city: "Paris"
-                country: "France"
-                externalPhotoUrl: null
-                photoUrl: null
+          description: Offer edited
         "400":
-          description: |
-            Bean Validation rejected the payload: `id` missing or not a UUID, a present but blank
-            `hotelName`, `city`, or `country`, one of those over 255 characters, `price` below 0,
-            `roomCapacity` below 1, `description` over 3000 characters, or `comment` over 1000. A
-            malformed `ownerEmail` is not a reason: that field is ignored.
-
-            A payload that passes validation and still carries a value PostgreSQL refuses lands here
-            too, on the same two causes as create: a character the database cannot encode, and a
-            `price` that overflows `NUMERIC(12,2)`.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              examples:
-                missingId:
-                  summary: id was not supplied
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Validation failed"
-                    instance: "/api/v1/owner/offers"
-                    field-errors:
-                      id: "must not be null"
-                blankName:
-                  summary: hotelName was supplied as whitespace
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Validation failed"
-                    instance: "/api/v1/owner/offers"
-                    field-errors:
-                      hotelName: "must not be blank"
-                unstorableCharacter:
-                  summary: A text field carried the JSON escape for NUL
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "A text field contains a character the database cannot store, such as the NUL character U+0000. Remove it and send the request again."
-                    instance: "/api/v1/owner/offers"
-                priceOutOfRange:
-                  summary: price does not fit NUMERIC(12,2)
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "A numeric field is outside the range the database column that stores it allows."
-                    instance: "/api/v1/owner/offers"
+          description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          description: |
-            Either the token carries no `user` or `admin` realm role, which Spring Security answers
-            with an empty body, or the offer belongs to someone else, which the service answers with
-            the problem detail below.
-
-            403 rather than 404 here: offers are public to read, so confirming that one exists
-            discloses nothing a caller could not learn from `GET /offers`.
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
           headers:
             WWW-Authenticate:
-              description: |
-                Bearer challenge with `error="insufficient_scope"`. Present only on the realm-role
-                denial, absent when the service itself refused the operation.
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
               schema:
                 type: string
-              example: 'Bearer error="insufficient_scope", error_description="The request requires higher privileges than provided by the access token."'
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+              style: simple
+        "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Forbidden"
-                status: 403
-                detail: "You can only edit offers you own."
-                instance: "/api/v1/owner/offers"
-        "404":
-          description: No offer with that `id` exists.
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
           headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer not found
+        "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Not Found"
-                status: 404
-                detail: "Offer not found."
-                instance: "/api/v1/owner/offers"
-        "409":
-          $ref: "#/components/responses/EventSequenceConflict"
+          description: "Conflict: the request is well formed and lost a race. Either\
+            \ another writer advanced the event sequence of the resource, or another\
+            \ caller already claimed the state this request asked for. There is no\
+            \ Retry-After, because waiting changes nothing: re-read the resource and\
+            \ send the change again against its current state. The detail is a fixed\
+            \ sentence rather than the internal message."
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Unsupported Media Type: the request body was not sent in the\
+            \ media type this operation consumes."
         "500":
-          $ref: "#/components/responses/ServerError"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
         "503":
-          $ref: "#/components/responses/PhotoStorageUnavailable"
-
-  /owner/offers/{offerId}:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      summary: Edit offer
+      tags:
+      - Owner offers
+  /api/v1/owner/offers/{offerId}:
     delete:
-      tags: [Owner offers]
       operationId: deleteOffer
-      summary: Delete an offer
-      description: |
-        Deletes the offer and publishes a Kafka notification. The caller must be the owner, compared
-        against the JWT `email` claim. An authenticated non-owner gets 403.
-
-        Returns 204 with an empty body. Nothing is echoed back.
-
-        Requires the realm role `user` or `admin`.
-      security:
-        - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/OfferId"
-        - $ref: "#/components/parameters/CorrelationId"
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "204":
-          description: Offer deleted. Empty body.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+          description: Offer deleted
         "400":
-          description: "`offerId` is not a UUID."
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Bad Request"
-                status: 400
-                detail: "Failed to convert 'offerId' with value: 'not-a-uuid'"
-                instance: "/api/v1/owner/offers/not-a-uuid"
+          description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          description: |
-            Either the token carries no `user` or `admin` realm role, which Spring Security answers
-            with an empty body, or the offer belongs to someone else, which the service answers with
-            the problem detail below.
-
-            403 rather than 404 here: offers are public to read, so confirming that one exists
-            discloses nothing a caller could not learn from `GET /offers`.
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
           headers:
             WWW-Authenticate:
-              description: |
-                Bearer challenge with `error="insufficient_scope"`. Present only on the realm-role
-                denial, absent when the service itself refused the operation.
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
               schema:
                 type: string
-              example: 'Bearer error="insufficient_scope", error_description="The request requires higher privileges than provided by the access token."'
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+              style: simple
+        "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Forbidden"
-                status: 403
-                detail: "You can only delete offers you own."
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-        "404":
-          description: No offer with that id exists.
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
           headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer not found
+        "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Not Found"
-                status: 404
-                detail: "Can't remove non-existing offer!"
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-        "409":
-          $ref: "#/components/responses/EventSequenceConflict"
+          description: "Conflict: the request is well formed and lost a race. Either\
+            \ another writer advanced the event sequence of the resource, or another\
+            \ caller already claimed the state this request asked for. There is no\
+            \ Retry-After, because waiting changes nothing: re-read the resource and\
+            \ send the change again against its current state. The detail is a fixed\
+            \ sentence rather than the internal message."
         "500":
-          $ref: "#/components/responses/ServerError"
-
-  /owner/offers/{offerId}/photo:
-    post:
-      tags: [Owner offers]
-      operationId: uploadOfferPhoto
-      summary: Upload the photo for an offer
-      description: |
-        Uploads a single image to object storage. The service builds the object key itself, as
-        `offers/{offerId}/{uuid}-{sanitized filename}`, and records it in a column no request can
-        reach. A second upload replaces the first and deletes the object it replaced, so the bucket
-        never holds a photo the offer no longer points at. There is no gallery: an offer has at most
-        one photo, addressed by the offer's own identifier.
-
-        The part name must be `file`. The content type the client declares on the part is ignored:
-        the service sniffs the leading bytes and accepts JPEG, PNG, GIF, and WebP only. A file whose
-        bytes do not match one of those four returns 400, whatever its name or declared type says.
-
-        Size caps come from the servlet container: 5 MB per file and 6 MB per request. Exceeding
-        either returns 413.
-
-        A failure of the object store itself is not a 400. An unreachable store, a connect or read
-        timeout, a 5xx and a 429 all answer 503 with `Retry-After: 10`, and a store that answers 401,
-        403 or a missing bucket answers 502. Only what the caller can fix by sending something else
-        stays in the 4xx range.
-
-        The response is the updated offer. The storage key never appears on the wire. `photoUrl` is
-        a presigned GET URL for it, valid for 15 minutes by default. Sign again by re-reading the
-        offer; the URL is not stored and every read returns a new one.
-
-        Requires the realm role `user` or `admin`, and the caller must own the offer.
-      security:
-        - bearerAuth: []
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Delete offer
+      tags:
+      - Owner offers
+  /api/v1/owner/offers/{offerId}/photo:
+    delete:
+      operationId: deletePhoto
       parameters:
-        - $ref: "#/components/parameters/OfferId"
-        - $ref: "#/components/parameters/CorrelationId"
-      requestBody:
+      - in: path
+        name: offerId
         required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: Photo removed from storage and cleared on the offer
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Delete the stored photo of an offer (owner only)
+      tags:
+      - Owner offers
+    post:
+      operationId: uploadPhoto
+      parameters:
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           multipart/form-data:
             schema:
               type: object
-              required:
-                - file
               properties:
                 file:
                   type: string
                   format: binary
-                  description: |
-                    The image. JPEG, PNG, GIF, or WebP, decided by the leading bytes, at most 5 MB.
-            encoding:
-              file:
-                contentType: image/jpeg, image/png, image/gif, image/webp
+              required:
+              - file
       responses:
         "200":
-          description: Photo stored. The body is the updated offer with a signed `photoUrl`.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferDTO"
-              example:
-                id: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-                hotelName: "Grand Hotel Paris"
-                description: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-                comment: "Breakfast included. Check-in after 15:00."
-                price: 249.99
-                ownerEmail: "owner@example.com"
-                roomCapacity: 2
-                city: "Paris"
-                country: "France"
-                externalPhotoUrl: null
-                photoUrl: "http://localhost:9070/sky-offers/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/8c2a5f1e-64b7-4a90-9d3c-0e5f7a1b2c3d-hotel.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=900&X-Amz-Signature=1f0c9a"
+          description: Photo uploaded; updated offer returned with photoUrl
         "400":
-          description: |
-            The `file` part is missing or empty, the bytes are not a JPEG, PNG, GIF, or WebP, or
-            `offerId` is not a UUID. Every case here is something the caller can fix by sending a
-            different request. A caller who does not own the offer gets 403, not 400, and an object
-            store that is unreachable or refuses the write is 503 or 502, never 400.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              examples:
-                unsupportedImage:
-                  summary: The bytes are not one of the four accepted formats
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Unsupported image format. Allowed types: JPEG, PNG, GIF, WebP."
-                    instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
-                emptyFile:
-                  summary: The part is present but zero length
-                  value:
-                    title: "Bad Request"
-                    status: 400
-                    detail: "Uploaded file must not be empty."
-                    instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
+          description: "Bad Request: invalid input or a rejected domain rule"
         "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          description: |
-            Either the token carries no `user` or `admin` realm role, which Spring Security answers
-            with an empty body, or the offer belongs to someone else, which the service answers with
-            the problem detail below.
+          description: "Unauthorized: missing or invalid bearer token. The body is\
+            \ empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
           headers:
             WWW-Authenticate:
-              description: |
-                Bearer challenge with `error="insufficient_scope"`. Present only on the realm-role
-                denial, absent when the service itself refused the operation.
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
               schema:
                 type: string
-              example: 'Bearer error="insufficient_scope", error_description="The request requires higher privileges than provided by the access token."'
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Forbidden"
-                status: 403
-                detail: "You can only upload photos for your own offers."
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
-        "404":
-          description: No offer with that id exists.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Not Found"
-                status: 404
-                detail: "Offer with ID: 3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f not exist."
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
-        "413":
-          description: |
-            The file is over 5 MB, or the whole multipart request is over 6 MB.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Payload Too Large"
-                status: 413
-                detail: "Maximum upload size exceeded"
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
-        "415":
-          description: The request was not sent as `multipart/form-data`.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Unsupported Media Type"
-                status: 415
-                detail: "Content-Type 'application/json' is not supported."
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
-        "500":
-          $ref: "#/components/responses/ServerError"
-        "502":
-          $ref: "#/components/responses/PhotoStorageBadResponse"
-        "503":
-          $ref: "#/components/responses/PhotoStorageUnavailable"
-
-    delete:
-      tags: [Owner offers]
-      operationId: deleteOfferPhoto
-      summary: Delete the stored photo of an offer
-      description: |
-        Removes the uploaded object from storage and clears the offer's record of it. This is the
-        only way to clear a photo: an edit cannot, because the key is not part of the edit body.
-
-        Idempotent. An offer that has no uploaded photo answers 204 and touches nothing. After it,
-        `photoUrl` falls back to `externalPhotoUrl`, or is null when the offer has none.
-
-        Storage failing to delete does not fail the request, and that is deliberate rather than an
-        oversight. The offer stops pointing at the object either way, so the caller's intent is
-        satisfied, and the service logs `photo_delete_failed` with the key. Failing the request would
-        roll the cleared key back and leave an owner unable to remove a photo for as long as the store
-        is down, which is a worse outcome than an object nobody references. So this path answers 204
-        during a store outage and never 503. The same reasoning applies to deleting a whole offer.
-
-        Requires the realm role `user` or `admin`, and the caller must own the offer.
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OfferId"
-        - $ref: "#/components/parameters/CorrelationId"
-      responses:
-        "204":
-          description: The photo is gone and the offer no longer refers to one. The body is empty.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-        "400":
-          description: "`offerId` is not a UUID."
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Bad Request"
-                status: 400
-                detail: "Failed to convert 'offerId' with value: 'not-a-uuid'"
-                instance: "/api/v1/owner/offers/not-a-uuid/photo"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+              style: simple
         "403":
-          description: |
-            Either the token carries no `user` or `admin` realm role, which Spring Security answers
-            with an empty body, or the offer belongs to someone else, which the service answers with
-            the problem detail below.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Forbidden"
-                status: 403
-                detail: "You can only delete photos of your own offers."
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
         "404":
-          description: No offer with that id exists.
-          headers:
-            X-Correlation-Id:
-              $ref: "#/components/headers/CorrelationId"
+          description: Offer not found
+        "413":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-              example:
-                title: "Not Found"
-                status: 404
-                detail: "Offer with ID: 3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f not exist."
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
+          description: "Content Too Large: the file is over 5 MB, or the whole multipart\
+            \ request is over 6 MB."
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Unsupported Media Type: the request body was not sent in the\
+            \ media type this operation consumes."
         "500":
-          $ref: "#/components/responses/ServerError"
-
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+        "502":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Gateway: a dependency this operation needs answered, and\
+            \ answered in a way the service cannot act on. The caller's own request\
+            \ was well formed and retrying it unchanged will not help, so there is\
+            \ no Retry-After. The cause is between the service and its dependency."
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      summary: Upload a photo for an offer (owner only)
+      tags:
+      - Owner offers
+  /api/v1/search:
+    post:
+      operationId: search
+      parameters:
+      - in: query
+        name: pageable
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: Offers found
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      security: []
+      summary: Search for offers (paginated)
+      tags:
+      - Offers
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: |
-        Keycloak-issued access token, validated by the service itself as an OAuth2 resource server
-        against the issuer in `OAUTH2_ISSUER_URI`. Locally that is
-        `https://keycloak.test:9443/realms/sky`, in production
-        `https://keycloak.luksarna.com/realms/sky`.
-
-        Mint one with the password grant against
-        `{issuer}/protocol/openid-connect/token` using the `sky-backend` client, or with the
-        client-credentials grant for machine callers. Tokens live 300 seconds.
-
-        Two claims matter:
-
-        - `email` identifies the acting user and becomes the `ownerEmail` of anything written. A
-          token without it fails the request. The Keycloak realm needs the email mapper on the
-          client scope.
-        - `realm_access.roles` carries the realm roles. `KeycloakRealmRoleConverter` uppercases each
-          one and prefixes `ROLE_`, so realm role `user` becomes `ROLE_USER`. Every `/owner/**`
-          operation requires `user` or `admin`. `GET /offers/{offerId}/owner` requires only a valid
-          token.
-
-  headers:
-    CorrelationId:
-      description: |
-        Echo of the request's `X-Correlation-Id`, or a freshly generated UUID when the request did
-        not carry one. Present on every response, including errors. Quote it in a bug report.
-      schema:
-        type: string
-      example: "0d6d4e3b-2c9a-4e77-b0a1-7b4c5d6e7f80"
-
-  parameters:
-    OfferId:
-      name: offerId
-      in: path
-      required: true
-      description: Identifier of the offer.
-      schema:
-        type: string
-        format: uuid
-      example: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-    Page:
-      name: page
-      in: query
-      required: false
-      description: Zero-based page index.
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
-      example: 0
-    Size:
-      name: size
-      in: query
-      required: false
-      description: |
-        Page size. Defaults to 20 when omitted and is capped server-side at 100; a larger value is
-        silently reduced to 100 rather than rejected.
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-      example: 20
-    Sort:
-      name: sort
-      in: query
-      required: false
-      description: |
-        Spring Data sort expression, `property,(asc|desc)`, for example `price,asc`. Repeat the
-        parameter for a multi-property sort. Sortable properties are the persisted `Offer` fields:
-        `id`, `hotelName`, `description`, `comment`, `price`, `ownerEmail`, `roomCapacity`, `city`,
-        `country`, `photoObjectKey`, `externalPhotoUrl`. Defaults to `id,asc` on every list and
-        search operation.
-
-        A property the entity does not have is a 400. `SpringDataExceptionHandler` in sky-common
-        turns Spring Data's `PropertyReferenceException` into a problem detail whose `detail` names
-        the offending property, for example `Unknown sort property 'hotelNamee'.`
-      schema:
-        type: array
-        items:
-          type: string
-      style: form
-      explode: true
-      example: ["price,asc"]
-    CorrelationId:
-      name: X-Correlation-Id
-      in: header
-      required: false
-      description: |
-        Optional request correlation id. When absent the service generates a UUID. Either way the
-        value is echoed on the response and stamped on every log line for the request.
-      schema:
-        type: string
-      example: "0d6d4e3b-2c9a-4e77-b0a1-7b4c5d6e7f80"
-
   schemas:
     OfferDTO:
       type: object
-      description: |
-        The full offer. Used both as the create request body and as the response body of every read
-        and write. Null fields are serialized as `null` rather than omitted, so expect
-        `"photoUrl": null` on an offer with no photo at all.
-
-        The object-storage key of an uploaded photo is not part of this schema. The server owns it,
-        writes it only from the photo upload operation, and exposes it only as the derived
-        `photoUrl`. The retired `photoPath` field is gone from every request and every response: a
-        body that still carries it is accepted and the field is discarded.
-      required:
-        - hotelName
-        - price
-        - roomCapacity
-        - city
-        - country
       properties:
+        city:
+          type: string
+          maxLength: 255
+          minLength: 0
+        comment:
+          type: string
+          maxLength: 1000
+          minLength: 0
+        country:
+          type: string
+          maxLength: 255
+          minLength: 0
+        description:
+          type: string
+          maxLength: 3000
+          minLength: 0
+        externalPhotoUrl:
+          type: string
+        hotelName:
+          type: string
+          maxLength: 255
+          minLength: 0
         id:
           type: string
           format: uuid
-          readOnly: true
-          description: |
-            Offer identifier, generated by the database (`GenerationType.UUID`). Server-assigned, so
-            a value sent on create is discarded rather than honoured or rejected. Read it back from
-            the response.
-          example: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-        hotelName:
+        ownerEmail:
           type: string
-          minLength: 1
-          maxLength: 255
-          description: Name of the hotel or accommodation. `@NotBlank` and `@Size(max = 255)`.
-          example: "Grand Hotel Paris"
-        description:
-          type: ["string", "null"]
-          maxLength: 3000
-          description: Long-form description. Optional, and null on an offer that has none.
-          example: "A luxury hotel in the heart of Paris, steps from the Eiffel Tower."
-        comment:
-          type: ["string", "null"]
-          maxLength: 1000
-          description: Short owner comment or house rules. Optional, and null on an offer without one.
-          example: "Breakfast included. Check-in after 15:00."
+        photoUrl:
+          type: string
         price:
           type: number
           minimum: 0
-          description: |
-            Nightly price. `BigDecimal` in Java, `NUMERIC(12,2)` in PostgreSQL, so at most 12 total
-            digits with 2 after the point; more precision than that is truncated on write.
-            `@NotNull` and `@Min(0)`.
-          example: 249.99
-        ownerEmail:
-          type: string
-          format: email
-          readOnly: true
-          description: |
-            Email of the owner, taken from the JWT `email` claim on create and kept as stored on
-            update. Sending it is pointless and harmless: the field carries no constraint, so a
-            malformed value is discarded rather than rejected.
-          example: "owner@example.com"
         roomCapacity:
           type: integer
           format: int64
           minimum: 1
-          description: Maximum number of guests. `@NotNull` and `@Min(1)`.
-          example: 2
-        city:
-          type: string
-          minLength: 1
-          maxLength: 255
-          description: City. `@NotBlank` and `@Size(max = 255)`. Searched by `POST /search`.
-          example: "Paris"
-        country:
-          type: string
-          minLength: 1
-          maxLength: 255
-          description: Country. `@NotBlank` and `@Size(max = 255)`. Searched by `POST /search`.
-          example: "France"
-        externalPhotoUrl:
-          type: ["string", "null"]
-          maxLength: 1024
-          description: |
-            Address of an image hosted somewhere else, for an offer whose owner never uploaded a
-            photo. Client-settable on create and edit, and the only photo field a client may write.
-            Must be an absolute `http` or `https` URL, so an object-storage key can never be stored
-            here; anything else is a 400. Null when the offer has none.
-          example: "https://images.example.com/grand-hotel-paris.jpg"
-        photoUrl:
-          type: ["string", "null"]
-          format: uri
-          readOnly: true
-          description: |
-            Address a client fetches the photo from, derived per response and never persisted. It is
-            a presigned GET URL for the uploaded object when the offer has one, valid for 15 minutes
-            by default, and `externalPhotoUrl` otherwise. Null when the offer has neither. Never
-            accepted on input.
-          example: "http://localhost:9070/sky-offers/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/8c2a5f1e-64b7-4a90-9d3c-0e5f7a1b2c3d-hotel.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=900&X-Amz-Signature=1f0c9a"
-
+      required:
+      - city
+      - country
+      - hotelName
+      - price
+      - roomCapacity
     OfferEditDTO:
       type: object
-      description: |
-        Request body of `PUT /owner/offers`. Only `id` is required. A field that is absent or null
-        keeps its stored value, so this is a partial update and cannot clear a field. It also cannot
-        reach the uploaded photo: the object key is not in this schema, and an edit leaves it exactly
-        as the upload operation wrote it.
-      required:
-        - id
       properties:
+        city:
+          type: string
+          maxLength: 255
+          minLength: 0
+        comment:
+          type: string
+          maxLength: 1000
+          minLength: 0
+        country:
+          type: string
+          maxLength: 255
+          minLength: 0
+        description:
+          type: string
+          maxLength: 3000
+          minLength: 0
+        externalPhotoUrl:
+          type: string
+        hotelName:
+          type: string
+          maxLength: 255
+          minLength: 0
         id:
           type: string
           format: uuid
-          description: |
-            Identifier of the offer to update. `@NotNull`. An id that does not exist returns 404, and
-            one owned by somebody else returns 403.
-          example: "3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f"
-        hotelName:
-          type: ["string", "null"]
-          minLength: 1
-          maxLength: 255
-          description: |
-            Replaces the stored name when present. Absent or null keeps the stored value; a
-            whitespace-only value is rejected with a 400, because the column is NOT NULL.
-          example: "Grand Hotel Paris (Renovated)"
-        description:
-          type: ["string", "null"]
-          maxLength: 3000
-          description: Replaces the stored description when present. Null keeps the stored value.
-          example: "Freshly renovated rooms with panoramic city views."
-        comment:
-          type: ["string", "null"]
-          maxLength: 1000
-          description: Replaces the stored comment when present. Null keeps the stored value.
-          example: "Breakfast and spa access included."
-        price:
-          type: ["number", "null"]
-          minimum: 0
-          description: Replaces the stored price when present. Null keeps the stored value.
-          example: 299.99
         ownerEmail:
-          type: ["string", "null"]
-          format: email
-          readOnly: true
-          description: |
-            Ignored. The merge always keeps the stored owner, and the field carries no constraint, so
-            whatever you send is neither honoured nor rejected. An offer cannot change hands.
-          example: "owner@example.com"
+          type: string
+        price:
+          type: number
+          minimum: 0
         roomCapacity:
-          type: ["integer", "null"]
+          type: integer
           format: int64
           minimum: 1
-          description: Replaces the stored capacity when present. Null keeps the stored value.
-          example: 2
-        city:
-          type: ["string", "null"]
-          minLength: 1
-          maxLength: 255
-          description: |
-            Replaces the stored city when present. Absent or null keeps the stored value; a
-            whitespace-only value is rejected with a 400.
-          example: "Paris"
-        country:
-          type: ["string", "null"]
-          minLength: 1
-          maxLength: 255
-          description: |
-            Replaces the stored country when present. Absent or null keeps the stored value; a
-            whitespace-only value is rejected with a 400.
-          example: "France"
-        externalPhotoUrl:
-          type: ["string", "null"]
-          maxLength: 1024
-          description: |
-            Replaces the stored external image address when present. Null keeps the stored value.
-            Must be an absolute `http` or `https` URL; anything else is a 400. An edit cannot touch
-            the uploaded photo: use the photo upload operation to replace it and the photo delete
-            operation to remove it.
-          example: "https://images.example.com/grand-hotel-paris.jpg"
-
-    PageOfOfferDTO:
-      type: object
-      description: |
-        Spring Data `Page<OfferDTO>`, serialized directly by Jackson. The fields below are the
-        stable part of the envelope. The serialization also emits Spring Data internals such as
-        `pageable` and `sort`; treat those as framework detail and do not build against them.
-      additionalProperties: true
       required:
-        - content
-        - totalElements
-        - totalPages
-        - size
-        - number
+      - id
+    Page:
+      type: object
       properties:
         content:
           type: array
-          items:
-            $ref: "#/components/schemas/OfferDTO"
-        totalElements:
-          type: integer
-          format: int64
-          description: Total number of offers matching the query across every page.
-          example: 47
-        totalPages:
-          type: integer
-          format: int32
-          example: 3
-        size:
-          type: integer
-          format: int32
-          description: Requested page size.
-          example: 20
+          items: {}
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
         number:
           type: integer
           format: int32
-          description: Zero-based index of this page.
-          example: 0
-        first:
-          type: boolean
-          example: true
-        last:
-          type: boolean
-          example: false
         numberOfElements:
           type: integer
           format: int32
-          description: Number of entries in `content` on this page.
-          example: 20
-        empty:
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        paged:
           type: boolean
-          example: false
-
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
     ProblemDetail:
       type: object
-      description: |
-        RFC 9457 problem detail, served as `application/problem+json`. Produced by
-        `SkyRestExceptionHandler` in sky-common for framework and validation failures,
-        `SpringDataExceptionHandler` in sky-common for an unknown sort property and for a value the
-        database cannot store (both 400), `GlobalExceptionHandler` in this service for `OfferException` (400),
-        `OfferAccessDeniedException` (403), and `OfferNotFoundException` (404), and
-        `UnhandledExceptionResolver` in sky-common for anything all three decline (500).
-      required:
-        - title
-        - status
       properties:
-        type:
+        detail:
           type: string
-          format: uri-reference
-          description: |
-            Absent from every response the services send. Spring Framework 7 leaves the member unset,
-            and RFC 9457 says a consumer assumes `about:blank` when it is absent. The services publish
-            no per-problem type URIs, so branch on `status` plus the presence of `field-errors`.
-        title:
+        instance:
           type: string
-          description: Reason phrase of the status code, for example `Bad Request` or `Not Found`.
-          example: "Bad Request"
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
         status:
           type: integer
           format: int32
-          description: The HTTP status code, repeated in the body.
-          example: 400
-        detail:
+        title:
           type: string
-          description: |
-            What went wrong on this occurrence. Bean Validation failures always use the fixed string
-            `Validation failed` and put the per-field messages in `field-errors`. Domain failures put
-            the exception message here.
-          example: "Validation failed"
-        instance:
+        type:
           type: string
-          format: uri-reference
-          description: |
-            Path of the request that failed, as the service saw it after the gateway rewrite. It is
-            `/api/v1/...`, not the `/offer/api/...` path the caller used.
-          example: "/api/v1/owner/offers"
-        field-errors:
-          type: object
-          description: |
-            Present only on a Bean Validation failure. One entry per rejected field, keyed by the
-            field name, valued with the constraint message. The key is the property path Spring
-            reports, so a nested field appears as `parent.child`.
-          additionalProperties:
-            type: string
-          example:
-            hotelName: "must not be blank"
-            price: "must not be null"
-
-
-  responses:
-    UnknownSortProperty:
-      description: |
-        The `sort` parameter names a property the entity does not have. `SpringDataExceptionHandler`
-        in sky-common turns the `PropertyReferenceException` Spring Data raises into the problem
-        detail below. The `detail` quotes the property only when the name is made of letters, digits,
-        underscores, and dots; any other name is described generically, so nothing a caller sent is
-        reflected back. `instance` is the path of the request that failed.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          examples:
-            unknownProperty:
-              summary: sort named a property the entity does not have
-              value:
-                title: "Bad Request"
-                status: 400
-                detail: "Unknown sort property 'hotelNamee'."
-                instance: "/api/v1/offers"
-            unquotableProperty:
-              summary: The property name was not safe to quote back
-              value:
-                title: "Bad Request"
-                status: 400
-                detail: "The requested sort property is not a sortable property of this resource."
-                instance: "/api/v1/offers"
-
-    Unauthorized:
-      description: |
-        No bearer token, or a token that failed signature, issuer, expiry, or audience validation.
-        The body is empty; Spring Security's `BearerTokenAuthenticationEntryPoint` answers with the
-        status and a `WWW-Authenticate` header only.
-      headers:
-        WWW-Authenticate:
-          description: |
-            Bearer challenge. With no token it carries the `resource_metadata` link Spring Security 7
-            advertises; with a token that failed validation it carries `error` and
-            `error_description` instead.
-          schema:
-            type: string
-          example: 'Bearer resource_metadata="https://skycloud.luksarna.com/.well-known/oauth-protected-resource"'
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-
-    Forbidden:
-      description: |
-        The token is valid but carries neither the `user` nor the `admin` realm role, so
-        `@PreAuthorize("hasAnyRole('USER','ADMIN')")` denied the call. The body is empty.
-
-        A denial raised by the service itself rather than by the role check carries a problem detail.
-        That case is documented on the operation it applies to.
-      headers:
-        WWW-Authenticate:
-          description: Bearer challenge with `error="insufficient_scope"`.
-          schema:
-            type: string
-          example: 'Bearer error="insufficient_scope", error_description="The request requires higher privileges than provided by the access token."'
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-
-    UnsupportedMediaType:
-      description: The request body was not sent as `application/json`.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          example:
-            title: "Unsupported Media Type"
-            status: 415
-            detail: "Content-Type 'text/plain' is not supported."
-            instance: "/api/v1/owner/offers"
-
-    EventSequenceConflict:
-      description: |
-        The offer's event sequence moved while this write was in flight, so the append lost the race
-        after twenty attempts against the event log (`EventSequenceConflictException`).
-
-        The write itself was well formed, which is why this is not a 400, and nothing on this service
-        is broken, which is why it is not a 500. It carries no `Retry-After` on purpose: waiting
-        changes nothing here, because the conflict means another writer advanced the sequence. Re-read
-        the offer and send the change again against its current state.
-
-        The `detail` is a fixed sentence rather than the internal message, so nothing about the event
-        log leaks to the caller.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          example:
-            title: "Conflict"
-            status: 409
-            detail: "A concurrent write advanced the offer event sequence. Re-read the offer and retry the change against its current state."
-            instance: "/api/v1/owner/offers"
-
-    PhotoStorageUnavailable:
-      description: |
-        The object store backing the photos could not be used, so the operation did not complete.
-        Covers a refused connection, a connect timeout, a read timeout, a 5xx from the store, a 429
-        from the store, and a failure to sign a photo address.
-
-        The request itself was well formed, which is why this is not a 400. Earlier releases answered
-        400 here, which told a client to stop retrying at exactly the moment retrying was the right
-        thing to do. Retry the same request unchanged after the number of seconds in `Retry-After`.
-
-        The `detail` is one of a fixed set of sentences. Nothing from the store's own answer reaches
-        it, so the message is safe to show and stable to branch on.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying the same request. Always `10`.
-          schema:
-            type: integer
-          example: 10
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          examples:
-            uploadUnavailable:
-              summary: The store was unreachable during an upload
-              value:
-                title: "Service Unavailable"
-                status: 503
-                detail: "Photo upload failed. The object store is unavailable."
-                instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
-            presignUnavailable:
-              summary: A stored photo address could not be signed while building a response
-              value:
-                title: "Service Unavailable"
-                status: 503
-                detail: "Photo address could not be signed. The object store is unavailable."
-                instance: "/api/v1/offers"
-
-    PhotoStorageBadResponse:
-      description: |
-        The object store answered, and answered in a way this service cannot act on: 401 or 403
-        because the credentials it holds are wrong, or 404 because the bucket is gone. Retrying the
-        same request changes nothing, so there is no `Retry-After`. The cause is between the service
-        and its store, not in the request, which is why it is not a 400 either.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          example:
-            title: "Bad Gateway"
-            status: 502
-            detail: "Photo upload failed. The object store refused the request."
-            instance: "/api/v1/owner/offers/3f7a1c88-5d24-4b6e-9c0f-1a2b3c4d5e6f/photo"
-
-    ServerError:
-      description: |
-        Unexpected failure. It is a problem detail like every other error on this API, so one parser
-        covers the whole surface: `UnhandledExceptionResolver` in sky-common answers anything the
-        shared handlers and this service's own handler decline.
-
-        The `detail` is a fixed sentence. It carries no exception type, no exception message, no
-        constraint name, and no SQL, because an unanticipated failure is where an internal message is
-        most likely to leak. There is nothing in it to act on. Treat a 500 as opaque, retry once, and
-        quote the `X-Correlation-Id` when reporting it.
-      headers:
-        X-Correlation-Id:
-          $ref: "#/components/headers/CorrelationId"
-      content:
-        application/problem+json:
-          schema:
-            $ref: "#/components/schemas/ProblemDetail"
-          example:
-            title: "Internal Server Error"
-            status: 500
-            detail: >-
-              The server failed to complete the request for a reason it did not anticipate. The
-              failure is logged against the X-Correlation-Id this response carries. Nothing in the
-              request needs changing before it is retried.
-            instance: "/api/v1/owner/offers"
+          format: uri
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: Paste a Keycloak access token obtained via the Authorization Code
+        flow.
+      scheme: bearer
+      type: http

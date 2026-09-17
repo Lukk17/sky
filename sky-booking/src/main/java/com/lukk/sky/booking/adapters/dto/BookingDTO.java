@@ -2,6 +2,7 @@ package com.lukk.sky.booking.adapters.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.lukk.sky.booking.domain.model.Booking;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,12 +18,14 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BookingDTO {
 
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private UUID id;
 
     @NotNull
     private UUID offerId;
 
     @NotBlank
+    @Schema(format = "date")
     private String bookedDate;
 
     @NotBlank
@@ -30,6 +33,7 @@ public class BookingDTO {
     private String bookingUser;
 
     @Email
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String ownerEmail;
 
     public static BookingDTO of(Booking booking) {

@@ -123,7 +123,23 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
   the booted context builds, not the configuration source that feeds it, and builds a real `KafkaProducer` from
   that map so both validations above actually run. sky-offer and sky-notify carry the identical five values, so
   change all three or none.
-- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`.
+- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`. The contract in
+  `docs/api/openapi/sky-booking.openapi.yaml` is generated, not written. `sky.openapi-conventions` wires the
+  springdoc Gradle plugin here and `build` depends on `generateOpenApiDocs`, which forks the application under
+  the `local,openapi` profile pair on port 7971 and fetches the grouped document from it. Never hand-edit that
+  file, and never add a default to `application-openapi.yaml` beyond what keeps the fork offline.
+  The mapping declares `version = "v1"` rather than `"1"`, and that literal is not cosmetic: springdoc
+  writes the version string from the mapping into the path segment the version resolver matches, so `"1"`
+  published `/api/1/...` for a service that serves `/api/v1/...`. Routing is identical either way, because
+  `SemanticApiVersionParser.parseVersion` calls `skipNonDigits` before it matches, so `"v1"` and `"1"` parse
+  to the same version and the `addSupportedVersions("1")` and `setDefaultVersion("1")` calls in sky-common
+  keep matching. Do not change it back.
+  The error contract is the annotations and nothing else. The 409, 415, 502 and 503 on `POST /bookings` come
+  from `@ApiConflictResponse`, `@ApiUnsupportedMediaTypeResponse`, `@ApiDependencyBadGatewayResponse` and
+  `@ApiDependencyUnavailableResponse` in sky-common, and `BookingDTO` marks `id` and `ownerEmail` required
+  through `@Schema` because neither carries a Bean Validation constraint that springdoc could read, though
+  both are always present on a response. A status this service answers and no annotation declares is simply
+  absent from the published document, so add the annotation in the same change as the exception mapping.
 
 ## Testing
 

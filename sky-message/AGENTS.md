@@ -56,9 +56,21 @@ the cosmetic `version` in `build.gradle.kts`.
   `DatasourceCredentialsAutoConfiguration` in sky-common, naming the variable and the property, instead of
   binding the literal placeholder text as the password. `DatasourceCredentialsStartupTest` pins that behaviour
   against this module's own configuration files, so do not delete it when touching the datasource block.
-- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`. The hand-written contract in
-  `docs/api/openapi/sky-message.openapi.yaml` is maintained by hand, so a change to the wire shape of an endpoint
-  changes both together. Send answers 201, 400, 401 and 403 and nothing else: there is no 404 and no 503 on it.
+- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`. The contract in
+  `docs/api/openapi/sky-message.openapi.yaml` is generated, not written. `sky.openapi-conventions` wires the
+  springdoc Gradle plugin here and `build` depends on `generateOpenApiDocs`, which forks the application under
+  the `local,openapi` profile pair on port 7973 and fetches the grouped document from it. Never hand-edit that
+  file, and never add a default to `application-openapi.yaml` beyond what keeps the fork offline. Send answers 201,
+  400, 401, 403 and 415 and nothing else: there is no 404 and no 503 on it, and the generated document carries only
+  what the annotations on the controller declare, so a status nothing declares is absent from it whatever this file
+  says. The 415 comes from `@ApiUnsupportedMediaTypeResponse` in sky-common, which is the shared form of a response
+  all three REST services answer.
+  The mapping declares `version = "v1"` rather than `"1"`, and that literal is not cosmetic: springdoc
+  writes the version string from the mapping into the path segment the version resolver matches, so `"1"`
+  published `/api/1/...` for a service that serves `/api/v1/...`. Routing is identical either way, because
+  `SemanticApiVersionParser.parseVersion` calls `skipNonDigits` before it matches, so `"v1"` and `"1"` parse
+  to the same version and the `addSupportedVersions("1")` and `setDefaultVersion("1")` calls in sky-common
+  keep matching. Do not change it back.
 
 ## Testing
 

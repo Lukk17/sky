@@ -3,7 +3,11 @@ package com.lukk.sky.offer.adapters.inbound.api;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
+import com.lukk.sky.common.openapi.ApiConflictResponse;
+import com.lukk.sky.common.openapi.ApiDependencyBadGatewayResponse;
+import com.lukk.sky.common.openapi.ApiDependencyUnavailableResponse;
 import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
+import com.lukk.sky.common.openapi.ApiUnsupportedMediaTypeResponse;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -13,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,13 +48,18 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
-@Tag(name = "Offers", description = "Offer lifecycle: browse, create, edit, delete, and search flight/booking offers.")
 @ApiCommonErrorResponses
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping(path = "${sky.apiPrefix}", version = "1")
+@RequestMapping(path = "${sky.apiPrefix}", version = "v1")
 public class OfferApiController {
+
+    private static final String OFFERS_TAG = "Offers";
+    private static final String OFFERS_TAG_DESCRIPTION = "Public browsing and search over the offer inventory.";
+    private static final String OWNER_OFFERS_TAG = "Owner offers";
+    private static final String OWNER_OFFERS_TAG_DESCRIPTION =
+            "Create, edit, delete, and photograph the offers the caller owns.";
 
     private static final int SEARCH_TERM_MAX_LENGTH = 100;
 
@@ -69,6 +80,9 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class))})
     })
+    @Tag(name = OFFERS_TAG, description = OFFERS_TAG_DESCRIPTION)
+    @SecurityRequirements
+    @ApiDependencyUnavailableResponse
     @GetMapping("/offers")
     public ResponseEntity<Page<OfferDTO>> getAllOffers(
             @PageableDefault(size = 20, sort = "id") Pageable pageable) {
@@ -81,7 +95,9 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class))})
     })
+    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
     @ApiSecuredErrorResponses
+    @ApiDependencyUnavailableResponse
     @IsUser
     @GetMapping("/owner/offers")
     public ResponseEntity<Page<OfferDTO>> getOwnedOffers(
@@ -97,7 +113,10 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))})
     })
+    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
     @ApiSecuredErrorResponses
+    @ApiConflictResponse
+    @ApiUnsupportedMediaTypeResponse
     @IsUser
     @PostMapping("/owner/offers")
     public ResponseEntity<OfferDTO> addOffer(@Valid @RequestBody OfferDTO offer) {
@@ -118,7 +137,11 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
     @ApiSecuredErrorResponses
+    @ApiConflictResponse
+    @ApiUnsupportedMediaTypeResponse
+    @ApiDependencyUnavailableResponse
     @IsUser
     @PutMapping("/owner/offers")
     public ResponseEntity<OfferDTO> edit(@Valid @RequestBody OfferEditDTO offer) {
@@ -137,7 +160,9 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
     @ApiSecuredErrorResponses
+    @ApiConflictResponse
     @IsUser
     @DeleteMapping("/owner/offers/{offerId}")
     public ResponseEntity<Void> deleteOffer(@PathVariable UUID offerId) {
@@ -157,6 +182,9 @@ public class OfferApiController {
             @ApiResponse(responseCode = "400", description = "Search term is blank or exceeds 100 characters",
                     content = @Content)
     })
+    @Tag(name = OFFERS_TAG, description = OFFERS_TAG_DESCRIPTION)
+    @SecurityRequirements
+    @ApiDependencyUnavailableResponse
     @PostMapping("/search")
     public ResponseEntity<Page<OfferDTO>> search(
             @RequestBody String searched,
@@ -184,6 +212,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @Tag(name = OFFERS_TAG, description = OFFERS_TAG_DESCRIPTION)
     @GetMapping("/offers/{offerId}/owner")
     public ResponseEntity<String> getOfferOwner(@PathVariable UUID offerId) {
         log.info("Trying to find owner of offer with ID: {}", offerId);
@@ -198,9 +227,17 @@ public class OfferApiController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
             @ApiResponse(responseCode = "404", description = "Offer not found",
-                    content = @Content)
+                    content = @Content),
+            @ApiResponse(responseCode = "413",
+                    description = "Content Too Large: the file is over 5 MB, or the whole multipart request is over 6 MB.",
+                    content = @Content(mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class)))
     })
+    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
     @ApiSecuredErrorResponses
+    @ApiUnsupportedMediaTypeResponse
+    @ApiDependencyBadGatewayResponse
+    @ApiDependencyUnavailableResponse
     @IsUser
     @PostMapping(value = "/owner/offers/{offerId}/photo", consumes = "multipart/form-data")
     public ResponseEntity<OfferDTO> uploadPhoto(
@@ -237,6 +274,7 @@ public class OfferApiController {
             @ApiResponse(responseCode = "404", description = "Offer not found",
                     content = @Content)
     })
+    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
     @ApiSecuredErrorResponses
     @IsUser
     @DeleteMapping("/owner/offers/{offerId}/photo")

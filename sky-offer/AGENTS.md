@@ -181,7 +181,27 @@ independently-deployable services. The module version is not restated here: the 
   worse than an object nobody references: the leak is sweepable from the key prefix, the blocked delete is not
   workaroundable by the caller. Narrow that catch if a new storage exception appears, do not widen it to `Exception`,
   and do not make it swallow an upload failure, which must reach the caller.
-- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`.
+- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`. The contract in
+  `docs/api/openapi/sky-offer.openapi.yaml` is generated, not written. `sky.openapi-conventions` wires the
+  springdoc Gradle plugin here and `build` depends on `generateOpenApiDocs`, which forks the application under
+  the `local,openapi` profile pair on port 7972 and fetches the grouped document from it. Never hand-edit that
+  file, and never add a default to `application-openapi.yaml` beyond what keeps the fork offline.
+  The mapping declares `version = "v1"` rather than `"1"`, and that literal is not cosmetic: springdoc
+  writes the version string from the mapping into the path segment the version resolver matches, so `"1"`
+  published `/api/1/...` for a service that serves `/api/v1/...`. Routing is identical either way, because
+  `SemanticApiVersionParser.parseVersion` calls `skipNonDigits` before it matches, so `"v1"` and `"1"` parse
+  to the same version and the `addSupportedVersions("1")` and `setDefaultVersion("1")` calls in sky-common
+  keep matching. Do not change it back.
+  The error contract is the annotations and nothing else. The 409 on create, edit and delete, the 415 on
+  every operation that takes a body, and the 503 on every operation that presigns a stored photo come from
+  `@ApiConflictResponse`, `@ApiUnsupportedMediaTypeResponse` and `@ApiDependencyUnavailableResponse` in
+  sky-common, with `@ApiDependencyBadGatewayResponse` beside them on the photo upload, the one operation
+  that can be refused by a store that answered. The 413 stays inline here, because the 5 MB file and 6 MB
+  request limits are this module's own. `GET /offers` and `POST /search` each carry `@SecurityRequirements`
+  with no value, which is what makes springdoc publish `security: []` on them: the document-level bearer
+  requirement from sky-common would otherwise mark two anonymous endpoints as needing a token. The two tags
+  are declared per method rather than on the class, because springdoc unions the class tag with the method
+  tag, so a class-level `@Tag` would put every owner operation under `Offers` as well.
 
 ## Testing
 
