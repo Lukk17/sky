@@ -57,6 +57,26 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
   is a path no route can claim for one service over the other two, and the page loads its shell and then falls back
   to the Swagger demo document. Spring Cloud Gateway derives the prefix itself by subtracting the rewritten path from
   the original one, so nothing here sets the header by hand.
+- The cluster half does have to set it by hand, and until now nothing did, so the two edges only looked alike. nginx
+  strips the prefix in a `rewrite` and tells the upstream nothing about it, so every self-reference springdoc handed
+  a browser through the ingress named the unprefixed path, and the document address it pointed at answered 404. Each
+  of the six documentation ingresses now carries `nginx.ingress.kubernetes.io/x-forwarded-prefix` set to that
+  ingress's own prefix, in `config/k8s/helm/service/<service>/values.yaml`, which both overlays inherit through
+  Helm's map merge because neither restates the annotation as null. An ingress that gains a documentation path and
+  not that annotation is the defect coming back, so the annotation and the `rewrite-target` move together.
+- The entry point is `/swagger-ui.html` and it is published under the prefix too. That is the address a person
+  types and it is what `springdoc.swagger-ui.path` is set to in all three services, and neither edge matched it
+  before, because `/x/swagger-ui/**` and `^/x/swagger-ui(/|$)(.*)` both require a slash or the end of the string
+  after `swagger-ui`. Both edges were widened rather than given a second route, because the entry point is the same
+  page on the same upstream as the assets beside it: a second ingress would need its own copy of the auth, timeout
+  and prefix annotations in three files per service, giving twelve documentation ingresses where six do the work
+  and a second place for the prefix to drift. Here that is one more `Path` entry on each swagger route, and the
+  existing `RewritePath` already covers it because its `(?<remaining>/?.*)` makes the separator optional. In the
+  chart it is `(/|[.]|$)` in place of `(/|$)`, with the `rewrite-target` changed from `/swagger-ui/$2` to
+  `/swagger-ui$1$2` so the separator that matched is the separator forwarded. The character class is there because
+  `\.` is not a legal escape inside a double-quoted YAML scalar. springdoc answers that path with a 302 to
+  `contextPath` plus `/swagger-ui/index.html`, so the prefix from the annotation above is what makes the redirect
+  land on the prefixed page rather than on a 404.
 - `trusted-proxies` is set for that reason and for no other. Gateway 5.0 registers `XForwardedHeadersFilter` only
   when `spring.cloud.gateway.server.webflux.trusted-proxies` is non-empty, and registers `RemoveXForwardedHeadersFilter`
   otherwise, which strips every `x-forwarded-` header on the way out, including one a route added by hand. So an
@@ -91,11 +111,11 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
 
   | Published path | Gateway predicate and rewrite | Ingress | Upstream |
   |---|---|---|---|
-  | `/booking/swagger-ui` | `/booking/swagger-ui/**` to `/swagger-ui...` | `sky-booking-swagger-ingress` | `sky-booking-service:5555` |
+  | `/booking/swagger-ui`, `/booking/swagger-ui.html` | `/booking/swagger-ui/**,/booking/swagger-ui.html` to `/swagger-ui...` | `sky-booking-swagger-ingress` | `sky-booking-service:5555` |
   | `/booking/v3/api-docs` | `/booking/v3/api-docs/**` to `/v3/api-docs...` | `sky-booking-swagger-resources-ingress` | `sky-booking-service:5555` |
-  | `/offer/swagger-ui` | `/offer/swagger-ui/**` to `/swagger-ui...` | `sky-offer-swagger-ingress` | `sky-offer-service:5552` |
+  | `/offer/swagger-ui`, `/offer/swagger-ui.html` | `/offer/swagger-ui/**,/offer/swagger-ui.html` to `/swagger-ui...` | `sky-offer-swagger-ingress` | `sky-offer-service:5552` |
   | `/offer/v3/api-docs` | `/offer/v3/api-docs/**` to `/v3/api-docs...` | `sky-offer-swagger-resources-ingress` | `sky-offer-service:5552` |
-  | `/msg/swagger-ui` | `/msg/swagger-ui/**` to `/swagger-ui...` | `sky-message-swagger-ingress` | `sky-message-service:5553` |
+  | `/msg/swagger-ui`, `/msg/swagger-ui.html` | `/msg/swagger-ui/**,/msg/swagger-ui.html` to `/swagger-ui...` | `sky-message-swagger-ingress` | `sky-message-service:5553` |
   | `/msg/v3/api-docs` | `/msg/v3/api-docs/**` to `/v3/api-docs...` | `sky-message-swagger-resources-ingress` | `sky-message-service:5553` |
 
   One deliberate difference from the chart. The nginx `rewrite-target` is `/swagger-ui/$2` and `/v3/api-docs/$2`, so
@@ -166,9 +186,9 @@ predicate claimed it, which is what lets one assertion carry both halves.
 - `SkyGatewayApplicationTest`, a context-load smoke test on a random port with `{"local", "test"}` active.
 - `SecurityConfigLocalProfileTest`, also `{"local", "test"}`: actuator and `/actuator/prometheus` open without
   credentials, the two notify-route predicates, and four parameterised cases that are the route table's only
-  mechanical guard. One walks all seven published API paths and one walks the six published documentation paths,
-  requiring each to reach routing rather than a 401 or a 404, so a predicate that stops covering a resource fails the
-  build. A third walks the eight sub-paths a Swagger UI page pulls for itself, which is the half a single
+  mechanical guard. One walks all seven published API paths and one walks the nine published documentation paths,
+  the three `/x/swagger-ui.html` entry points included, requiring each to reach routing rather than a 401 or a 404,
+  so a predicate that stops covering a resource fails the build. A third walks the eight sub-paths a Swagger UI page pulls for itself, which is the half a single
   `index.html` assertion would miss. The fourth walks `/booking/api`, `/offer/api` and `/msg/api` and requires a 404,
   so the retired prefixes cannot quietly come back, now widened to prove that the new `/offer`, `/booking` and `/msg`
   prefixes did not grow into general service prefixes. A fifth case requires the unprefixed `/swagger-ui/index.html`,
@@ -177,8 +197,10 @@ predicate claimed it, which is what lets one assertion carry both halves.
 - `DocumentationRouteTest`, `{"local", "test"}`, the only test in this module that proves what a route sends rather
   than that it matched. `StubUpstream` is a JDK `com.sun.net.httpserver.HttpServer` on a random loopback port that
   answers every request with the path it received and the `X-Forwarded-Prefix` it was given, and
-  `@DynamicPropertySource` points the three REST upstreams at it. Thirteen cases then pin the rewrite target and the
+  `@DynamicPropertySource` points the three REST upstreams at it. Sixteen cases then pin the rewrite target and the
   stripped prefix together, which is the pair the Swagger UI depends on and which a status-code assertion cannot see.
+  Three of them are the `/x/swagger-ui.html` entry point, which has to arrive as `/swagger-ui.html` rather than as
+  `/swagger-ui/.html` or `/swagger-ui/`, and that is the half a status assertion would pass straight through.
   Keep this class pointed at a stub rather than at a dead port, because a 5xx would pass against a broken rewrite.
 - `ServletExceptionHandlingAbsentTest`, which pins that `sky-common`'s servlet exception handling never loads in
   this reactive module.

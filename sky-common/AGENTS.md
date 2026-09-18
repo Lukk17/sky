@@ -103,6 +103,26 @@ the cosmetic `version` in `build.gradle.kts`.
     address last, that being the narrowest of the three and the only one that needs no edge running. What
     must never come back is a server url carrying a path segment, which is what the old `/booking/api` form
     was: with absolute paths in the document, a base with a path is always wrong.
+
+    The group is named once and labelled once, and neither belongs in a service. `OpenApiAutoConfiguration`
+    builds the one `GroupedOpenApi`, group `public`, which springdoc publishes at `/v3/api-docs/public`, and it
+    now also sets `displayName` from `${springdoc.info.title:${spring.application.name:Sky API}}`, the same
+    expression `OpenApiSecurityAutoConfiguration` already uses for the document title, so the entry in the Swagger
+    UI dropdown reads `sky-offer` rather than `public`. The group name is the URL segment and the display name is
+    the label: in `SwaggerUrl` the group is `@JsonIgnore` and the display name is what serialises as `name`, which
+    is why a service-naming label costs no path change and breaks neither the Bruno collection nor the
+    `springdoc.api-docs.path` the documentation build reads.
+
+    What this replaced was a hand-written `springdoc.swagger-ui.urls` entry in each of the three services, all
+    three labelled `Booking API doc` and all three pointing at `${SWAGGER_URL:/v3/api-docs/public}`. It did not
+    override the group, it duplicated it: `SwaggerUiConfigParameters` starts from the configured urls and
+    `AbstractSwaggerWelcome.init` then adds one entry per registered group, and the two carry different names so
+    neither displaces the other. The swagger-config response listed the same address twice, once under a label
+    naming the wrong service on two of the three. `SWAGGER_URL` went with it: no compose file, no chart, no
+    workflow and no script in this repository ever set it, so it was an override nothing could reach, and the one
+    thing it could have done, pointing the dropdown at a second document, is what a second `GroupedOpenApi` bean
+    is for. Do not put a `springdoc.swagger-ui.urls` block back in a service: it re-creates the duplicate rather
+    than replacing the group.
   - `common.config`: `CommonConfigPropertiesAutoConfiguration` binding the shared server, management and
     logging-level property records, plus the startup credential check covered in its own section below:
     `MissingCredential`, `MissingCredentialException`, `RequiredCredentials`, `DatasourceCredentialsValidator`,

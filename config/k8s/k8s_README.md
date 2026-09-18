@@ -32,11 +32,11 @@ Three services publish Swagger UI through the ingress. All three sit behind oaut
 
 | Service | URL |
 |---|---|
-| sky-offer | https://skycloud.luksarna.com/offer/swagger-ui/index.html |
-| sky-booking | https://skycloud.luksarna.com/booking/swagger-ui/index.html |
-| sky-message | https://skycloud.luksarna.com/msg/swagger-ui/index.html |
+| sky-offer | https://skycloud.luksarna.com/offer/swagger-ui.html |
+| sky-booking | https://skycloud.luksarna.com/booking/swagger-ui.html |
+| sky-message | https://skycloud.luksarna.com/msg/swagger-ui.html |
 
-The reverse proxy rewrites the path, and Swagger UI cannot always work out where its own config lives behind that rewrite. When the page loads empty, paste the matching api-docs URL into the Explore box:
+Each of those redirects to `/<prefix>/swagger-ui/index.html`, and the page finds its own document from there. Nothing has to be pasted into the Explore box: the documentation ingresses hand the service the prefix they stripped, in `nginx.ingress.kubernetes.io/x-forwarded-prefix`, so springdoc names the prefixed document address and the dropdown names the service that answered. If a page ever does load empty, that annotation is the first thing to check. The document itself is at:
 
 | Service | api-docs URL |
 |---|---|

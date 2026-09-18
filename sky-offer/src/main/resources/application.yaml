@@ -32,9 +32,6 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: '/swagger-ui.html'
-    urls:
-      - url: ${SWAGGER_URL:/v3/api-docs/public}
-        name: Booking API doc
 
 spring:
   threads:

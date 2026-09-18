@@ -220,6 +220,11 @@ port. This is useful when running services directly without the gateway:
 
 The raw OpenAPI JSON is at `/v3/api-docs` on each service.
 
+Through an edge, the entry point carries the service prefix, `http://localhost:5777/offer/swagger-ui.html`
+under the gateway and `https://skycloud.luksarna.com/offer/swagger-ui.html` through the ingress, with `booking`
+and `msg` for the other two. Each redirects to the page under the same prefix and the page finds its own
+document from there.
+
 ---
 
 ### OpenAPI specs

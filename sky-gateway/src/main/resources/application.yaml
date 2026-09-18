@@ -40,7 +40,7 @@ spring:
             - id: booking-swagger-route
               uri: ${sky-gateway.booking-uri}
               predicates:
-                - Path=/booking/swagger-ui/**
+                - Path=/booking/swagger-ui/**,/booking/swagger-ui.html
               filters:
                 - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
 
@@ -54,7 +54,7 @@ spring:
             - id: offer-swagger-route
               uri: ${sky-gateway.offer-uri}
               predicates:
-                - Path=/offer/swagger-ui/**
+                - Path=/offer/swagger-ui/**,/offer/swagger-ui.html
               filters:
                 - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
 
@@ -68,7 +68,7 @@ spring:
             - id: message-swagger-route
               uri: ${sky-gateway.message-uri}
               predicates:
-                - Path=/msg/swagger-ui/**
+                - Path=/msg/swagger-ui/**,/msg/swagger-ui.html
               filters:
                 - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
 
@@ -157,7 +157,7 @@ spring:
             - id: booking-swagger-route
               uri: ${sky-gateway.booking-uri}
               predicates:
-                - Path=/booking/swagger-ui/**
+                - Path=/booking/swagger-ui/**,/booking/swagger-ui.html
               filters:
                 - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
                 - TokenRelay=
@@ -173,7 +173,7 @@ spring:
             - id: offer-swagger-route
               uri: ${sky-gateway.offer-uri}
               predicates:
-                - Path=/offer/swagger-ui/**
+                - Path=/offer/swagger-ui/**,/offer/swagger-ui.html
               filters:
                 - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
                 - TokenRelay=
@@ -189,7 +189,7 @@ spring:
             - id: message-swagger-route
               uri: ${sky-gateway.message-uri}
               predicates:
-                - Path=/msg/swagger-ui/**
+                - Path=/msg/swagger-ui/**,/msg/swagger-ui.html
               filters:
                 - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
                 - TokenRelay=

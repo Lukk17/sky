@@ -54,6 +54,14 @@ repository.
   every `x-forwarded-` header when it is not. springdoc builds the config address and the document
   address it hands the browser out of that header, so with it empty a Swagger UI page loads its shell,
   asks for a document at an address no route can claim, and shows the Swagger demo API instead of ours.
+- `/booking/swagger-ui.html`, `/offer/swagger-ui.html` and `/msg/swagger-ui.html` on the three swagger
+  routes, alongside the sub-paths they already carried. That is the documented entry point, the value
+  of `springdoc.swagger-ui.path` in all three services and the address a person types, and it matched
+  no predicate here and no ingress path in the cluster, so the only way in was to know the internal
+  `/swagger-ui/index.html`. The existing `RewritePath` needed no change, because its optional
+  separator already forwards the path as `/swagger-ui.html`. springdoc answers it with a
+  prefix-aware redirect to `/<prefix>/swagger-ui/index.html`, which is the page the six routes
+  already served.
 
 ### Changed
 - This module is consumed by Docker, not by Kubernetes. There is no Helm chart for it, and there

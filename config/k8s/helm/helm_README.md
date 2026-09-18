@@ -343,10 +343,20 @@ Using `sky-offer` as the example:
 | `/api/v1/offers` | `Prefix` | nothing, forwarded as is | None, this is the public list |
 | `/api/v1/search` | `Prefix` | nothing, forwarded as is | None, this is the public search |
 | `/api/v1/owner/offers` | `Prefix` | nothing, forwarded as is | Through oauth2-proxy |
-| `/offer/swagger-ui(/\|$)(.*)` | `ImplementationSpecific` | `/swagger-ui/$2` | Through oauth2-proxy |
+| `/offer/swagger-ui(/\|[.]\|$)(.*)` | `ImplementationSpecific` | `/swagger-ui$1$2` | Through oauth2-proxy |
 | `/offer/v3/api-docs(/\|$)(.*)` | `ImplementationSpecific` | `/v3/api-docs/$2` | Through oauth2-proxy |
 
 The API rows lose their prefix because the three REST services own disjoint top-level resources: `offers`, `search` and `owner/offers` here, `bookings` and `user/bookings` on sky-booking, `messages` on sky-message. The last two rows keep theirs because Swagger UI and the api-docs are the same path on all three services, so those are the one place a prefix and a rewrite are still doing real work.
+
+The swagger row also matches a dot, so `/offer/swagger-ui.html` reaches the service as `/swagger-ui.html`. That is the documented entry point, the value of `springdoc.swagger-ui.path`, and it needs the separator that matched to be the separator forwarded, which is why that row rewrites to `/swagger-ui$1$2` rather than to a hardcoded slash. The class `[.]` is a character class rather than `\.` because a backslash is not a legal escape inside a double-quoted YAML scalar.
+
+Both documentation rows carry one more annotation the API rows must not have:
+
+```yaml
+nginx.ingress.kubernetes.io/x-forwarded-prefix: "/offer"
+```
+
+nginx strips the prefix in the rewrite and otherwise tells the upstream nothing about it, and springdoc builds `configUrl`, `oauth2RedirectUrl` and every dropdown entry from that header. Without it the Swagger UI page loads its shell and then asks for a document at `/v3/api-docs/...`, which is a path no ingress claims for one service over the other two, so the page stays empty. The value is that ingress's own prefix, `/booking` and `/msg` being the other two, it lives in `values.yaml` and both overlays inherit it, and it belongs on a documentation ingress only: an API path is served unrewritten, so a prefix there would be a lie.
 
 Two consequences of that split are worth knowing before adding a path. Because the swagger rows still carry `rewrite-target` and `use-regex`, ingress-nginx compiles every path on that host as a case-insensitive regex location, the API rows included, and regex locations are first match over a list ingress-nginx sorts by descending path length rather than nginx's longest-prefix rule. That decides nothing today, because `^/api/v1/offers` cannot match `/api/v1/owner/offers` and the owner Ingress wins by being disjoint rather than by sorting first. It did decide under the old prefixes, where `^/offer/api` matched `/offer/api/owner/offers` too and only the length sort kept the auth gate in front of the owner endpoints. A new path that is a strict extension of an existing one puts that dependency back, so keep them disjoint.
 

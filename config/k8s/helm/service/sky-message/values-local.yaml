@@ -35,7 +35,7 @@ ingress:
   swagger:
     name: "sky-message-swagger-ingress"
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui/$2"
+      nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui$1$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
@@ -47,7 +47,7 @@ ingress:
     hosts:
       - host: "localhost"
         paths:
-          - path: "/msg/swagger-ui(/|$)(.*)"
+          - path: "/msg/swagger-ui(/|[.]|$)(.*)"
             pathType: "ImplementationSpecific"
 
   swaggerResource:

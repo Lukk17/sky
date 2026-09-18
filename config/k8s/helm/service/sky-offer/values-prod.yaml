@@ -47,7 +47,7 @@ ingress:
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
-          - path: "/offer/swagger-ui(/|$)(.*)"
+          - path: "/offer/swagger-ui(/|[.]|$)(.*)"
             pathType: "ImplementationSpecific"
 
   swaggerResource:

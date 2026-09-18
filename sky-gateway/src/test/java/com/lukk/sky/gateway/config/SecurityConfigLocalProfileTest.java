@@ -61,10 +61,13 @@ class SecurityConfigLocalProfileTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+            "/booking/swagger-ui.html",
             "/booking/swagger-ui/index.html",
             "/booking/v3/api-docs",
+            "/offer/swagger-ui.html",
             "/offer/swagger-ui/index.html",
             "/offer/v3/api-docs",
+            "/msg/swagger-ui.html",
             "/msg/swagger-ui/index.html",
             "/msg/v3/api-docs"
     })

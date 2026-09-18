@@ -181,7 +181,14 @@ independently-deployable services. The module version is not restated here: the 
   worse than an object nobody references: the leak is sweepable from the key prefix, the blocked delete is not
   workaroundable by the caller. Narrow that catch if a new storage exception appears, do not widen it to `Exception`,
   and do not make it swallow an upload failure, which must reach the caller.
-- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`. The contract in
+- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`, entered at `/swagger-ui.html`, which is
+  `springdoc.swagger-ui.path` here and answers a prefix-aware 302 to the page. Behind an edge both live under
+  `/offer`, and the prefix reaches springdoc only because the documentation ingresses set
+  `nginx.ingress.kubernetes.io/x-forwarded-prefix` and `server.forward-headers-strategy: framework` is set
+  above. There is no `springdoc.swagger-ui.urls` block here and there must not be one: the dropdown entry is
+  the `public` group `OpenApiAutoConfiguration` registers in sky-common, labelled from `springdoc.info.title`,
+  and a local block duplicates that entry rather than replacing it. See [sky-common/AGENTS.md](../sky-common/AGENTS.md).
+  The contract in
   `docs/api/openapi/sky-offer.openapi.yaml` is generated, not written. `sky.openapi-conventions` wires the
   springdoc Gradle plugin here and `build` depends on `generateOpenApiDocs`, which forks the application under
   the `local,openapi` profile pair on port 7972 and fetches the grouped document from it. Never hand-edit that

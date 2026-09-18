@@ -76,8 +76,9 @@ ingress:
   swagger:
     name: "sky-offer-swagger-ingress"
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui/$2"
+      nginx.ingress.kubernetes.io/rewrite-target: "/swagger-ui$1$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/offer"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
@@ -87,7 +88,7 @@ ingress:
     hosts:
       - host: ""
         paths:
-          - path: "/offer/swagger-ui(/|$)(.*)"
+          - path: "/offer/swagger-ui(/|[.]|$)(.*)"
             pathType: "ImplementationSpecific"
 
   swaggerResource:
@@ -95,6 +96,7 @@ ingress:
     annotations:
       nginx.ingress.kubernetes.io/rewrite-target: "/v3/api-docs/$2"
       nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/offer"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"

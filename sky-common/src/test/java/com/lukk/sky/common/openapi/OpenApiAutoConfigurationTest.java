@@ -33,6 +33,23 @@ class OpenApiAutoConfigurationTest {
     }
 
     @Test
+    @DisplayName("publicApi_namesTheServiceInTheDropdown")
+    void publicApi_namesTheServiceInTheDropdown() {
+        runner.withPropertyValues("springdoc.info.title=sky-offer")
+                .run(context -> assertThat(context.getBean(GroupedOpenApi.class).getDisplayName())
+                        .as("the dropdown label is the only place a reader learns which service answered")
+                        .isEqualTo("sky-offer"));
+    }
+
+    @Test
+    @DisplayName("publicApi_fallsBackToTheApplicationName_whenNoTitleIsSet")
+    void publicApi_fallsBackToTheApplicationName_whenNoTitleIsSet() {
+        runner.withPropertyValues("spring.application.name=sky-message")
+                .run(context -> assertThat(context.getBean(GroupedOpenApi.class).getDisplayName())
+                        .isEqualTo("sky-message"));
+    }
+
+    @Test
     @DisplayName("backsOff_whenTheServiceDeclaresItsOwnGroup")
     void backsOff_whenTheServiceDeclaresItsOwnGroup() {
         runner.withUserConfiguration(ServiceSuppliedGroupConfig.class)

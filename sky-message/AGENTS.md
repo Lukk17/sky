@@ -56,7 +56,14 @@ the cosmetic `version` in `build.gradle.kts`.
   `DatasourceCredentialsAutoConfiguration` in sky-common, naming the variable and the property, instead of
   binding the literal placeholder text as the password. `DatasourceCredentialsStartupTest` pins that behaviour
   against this module's own configuration files, so do not delete it when touching the datasource block.
-- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`. The contract in
+- API docs: springdoc `webmvc` UI at `/swagger-ui/index.html`, entered at `/swagger-ui.html`, which is
+  `springdoc.swagger-ui.path` here and answers a prefix-aware 302 to the page. Behind an edge both live under
+  `/msg`, and the prefix reaches springdoc only because the documentation ingresses set
+  `nginx.ingress.kubernetes.io/x-forwarded-prefix` and `server.forward-headers-strategy: framework` is set
+  above. There is no `springdoc.swagger-ui.urls` block here and there must not be one: the dropdown entry is
+  the `public` group `OpenApiAutoConfiguration` registers in sky-common, labelled from `springdoc.info.title`,
+  and a local block duplicates that entry rather than replacing it. See [sky-common/AGENTS.md](../sky-common/AGENTS.md).
+  The contract in
   `docs/api/openapi/sky-message.openapi.yaml` is generated, not written. `sky.openapi-conventions` wires the
   springdoc Gradle plugin here and `build` depends on `generateOpenApiDocs`, which forks the application under
   the `local,openapi` profile pair on port 7973 and fetches the grouped document from it. Never hand-edit that
