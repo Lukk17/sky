@@ -24,8 +24,10 @@ ingress:
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
-          - path: "/booking/api(/|$)(.*)"
-            pathType: "ImplementationSpecific"
+          - path: "/api/v1/bookings"
+            pathType: "Prefix"
+          - path: "/api/v1/user/bookings"
+            pathType: "Prefix"
 
   swagger:
     annotations:

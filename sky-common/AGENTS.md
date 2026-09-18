@@ -87,12 +87,16 @@ the cosmetic `version` in `build.gradle.kts`.
 
     Which addresses may appear there is decided by the paths, and this is the part that is not obvious. The
     published paths are absolute and already carry the `/api/v1` prefix, so a server url is correct only when
-    it serves `/api/v1/...` directly, which is the service's own address and nothing else. The gateway route
-    `/booking/api/**` and the nginx `rewrite-target: /api/v1/$2` both replace that prefix rather than
-    prepending to it, so `http://localhost:5777/booking/api` and `https://skycloud.luksarna.com/booking/api`
-    resolve to `/booking/api/api/v1/bookings` against these paths and reach nothing. The hand-written
-    documents these replaced carried both, correctly, because their paths were relative to the base. Do not
-    add them back here: making them true means publishing relative paths, which changes what a client calls.
+    it serves `/api/v1/...` directly. That used to be the service's own address and nothing else, because the
+    gateway route `/booking/api/**` and the nginx `rewrite-target: /api/v1/$2` both replaced that prefix
+    rather than prepending to it, so `http://localhost:5777/booking/api` resolved to
+    `/booking/api/api/v1/bookings` against these paths and reached nothing. That is no longer the shape of the
+    edge. Nothing rewrites anything now, the published path is the path the service serves, and so the bare
+    gateway and ingress origins `http://localhost:5777` and `https://skycloud.luksarna.com` do serve
+    `/api/v1/...` directly and would be correct entries. They are still not declared, because adding one
+    changes the generated documents under `docs/api/openapi/` and that is a contract decision nobody has
+    taken. What must never come back is a server url carrying a path segment, which is what the old
+    `/booking/api` form was: with absolute paths in the document, a base with a path is always wrong.
   - `common.config`: `CommonConfigPropertiesAutoConfiguration` binding the shared server, management and
     logging-level property records, plus the startup credential check covered in its own section below:
     `MissingCredential`, `MissingCredentialException`, `RequiredCredentials`, `DatasourceCredentialsValidator`,

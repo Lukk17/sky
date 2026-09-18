@@ -2,6 +2,8 @@ package com.lukk.sky.gateway.config;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -41,11 +43,28 @@ class SecurityConfigLocalProfileTest {
                 .expectStatus().isOk();
     }
 
-    @Test
-    void proxiedRoute_whenNoCredentialsSupplied_thenReachesRoutingInsteadOfBeingRejected() {
-        client.get().uri("/booking/api/anything")
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/v1/offers",
+            "/api/v1/offers/11111111-1111-1111-1111-111111111111/owner",
+            "/api/v1/search",
+            "/api/v1/owner/offers",
+            "/api/v1/bookings",
+            "/api/v1/user/bookings",
+            "/api/v1/messages"
+    })
+    void publishedApiPath_whenNoCredentialsSupplied_thenReachesItsRouteInsteadOfBeingRejected(String path) {
+        client.get().uri(path)
                 .exchange()
                 .expectStatus().is5xxServerError();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/booking/api/anything", "/offer/api/anything", "/msg/api/anything"})
+    void retiredServicePrefix_whenRequested_thenMatchesNoRoute(String path) {
+        client.get().uri(path)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test

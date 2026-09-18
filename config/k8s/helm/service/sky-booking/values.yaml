@@ -36,7 +36,7 @@ service:
   name: "sky-booking-service"
   type: "ClusterIP"
   port: "5555"
-  apiPrefix: "/booking/api"
+  apiPrefix: "/api/v1"
 
 ingress:
   tls:
@@ -45,8 +45,6 @@ ingress:
   service:
     name: "sky-booking-ingress"
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/$2"
-      nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
@@ -56,8 +54,10 @@ ingress:
     hosts:
       - host: ""
         paths:
-          - path: "/booking/api(/|$)(.*)"
-            pathType: "ImplementationSpecific"
+          - path: "/api/v1/bookings"
+            pathType: "Prefix"
+          - path: "/api/v1/user/bookings"
+            pathType: "Prefix"
   swagger:
     name: "sky-booking-swagger-ingress"
     annotations:

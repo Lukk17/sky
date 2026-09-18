@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/msg/api/messages/received?page=0&size=20"
+  url: "{{baseUrl}}/api/v1/messages/received?page=0&size=20"
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"

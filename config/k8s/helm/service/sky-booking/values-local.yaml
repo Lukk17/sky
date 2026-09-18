@@ -19,8 +19,6 @@ ingress:
   service:
     name: "sky-booking-ingress"
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: "/api/v1/$2"
-      nginx.ingress.kubernetes.io/use-regex: "true"
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
@@ -31,8 +29,10 @@ ingress:
     hosts:
       - host: "localhost"
         paths:
-          - path: "/booking/api(/|$)(.*)"
-            pathType: "ImplementationSpecific"
+          - path: "/api/v1/bookings"
+            pathType: "Prefix"
+          - path: "/api/v1/user/bookings"
+            pathType: "Prefix"
 
   swagger:
     name: "sky-booking-swagger-ingress"

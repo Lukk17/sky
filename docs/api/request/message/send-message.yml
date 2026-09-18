@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/msg/api/messages"
+  url: "{{baseUrl}}/api/v1/messages"
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"

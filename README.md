@@ -40,7 +40,7 @@ Start Kafka, the four services, and the gateway in Docker Compose:
 docker compose -f config/docker/docker-compose.yaml up --build -d
 ```
 
-The gateway then answers at `http://localhost:5777`, and each service port stays published for direct calls.
+The gateway then answers at `http://localhost:5777`, and that is the only sky port published to the host, matching the k3d cluster where only the ingress is reachable. The four services listen on 5552 to 5555 inside the compose network and are not dialable from the host.
 
 Run one service against the local stack instead. Unix shell:
 
@@ -157,12 +157,12 @@ sequenceDiagram
     participant KF as Kafka
     participant NT as sky-notify
 
-    FE->>NG: POST /booking/api/bookings (JWT in Authorization header)
+    FE->>NG: POST /api/v1/bookings (JWT in Authorization header)
     NG->>OP: forward (auth-url check)
     OP->>KC: validate OIDC session
     KC-->>OP: session valid
     OP-->>NG: 200 plus x-auth-request-email
-    NG->>BK: POST /api/v1/bookings (Authorization and x-auth-request-email forwarded)
+    NG->>BK: POST /api/v1/bookings (path unchanged, Authorization and x-auth-request-email forwarded)
     BK->>OF: GET /api/v1/offers/{id}/owner (verify offer ownership)
     OF-->>BK: 200 owner email
     BK->>BK: validate and persist booking (PostgreSQL through JPA, schema owned by Flyway)
@@ -267,14 +267,18 @@ The three stateful services (`sky-offer`, `sky-booking`, `sky-message`) share th
 
 Service ports come from `OFFER_PORT`, `MESSAGE_PORT`, `NOTIFY_PORT`, `BOOKING_PORT`, and `GATEWAY_PORT`, each defaulting to the port in the module table above.
 
-The gateway route table mirrors the production nginx rewrite rules:
+The gateway route table mirrors the production nginx ingress paths. Nothing is rewritten: the published path is
+the path the service serves, and the edge only decides which service it belongs to.
 
-| Incoming path | Upstream | Rewritten to |
-|---|---|---|
-| `/offer/api/**` | sky-offer:5552 | `/api/v1/{remainder}` |
-| `/booking/api/**` | sky-booking:5555 | `/api/v1/{remainder}` |
-| `/msg/api/**` | sky-message:5553 | `/api/v1/{remainder}` |
-| `/notifyWebsocket/**` | sky-notify:5554 | passthrough, no rewrite |
+| Published path | Upstream |
+|---|---|
+| `/api/v1/offers`, `/api/v1/search`, `/api/v1/owner/offers` | sky-offer:5552 |
+| `/api/v1/bookings`, `/api/v1/user/bookings` | sky-booking:5555 |
+| `/api/v1/messages` | sky-message:5553 |
+| `/notifyWebsocket` | sky-notify:5554 |
+
+This works because the three REST services own disjoint top-level resources. A new one has to stay disjoint and
+has to be added to the gateway route and to the service ingress, or it is unreachable from outside.
 
 The gateway defaults to the OIDC login flow and the token-relay filter, which need `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID`, and `KEYCLOAK_CLIENT_SECRET`. Set `SPRING_PROFILES_ACTIVE=local` to get the permit-all chain instead, which is what Docker Compose does and what a laptop run wants. See [sky-gateway/README.md](sky-gateway/README.md).
 

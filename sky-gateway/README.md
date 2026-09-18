@@ -12,14 +12,16 @@ The Spring Cloud release train is pinned in [gradle/libs.versions.toml](../gradl
 
 ### Routes
 
-| Incoming path | Upstream variable | Default upstream | Rewritten to |
-|---|---|---|---|
-| `/offer/api/**` | `OFFER_URI` | `http://localhost:5552` | `/api/v1/{remainder}` |
-| `/booking/api/**` | `BOOKING_URI` | `http://localhost:5555` | `/api/v1/{remainder}` |
-| `/msg/api/**` | `MESSAGE_URI` | `http://localhost:5553` | `/api/v1/{remainder}` |
-| `/notifyWebsocket/**` | `NOTIFY_URI` | `http://localhost:5554` | passthrough, no rewrite |
+| Published path | Upstream variable | Default upstream |
+|---|---|---|
+| `/api/v1/offers`, `/api/v1/search`, `/api/v1/owner/offers` | `OFFER_URI` | `http://localhost:5552` |
+| `/api/v1/bookings`, `/api/v1/user/bookings` | `BOOKING_URI` | `http://localhost:5555` |
+| `/api/v1/messages` | `MESSAGE_URI` | `http://localhost:5553` |
+| `/notifyWebsocket` | `NOTIFY_URI` | `http://localhost:5554` |
 
-The routes are declared in [src/main/resources/application.yaml](src/main/resources/application.yaml). The three API routes mirror the production nginx rewrite annotations exactly, so a request that works here works against the cluster with only the host changed. The fourth mirrors the `sky-notify` Ingress, which also passes `/notifyWebsocket` through without a rewrite, see below.
+Nothing is rewritten. The published path is the path the service serves, so the gateway only decides which service a resource belongs to and then forwards the request unchanged. That works because the three REST services own disjoint top-level resources, so a new one has to stay disjoint from the other two and has to be added here and to that service ingress, or it is unreachable from outside.
+
+The routes are declared in [src/main/resources/application.yaml](src/main/resources/application.yaml). The three API routes mirror the production nginx ingress paths exactly, so a request that works here works against the cluster with only the host changed. The fourth mirrors the `sky-notify` Ingress, which also serves `/notifyWebsocket` unchanged, see below.
 
 The notification route predicate is `/notifyWebsocket/**` because that is the exact path `sky-notify` registers its STOMP endpoint on, so a WebSocket client connects through the gateway at `ws://localhost:5777/notifyWebsocket`. Two tests in [src/test/java/com/lukk/sky/gateway/config/SecurityConfigLocalProfileTest.java](src/test/java/com/lukk/sky/gateway/config/SecurityConfigLocalProfileTest.java) pin it: one asserts `/notifyWebsocket/info` reaches the route, the other asserts the old `/notify/**` prefix now matches nothing and returns 404.
 
@@ -106,7 +108,7 @@ Everything tuneable is in [src/main/resources/application.yaml](src/main/resourc
 
 ### Why this module exists
 
-The production edge is nginx-ingress rewrite annotations plus oauth2-proxy, and neither is practical to run on a laptop without a Kubernetes cluster. This module reproduces the URL surface (`/offer/api/**`, `/booking/api/**`, `/msg/api/**`) without one, so the Bruno collection and the frontend work against `http://localhost:5777` whether the backend is running from Gradle, from Docker Compose, or in a local cluster.
+The production edge is nginx-ingress path routing plus oauth2-proxy, and neither is practical to run on a laptop without a Kubernetes cluster. This module reproduces the URL surface, the `/api/v1/...` paths the services serve, without one, so the Bruno collection and the frontend work against `http://localhost:5777` whether the backend is running from Gradle, from Docker Compose, or in a local cluster.
 
 ---
 

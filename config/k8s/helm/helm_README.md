@@ -334,16 +334,21 @@ helm install sky-notify ./config/k8s/helm/service/sky-notify -f ./config/k8s/hel
 
 ### Ingress and routing
 
-nginx-ingress terminates TLS and rewrites paths. Every service chart templates its own Ingress resources, `sky-notify` included. `sky-notify` is the one that does not rewrite: its single Ingress serves `/notifyWebsocket` with `pathType: Prefix`, passes the path through unchanged, carries no oauth2-proxy auth annotations because the JWT is checked on the STOMP `CONNECT` frame, and raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not close an idle WebSocket after its default 60.
+nginx-ingress terminates TLS and routes on the path. The API paths are not rewritten: what a client calls is what the service serves, so an Ingress matches a resource and forwards the request unchanged. Every service chart templates its own Ingress resources, `sky-notify` included, and `sky-notify` has only the one, serving `/notifyWebsocket` with `pathType: Prefix`, carrying no oauth2-proxy auth annotations because the JWT is checked on the STOMP `CONNECT` frame, and raising `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not close an idle WebSocket after its default 60.
 
 Using `sky-offer` as the example:
 
-| Public path | Rewritten to | Authentication |
-|---|---|---|
-| `/offer/api(/\|$)(.*)` | `/api/v1/$2` | None, these are the public list and search endpoints |
-| `/offer/api/owner(/\|$)(.*)` | `/api/v1/owner/$2` | Through oauth2-proxy |
-| `/offer/swagger-ui(/\|$)(.*)` | `/swagger-ui/$2` | Through oauth2-proxy |
-| `/offer/v3/api-docs(/\|$)(.*)` | `/v3/api-docs/$2` | Through oauth2-proxy |
+| Public path | `pathType` | Rewritten to | Authentication |
+|---|---|---|---|
+| `/api/v1/offers` | `Prefix` | nothing, forwarded as is | None, this is the public list |
+| `/api/v1/search` | `Prefix` | nothing, forwarded as is | None, this is the public search |
+| `/api/v1/owner/offers` | `Prefix` | nothing, forwarded as is | Through oauth2-proxy |
+| `/offer/swagger-ui(/\|$)(.*)` | `ImplementationSpecific` | `/swagger-ui/$2` | Through oauth2-proxy |
+| `/offer/v3/api-docs(/\|$)(.*)` | `ImplementationSpecific` | `/v3/api-docs/$2` | Through oauth2-proxy |
+
+The API rows lose their prefix because the three REST services own disjoint top-level resources: `offers`, `search` and `owner/offers` here, `bookings` and `user/bookings` on sky-booking, `messages` on sky-message. The last two rows keep theirs because Swagger UI and the api-docs are the same path on all three services, so those are the one place a prefix and a rewrite are still doing real work.
+
+Two consequences of that split are worth knowing before adding a path. Because the swagger rows still carry `rewrite-target` and `use-regex`, ingress-nginx compiles every path on that host as a case-insensitive regex location, the API rows included, and regex locations are first match over a list ingress-nginx sorts by descending path length rather than nginx's longest-prefix rule. That decides nothing today, because `^/api/v1/offers` cannot match `/api/v1/owner/offers` and the owner Ingress wins by being disjoint rather than by sorting first. It did decide under the old prefixes, where `^/offer/api` matched `/offer/api/owner/offers` too and only the length sort kept the auth gate in front of the owner endpoints. A new path that is a strict extension of an existing one puts that dependency back, so keep them disjoint.
 
 The annotations that delegate to oauth2-proxy, which live in each service chart's `values-prod.yaml` because the first two name a concrete environment's front door:
 

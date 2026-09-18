@@ -5,7 +5,7 @@ info:
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/offer/api/owner/offers/{{offerId}}"
+  url: "{{baseUrl}}/api/v1/owner/offers/{{offerId}}"
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"

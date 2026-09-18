@@ -2,27 +2,27 @@
 
 ## What this verifies
 
-- POST `/offer/api/owner/offers` returns HTTP 201 with a server-assigned UUID `id`, `ownerEmail` equal to
+- POST `/api/v1/owner/offers` returns HTTP 201 with a server-assigned UUID `id`, `ownerEmail` equal to
   `lukk@sky.dev`, and the submitted `hotelName`, `city`, `country`, `price`, and `roomCapacity` echoed.
-- GET `/offer/api/offers` (public) returns HTTP 200 with a paginated body (`content` array and numeric
+- GET `/api/v1/offers` (public) returns HTTP 200 with a paginated body (`content` array and numeric
   `totalElements`).
-- POST `/offer/api/search` with the canary token returns HTTP 200 and the created offer appears in `content`
+- POST `/api/v1/search` with the canary token returns HTTP 200 and the created offer appears in `content`
   (retrieval by `hotelName` LIKE).
-- GET `/offer/api/owner/offers` returns HTTP 200 and the created offer appears in the owner's page.
-- GET `/offer/api/offers/{id}/owner` returns HTTP 200 with body `lukk@sky.dev`.
-- POST `/offer/api/owner/offers/{id}/photo` (multipart) returns HTTP 200 with a UUID `id` and a non-empty
+- GET `/api/v1/owner/offers` returns HTTP 200 and the created offer appears in the owner's page.
+- GET `/api/v1/offers/{id}/owner` returns HTTP 200 with body `lukk@sky.dev`.
+- POST `/api/v1/owner/offers/{id}/photo` (multipart) returns HTTP 200 with a UUID `id` and a non-empty
   `photoUrl` presigned URL pointing at the `sky-offers` bucket (persisted state in the object store, plus the
   server-owned `photo_object_key` column of `public.offer`), and fetching that presigned URL returns HTTP 200 with
   the canary marker `SKY-OFFER-PHOTO-CANARY-4471` in the stored bytes, so the object in the bucket is this fixture
   rather than any other image. No response carries `photoPath`, the field a client once used to overwrite the key.
-- PUT `/offer/api/owner/offers` returns HTTP 200, a follow-up read reflects the edited `hotelName` and `price`, and
+- PUT `/api/v1/owner/offers` returns HTTP 200, a follow-up read reflects the edited `hotelName` and `price`, and
   refetching `photoUrl` still returns the canary bytes, so the edit left the stored object where it was.
 - POST on the same photo path again replaces the photo: HTTP 200 with a new `photoUrl` that fetches the canary, and
   the address of the object it replaced answers 404.
-- DELETE `/offer/api/owner/offers/{id}/photo` returns HTTP 204 and the address it cleared answers 404, so the object
+- DELETE `/api/v1/owner/offers/{id}/photo` returns HTTP 204 and the address it cleared answers 404, so the object
   left the bucket and not just the column.
 - A final POST on the photo path restores a photo, so the teardown below has one left to take with it.
-- DELETE `/offer/api/owner/offers/{id}` returns HTTP 204, the offer no longer appears in the owner's page
+- DELETE `/api/v1/owner/offers/{id}` returns HTTP 204, the offer no longer appears in the owner's page
   (persisted-state removal from `public.offer`), and the photo it was still holding answers 404, so deleting the
   offer deletes its object too.
 

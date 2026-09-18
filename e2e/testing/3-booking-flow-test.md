@@ -2,19 +2,19 @@
 
 ## What this verifies
 
-- POST `/offer/api/owner/offers` returns HTTP 201 with a server-assigned UUID `id` and `ownerEmail` equal to
+- POST `/api/v1/owner/offers` returns HTTP 201 with a server-assigned UUID `id` and `ownerEmail` equal to
   `lukk@sky.dev` (the offer this flow books against).
 - The offer folder's whole photo lifecycle passes as part of this run, because the run includes that folder. The
   detail belongs to `2-offer-crud-test.md` and is not restated here.
-- POST `/booking/api/bookings` with `{offerId, dateToBook}` returns HTTP 201 with a server-assigned UUID `id`,
+- POST `/api/v1/bookings` with `{offerId, dateToBook}` returns HTTP 201 with a server-assigned UUID `id`,
   the booked `offerId`, a `bookedDate`, and `bookingUser` equal to `lukk@sky.dev`.
-- GET `/booking/api/user/bookings` returns HTTP 200 and the created booking appears in the user's page (persisted
+- GET `/api/v1/user/bookings` returns HTTP 200 and the created booking appears in the user's page (persisted
   state in Postgres `public.booking`).
-- GET `/offer/api/offers/{offerId}/owner` returns HTTP 200 with body `lukk@sky.dev` (the owner sky-booking resolves
+- GET `/api/v1/offers/{offerId}/owner` returns HTTP 200 with body `lukk@sky.dev` (the owner sky-booking resolves
   internally).
-- DELETE `/booking/api/bookings/{bookingId}` returns HTTP 204 and the booking no longer appears in the user's page
+- DELETE `/api/v1/bookings/{bookingId}` returns HTTP 204 and the booking no longer appears in the user's page
   (persisted-state removal).
-- DELETE `/offer/api/owner/offers/{offerId}` returns HTTP 204 (cleanup of the seeded offer).
+- DELETE `/api/v1/owner/offers/{offerId}` returns HTTP 204 (cleanup of the seeded offer).
 
 ## Prerequisites
 

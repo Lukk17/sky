@@ -82,7 +82,7 @@ class SecurityConfigOidcProfileTest {
 
     @Test
     void proxiedRoute_whenNoCredentialsSupplied_thenRedirectsToLogin() {
-        client.get().uri("/booking/api/anything")
+        client.get().uri("/api/v1/bookings")
                 .exchange()
                 .expectStatus().isFound();
     }

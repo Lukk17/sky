@@ -73,7 +73,7 @@ The collection is self-driving: you never copy a token or an id by hand.
 4. Three more requests close the photo lifecycle, and each one goes back to the store rather than trusting the
    response body. `offer/replace-photo.yml` posts a second image and requires the address of the object it replaced
    to answer 404, which is how a leaked object fails the run. `offer/delete-photo.yml` calls
-   `DELETE /offer/api/owner/offers/{{offerId}}/photo`, expects 204, and requires the address it just cleared to be
+   `DELETE /api/v1/owner/offers/{{offerId}}/photo`, expects 204, and requires the address it just cleared to be
    gone as well. `offer/restore-photo.yml` uploads once more so the teardown still has a photo to take with it, and
    `cleanup/delete-offer.yml` then requires that last object to be gone too. `offer/edit-offer.yml` sits in the same
    group: it refetches the photo after the edit, which pins the rule that an edit cannot touch the stored object.
@@ -146,21 +146,23 @@ Tokens live for 300 seconds. Re-run `auth/get-token.yml`, or the curl above, whe
 
 ### Gateway routing
 
-Locally, sky-gateway (port 5777) strips the service prefix and rewrites the path before
-forwarding to the downstream service. Production uses the same mapping via nginx-ingress.
+Locally, sky-gateway (port 5777) decides which service a resource belongs to and forwards the request
+unchanged. Nothing is rewritten, so the path you call is the path the service serves. Production uses the
+same mapping via nginx-ingress.
 
-| Gateway prefix | Downstream service | Direct port | Rewritten to |
-|---|---|---|---|
-| `/booking/api/**` | sky-booking | 5555 | `/api/v1/{remainder}` |
-| `/offer/api/**` | sky-offer | 5552 | `/api/v1/{remainder}` |
-| `/msg/api/**` | sky-message | 5553 | `/api/v1/{remainder}` |
-| `/notifyWebsocket/**` | sky-notify | 5554 | passthrough, no rewrite |
+| Published path | Downstream service | Direct port |
+|---|---|---|
+| `/api/v1/bookings`, `/api/v1/user/bookings` | sky-booking | 5555 |
+| `/api/v1/offers`, `/api/v1/search`, `/api/v1/owner/offers` | sky-offer | 5552 |
+| `/api/v1/messages` | sky-message | 5553 |
+| `/notifyWebsocket` | sky-notify | 5554 |
 
 The collection covers the three REST services. The fourth row is the WebSocket handshake, which Bruno does not drive,
 and it is listed so the route table here matches [sky-gateway/README.md](../../sky-gateway/README.md).
 
-The Bruno collection uses `{{baseUrl}}/booking/api/...` etc. so requests work against
-both the gateway (local or prod) and directly against a service when you change `baseUrl`.
+The Bruno collection uses `{{baseUrl}}/api/v1/...` throughout, so the same request works against the gateway,
+against the cluster ingress, and directly against a service when you change `baseUrl` to that service port.
+Pointing `baseUrl` at a service no longer means editing the path as well.
 
 ---
 
@@ -168,8 +170,8 @@ both the gateway (local or prod) and directly against a service when you change 
 
 sky-offer has two public endpoints that work without a bearer token:
 
-- `GET {{baseUrl}}/offer/api/offers`, list all offers
-- `POST {{baseUrl}}/offer/api/search`, keyword search
+- `GET {{baseUrl}}/api/v1/offers`, list all offers
+- `POST {{baseUrl}}/api/v1/search`, keyword search
 
 Every other endpoint across all three services requires `Authorization: Bearer <token>`.
 The sky-booking and sky-message services have no public endpoints at all.

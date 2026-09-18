@@ -19,10 +19,13 @@ repository.
 ### Added
 - A Spring Cloud Gateway edge proxy for the local Docker stack, so a developer drives all four
   services through one origin instead of four ports with four CORS entries. It serves on 5777
-  (`GATEWAY_PORT`), which keeps it off 8080 and off every service port. Four routes:
-  `/booking/api/**`, `/offer/api/**` and `/msg/api/**` each rewrite to `/api/v1/**` on their
-  service, and `/notifyWebsocket/**` passes through to sky-notify unrewritten so the STOMP
-  handshake and its upgrade survive the hop.
+  (`GATEWAY_PORT`), which keeps it off 8080 and off every service port. Four routes, and none of
+  them rewrites anything: the published path is the path the service serves, so the gateway only
+  decides which service owns a resource and forwards the request unchanged. `/api/v1/bookings` and
+  `/api/v1/user/bookings` go to sky-booking, `/api/v1/offers`, `/api/v1/search` and
+  `/api/v1/owner/offers` to sky-offer, `/api/v1/messages` to sky-message, and `/notifyWebsocket/**`
+  to sky-notify so the STOMP handshake and its upgrade survive the hop. This works because the three
+  REST services own disjoint top-level resources, and it mirrors the cluster ingress paths exactly.
 - Two security profiles. The default profile wires an OAuth2 client against Keycloak through
   `KEYCLOAK_ISSUER_URI` and relays the token to the upstream services. The `local` profile
   installs a permit-all chain, so the stack starts and serves with no identity provider running

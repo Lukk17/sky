@@ -24,8 +24,8 @@ ingress:
     hosts:
       - host: "skycloud.luksarna.com"
         paths:
-          - path: "/msg/api(/|$)(.*)"
-            pathType: "ImplementationSpecific"
+          - path: "/api/v1/messages"
+            pathType: "Prefix"
 
   swagger:
     annotations:

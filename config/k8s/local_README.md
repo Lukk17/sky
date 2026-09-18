@@ -316,7 +316,7 @@ The collection passes in full against the cluster, every request and every asser
 A green run is worth more than a row of 200s, because three of its checks reach back into the object store rather than trusting a response body:
 
 - The photo round trip. The upload refetches its own presigned `photoUrl` through the floci ingress and asserts the canary marker is in the bytes that come back, so the object in the bucket is the fixture that was posted and not just any image.
-- The photo survives an edit. `PUT /offer/api/owner/offers` refetches the photo afterwards, which is the regression guard for the defect where a client-supplied path overwrote the server's object key and orphaned the real object.
+- The photo survives an edit. `PUT /api/v1/owner/offers` refetches the photo afterwards, which is the regression guard for the defect where a client-supplied path overwrote the server's object key and orphaned the real object.
 - The object really goes. The photo replace, the photo delete, and the offer delete each refetch the address they just invalidated and require a 404, so a leaked object fails the run rather than passing quietly.
 
 The collection and its environments are documented in [docs/api/README.md](../../docs/api/README.md).

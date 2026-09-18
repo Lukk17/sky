@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/offer/api/search"
+  url: "{{baseUrl}}/api/v1/search"
   headers:
     - name: Content-Type
       value: text/plain

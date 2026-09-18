@@ -2,13 +2,13 @@
 
 ## What this verifies
 
-- POST `/msg/api/messages` with a valid Bearer token returns HTTP 201 and a body carrying a server-assigned UUID
+- POST `/api/v1/messages` with a valid Bearer token returns HTTP 201 and a body carrying a server-assigned UUID
   `id`, `senderEmail` equal to `lukk@sky.dev`, the submitted `receiverEmail`, and the submitted canary `text`.
-- GET `/msg/api/messages/received` returns HTTP 200 with a paginated body (a `content` array and a numeric
+- GET `/api/v1/messages/received` returns HTTP 200 with a paginated body (a `content` array and a numeric
   `totalElements`).
-- GET `/msg/api/messages/sent` returns HTTP 200 and the just-created message appears in the sender's sent page,
+- GET `/api/v1/messages/sent` returns HTTP 200 and the just-created message appears in the sender's sent page,
   matched by `id` and the canary `text` (persisted state in Postgres `public.message`).
-- DELETE `/msg/api/messages/{id}` returns HTTP 204 and the message no longer appears in the sender's sent page
+- DELETE `/api/v1/messages/{id}` returns HTTP 204 and the message no longer appears in the sender's sent page
   (persisted-state removal).
 
 ## Prerequisites
