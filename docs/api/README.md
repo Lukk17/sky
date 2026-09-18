@@ -18,20 +18,29 @@ format (`.yml` request and environment files, with [request/opencollection.yml](
 as the collection root), which is the default format in Bruno v3.1 and later. It replaces the
 legacy single-file `.bru` format. Both still open in Bruno if you are on an older release.
 
-The collection has four environments in [request/environments/](request/environments/):
+The collection has five environments in [request/environments/](request/environments/):
 
-| File | `--env` value | Name shown in the app | `baseUrl` | Target |
+| File | `--env` value | Name shown in the app | `bookingUrl` / `offerUrl` / `messageUrl` | Target |
 |---|---|---|---|---|
-| [request/environments/local.yml](request/environments/local.yml) | `local` | `sky-local` | `http://localhost:5777` | The local Docker Compose or Gradle stack behind sky-gateway |
-| [request/environments/k8s.yml](request/environments/k8s.yml) | `k8s` | `k8s` | `http://localhost:5777` | A local in-cluster deployment (k3d, minikube, kind) |
-| [request/environments/prod.yml](request/environments/prod.yml) | `prod` | `sky-prod` | `https://skycloud.luksarna.com` | The deployed cluster |
-| [request/environments/ci.yml](request/environments/ci.yml) | `ci` | `sky-e2e` | `http://sky-gateway:5777` | The self-contained compose stack, from inside its own network |
+| [request/environments/local.yml](request/environments/local.yml) | `local` | `sky-local` | `http://localhost:5777` for all three | The local Docker Compose or Gradle stack behind sky-gateway |
+| [request/environments/k8s.yml](request/environments/k8s.yml) | `k8s` | `k8s` | `http://localhost:5777` for all three | A local in-cluster deployment (k3d, minikube, kind) |
+| [request/environments/prod.yml](request/environments/prod.yml) | `prod` | `sky-prod` | `https://skycloud.luksarna.com` for all three | The deployed cluster |
+| [request/environments/ci.yml](request/environments/ci.yml) | `ci` | `sky-e2e` | `http://sky-gateway:5777` for all three | The self-contained compose stack, from inside its own network |
+| [request/environments/direct.yml](request/environments/direct.yml) | `direct` | `sky-direct` | `:5555`, `:5552`, `:5553` on `http://localhost` | The services started from Gradle, with no gateway and no Keycloak |
 
 The `--env` value is the file name without its extension, which is what the CLI resolves. The name inside
 the file is what the Bruno desktop app shows in its environment selector. They do not have to match, and
 for `local` and `prod` they deliberately do not.
 
-`local` and `k8s` share a `baseUrl` and differ in `keycloakUrl`: `local` mints tokens from the host
+There is no `baseUrl` any more. Each request names the service it belongs to, so `offer/create-offer.yml`
+reads `{{offerUrl}}/api/v1/owner/offers` and `booking/create-booking.yml` reads
+`{{bookingUrl}}/api/v1/bookings`. The `cleanup/` folder is the one place where the folder name and the
+service do not line up, because it deletes a booking, a message and an offer in turn, so its three
+requests use three different variables. Nothing is rewritten at any edge, so the four
+gateway and ingress environments above give all three variables the same value, and only `direct` gives
+each one its own port.
+
+`local` and `k8s` share those addresses and differ in `keycloakUrl`: `local` mints tokens from the host
 Keycloak, `k8s` from the cluster's own. Picking the wrong one gives you a valid token and a 401 on every
 authenticated call, because the issuer will not match what the services validate against. See
 [config/k8s/local_README.md](../../config/k8s/local_README.md) for the cluster runbook.
@@ -42,8 +51,19 @@ network [config/docker/docker-compose.ci.yaml](../../config/docker/docker-compos
 [config/local-dev/e2e-stack_README.md](../../config/local-dev/e2e-stack_README.md) for that stack and for the CI
 gate built on it.
 
-Every environment also carries the realm client and user credentials plus an empty `bearerToken`. You never
-fill `bearerToken` by hand, the `auth/get-token.yml` request mints a token and saves it there.
+`direct` is for the fast edit-run loop, where you start the services from Gradle under the `local`
+profile and call each one's own port instead of going through anything. It needs
+no identity provider: under the `local` profile `UnverifiedJwtDecoder` in sky-common reads a token without
+checking signature, issuer or expiry, so the file carries a committed token for `lukk@sky.dev` with the
+realm roles `user` and `admin`, and `mintToken` is `false` so `auth/get-token.yml` is skipped rather than
+run against a Keycloak that is not there. That token is worthless against anything running on another
+profile. Its own comment block lists what has to be up first, including the object store the photo
+requests need on host port 9070. See [config/local-dev/local_README.md](../../config/local-dev/local_README.md)
+for those steps.
+
+Every environment except `direct` also carries the realm client and user credentials plus an empty
+`bearerToken`. You never fill `bearerToken` by hand, the `auth/get-token.yml` request mints a token and
+saves it there.
 
 ---
 
@@ -56,7 +76,11 @@ The collection is self-driving: you never copy a token or an id by hand.
 
 1. `auth/get-token.yml` (seq 1) runs the Keycloak password grant and, in a post-response script, saves the
    returned `access_token` into the `bearerToken` environment variable. Every other request sends
-   `Authorization: Bearer {{bearerToken}}`, so once this request has run they are all authenticated.
+   `Authorization: Bearer {{bearerToken}}`, so once this request has run they are all authenticated. A
+   pre-request script on the same file skips it when the environment sets `mintToken` to `false`, which is
+   how the `direct` environment runs with no Keycloak: the request is reported as skipped, its three
+   assertions do not run, and the committed token already in `bearerToken` carries the rest of the run.
+   Every other environment sets `mintToken` to `true` and mints as before.
 2. `offer/create-offer.yml` saves the new offer id into the runtime variable `offerId`, and the owner lookup, every
    photo request, the edit and the final delete all reference `{{offerId}}`. `booking/create-booking.yml` saves
    `bookingId` for its delete, and `message/send-message.yml` saves `messageId` for its delete.
@@ -93,9 +117,12 @@ This is the normal way to use the collection day to day. The terminal path below
 agents, and the OpenSpec e2e runbooks.
 
 1. Open Bruno, choose "Open Collection", and point it at [request/](request/).
-2. In the environment selector (top right), pick `sky-local`, `k8s`, or `sky-prod`.
+2. In the environment selector (top right), pick `sky-local`, `k8s`, `sky-prod`, or `sky-direct`.
 3. To run single requests, run `auth/get-token.yml` once, then run any other request. The saved `bearerToken`
-   and the chained ids (`offerId`, `bookingId`, `messageId`) are reused for the rest of the session.
+   and the chained ids (`offerId`, `bookingId`, `messageId`) are reused for the rest of the session. Under
+   `sky-direct` do not run it at all: that environment has no Keycloak to call and its `bearerToken` is
+   already filled. The skip only applies to the Collection Runner, so running the request on its own there
+   fails rather than being skipped.
 4. To run the whole flow, open the Collection Runner (right-click the collection, then "Run"). It executes in
    folder and request `seq` order, so it finishes with the `cleanup/` folder as teardown. The GUI Runner follows
    that tree order and does not let you reorder requests ad hoc, which is exactly why teardown lives in its own
@@ -109,9 +136,11 @@ agents, and the OpenSpec e2e runbooks.
 bru run -r --env local --insecure
 ```
 
-Switch `--env local` to `--env k8s` for a local in-cluster deployment, or `--env prod` for the deployed stack.
+Switch `--env local` to `--env k8s` for a local in-cluster deployment, `--env prod` for the deployed stack,
+or `--env direct` for services started from Gradle.
 `--insecure` is there because `local` and `k8s` both mint tokens from a Keycloak on the self-signed development
-certificate. Drop it for `prod`, which has a real one, and for `ci`, which is plain HTTP on a private network.
+certificate. Drop it for `prod`, which has a real one, for `ci`, which is plain HTTP on a private network, and
+for `direct`, which mints nothing and is plain HTTP throughout.
 
 `ci` is not run this way. It runs inside the compose network:
 
@@ -160,9 +189,11 @@ same mapping via nginx-ingress.
 The collection covers the three REST services. The fourth row is the WebSocket handshake, which Bruno does not drive,
 and it is listed so the route table here matches [sky-gateway/README.md](../../sky-gateway/README.md).
 
-The Bruno collection uses `{{baseUrl}}/api/v1/...` throughout, so the same request works against the gateway,
-against the cluster ingress, and directly against a service when you change `baseUrl` to that service port.
-Pointing `baseUrl` at a service no longer means editing the path as well.
+The Bruno collection uses `{{offerUrl}}/api/v1/...`, `{{bookingUrl}}/api/v1/...` and
+`{{messageUrl}}/api/v1/...`, so the same request works against the gateway, against the cluster ingress, and
+straight at a service. Only the host changes, which is what the `direct` environment does by giving each
+variable the port in the last column above. sky-notify has no variable, because no request in the collection
+drives the WebSocket handshake.
 
 ---
 
@@ -170,8 +201,8 @@ Pointing `baseUrl` at a service no longer means editing the path as well.
 
 sky-offer has two public endpoints that work without a bearer token:
 
-- `GET {{baseUrl}}/api/v1/offers`, list all offers
-- `POST {{baseUrl}}/api/v1/search`, keyword search
+- `GET {{offerUrl}}/api/v1/offers`, list all offers
+- `POST {{offerUrl}}/api/v1/search`, keyword search
 
 Every other endpoint across all three services requires `Authorization: Bearer <token>`.
 The sky-booking and sky-message services have no public endpoints at all.

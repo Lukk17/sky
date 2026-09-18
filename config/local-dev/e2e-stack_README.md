@@ -164,13 +164,13 @@ it does. Anything less than a clean run is a defect in the stack or in a service
 
 ### The Bruno environment
 
-The collection resolves an environment by file name, so the fourth file in
-[docs/api/request/environments/](../../docs/api/request/environments/) is
-[ci.yml](../../docs/api/request/environments/ci.yml), selected with `--env ci`.
+The collection resolves an environment by file name, so
+[ci.yml](../../docs/api/request/environments/ci.yml) in
+[docs/api/request/environments/](../../docs/api/request/environments/) is selected with `--env ci`.
 
 | Variable | Value | Why it differs from `local` |
 |---|---|---|
-| `baseUrl` | `http://sky-gateway:5777` | The gateway is reached by Compose service name, not through a host port |
+| `bookingUrl`, `offerUrl`, `messageUrl` | `http://sky-gateway:5777` | The gateway is reached by Compose service name, not through a host port |
 | `keycloakUrl` | `http://keycloak:8080` | Plain HTTP on the network, so no `--insecure` and no certificate |
 
 Everything else, the client id, the client secret and the three realm users, is identical to `local` and `k8s`,
@@ -304,4 +304,4 @@ docker images --filter "reference=sky-*:e2e" --format "{{.ID}}" | xargs -r docke
 | [config/local-dev/local_README.md](local_README.md) | The developer stack: host PostgreSQL, Keycloak and object store, Compose and Gradle |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: create, deploy the charts, verify, tear down |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection, its four environments, and the OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection, its environments, and the OpenAPI specs |

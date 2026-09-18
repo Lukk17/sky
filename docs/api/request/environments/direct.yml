@@ -1,0 +1,57 @@
+# The four services started straight from Gradle with the local profile: no gateway, no ingress and
+# no Keycloak. Each service variable names its own port, and that is the only thing separating this
+# environment from the gateway ones, because nothing is rewritten at any edge and the paths are
+# identical everywhere. sky-notify has no variable here for the same reason it has none anywhere
+# else: no request in the collection drives the WebSocket handshake.
+#
+# mintToken is false, so the before-request script on auth/get-token.yml skips that one request and
+# the static bearerToken below is what every other request sends. Under the local profile
+# UnverifiedJwtDecoder in sky-common parses the token and builds the principal from its claims
+# without checking signature, issuer or expiry, so nothing has to issue it. Two claims carry the
+# run. email is what SecurityUtils.currentUserEmail returns, and it is lukk@sky.dev because that is
+# the user the collection asserts on every ownerEmail, bookingUser, senderEmail and receiverEmail.
+# realm_access.roles is what KeycloakRealmRoleConverter turns into ROLE_USER and ROLE_ADMIN, which
+# is what the @IsUser meta-annotation on every protected endpoint demands. The remaining claims
+# (iss, sub, aud, azp, typ, iat, exp, jti, preferred_username, email_verified, scope) are there so
+# the token reads like the one the sky realm issues for lukk, and none of them is checked. Never
+# point this environment at a deployed service: on any other profile the signature is verified and
+# this token is worth nothing.
+#
+# The photo requests need an object store on the host. sky-offer signs the presigned photoUrl
+# against sky.s3.presign-endpoint, which application.yaml leaves empty and application-local.yaml
+# does not set, so S3Properties.resolvedPresignEndpoint falls back to sky.s3.endpoint, which is
+# http://localhost:9070 outside a container. The upload, the three round-trip fetches and the two
+# inverse 404 assertions therefore all address host port 9070. With nothing listening there the
+# upload itself answers 503 before any fetch is attempted, so the photo requests cannot pass without
+# a store. Start floci or MinIO on 9070 exactly as step 3 of config/local-dev/local_README.md does.
+# The bucket is created at service startup, so there is nothing else to prepare.
+#
+# What has to be running, from the repository root:
+#   docker run -d --name sky-postgres -p 5432:5432 -e POSTGRES_DB=sky -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=local postgres:16-alpine
+#   docker run -d --name floci -p 9070:4566 -e FLOCI_STORAGE_MODE=persistent -e FLOCI_STORAGE_PERSISTENT_PATH=/app/data -v floci_data:/app/data floci/floci:2.0.1
+#   docker compose -f config/docker/docker-compose.yaml up -d kafka
+#   ./gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
+#   ./gradlew :sky-booking:bootRun --args='--spring.profiles.active=local'
+#   ./gradlew :sky-message:bootRun --args='--spring.profiles.active=local'
+#
+# The broker advertises itself as kafka:9092, so the host needs a 127.0.0.1 kafka entry in its hosts
+# file, which config/local-dev/local_README.md option B already explains. sky-message needs no broker
+# at all. sky-booking resolves an offer's owner over http://localhost:5552, which its own
+# application-local.yaml already points at, so start sky-offer before you create a booking.
+#
+# Run with, from docs/api/request:
+#   bru run -r --env direct
+# No --insecure here: every address in this file is plain HTTP and no certificate is involved. There
+# are no keycloak variables either, deliberately: the one request that reads them never runs.
+name: sky-direct
+variables:
+  - name: bookingUrl
+    value: http://localhost:5555
+  - name: offerUrl
+    value: http://localhost:5552
+  - name: messageUrl
+    value: http://localhost:5553
+  - name: mintToken
+    value: "false"
+  - name: bearerToken
+    value: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InNreS1sb2NhbC11bnZlcmlmaWVkIn0.eyJpc3MiOiJodHRwczovL2tleWNsb2FrLnRlc3Q6OTQ0My9yZWFsbXMvc2t5Iiwic3ViIjoiZjdiM2Q2YzItNWE0MS00ZTBiLTljNGYtMmYxYThjNmQzZTc3IiwiYXVkIjoiYWNjb3VudCIsImF6cCI6InNreS1iYWNrZW5kIiwidHlwIjoiQmVhcmVyIiwiaWF0IjoxNzY3MjI1NjAwLCJleHAiOjIwODI3NTg0MDAsImp0aSI6IjZiMWEwZjJlLTljNzMtNGQ4NS1iMGExLTNjNWU3ZDlmNGE2MiIsInByZWZlcnJlZF91c2VybmFtZSI6Imx1a2siLCJlbWFpbCI6Imx1a2tAc2t5LmRldiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsidXNlciIsImFkbWluIl19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIn0.bG9jYWwtcHJvZmlsZS1zaWduYXR1cmUtaXMtbmV2ZXItdmVyaWZpZWQ

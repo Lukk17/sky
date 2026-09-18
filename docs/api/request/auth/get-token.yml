@@ -27,6 +27,11 @@ http:
 
 runtime:
   scripts:
+    - type: before-request
+      code: |-
+        if (bru.getEnvVar("mintToken") === "false") {
+          bru.runner.skipRequest();
+        }
     - type: after-response
       code: |-
         if (res.status === 200 && res.body && res.body.access_token) {

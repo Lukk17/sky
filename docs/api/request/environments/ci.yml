@@ -7,6 +7,10 @@
 # Everything is plain HTTP on that network, so this is the one environment that needs no
 # --insecure: there is no certificate, no hosts file entry and no host port in the path.
 #
+# bookingUrl, offerUrl and messageUrl all hold the one gateway address. Nothing is rewritten at the
+# edge, so the three only ever differ in the direct environment, where each names its own service port.
+# mintToken is true here, so auth/get-token.yml runs and fills bearerToken.
+#
 # Run it through the bruno service, which is on that network and already carries the CLI:
 #   docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml up -d --build --wait
 #   docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml run --rm bruno
@@ -16,8 +20,14 @@
 # from the desktop app will not work: none of these names resolve outside the compose network.
 name: sky-e2e
 variables:
-  - name: baseUrl
+  - name: bookingUrl
     value: http://sky-gateway:5777
+  - name: offerUrl
+    value: http://sky-gateway:5777
+  - name: messageUrl
+    value: http://sky-gateway:5777
+  - name: mintToken
+    value: "true"
   - name: keycloakUrl
     value: http://keycloak:8080
   - name: keycloakClientId

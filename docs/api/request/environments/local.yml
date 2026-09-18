@@ -7,13 +7,23 @@
 # stored bytes, so the object store has to answer on the host at http://s3.localhost:9070, the same
 # hostname sky-offer signs the URL against (S3_ENDPOINT in config/docker/docker-compose.yaml).
 #
+# bookingUrl, offerUrl and messageUrl all hold the one gateway address. Nothing is rewritten at the
+# edge, so the three only ever differ in the direct environment, where each names its own service port.
+# mintToken is true here, so auth/get-token.yml runs and fills bearerToken.
+#
 # Run with:
 #   bru run -r --env local --insecure
 # The --env flag takes the file name, local, while the name below is what the Bruno app shows.
 name: sky-local
 variables:
-  - name: baseUrl
+  - name: bookingUrl
     value: http://localhost:5777
+  - name: offerUrl
+    value: http://localhost:5777
+  - name: messageUrl
+    value: http://localhost:5777
+  - name: mintToken
+    value: "true"
   - name: keycloakUrl
     value: https://keycloak.test:9443
   - name: keycloakClientId

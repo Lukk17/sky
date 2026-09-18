@@ -329,7 +329,10 @@ The environment file is [docs/api/request/environments/k8s.yml](../../docs/api/r
 
 | Variable | Value |
 |---|---|
-| `baseUrl` | `http://localhost:5777` |
+| `bookingUrl` | `http://localhost:5777` |
+| `offerUrl` | `http://localhost:5777` |
+| `messageUrl` | `http://localhost:5777` |
+| `mintToken` | `true` |
 | `keycloakUrl` | `http://keycloak.127.0.0.1.nip.io:5777` |
 | `keycloakClientId` | `sky-backend` |
 | `keycloakClientSecret` | `dev-only-change-in-prod` |

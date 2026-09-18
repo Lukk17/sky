@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/api/v1/bookings"
+  url: "{{bookingUrl}}/api/v1/bookings"
   headers:
     - name: Authorization
       value: "Bearer {{bearerToken}}"
