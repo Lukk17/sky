@@ -4,6 +4,10 @@ info:
   title: sky-booking
   version: v1
 servers:
+- description: "Local, through the gateway, one origin for the whole stack"
+  url: http://localhost:5777
+- description: "Production, through the ingress, behind oauth2-proxy"
+  url: https://skycloud.luksarna.com
 - description: "Local, straight at the service, bypassing the gateway"
   url: http://localhost:5555
 security:

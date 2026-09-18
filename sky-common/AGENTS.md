@@ -79,11 +79,13 @@ the cosmetic `version` in `build.gradle.kts`.
     `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` is unchanged and the
     existing `@ConditionalOnClass(GroupedOpenApi.class)` is the only gate, which is what keeps it away from
     sky-notify and sky-gateway. Each service declares its own entries in its `application.yaml` under
-    `springdoc.servers`, beside `springdoc.info`: `http://localhost:5555` in sky-booking,
-    `http://localhost:5552` in sky-offer and `http://localhost:5553` in sky-message. A service that declares
-    none leaves the list unset and springdoc fills in a `Generated server url` entry naming whatever address
-    the process is bound to, which under the documentation build is the port the forked boot binds and which
-    no client can reach, so the fix is to declare servers rather than to stop springdoc guessing.
+    `springdoc.servers`, beside `springdoc.info`, and each declares the same three: the local gateway
+    `http://localhost:5777`, the production ingress `https://skycloud.luksarna.com`, and its own address,
+    which is `http://localhost:5555` in sky-booking, `http://localhost:5552` in sky-offer and
+    `http://localhost:5553` in sky-message. A service that declares none leaves the list unset and springdoc
+    fills in a `Generated server url` entry naming whatever address the process is bound to, which under the
+    documentation build is the port the forked boot binds and which no client can reach, so the fix is to
+    declare servers rather than to stop springdoc guessing.
 
     Which addresses may appear there is decided by the paths, and this is the part that is not obvious. The
     published paths are absolute and already carry the `/api/v1` prefix, so a server url is correct only when
@@ -91,12 +93,16 @@ the cosmetic `version` in `build.gradle.kts`.
     gateway route `/booking/api/**` and the nginx `rewrite-target: /api/v1/$2` both replaced that prefix
     rather than prepending to it, so `http://localhost:5777/booking/api` resolved to
     `/booking/api/api/v1/bookings` against these paths and reached nothing. That is no longer the shape of the
-    edge. Nothing rewrites anything now, the published path is the path the service serves, and so the bare
-    gateway and ingress origins `http://localhost:5777` and `https://skycloud.luksarna.com` do serve
-    `/api/v1/...` directly and would be correct entries. They are still not declared, because adding one
-    changes the generated documents under `docs/api/openapi/` and that is a contract decision nobody has
-    taken. What must never come back is a server url carrying a path segment, which is what the old
-    `/booking/api` form was: with absolute paths in the document, a base with a path is always wrong.
+    edge. Nothing rewrites anything now, the published path is the path the service serves, and all three
+    origins serve `/api/v1/...` directly, which is why all three are declared. Every documented path of all
+    three services was joined to `http://localhost:5777` against the running compose stack before they were
+    added, and each one reached its own service rather than a gateway 404. The order is the most useful
+    default first. The gateway leads, because it is the one origin the whole local stack answers on and
+    because the first entry is what a Swagger UI "Try it out" fires at, so leading with production would aim
+    a developer's local documentation page at the cluster. Production comes second, and each service's own
+    address last, that being the narrowest of the three and the only one that needs no edge running. What
+    must never come back is a server url carrying a path segment, which is what the old `/booking/api` form
+    was: with absolute paths in the document, a base with a path is always wrong.
   - `common.config`: `CommonConfigPropertiesAutoConfiguration` binding the shared server, management and
     logging-level property records, plus the startup credential check covered in its own section below:
     `MissingCredential`, `MissingCredentialException`, `RequiredCredentials`, `DatasourceCredentialsValidator`,

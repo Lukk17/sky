@@ -17,6 +17,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -173,22 +176,38 @@ class OfferApiDocumentTest {
     }
 
     @Test
-    @DisplayName("the published servers name the address the service answers on, never the port the "
-            + "documentation build binds")
-    void servers_nameTheAddressTheServiceAnswersOn() {
+    @DisplayName("the published servers name every address that serves these paths, gateway first, "
+            + "and never the port the documentation build binds")
+    void servers_nameEveryAddressThesePathsAreServedOn() {
         JsonNode servers = document.get("servers");
 
         assertThat(servers).isNotNull();
-        assertThat(servers.size()).isEqualTo(1);
-        assertThat(servers.get(0).path("url").asString())
-                .isEqualTo("http://localhost:5552");
-        assertThat(servers.get(0).path("description").asString())
-                .isEqualTo("Local, straight at the service, bypassing the gateway");
+        assertThat(fieldOf(servers, "url"))
+                .as("each entry is a bare origin, because the published paths already carry /api/v1")
+                .containsExactly(
+                        "http://localhost:5777",
+                        "https://skycloud.luksarna.com",
+                        "http://localhost:5552");
+        assertThat(fieldOf(servers, "description"))
+                .containsExactly(
+                        "Local, through the gateway, one origin for the whole stack",
+                        "Production, through the ingress, behind oauth2-proxy",
+                        "Local, straight at the service, bypassing the gateway");
         assertThat(servers.toString())
                 .as("port 7972 exists only while the documentation build forks a boot, and "
                         + "\"Generated server url\" is what springdoc invents when the document declares none")
                 .doesNotContain("7972")
                 .doesNotContain("Generated server url");
+    }
+
+    private List<String> fieldOf(JsonNode servers, String field) {
+        List<String> values = new ArrayList<>();
+
+        for (JsonNode server : servers) {
+            values.add(server.path(field).asString());
+        }
+
+        return values;
     }
 
     private JsonNode responsesOf(String operationId) {

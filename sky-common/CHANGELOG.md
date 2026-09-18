@@ -83,6 +83,20 @@ label the release workflow does not read. If the two disagree, this file wins.
   properties record is registered by an `@EnableConfigurationProperties` on a class already listed there,
   which also means the existing `@ConditionalOnClass(GroupedOpenApi.class)` gate keeps the whole thing away
   from sky-notify and sky-gateway with no second condition to maintain.
+- Two more entries in that server list, one per consumer, so a document names every address its paths are
+  served on rather than only the service's own. When the entry above was written, the published path and
+  the served path were different strings: the edge published `/offer/api/offers` and rewrote it onto
+  `/api/v1/offers`, so a base of `http://localhost:5777/offer/api` joined to a generated
+  `/api/v1/offers` reached nothing, and a service's own address was the only entry that could be correct.
+  Nothing rewrites anything now, so sky-booking, sky-offer and sky-message each declare the local gateway
+  `http://localhost:5777` first, the production ingress `https://skycloud.luksarna.com` second, and their
+  own address last. The gateway leads because the first entry is the one a Swagger UI "Try it out" fires
+  at, so leading with production would aim a developer's local documentation page at the cluster. Every
+  path in all three generated documents was joined to the gateway origin against the running compose stack
+  before the entries were added, and each one reached its own service rather than a gateway 404. The
+  production origin is the ingress host the charts render, and it could not be joined the same way, because
+  every path on that host answered 522 from its CDN while this was written. `OfferApiDocumentTest` pins all
+  three urls and all three descriptions in order, so a later edit cannot drop one quietly.
 - This module is new in 2.0.0. Before it, each of the four services carried its own copy of
   the same wire types, property bindings, exception handling and security wiring, and the
   copies had already drifted: three different `KafkaPayloadModel` records, three different
