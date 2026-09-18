@@ -1,0 +1,79 @@
+info:
+  name: Upload Offer Photo
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{offerUrl}}/api/v1/owner/offers/{{offerId}}/photo"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - ../../../e2e/fixtures/offer-photo.png
+        contentType: image/png
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const marker = "SKY-OFFER-PHOTO-CANARY-4471";
+        const markerHex = marker.split("").map(function (c) { return ("0" + c.charCodeAt(0).toString(16)).slice(-2); }).join("");
+        bru.setVar("storedPhotoStatus", 0);
+        bru.setVar("storedPhotoCanary", "presigned URL was not fetched");
+        bru.setVar("storedPhotoUrl", "");
+        if (res.status === 200 && res.body && res.body.photoUrl) {
+          bru.setVar("storedPhotoUrl", res.body.photoUrl);
+          try {
+            const stored = await bru.sendRequest({
+              method: "GET",
+              url: res.body.photoUrl,
+              responseType: "text",
+              responseEncoding: "hex"
+            });
+            bru.setVar("storedPhotoStatus", stored.status);
+            bru.setVar("storedPhotoCanary", String(stored.data).indexOf(markerHex) === -1
+              ? "stored object carries no canary marker"
+              : marker);
+          } catch (err) {
+            bru.setVar("storedPhotoStatus", (err && err.status) || 0);
+            bru.setVar("storedPhotoCanary", "presigned URL not fetchable: " + ((err && err.message) || "unknown error"));
+          }
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.id
+      operator: isDefined
+    - expression: res.body.photoUrl
+      operator: isDefined
+    - expression: res.body.photoUrl
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.photoUrl
+      operator: contains
+      value: "offers/"
+    - expression: res.body.photoPath
+      operator: isUndefined
+    - expression: res.body.photoObjectKey
+      operator: isUndefined
+    - expression: res.body.externalPhotoUrl
+      operator: eq
+      value: "https://images.example.com/grand-hotel-paris.jpg"
+    - expression: res.body.ownerEmail
+      operator: eq
+      value: "lukk@sky.dev"
+    - expression: storedPhotoStatus
+      operator: eq
+      value: "200"
+    - expression: storedPhotoCanary
+      operator: eq
+      value: "SKY-OFFER-PHOTO-CANARY-4471"

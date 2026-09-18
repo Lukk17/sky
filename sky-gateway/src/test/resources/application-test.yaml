@@ -1,0 +1,5 @@
+sky-gateway:
+  booking-uri: http://localhost:15555
+  offer-uri: http://localhost:15552
+  message-uri: http://localhost:15553
+  notify-uri: http://localhost:15554

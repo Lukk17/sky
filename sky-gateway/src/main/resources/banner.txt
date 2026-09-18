@@ -1,0 +1,18 @@
+${AnsiColor.BRIGHT_CYAN}
+ ██████╗ ██╗  ██╗██╗   ██╗
+██╔════╝ ██║ ██╔╝╚██╗ ██╔╝
+███████╗ █████╔╝  ╚████╔╝
+╚════██╗ ██╔═██╗   ╚██╔╝
+███████╔╝██║  ██╗   ██║
+╚══════╝ ╚═╝  ╚═╝   ╚═╝
+
+ ██████╗  █████╗ ████████╗███████╗██╗    ██╗ █████╗ ██╗   ██╗
+██╔════╝ ██╔══██╗╚══██╔══╝██╔════╝██║    ██║██╔══██╗╚██╗ ██╔╝
+██║  ███╗███████║   ██║   █████╗  ██║ █╗ ██║███████║ ╚████╔╝
+██║   ██║██╔══██║   ██║   ██╔══╝  ██║███╗██║██╔══██║  ╚██╔╝
+╚██████╔╝██║  ██║   ██║   ███████╗╚███╔███╔╝██║  ██║   ██║
+ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝
+${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_YELLOW}  :: Sky Gateway ::  ${AnsiColor.BRIGHT_BLACK}${application.formatted-version}${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_BLACK}  :: Spring Boot ::  ${spring-boot.formatted-version}
+${AnsiColor.BRIGHT_BLACK}  :: Java        ::  ${java.version}${AnsiColor.DEFAULT}

@@ -1,34 +1,34 @@
 package com.lukk.sky.notify.adapters.outbound;
 
-import com.lukk.sky.notify.adapters.outbound.service.WebSocketService;
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
+import com.lukk.sky.notify.adapters.dto.WebsocketPayloadModel;
+import com.lukk.sky.notify.adapters.outbound.websocket.WebSocketService;
 import com.lukk.sky.notify.domain.ports.NotificationPublisher;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
-import static com.lukk.sky.notify.config.Constants.NOTIFY_DEST;
-
-/**
- * The primary implementation of the {@link NotificationPublisher} interface.
- * This implementation uses a {@link WebSocketService} to publish notifications.
- */
 @Component
 @RequiredArgsConstructor
 @Primary
 public class NotificationPublisherPrimary implements NotificationPublisher {
 
     private final WebSocketService webSocketService;
+    private final ObjectMapper objectMapper;
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation triggers a message on a WebSocket endpoint with the given payload.
-     */
     @Override
-    public void publish(String payload) {
-        webSocketService.triggerMessage(payload);
+    public void publish(String targetUser,
+                        KafkaPayloadModel payload,
+                        String partition,
+                        String topic,
+                        String groupId,
+                        String timestamp,
+                        String offset) {
+
+        WebsocketPayloadModel websocketPayload =
+                new WebsocketPayloadModel(payload, partition, topic, groupId, timestamp, offset);
+
+        webSocketService.triggerMessage(targetUser, objectMapper.writeValueAsString(websocketPayload));
     }
 }

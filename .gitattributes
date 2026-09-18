@@ -1,0 +1,65 @@
+# Default text normalisation: detect text, store LF in the repository.
+* text=auto
+
+# LF required.
+gradlew             text eol=lf
+*.sh                text eol=lf diff=bash
+Dockerfile          text eol=lf
+Dockerfile.*        text eol=lf
+.dockerignore       text eol=lf
+.helmignore         text eol=lf
+*.yaml              text eol=lf
+*.yml               text eol=lf
+*.tpl               text eol=lf
+*.sql               text eol=lf
+*.crt               text eol=lf
+*.csr               text eol=lf
+*.key               text eol=lf
+*.pem               text eol=lf
+*.cnf               text eol=lf
+
+# CRLF required.
+*.bat               text eol=crlf
+*.cmd               text eol=crlf
+
+# Binary.
+*.jar               binary
+*.class             binary
+*.zip               binary
+*.gz                binary
+*.tgz               binary
+*.png               binary
+*.jpg               binary
+*.jpeg              binary
+*.gif               binary
+*.ico               binary
+*.webp              binary
+*.pdf               binary
+*.p12               binary
+*.pfx               binary
+*.jks               binary
+*.keystore          binary
+*.der               binary
+
+# Language-aware diff hunk headers.
+*.java              diff=java
+*.kt                diff=kotlin
+*.kts               diff=kotlin
+*.py                diff=python
+*.md                diff=markdown
+
+# Vendored: Gradle wrapper, Bitnami Kafka subcharts, agent tooling imported from agent-standards.
+gradlew                             linguist-vendored
+gradlew.bat                         linguist-vendored
+gradle/wrapper/**                   linguist-vendored
+config/k8s/helm/kafka/charts/**     linguist-vendored
+.agents/**                          linguist-vendored
+.claude/**                          linguist-vendored
+.codex/**                           linguist-vendored
+.github/agents/**                   linguist-vendored
+.kilo/**                            linguist-vendored
+.opencode/**                        linguist-vendored
+
+# Documentation: excluded from language statistics, still diffed.
+docs/**             linguist-documentation
+openspec/**         linguist-documentation

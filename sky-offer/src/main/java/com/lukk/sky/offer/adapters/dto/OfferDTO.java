@@ -1,22 +1,27 @@
 package com.lukk.sky.offer.adapters.dto;
 
+import com.lukk.sky.offer.adapters.dto.validation.ExternalPhotoUrl;
 import com.lukk.sky.offer.domain.model.Offer;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.util.UUID;
 
 @Builder
 @Data
 @AllArgsConstructor
 public class OfferDTO {
 
-    private Long id;
+    private UUID id;
 
     @NotBlank
+    @Size(max = 255)
     private String hotelName;
 
     @Size(max = 3000)
@@ -29,7 +34,6 @@ public class OfferDTO {
     @Min(value = 0)
     private BigDecimal price;
 
-    @Email
     private String ownerEmail;
 
     @NotNull
@@ -37,11 +41,20 @@ public class OfferDTO {
     private Long roomCapacity;
 
     @NotBlank
+    @Size(max = 255)
     private String city;
 
     @NotBlank
+    @Size(max = 255)
     private String country;
-    private String photoPath;
+
+    @ExternalPhotoUrl
+    private String externalPhotoUrl;
+
+    /**
+     * Address a client fetches the photo from, derived per response and never persisted.
+     */
+    private String photoUrl;
 
     public static OfferDTO of(Offer offer) {
         return OfferDTO.builder()
@@ -54,12 +67,11 @@ public class OfferDTO {
                 .comment(offer.getComment())
                 .price(offer.getPrice())
                 .roomCapacity(offer.getRoomCapacity())
-                .photoPath(offer.getPhotoPath())
+                .externalPhotoUrl(offer.getExternalPhotoUrl())
                 .build();
     }
 
     public Offer toDomain() {
-
         return Offer.builder()
                 .id(this.getId())
                 .hotelName(this.getHotelName())
@@ -70,32 +82,8 @@ public class OfferDTO {
                 .comment(this.getComment())
                 .price(this.getPrice())
                 .roomCapacity(this.getRoomCapacity())
-                .photoPath(this.getPhotoPath())
+                .externalPhotoUrl(this.getExternalPhotoUrl())
                 .build();
     }
 
-    public OfferDTO mergeWithDomain(Offer dbOffer) {
-        OfferDTO.OfferDTOBuilder builder = OfferDTO.builder();
-        builder.id(dbOffer.getId());
-        builder.hotelName(Optional.ofNullable(this.getHotelName())
-                .orElse(dbOffer.getHotelName()));
-        builder.city(Optional.ofNullable(this.getCity())
-                .orElse(dbOffer.getCity()));
-        builder.country(Optional.ofNullable(this.getCountry())
-                .orElse(dbOffer.getCountry()));
-        builder.ownerEmail(Optional.ofNullable(this.getOwnerEmail())
-                .orElse(dbOffer.getOwnerEmail()));
-        builder.description(Optional.ofNullable(this.getDescription())
-                .orElse(dbOffer.getDescription()));
-        builder.comment(Optional.ofNullable(this.getComment())
-                .orElse(dbOffer.getComment()));
-        builder.price(Optional.ofNullable(this.getPrice())
-                .orElse(dbOffer.getPrice()));
-        builder.roomCapacity(Optional.ofNullable(this.getRoomCapacity())
-                .orElse(dbOffer.getRoomCapacity()));
-        builder.photoPath(Optional.ofNullable(this.getPhotoPath())
-                .orElse(dbOffer.getPhotoPath()));
-
-        return builder.build();
-    }
 }

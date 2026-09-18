@@ -1,0 +1,390 @@
+openapi: 3.1.0
+info:
+  description: Sky platform REST API secured with Keycloak JWT bearer tokens.
+  title: sky-booking
+  version: v1
+servers:
+- description: "Local, through the gateway, one origin for the whole stack"
+  url: http://localhost:5777
+- description: "Production, through the ingress, behind oauth2-proxy"
+  url: https://skycloud.luksarna.com
+- description: "Local, straight at the service, bypassing the gateway"
+  url: http://localhost:5555
+security:
+- bearerAuth: []
+tags:
+- description: "Booking lifecycle: create, list, and cancel bookings placed against\
+    \ offers."
+  name: Bookings
+paths:
+  /api/v1/bookings:
+    post:
+      operationId: bookOffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingPayload"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingDTO"
+          description: Booking created
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: No offer with that id exists in sky-offer
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Conflict: the request is well formed and lost a race. Either\
+            \ another writer advanced the event sequence of the resource, or another\
+            \ caller already claimed the state this request asked for. There is no\
+            \ Retry-After, because waiting changes nothing: re-read the resource and\
+            \ send the change again against its current state. The detail is a fixed\
+            \ sentence rather than the internal message."
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Unsupported Media Type: the request body was not sent in the\
+            \ media type this operation consumes."
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+        "502":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Gateway: a dependency this operation needs answered, and\
+            \ answered in a way the service cannot act on. The caller's own request\
+            \ was well formed and retrying it unchanged will not help, so there is\
+            \ no Retry-After. The cause is between the service and its dependency."
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      summary: Create new booking
+      tags:
+      - Bookings
+  /api/v1/bookings/{bookingId}:
+    delete:
+      operationId: removeBooking
+      parameters:
+      - in: path
+        name: bookingId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: Booking deleted
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Booking not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Delete booking
+      tags:
+      - Bookings
+  /api/v1/user/bookings:
+    get:
+      operationId: getBookedOffers
+      parameters:
+      - in: query
+        name: pageable
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: Found user bookings
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Get all user's bookings (paginated)
+      tags:
+      - Bookings
+components:
+  schemas:
+    BookingDTO:
+      type: object
+      properties:
+        bookedDate:
+          type: string
+          format: date
+          minLength: 1
+        bookingUser:
+          type: string
+          format: email
+          minLength: 1
+        id:
+          type: string
+          format: uuid
+        offerId:
+          type: string
+          format: uuid
+        ownerEmail:
+          type: string
+          format: email
+      required:
+      - bookedDate
+      - bookingUser
+      - id
+      - offerId
+      - ownerEmail
+    BookingPayload:
+      type: object
+      properties:
+        dateToBook:
+          type: string
+          format: date
+        offerId:
+          type: string
+          format: uuid
+      required:
+      - dateToBook
+      - offerId
+    Page:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
+    ProblemDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: Paste a Keycloak access token obtained via the Authorization Code
+        flow.
+      scheme: bearer
+      type: http

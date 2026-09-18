@@ -1,0 +1,39 @@
+# Self-driving collection: run "Get Token (Keycloak)" (seq 1) once and its post-response
+# script fills bearerToken below automatically. A full-collection run does this for you.
+# Tokens are short-lived (300 seconds); re-run "Get Token" when you receive a 401.
+#
+# Fill keycloakClientSecret, keycloakUsername and keycloakPassword with real prod credentials
+# before running protected requests; they are intentionally left blank here.
+#
+# bookingUrl, offerUrl and messageUrl all hold the one ingress address. Nothing is rewritten at the
+# edge, so the three only ever differ in the direct environment, where each names its own service port.
+# mintToken is true here, so auth/get-token.yml runs and fills bearerToken.
+#
+# Run with:
+#   bru run -r --env prod
+# The --env flag takes the file name, prod, while the name below is what the Bruno app shows.
+name: sky-prod
+variables:
+  - name: bookingUrl
+    value: https://skycloud.luksarna.com
+  - name: offerUrl
+    value: https://skycloud.luksarna.com
+  - name: messageUrl
+    value: https://skycloud.luksarna.com
+  - name: mintToken
+    value: "true"
+  - name: keycloakUrl
+    value: https://keycloak.luksarna.com
+  - name: keycloakClientId
+    value: sky-backend
+  - name: keycloakClientSecret
+    value: ""
+    secret: true
+  - name: keycloakUsername
+    value: ""
+  - name: keycloakPassword
+    value: ""
+    secret: true
+  - name: bearerToken
+    value: ""
+    secret: true

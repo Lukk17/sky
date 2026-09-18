@@ -1,0 +1,36 @@
+image:
+  name: "floci/floci:2.0.1@sha256:4e451c39c7bb88e3cd4f87e8fc0c25d5b47695a51185d521e2241fa00486e8eb"
+  imagePullPolicy: "IfNotPresent"
+
+service:
+  port: 4566
+
+volume:
+  claimName: "floci-pvc"
+  storage: "10Gi"
+
+storage:
+  mode: "persistent"
+  path: "/app/data"
+
+ui:
+  enabled: false
+
+health:
+  path: "/_floci/health"
+
+ingress:
+  enabled: false
+  controller: "nginx"
+  tls:
+    secretName: ""
+  annotations: {}
+  hosts: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

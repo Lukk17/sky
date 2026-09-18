@@ -10,6 +10,9 @@ kubectl delete -f ./config/k8s/secret/sealed/sealed-secrets.yaml
 kubectl delete -f ./config/k8s/secret/sealed/sealed-docker-cred.yaml
 kubectl delete -f ./config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
 
+# identity provider
+helm uninstall keycloak
+
 # api gateway
 helm uninstall oauth2-proxy
 
@@ -17,8 +20,12 @@ helm uninstall oauth2-proxy
 helm uninstall kafka-service
 kubectl delete pvc data-kafka-service-0
 
+# object storage
+helm uninstall floci
+
 # db
-helm uninstall mysql
+helm uninstall postgres
+helm uninstall database-persistent-volume-claim
 
 # services
 helm uninstall sky-booking

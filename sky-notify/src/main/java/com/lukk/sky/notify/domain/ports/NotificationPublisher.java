@@ -1,14 +1,17 @@
 package com.lukk.sky.notify.domain.ports;
 
+import com.lukk.sky.common.kafka.KafkaPayloadModel;
+
 /**
- * Service for publishing notifications.
+ * Port for delivering a consumed event to the notification channel of a single user.
  */
 public interface NotificationPublisher {
-    /**
-     * Publish the provided data as a notification.
-     *
-     * @param data The data to be published. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code data} is {@code null}.
-     */
-    public void publish(String data);
+
+    void publish(String targetUser,
+                 KafkaPayloadModel payload,
+                 String partition,
+                 String topic,
+                 String groupId,
+                 String timestamp,
+                 String offset);
 }

@@ -1,0 +1,45 @@
+# SPRING setup
+
+server:
+  port: 5553
+
+spring:
+  application:
+    name: sky-message
+
+  web:
+    locale-resolver: accept_header
+
+  mvc:
+    dispatch-options-request: true
+
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sky
+    hikari:
+      connection-timeout: 60000
+      validation-timeout: 60000
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:local}
+    driver-class-name: org.postgresql.Driver
+
+# expose actuator endpoints (* for all)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+      hibernate: INFO

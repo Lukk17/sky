@@ -1,0 +1,25 @@
+# Production-environment overlay for sky-notify.
+#
+# Apply on top of values.yaml:
+#   helm upgrade --install sky-notify ./config/k8s/helm/service/sky-notify -f ./config/k8s/helm/service/sky-notify/values-prod.yaml
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"
+
+oauth2:
+  issuerUri: "https://keycloak.luksarna.com/realms/sky"
+
+crossOrigin:
+  allowed: "https://sky.luksarna.com"
+
+ingress:
+  tls:
+    secretName: sky-tls-cert
+
+  service:
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/notifyWebsocket"
+            pathType: "Prefix"

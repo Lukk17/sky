@@ -1,22 +1,15 @@
 package com.lukk.sky.notify;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
 
-import static com.lukk.sky.notify.config.Constants.KAFKA_BOOKING_TOPIC;
-import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
-
-@ActiveProfiles("test")
-@SpringBootTest(properties = {"spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}"})
-@DirtiesContext
-@EmbeddedKafka(partitions = 1, topics = {KAFKA_OFFER_TOPIC, KAFKA_BOOKING_TOPIC},
-        brokerProperties = {"listeners=PLAINTEXT://localhost:9099", "port=9099"})
-class SkyNotifyApplicationTests {
+@DisplayName("SkyNotify application context smoke test")
+@Import(TestSecurityConfig.class)
+class SkyNotifyApplicationTests extends AbstractIntegrationTest {
 
     @Test
-    void contextLoads() {
+    @DisplayName("Application context loads successfully on startup")
+    void contextLoads_whenApplicationStarts_thenContextLoadsSuccessfully() {
     }
 }

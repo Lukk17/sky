@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm-config
+  namespace: {{ .Release.Namespace }}
+data:
+  sky-realm.json: |
+{{ .Files.Get "files/sky-realm.json" | indent 4 }}

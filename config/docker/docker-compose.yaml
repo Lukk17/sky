@@ -1,0 +1,211 @@
+name: sky
+
+# Postgres, Keycloak, and the S3 object store are provided externally (local-dev stack / host install).
+# Only Kafka and the application services are managed here.
+# Default datasource host: host.docker.internal:5432 (host Postgres reachable from container).
+# Default object-store host: s3.localhost:9070. The host resolver maps every name under .localhost to
+# 127.0.0.1 and the extra_hosts entry below maps the same name to the host gateway, so a path-style
+# presigned URL signed inside the network is fetchable from the host with its Host header and signature untouched.
+
+services:
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: sky-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - sky-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  sky-booking:
+    container_name: sky-booking
+    build:
+      dockerfile: sky-booking/docker/Dockerfile
+      context: ../../
+      tags:
+        - "sky-booking:${SKY_VERSION:-2.0.0}"
+    image: sky-booking:latest
+    networks:
+      - sky-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    extra_hosts:
+      - "keycloak.test:host-gateway"
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local}
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      OFFER_SERVICE_HOSTNAME: http://sky-offer
+      OFFER_SERVICE_HOST_PORT: "5552"
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5555/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-offer:
+    container_name: sky-offer
+    build:
+      dockerfile: sky-offer/docker/Dockerfile
+      context: ../../
+      tags:
+        - "sky-offer:${SKY_VERSION:-2.0.0}"
+    image: sky-offer:latest
+    networks:
+      - sky-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    extra_hosts:
+      - "keycloak.test:host-gateway"
+      - "s3.localhost:host-gateway"
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local}
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://s3.localhost:9070}
+      S3_PRESIGN_ENDPOINT: ${S3_PRESIGN_ENDPOINT:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-root}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-localdev}
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5552/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-message:
+    container_name: sky-message
+    build:
+      dockerfile: sky-message/docker/Dockerfile
+      context: ../../
+      tags:
+        - "sky-message:${SKY_VERSION:-2.0.0}"
+    image: sky-message:latest
+    networks:
+      - sky-network
+    extra_hosts:
+      - "keycloak.test:host-gateway"
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/sky}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5553/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-notify:
+    container_name: sky-notify
+    build:
+      dockerfile: sky-notify/docker/Dockerfile
+      context: ../../
+      tags:
+        - "sky-notify:${SKY_VERSION:-2.0.0}"
+    image: sky-notify:latest
+    networks:
+      - sky-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    extra_hosts:
+      - "keycloak.test:host-gateway"
+    environment:
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_DEBUG: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5554/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  sky-gateway:
+    container_name: sky-gateway
+    build:
+      dockerfile: sky-gateway/docker/Dockerfile
+      context: ../../
+      tags:
+        - "sky-gateway:${SKY_VERSION:-2.0.0}"
+    image: sky-gateway:latest
+    networks:
+      - sky-network
+    ports:
+      - "5777:5777"
+    depends_on:
+      sky-booking:
+        condition: service_healthy
+      sky-offer:
+        condition: service_healthy
+      sky-message:
+        condition: service_healthy
+      sky-notify:
+        condition: service_healthy
+    environment:
+      BOOKING_URI: http://sky-booking:5555
+      OFFER_URI: http://sky-offer:5552
+      MESSAGE_URI: http://sky-message:5553
+      NOTIFY_URI: http://sky-notify:5554
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DEBUG: INFO
+      GATEWAY_DEBUG: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5777/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+
+volumes:
+  kafka_data:
+
+networks:
+  sky-network:
+    name: sky-network

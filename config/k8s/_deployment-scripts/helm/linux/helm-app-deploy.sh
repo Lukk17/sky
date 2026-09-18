@@ -1,29 +1,55 @@
-# Will work only if script is run from project main directory with:
-# ./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
+#!/usr/bin/env bash
+# Will work only if script is run from project main directory:
+#   ./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
+#
+# Pass `ENV=prod` (default) to layer the production overlay on top of each chart
+# that ships one. Future env split: pass `ENV=dev` etc. once values-dev.yaml exists.
+set -euo pipefail
+
+ENV="${ENV:-prod}"
+SEALED_SECRETS_FILE="./config/k8s/secret/sealed/sealed-secrets.yaml"
+
+# sealed secret preflight
+if [[ ! -f "$SEALED_SECRETS_FILE" ]]; then
+  echo "Missing $SEALED_SECRETS_FILE. It is generated per cluster and is not committed: follow \"Create the sealed secrets\" in section 3 of config/k8s/_deployment-scripts/deployment_README.md, then run this script again." >&2
+  exit 1
+fi
 
 # sealed secrets
 kubectl create namespace sealed-secrets
 kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-public.crt --key=./config/k8s/secret/sealed-private.key -n sealed-secrets
 helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secrets-controller/ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 
-kubectl apply -f ./config/k8s/secret/sealed/sealed-secrets.yaml
+kubectl apply -f "$SEALED_SECRETS_FILE"
 kubectl apply -f ./config/k8s/secret/sealed/sealed-docker-cred.yaml
 kubectl apply -f ./config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
 
+# Keycloak backing postgres, then Keycloak itself
+helm install keycloak ./config/k8s/helm/infra/keycloak/ \
+  -f "./config/k8s/helm/infra/keycloak/values-${ENV}.yaml"
+kubectl wait --namespace default --for=condition=ready --timeout=300s pod -l component=keycloak-postgres
+kubectl wait --namespace default --for=condition=ready --timeout=300s pod -l component=keycloak
+
 # api gateway
-helm install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/
+helm install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy/ \
+  -f "./config/k8s/helm/api-gateway/oauth2-proxy/values-${ENV}.yaml"
+
+# app database (PostgreSQL)
+helm install database-persistent-volume-claim ./config/k8s/helm/db/database-persistent-volume-claim/
+helm install postgres ./config/k8s/helm/db/postgres/
+kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=postgres
+
+# object storage
+helm install floci ./config/k8s/helm/infra/floci/ \
+  -f "./config/k8s/helm/infra/floci/values-${ENV}.yaml"
+kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=floci
 
 # independent services
-helm install kafka-service ./config/k8s/helm/kafka/
+helm install kafka-service ./config/k8s/helm/kafka/ \
+  -f "./config/k8s/helm/kafka/values-${ENV}.yaml"
 
-# db
-helm install database-persistent-volume-claim ./config/k8s/helm/db/database-persistent-volume-claim/
-helm install mysql ./config/k8s/helm/db/mysql/
-kubectl wait --namespace default --for=condition=ready --timeout=180s pod -l component=mysql
-
-# services
-helm install sky-booking ./config/k8s/helm/service/sky-booking
-helm install sky-message ./config/k8s/helm/service/sky-message
-helm install sky-notify ./config/k8s/helm/service/sky-notify
-helm install sky-offer ./config/k8s/helm/service/sky-offer
-
+# services - each chart's defaults plus the per-env overlay
+for svc in sky-booking sky-message sky-notify sky-offer; do
+  helm install "$svc" "./config/k8s/helm/service/$svc" \
+    -f "./config/k8s/helm/service/$svc/values-${ENV}.yaml"
+done
