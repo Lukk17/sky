@@ -157,7 +157,9 @@ Stop it:
 docker compose -f config/docker/docker-compose.yaml down
 ```
 
-The gateway answers at `http://localhost:5777` with the same path prefixes the cluster ingress uses, and each service port (5552 to 5555) stays published for direct calls. Give the containers a minute after start: readiness probes have a 60 second start period, and calls before that return errors.
+The gateway answers at `http://localhost:5777` with the same path prefixes the cluster ingress uses, and it is the only sky port published to the host. Ports 5552 to 5555 stay open inside the compose network, where the gateway and the services reach each other by service name, and no service port is dialable from the host. That matches the k3d cluster, which is created with `--port "5777:80@loadbalancer"` and publishes nothing else, so a path that works here works there. To call one service directly, run it with Gradle (option B below), which binds its port on the host.
+
+Give the containers a minute after start: readiness probes have a 60 second start period, and calls before that return errors.
 
 ---
 

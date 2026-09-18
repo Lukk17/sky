@@ -48,8 +48,6 @@ services:
     image: sky-booking:latest
     networks:
       - sky-network
-    ports:
-      - "5555:5555"
     depends_on:
       kafka:
         condition: service_healthy
@@ -85,8 +83,6 @@ services:
     image: sky-offer:latest
     networks:
       - sky-network
-    ports:
-      - "5552:5552"
     depends_on:
       kafka:
         condition: service_healthy
@@ -125,8 +121,6 @@ services:
     image: sky-message:latest
     networks:
       - sky-network
-    ports:
-      - "5553:5553"
     extra_hosts:
       - "keycloak.test:host-gateway"
     environment:
@@ -155,8 +149,6 @@ services:
     image: sky-notify:latest
     networks:
       - sky-network
-    ports:
-      - "5554:5554"
     depends_on:
       kafka:
         condition: service_healthy
