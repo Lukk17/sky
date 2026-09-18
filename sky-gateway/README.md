@@ -18,8 +18,13 @@ The Spring Cloud release train is pinned in [gradle/libs.versions.toml](../gradl
 | `/api/v1/bookings`, `/api/v1/user/bookings` | `BOOKING_URI` | `http://localhost:5555` |
 | `/api/v1/messages` | `MESSAGE_URI` | `http://localhost:5553` |
 | `/notifyWebsocket` | `NOTIFY_URI` | `http://localhost:5554` |
+| `/offer/swagger-ui`, `/offer/v3/api-docs` | `OFFER_URI` | `http://localhost:5552` |
+| `/booking/swagger-ui`, `/booking/v3/api-docs` | `BOOKING_URI` | `http://localhost:5555` |
+| `/msg/swagger-ui`, `/msg/v3/api-docs` | `MESSAGE_URI` | `http://localhost:5553` |
 
-Nothing is rewritten. The published path is the path the service serves, so the gateway only decides which service a resource belongs to and then forwards the request unchanged. That works because the three REST services own disjoint top-level resources, so a new one has to stay disjoint from the other two and has to be added here and to that service ingress, or it is unreachable from outside.
+No API path is rewritten. The published path is the path the service serves, so the gateway only decides which service a resource belongs to and then forwards the request unchanged. That works because the three REST services own disjoint top-level resources, so a new one has to stay disjoint from the other two and has to be added here and to that service ingress, or it is unreachable from outside.
+
+The six documentation paths are the exception, and they are the exception because they are the one thing the three services do not own disjointly: every one of them serves the same `/swagger-ui` and `/v3/api-docs`, so a service prefix is the only way to say which document you want. The prefix is stripped before the request goes upstream and handed back as `X-Forwarded-Prefix`, so the Swagger UI page asks for its own assets and its own document under the same prefix it was served from. Open one at `http://localhost:5777/offer/swagger-ui/index.html`, and swap `offer` for `booking` or `msg` for the other two. These six mirror the swagger ingresses in the three Helm charts exactly, so the same URL works against the cluster with only the host changed.
 
 The routes are declared in [src/main/resources/application.yaml](src/main/resources/application.yaml). The three API routes mirror the production nginx ingress paths exactly, so a request that works here works against the cluster with only the host changed. The fourth mirrors the `sky-notify` Ingress, which also serves `/notifyWebsocket` unchanged, see below.
 

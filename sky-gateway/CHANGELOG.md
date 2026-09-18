@@ -35,6 +35,25 @@ repository.
   banner, matching the other four services.
 - Tests covering both security profiles against a stubbed OIDC provider, so the permit-all chain
   cannot silently become the default and the OIDC chain cannot silently stop requiring a token.
+- Six documentation routes, so Swagger UI and the OpenAPI documents are reachable through the one
+  origin the rest of the stack already answers on. `/offer/swagger-ui` and `/offer/v3/api-docs` go to
+  sky-offer, `/booking/...` to sky-booking and `/msg/...` to sky-message, each stripped of its prefix
+  before the hop. Nothing could open a documentation page under Compose before this: the gateway had
+  no route that matched one, and the service ports stopped being published when the local stack was
+  brought in line with the cluster, where only the ingress is reachable. These six carry a service
+  prefix and a rewrite where the four API routes carry neither, because they are the one place the
+  disjointness the API routes rest on breaks down: all three services serve the identical
+  `/swagger-ui` and `/v3/api-docs`, so nothing but a prefix can say which document a caller wants.
+  They mirror the six swagger and api-docs ingresses in the three service charts, same prefixes and
+  same targets, so a documentation URL that works here works against the cluster with only the host
+  changed. Under the OIDC chain they sit behind the Keycloak login exactly as the cluster puts them
+  behind oauth2-proxy.
+- `spring.cloud.gateway.server.webflux.trusted-proxies`, scoped to loopback and the three private
+  ranges. It reads like unrelated hardening and it is not optional: Gateway 5.0 registers the filter
+  that writes `X-Forwarded-Prefix` only when this value is set, and registers a filter that strips
+  every `x-forwarded-` header when it is not. springdoc builds the config address and the document
+  address it hands the browser out of that header, so with it empty a Swagger UI page loads its shell,
+  asks for a document at an address no route can claim, and shows the Swagger demo API instead of ours.
 
 ### Changed
 - This module is consumed by Docker, not by Kubernetes. There is no Helm chart for it, and there

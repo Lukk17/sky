@@ -60,8 +60,55 @@ class SecurityConfigLocalProfileTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/booking/api/anything", "/offer/api/anything", "/msg/api/anything"})
+    @ValueSource(strings = {
+            "/booking/swagger-ui/index.html",
+            "/booking/v3/api-docs",
+            "/offer/swagger-ui/index.html",
+            "/offer/v3/api-docs",
+            "/msg/swagger-ui/index.html",
+            "/msg/v3/api-docs"
+    })
+    void publishedDocumentationPath_whenNoCredentialsSupplied_thenReachesItsRouteInsteadOfBeingRejected(String path) {
+        client.get().uri(path)
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/offer/swagger-ui/swagger-initializer.js",
+            "/offer/swagger-ui/swagger-ui-bundle.js",
+            "/offer/swagger-ui/swagger-ui-standalone-preset.js",
+            "/offer/swagger-ui/swagger-ui.css",
+            "/offer/swagger-ui/index.css",
+            "/offer/swagger-ui/favicon-32x32.png",
+            "/offer/v3/api-docs/swagger-config",
+            "/offer/v3/api-docs/public"
+    })
+    void swaggerUiAssetOrConfigPath_whenRequested_thenReachesItsRouteInsteadOfBeingRejected(String path) {
+        client.get().uri(path)
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/booking/api/anything",
+            "/offer/api/anything",
+            "/msg/api/anything",
+            "/booking/api/v1/bookings",
+            "/offer/api/v1/offers",
+            "/msg/api/v1/messages"
+    })
     void retiredServicePrefix_whenRequested_thenMatchesNoRoute(String path) {
+        client.get().uri(path)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/swagger-ui/index.html", "/v3/api-docs", "/v3/api-docs/swagger-config"})
+    void documentationPathWithoutAServicePrefix_whenRequested_thenMatchesNoRoute(String path) {
         client.get().uri(path)
                 .exchange()
                 .expectStatus().isNotFound();

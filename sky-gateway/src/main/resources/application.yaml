@@ -15,6 +15,7 @@ spring:
     gateway:
       server:
         webflux:
+          trusted-proxies: '127\.0\.0\.1|localhost|::1|0:0:0:0:0:0:0:1|10\..*|172\.(1[6-9]|2[0-9]|3[01])\..*|192\.168\..*'
           routes:
             - id: booking-route
               uri: ${sky-gateway.booking-uri}
@@ -35,6 +36,48 @@ spring:
               uri: ${sky-gateway.notify-uri}
               predicates:
                 - Path=/notifyWebsocket/**
+
+            - id: booking-swagger-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/swagger-ui/**
+              filters:
+                - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: booking-api-docs-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/v3/api-docs/**
+              filters:
+                - RewritePath=/booking/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+            - id: offer-swagger-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/swagger-ui/**
+              filters:
+                - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: offer-api-docs-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/v3/api-docs/**
+              filters:
+                - RewritePath=/offer/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+            - id: message-swagger-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/swagger-ui/**
+              filters:
+                - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: message-api-docs-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/v3/api-docs/**
+              filters:
+                - RewritePath=/msg/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
 
 management:
   endpoints:
@@ -109,4 +152,52 @@ spring:
               predicates:
                 - Path=/notifyWebsocket/**
               filters:
+                - TokenRelay=
+
+            - id: booking-swagger-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/swagger-ui/**
+              filters:
+                - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: booking-api-docs-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/v3/api-docs/**
+              filters:
+                - RewritePath=/booking/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=
+
+            - id: offer-swagger-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/swagger-ui/**
+              filters:
+                - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: offer-api-docs-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/v3/api-docs/**
+              filters:
+                - RewritePath=/offer/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=
+
+            - id: message-swagger-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/swagger-ui/**
+              filters:
+                - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: message-api-docs-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/v3/api-docs/**
+              filters:
+                - RewritePath=/msg/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
                 - TokenRelay=

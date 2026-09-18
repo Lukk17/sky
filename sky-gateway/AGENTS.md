@@ -31,11 +31,40 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
   There is no hexagonal structure and no ArchUnit rule here, because the module holds no domain logic: the routing
   table is configuration, not code.
 - Routes live in `src/main/resources/application.yaml` under
-  `spring.cloud.gateway.server.webflux.routes`, and nothing rewrites anything. The published path is the path the
-  service serves, so a predicate names the resource and the request is forwarded byte for byte. There is no
-  `RewritePath` filter in either document of that file, and adding one back would reintroduce the defect this
-  replaced: a client had to know which service owned a resource before it could address it, and the address it
-  learned was not the address the service answered on.
+  `spring.cloud.gateway.server.webflux.routes`, and no API route rewrites anything. The published path is the path
+  the service serves, so a predicate names the resource and the request is forwarded byte for byte. Putting a
+  `RewritePath` filter back on one of those four would reintroduce the defect this replaced: a client had to know
+  which service owned a resource before it could address it, and the address it learned was not the address the
+  service answered on.
+- The six documentation routes are the one place a service-naming prefix is correct rather than a mistake, because
+  they are the one place the disjointness the API routes rest on does not hold: every service serves the identical
+  `/swagger-ui` and `/v3/api-docs` paths, so unlike an API resource they cannot be told apart by path alone, which is
+  why these routes keep a prefix and a rewrite when commit 2c49a82 removed every other one. They mirror the six
+  swagger and api-docs ingresses in the three service charts exactly, same prefixes and same targets, so
+  `/offer/swagger-ui/...` reaches sky-offer at `/swagger-ui/...` and `/offer/v3/api-docs...` reaches it at
+  `/v3/api-docs...`, and `/booking` and `/msg` do the same for the other two.
+- Swagger UI is not one path, and a route that serves only the HTML looks right in a test and is blank in a browser.
+  The page pulls `swagger-ui.css`, `index.css`, both favicons, `swagger-ui-bundle.js`,
+  `swagger-ui-standalone-preset.js` and `swagger-initializer.js`, all as `./name` relative references, so they
+  resolve under whatever prefix served the page and the one swagger route covers them. It then reads
+  `configUrl` out of `swagger-initializer.js` and fetches the config endpoint, and follows the `urls` entry in that
+  response to the grouped document. Those last two are the reason the api-docs route exists as well as the swagger
+  one, because springdoc writes both of them as root-absolute paths rather than relative ones.
+- Which makes `X-Forwarded-Prefix` load bearing rather than incidental. springdoc builds `configUrl`,
+  `oauth2RedirectUrl` and the `urls` entries from that header, and the three services all set
+  `server.forward-headers-strategy: framework`, so a request arriving as `/offer/swagger-ui/index.html` comes back
+  naming `/offer/v3/api-docs/swagger-config`. Without the header springdoc names `/v3/api-docs/swagger-config`, which
+  is a path no route can claim for one service over the other two, and the page loads its shell and then falls back
+  to the Swagger demo document. Spring Cloud Gateway derives the prefix itself by subtracting the rewritten path from
+  the original one, so nothing here sets the header by hand.
+- `trusted-proxies` is set for that reason and for no other. Gateway 5.0 registers `XForwardedHeadersFilter` only
+  when `spring.cloud.gateway.server.webflux.trusted-proxies` is non-empty, and registers `RemoveXForwardedHeadersFilter`
+  otherwise, which strips every `x-forwarded-` header on the way out, including one a route added by hand. So an
+  empty value is not a neutral default here, it is the off switch for the mechanism the documentation routes depend
+  on. The value is a regular expression matched against the peer address of the inbound connection, and it names
+  loopback and the three private ranges, which is every address a compose client or a cluster peer can arrive from
+  and nothing on the public internet. Widening it to `.*` would let any caller dictate the `X-Forwarded-For` chain,
+  and emptying it would put the Swagger UI back to blank.
 - That works because the three REST services own disjoint resource names, which is the property the whole edge now
   rests on. Break it by giving two services a resource with the same first segment and both the gateway and the
   ingress become ambiguous, so a new top-level resource is an edge change as much as a controller change.
@@ -43,7 +72,7 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
   in `sky-notify` registers its STOMP endpoint on. The earlier `/notify/**` predicate matched nothing and the route
   was dead. `SecurityConfigLocalProfileTest` pins both halves: `/notifyWebsocket/info` reaches the route,
   `/notify/anything` returns 404.
-- The four routes and their cluster equivalents, as the literal path values in
+- The four API routes and their cluster equivalents, as the literal path values in
   `config/k8s/helm/service/<service>/values.yaml`. No row carries a `rewrite-target` and no row carries
   `use-regex`, and every cluster path is `pathType: Prefix`:
 
@@ -54,6 +83,33 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
   | `/api/v1/owner/offers` | same offer-route predicate | `sky-offer-owner-ingress` | `sky-offer-service:5552` |
   | `/api/v1/messages` | `/api/v1/messages/**` | `sky-message-ingress` | `sky-message-service:5553` |
   | `/notifyWebsocket` | `/notifyWebsocket/**` | `sky-notify-ingress` | `sky-notify-service:5554` |
+
+- The six documentation routes and their cluster equivalents. Every row here does carry a `rewrite-target` and
+  `use-regex` in the chart, and every cluster path is `pathType: ImplementationSpecific`. The gateway predicate is a
+  `PathPattern` rather than a regular expression, and `/x/**` matches the bare `/x` as well as everything under it,
+  which is what makes `/offer/v3/api-docs` reach the document and not only its sub-paths:
+
+  | Published path | Gateway predicate and rewrite | Ingress | Upstream |
+  |---|---|---|---|
+  | `/booking/swagger-ui` | `/booking/swagger-ui/**` to `/swagger-ui...` | `sky-booking-swagger-ingress` | `sky-booking-service:5555` |
+  | `/booking/v3/api-docs` | `/booking/v3/api-docs/**` to `/v3/api-docs...` | `sky-booking-swagger-resources-ingress` | `sky-booking-service:5555` |
+  | `/offer/swagger-ui` | `/offer/swagger-ui/**` to `/swagger-ui...` | `sky-offer-swagger-ingress` | `sky-offer-service:5552` |
+  | `/offer/v3/api-docs` | `/offer/v3/api-docs/**` to `/v3/api-docs...` | `sky-offer-swagger-resources-ingress` | `sky-offer-service:5552` |
+  | `/msg/swagger-ui` | `/msg/swagger-ui/**` to `/swagger-ui...` | `sky-message-swagger-ingress` | `sky-message-service:5553` |
+  | `/msg/v3/api-docs` | `/msg/v3/api-docs/**` to `/v3/api-docs...` | `sky-message-swagger-resources-ingress` | `sky-message-service:5553` |
+
+  One deliberate difference from the chart. The nginx `rewrite-target` is `/swagger-ui/$2` and `/v3/api-docs/$2`, so
+  the bare `/offer/v3/api-docs` arrives upstream as `/v3/api-docs/` with a trailing slash, and springdoc answers 404
+  on that while answering 200 on `/v3/api-docs`. The gateway keeps the separator inside the capture instead, so the
+  bare path arrives as `/v3/api-docs` and returns the document. Everything the Swagger UI page itself requests has a
+  remainder and so is unaffected either way, which is why the cluster has not noticed.
+- Documentation paths are authenticated under `!local`, and that is the cluster's answer rather than a local
+  preference. All six swagger and api-docs ingresses carry `nginx.ingress.kubernetes.io/auth-url` and
+  `auth-signin` in `values-prod.yaml`, so a browser reaching `/offer/swagger-ui/index.html` in the cluster goes
+  through oauth2-proxy first. The gateway needs no change to agree: `SecurityPaths.probes()` is the whole permit-list
+  on the `!local` chain, so a documentation path is already `authenticated()` and redirects to the Keycloak login
+  flow. Do not add a documentation path to that permit-list, and do not add one to `SecurityPaths`, which would open
+  it in all four services as well as here.
 
   The owner row is one ingress in the cluster and no separate route here, and that asymmetry is deliberate. The
   split exists so the owner paths can carry the oauth2-proxy auth annotations the public ones must not, which is a
@@ -101,7 +157,7 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
 
 ## Testing
 
-Four test classes, run from the repo root with `./gradlew :sky-gateway:test`. No Testcontainers and no database here.
+Five test classes, run from the repo root with `./gradlew :sky-gateway:test`. No Testcontainers and no database here.
 `src/test/resources/application-test.yaml` points the four upstreams at ports nothing listens on (15552 to 15555), so
 a proxied request fails at the connection rather than being rejected by security, which is what the routing assertions
 rely on. A 5xx therefore means the path matched a route and the security chain let it through, and a 404 means no
@@ -109,15 +165,30 @@ predicate claimed it, which is what lets one assertion carry both halves.
 
 - `SkyGatewayApplicationTest`, a context-load smoke test on a random port with `{"local", "test"}` active.
 - `SecurityConfigLocalProfileTest`, also `{"local", "test"}`: actuator and `/actuator/prometheus` open without
-  credentials, the two notify-route predicates, and two parameterised cases that are the route table's only
-  mechanical guard. One walks all seven published paths and requires each to reach routing rather than a 401 or a
-  404, so a predicate that stops covering a resource fails the build. The other walks `/booking/api`, `/offer/api`
-  and `/msg/api` and requires a 404, so the retired prefixes cannot quietly come back.
+  credentials, the two notify-route predicates, and four parameterised cases that are the route table's only
+  mechanical guard. One walks all seven published API paths and one walks the six published documentation paths,
+  requiring each to reach routing rather than a 401 or a 404, so a predicate that stops covering a resource fails the
+  build. A third walks the eight sub-paths a Swagger UI page pulls for itself, which is the half a single
+  `index.html` assertion would miss. The fourth walks `/booking/api`, `/offer/api` and `/msg/api` and requires a 404,
+  so the retired prefixes cannot quietly come back, now widened to prove that the new `/offer`, `/booking` and `/msg`
+  prefixes did not grow into general service prefixes. A fifth case requires the unprefixed `/swagger-ui/index.html`,
+  `/v3/api-docs` and `/v3/api-docs/swagger-config` to stay 404, because the cluster serves none of them and a route
+  claiming one would have to pick a service arbitrarily.
+- `DocumentationRouteTest`, `{"local", "test"}`, the only test in this module that proves what a route sends rather
+  than that it matched. `StubUpstream` is a JDK `com.sun.net.httpserver.HttpServer` on a random loopback port that
+  answers every request with the path it received and the `X-Forwarded-Prefix` it was given, and
+  `@DynamicPropertySource` points the three REST upstreams at it. Thirteen cases then pin the rewrite target and the
+  stripped prefix together, which is the pair the Swagger UI depends on and which a status-code assertion cannot see.
+  Keep this class pointed at a stub rather than at a dead port, because a 5xx would pass against a broken rewrite.
 - `ServletExceptionHandlingAbsentTest`, which pins that `sky-common`'s servlet exception handling never loads in
   this reactive module.
 - `SecurityConfigOidcProfileTest`, `test` only so the `!local` chain applies: unauthenticated `/actuator/prometheus`
   and a proxied route both redirect to `/oauth2/authorization/keycloak`, while health, liveness, readiness and info
-  stay open.
+  stay open. The six documentation paths redirect there too, which pins the decision to keep them behind the login
+  flow. That case cannot fail on a missing route, because the chain redirects every unauthenticated exchange whether
+  a predicate claimed it or not, so the class also asserts the six documentation route ids are present in the
+  `RouteLocator` under this profile. That is what stops the second YAML document drifting from the first, which is a
+  gap the four API routes carried unguarded until now.
 
 The OIDC suite runs against `StubOidcProvider`, a JDK `com.sun.net.httpserver.HttpServer` that serves one discovery
 document on a random loopback port and nothing else. `@DynamicPropertySource` feeds its issuer URI plus a dummy client
@@ -132,7 +203,7 @@ main source set is two classes, `SkyGatewayApplication` and `config/SecurityConf
 and reports the rule as satisfied, so leaving the gate on would publish a green tick standing for nothing measured at
 all. Keeping `SecurityConfig` in the measured set was the alternative and it does not fix that: the class declares two
 profile-selected filter chains and no conditional, so it carries no branch counter, and the 0.90 branch limit would
-still sit over an empty counter while only the line limit came alive. What guards this module is the four test classes
+still sit over an empty counter while only the line limit came alive. What guards this module is the five test classes
 above, which cover both filter chains and the whole route table. Delete the exemption as soon as this module owns a class the filter keeps.
 
 ## Conventions
@@ -143,7 +214,9 @@ above, which cover both filter chains and the whole route table. Delete the exem
   needs a domain model belongs in a service, not in the proxy.
 - A route change here is only part of the change: the production behaviour lives in the `ingress` path lists in
   `config/k8s/helm/service/<service>/values.yaml` and in both overlays beside it, `values-local.yaml` and
-  `values-prod.yaml`, each of which restates the whole `hosts` block. Change all of them together, or local and
-  production stop agreeing. The Bruno collection under `docs/api/request/` calls the same paths and moves with them.
+  `values-prod.yaml`, each of which restates the whole `hosts` block. That covers the `swagger` and `swaggerResource`
+  blocks as much as the `service` one, so a documentation prefix moves in seven places or in none. Change all of them
+  together, or local and production stop agreeing. The Bruno collection under `docs/api/request/` calls the same paths
+  and moves with them.
 - Keep the port at 5777. The e2e runbooks, the Bruno `local` environment, the compose mapping and the Dockerfile
   `EXPOSE` all hardcode it.
