@@ -4,8 +4,8 @@ info:
   title: sky-offer
   version: v1
 servers:
-- description: Generated server url
-  url: http://localhost:7972
+- description: "Local, straight at the service, bypassing the gateway"
+  url: http://localhost:5552
 security:
 - bearerAuth: []
 tags:

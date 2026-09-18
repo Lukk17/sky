@@ -21,6 +21,9 @@ springdoc:
   info:
     title: sky-offer
     version: v1
+  servers:
+    - url: http://localhost:5552
+      description: Local, straight at the service, bypassing the gateway
   api-docs:
     path: /v3/api-docs
   swagger-ui:

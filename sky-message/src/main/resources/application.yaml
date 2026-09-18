@@ -13,6 +13,9 @@ springdoc:
   info:
     title: sky-message
     version: v1
+  servers:
+    - url: http://localhost:5553
+      description: Local, straight at the service, bypassing the gateway
   api-docs:
     path: /v3/api-docs
   swagger-ui:

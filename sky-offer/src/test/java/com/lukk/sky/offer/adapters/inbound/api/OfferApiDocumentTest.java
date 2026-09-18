@@ -172,6 +172,25 @@ class OfferApiDocumentTest {
         assertThat(responses.has("403")).as("owner lookup declares %s", responses.propertyNames()).isFalse();
     }
 
+    @Test
+    @DisplayName("the published servers name the address the service answers on, never the port the "
+            + "documentation build binds")
+    void servers_nameTheAddressTheServiceAnswersOn() {
+        JsonNode servers = document.get("servers");
+
+        assertThat(servers).isNotNull();
+        assertThat(servers.size()).isEqualTo(1);
+        assertThat(servers.get(0).path("url").asString())
+                .isEqualTo("http://localhost:5552");
+        assertThat(servers.get(0).path("description").asString())
+                .isEqualTo("Local, straight at the service, bypassing the gateway");
+        assertThat(servers.toString())
+                .as("port 7972 exists only while the documentation build forks a boot, and "
+                        + "\"Generated server url\" is what springdoc invents when the document declares none")
+                .doesNotContain("7972")
+                .doesNotContain("Generated server url");
+    }
+
     private JsonNode responsesOf(String operationId) {
         return operationOf(operationId).get("responses");
     }

@@ -70,6 +70,19 @@ label the release workflow does not read. If the two disagree, this file wins.
   `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` is unchanged. The 503
   names `Retry-After` and its fixed value of 10 in its description rather than declaring the header, because
   the response headers across this contract are a separate piece of work nobody has taken yet.
+- A bound server list on the published OpenAPI document, so a client generating code from a contract gets
+  a base URL that exists. springdoc invents a `Generated server url` entry naming whatever address the
+  running process happens to be bound to whenever the document declares no server of its own, and under the
+  documentation build that address is the port the forked boot binds, which is reachable only while a Gradle
+  build is running. `OpenApiServersProperties` binds `springdoc.servers` as a list of url and description
+  pairs and `OpenApiSecurityAutoConfiguration` sets them on the `OpenAPI` bean it already builds, so an
+  address is configuration in each service's own `application.yaml` rather than a literal in shared code. A
+  service that declares none is unchanged: the list stays unset on the document and springdoc guesses exactly
+  as before. No new auto-configuration class was added, so
+  `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` is unchanged: the
+  properties record is registered by an `@EnableConfigurationProperties` on a class already listed there,
+  which also means the existing `@ConditionalOnClass(GroupedOpenApi.class)` gate keeps the whole thing away
+  from sky-notify and sky-gateway with no second condition to maintain.
 - This module is new in 2.0.0. Before it, each of the four services carried its own copy of
   the same wire types, property bindings, exception handling and security wiring, and the
   copies had already drifted: three different `KafkaPayloadModel` records, three different

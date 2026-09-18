@@ -70,6 +70,29 @@ the cosmetic `version` in `build.gradle.kts`.
     `@ApiResponse` for a status one of these annotations already declares never reaches the document. Declare a
     status inline only when no shared annotation on the class covers it, and when a shared annotation is wrong
     for one operation, fix it here rather than trying to override it per method.
+
+    The document's `servers` block reaches it from configuration, never from this module's Java.
+    `OpenApiServersProperties` binds `springdoc.servers` as a list of url and description pairs and
+    `OpenApiSecurityAutoConfiguration` sets them on the `OpenAPI` bean it already builds, so no address is
+    written into shared code. It is not a new auto-configuration: the record is registered by an
+    `@EnableConfigurationProperties` on that class, so
+    `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` is unchanged and the
+    existing `@ConditionalOnClass(GroupedOpenApi.class)` is the only gate, which is what keeps it away from
+    sky-notify and sky-gateway. Each service declares its own entries in its `application.yaml` under
+    `springdoc.servers`, beside `springdoc.info`: `http://localhost:5555` in sky-booking,
+    `http://localhost:5552` in sky-offer and `http://localhost:5553` in sky-message. A service that declares
+    none leaves the list unset and springdoc fills in a `Generated server url` entry naming whatever address
+    the process is bound to, which under the documentation build is the port the forked boot binds and which
+    no client can reach, so the fix is to declare servers rather than to stop springdoc guessing.
+
+    Which addresses may appear there is decided by the paths, and this is the part that is not obvious. The
+    published paths are absolute and already carry the `/api/v1` prefix, so a server url is correct only when
+    it serves `/api/v1/...` directly, which is the service's own address and nothing else. The gateway route
+    `/booking/api/**` and the nginx `rewrite-target: /api/v1/$2` both replace that prefix rather than
+    prepending to it, so `http://localhost:5777/booking/api` and `https://skycloud.luksarna.com/booking/api`
+    resolve to `/booking/api/api/v1/bookings` against these paths and reach nothing. The hand-written
+    documents these replaced carried both, correctly, because their paths were relative to the base. Do not
+    add them back here: making them true means publishing relative paths, which changes what a client calls.
   - `common.config`: `CommonConfigPropertiesAutoConfiguration` binding the shared server, management and
     logging-level property records, plus the startup credential check covered in its own section below:
     `MissingCredential`, `MissingCredentialException`, `RequiredCredentials`, `DatasourceCredentialsValidator`,
