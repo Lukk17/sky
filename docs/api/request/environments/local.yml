@@ -33,6 +33,6 @@ variables:
   - name: keycloakUsername
     value: lukk
   - name: keycloakPassword
-    value: test1234
+    value: local
   - secret: true
     name: bearerToken
