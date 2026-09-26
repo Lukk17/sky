@@ -91,10 +91,26 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
-    void proxiedRoute_whenNoCredentialsSupplied_thenRedirectsToLogin() {
+    void session_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect() {
+        client.get().uri("/api/session")
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody().isEmpty();
+    }
+
+    @Test
+    void anonymousSearch_whenNoCredentialsSupplied_thenPassesSecurityToRouting() {
+        client.post().uri("/api/v1/search")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    void proxiedRoute_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect() {
         client.get().uri("/api/v1/bookings")
                 .exchange()
-                .expectStatus().isFound();
+                .expectStatus().isUnauthorized()
+                .expectBody().isEmpty();
     }
 
     @ParameterizedTest
