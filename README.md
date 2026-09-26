@@ -56,6 +56,18 @@ PowerShell:
 
 For a local Kubernetes cluster rather than Compose, go to [config/k8s/local_README.md](config/k8s/local_README.md).
 
+Seed demo data (compose or k3d must be running first so Keycloak and the edge answer). It populates 4 users, 9 offers, 15 bookings, 12 messages, and one photo per owned offer from [seed/](seed/). See [seed/README.md](seed/README.md) for the how-to. Required env: `KEYCLOAK_BASE` (default `https://keycloak.test:9443`), `EDGE_BASE` (default `http://localhost:5777`), `TLS_INSECURE=1` for the self-signed Keycloak cert. Unix shell:
+
+```bash
+TLS_INSECURE=1 node seed/seed.mjs
+```
+
+PowerShell:
+
+```powershell
+$env:TLS_INSECURE=1; node seed/seed.mjs
+```
+
 ---
 
 ### Architecture

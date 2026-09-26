@@ -164,7 +164,7 @@ export const Preflight = async ({ directory, worktree, client } = {}) => {
       // trip for the assistant text out of a project that checked out no hooks.
       if (hooks.length === 0) return
 
-      const agent = typeof input?.agent === "string" ? input.agent : ""
+      const agent = typeof input?.agent === "string" ? input.agent : "agent"
 
       const envelope = JSON.stringify({
         contract: CONTRACT,

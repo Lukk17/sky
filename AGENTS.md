@@ -106,6 +106,14 @@ Spawn subagents proactively, not reactively, and run them in parallel when the w
 
 Spec-driven work still starts with an OpenSpec proposal (`/opsx:propose`) before delegating implementation.
 
+## Seed data
+
+[seed/](seed/) holds the local demo dataset: 4 users, 9 offers, 15 bookings, 12 messages, one photo per owned offer. [seed/seed.mjs](seed/seed.mjs) is zero-dependency Node, env-driven (`KEYCLOAK_BASE`, `EDGE_BASE`, `TLS_INSECURE`), idempotent on rerun. Compose or k3d must be running first so Keycloak and the edge answer. Unix shell:
+
+```text
+TLS_INSECURE=1 node seed/seed.mjs
+```
+
 ## Module guides
 
 Each module carries its own `AGENTS.md` with its port, dependencies, data story, and module-local conventions:
