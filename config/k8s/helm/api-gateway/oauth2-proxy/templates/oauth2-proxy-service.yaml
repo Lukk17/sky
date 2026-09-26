@@ -12,5 +12,9 @@ spec:
       port: {{ .Values.service.port }}
       protocol: TCP
       targetPort: {{ .Values.service.port }}
+    - name: session
+      port: {{ .Values.session.port }}
+      protocol: TCP
+      targetPort: {{ .Values.session.port }}
   selector:
     k8s-app: oauth2-proxy

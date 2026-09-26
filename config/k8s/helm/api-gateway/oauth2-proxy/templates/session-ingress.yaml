@@ -1,0 +1,28 @@
+---
+# GET /api/session through the cluster edge (edge-session-parity 2.1).
+# Anonymous callers get empty-body 401 via auth-url (never a login redirect);
+# authenticated ones reach the session-responder sidecar.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: session-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: "http://{{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: {{ .Values.ingress.controller }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
+      http:
+        paths:
+          - path: /api/session
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Values.service.name }}
+                port:
+                  number: {{ $.Values.session.port }}
+    {{- end }}
