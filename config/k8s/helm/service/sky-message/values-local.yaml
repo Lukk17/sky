@@ -22,9 +22,8 @@ ingress:
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
-      nginx.ingress.kubernetes.io/auth-url: ~
-      nginx.ingress.kubernetes.io/auth-signin: ~
-      nginx.ingress.kubernetes.io/auth-response-headers: ~
+      nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local:4180/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
     controller: "nginx"
     hosts:
       - host: "localhost"
@@ -41,7 +40,6 @@ ingress:
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
       nginx.ingress.kubernetes.io/auth-url: ~
-      nginx.ingress.kubernetes.io/auth-signin: ~
       nginx.ingress.kubernetes.io/auth-response-headers: ~
     controller: "nginx"
     hosts:
@@ -59,7 +57,6 @@ ingress:
       nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
       nginx.ingress.kubernetes.io/auth-url: ~
-      nginx.ingress.kubernetes.io/auth-signin: ~
       nginx.ingress.kubernetes.io/auth-response-headers: ~
     controller: "nginx"
     hosts:
