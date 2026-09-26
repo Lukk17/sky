@@ -188,12 +188,17 @@ services:
         condition: service_healthy
       sky-notify:
         condition: service_healthy
+    extra_hosts:
+      - "keycloak.test:host-gateway"
     environment:
       BOOKING_URI: http://sky-booking:5555
       OFFER_URI: http://sky-offer:5552
       MESSAGE_URI: http://sky-message:5553
       NOTIFY_URI: http://sky-notify:5554
-      SPRING_PROFILES_ACTIVE: local
+      SPRING_PROFILES_ACTIVE: default
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-https://keycloak.test:9443/realms/sky}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-sky-backend}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-dev-only-change-in-prod}
       SPRING_DEBUG: INFO
       GATEWAY_DEBUG: INFO
     healthcheck:
