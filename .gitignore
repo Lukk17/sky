@@ -99,3 +99,45 @@ e2e/testing/runs/*.md
 !e2e/testing/runs/README.md
 
 /tasks.md
+
+### Frontend / Node / Angular (merged from apps/frontend/.gitignore) ###
+
+# dependencies (any Node app under apps/)
+node_modules/
+bower_components/
+
+# Angular build output
+dist/
+app/**/*.js
+app/**/*.js.map
+
+# Angular misc
+.sass-cache/
+connect.lock/
+coverage/
+libpeerconnection.log
+npm-debug.log
+testem.log
+typings/
+
+# frontend e2e output (scoped: repo e2e/ holds capability runbooks, not JS)
+apps/frontend/e2e/*.js
+apps/frontend/e2e/*.map
+
+# macOS
+.DS_Store
+
+# CLion / CMake (carried by the frontend template; harmless repo-wide)
+cmake-build-*/
+
+# IntelliJ out dirs and plugin leftovers not already covered above
+out/
+.idea_modules/
+atlassian-ide-plugin.xml
+.idea/replstate.xml
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+.idea/httpRequests
+.idea/caches/build_file_checksums.ser

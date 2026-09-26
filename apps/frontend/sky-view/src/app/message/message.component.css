@@ -1,0 +1,16 @@
+
+.toggleStyle {
+  margin-top: 10px;
+  margin-right: 10px;
+  float: right;
+}
+
+.writeNew {
+  max-width: 150px;
+  margin: 10px;
+}
+
+.iconSize {
+  margin-left: 40px;
+  font-size: 30px;
+}
