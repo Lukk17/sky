@@ -1,0 +1,13 @@
+Gateway BFF session rotation evidence, one compose window, full browser login, no re-login.
+Flow: Playwright Chromium -> http://localhost:5777/oauth2/authorization/keycloak ->
+Keycloak login (owner/owner) -> SESSION cookie at gateway.
+Secured probe: GET http://localhost:5777/api/v1/user/bookings with browser context storage.
+
+T1=2026-09-26T16:24:24.833Z status=200
+Waited 320s (past the 300s access token lifespan, expires_in=300).
+T2=2026-09-26T16:29:46.534Z status=200 noRelogin=true bodyLen=315
+
+Verdict: ROTATION_PASS. Back to back secured calls across the rotation window
+succeeded with no browser redirect and no second login.
+CORS note: live GET /api/v1/offers with Origin http://localhost:4200 through the
+gateway answered exactly one Access-Control-Allow-Origin value.
