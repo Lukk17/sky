@@ -8,8 +8,21 @@
         "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY:-}"
       }
     },
-
+    
+    "mongodb": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mongodb-mcp-server@latest",
+        "--readOnly",
+        "--connectionString",
+        "${MONGODB_URL:-mongodb://localhost:27017}"
+      ]
+    },
+    
     "grafana": {
+      "type": "stdio",
       "command": "uvx",
       "args": [
         "mcp-grafana"
@@ -21,6 +34,7 @@
     },
     
     "playwright": {
+      "type": "stdio",
       "command": "npx",
       "args": [
         "@playwright/mcp@latest"
@@ -28,6 +42,7 @@
     },
     
     "chrome-devtools": {
+      "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
@@ -36,6 +51,7 @@
     },
     
     "redis": {
+      "type": "stdio",
       "command": "uvx",
       "args": [
         "--from",
@@ -44,6 +60,39 @@
         "--url",
         "${REDIS_URL:-redis://localhost:6379/0}"
       ]
+    },
+    
+    "sonarqube": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "--init",
+        "--pull=always",
+        "-i",
+        "--rm",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_URL",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN:-}",
+        "SONARQUBE_URL": "${SONARQUBE_URL:-http://localhost:9000}"
+      }
+    },
+    
+    "n8n": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "n8n-mcp"
+      ],
+      "env": {
+        "N8N_API_URL": "${N8N_API_URL:-http://localhost:5678}",
+        "N8N_API_KEY": "${N8N_API_KEY:-}"
+      }
     }
   }
 }
