@@ -1,0 +1,77 @@
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <!-- Container wrapper -->
+  <div class="container-fluid">
+    <!-- Navbar brand -->
+    <a (click)="routeToHome()" class="navbar-brand">Sky</a>
+    <!-- Toggle button -->
+    <button
+      class="navbar-toggler"
+      type="button"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+      >
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Collapsible wrapper -->
+    <div
+      class="collapse navbar-collapse"
+      id="navbarSupportedContent"
+      >
+      <!-- Left links -->
+      <ul class="navbar-nav me-auto">
+        <li routerLinkActive="activated" class="nav-item">
+          <a routerLink="/home" class="nav-link active">Home</a>
+        </li>
+        @if (isAuth) {
+          <li routerLinkActive="activated" class="nav-item">
+            <a routerLink="/myOffers" class="nav-link active">My Offers</a>
+          </li>
+        }
+        @if (isAuth) {
+          <li routerLinkActive="activated" class="nav-item">
+            <a routerLink="/addOffer" class="nav-link active">Add Offer</a>
+          </li>
+        }
+      </ul>
+      <!-- Left links -->
+
+      <!-- Right Links-->
+      <ul class="navbar-nav ms-auto">
+        @if (isAuth) {
+          <li routerLinkActive="activated" class="nav-item">
+            <a routerLink="/messages" class="nav-link active"><i class="bi bi-chat-left-text-fill"></i></a>
+          </li>
+        }
+        @if (isAuth) {
+          <li routerLinkActive="activated" class="nav-item">
+            <a routerLink="/userDetails" class="nav-link active"><i class="bi bi-person-fill"></i></a>
+          </li>
+        }
+        @if (!isAuth) {
+          <li class="nav-item horizontalSpacing">
+            <button class="btn btn-success btn-block" (click)="login()">Login</button>
+          </li>
+        }
+        @if (isAuth) {
+          <li class="nav-item horizontalSpacing">
+            <button class="btn btn-dark btn-block" (click)="logout()">Logout</button>
+          </li>
+        }
+        <!-- Search form -->
+        <li>
+          <form #searchForm="ngForm" (ngSubmit)="search(searchForm)" class="d-flex input-group w-auto">
+            <input class="form-control" name="search" ngModel placeholder="Search" type="text">
+            <button class="btn btn-primary" type="submit">
+              Search
+            </button>
+          </form>
+        </li>
+      </ul>
+    </div>
+    <!-- Collapsible wrapper -->
+  </div>
+  <!-- Container wrapper -->
+</nav>
+<!-- Navbar -->

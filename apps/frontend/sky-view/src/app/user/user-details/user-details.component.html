@@ -1,0 +1,11 @@
+<div class="center">
+  {{user}}
+</div>
+
+@for (booked of bookedOffers; track booked) {
+  <div>
+    <div>{{booked.date}}</div>
+    <div>{{booked.hotelName}}</div>
+    <div>{{booked.id}}</div>
+  </div>
+}

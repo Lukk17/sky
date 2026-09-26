@@ -1,0 +1,36 @@
+<div class="centerIt">
+  <div class="container-fluid">
+    @if (error) {
+      <div class="alert-danger">
+        <p>{{error}}</p>
+      </div>
+    }
+    <form #messageForm="ngForm" (ngSubmit)="onSubmit(messageForm)">
+      <div class="form-group">
+        <label for="text">Message Text</label>
+        <textarea class="form-control"
+          id="text"
+          name="text"
+          ngModel
+          required
+          rows="5"
+        type="text"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="receiver">Receiver</label>
+        <input class="form-control"
+          id="receiver"
+          name="receiver"
+          [(ngModel)]="receiver"
+          required
+          type="email"
+          />
+      </div>
+      <div>
+        <button [disabled]="messageForm.invalid" class="btn btn-primary"
+          type="submit">Send Message
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

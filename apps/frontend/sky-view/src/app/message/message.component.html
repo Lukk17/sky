@@ -1,0 +1,60 @@
+<div class="toggleStyle">
+  <div class="btn-group btn-group-toggle" data-toggle="buttons">
+    <label (click)="goToReceived()" class="btn btn-success active">
+      <input autocomplete="off" checked id="option1" name="options" type="radio"> Received
+    </label>
+    <label (click)="goToSent()" class="btn btn-success">
+      <input autocomplete="off" id="option2" name="options" type="radio"> Sent
+    </label>
+  </div>
+</div>
+<div class="writeNew">
+  <a routerLink="/newMessage">
+    <button class="btn btn-success">Send message</button>
+  </a>
+</div>
+<div class="centerIt">
+  @if (currentPage===RECEIVED_PAGE) {
+    <div>
+      @for (message of received; track message) {
+        <div>
+          <div class="card center">{{message.createdTime.replace("T", " ")}}
+            <div class="card-body">
+              <h3 class="card-title">{{message.senderEmail}}</h3>
+              <p class="card-text">{{message.text}}</p>
+              <div class="d-flex justify-content-evenly">
+                <button [routerLink]="['/newMessage']"
+                  [queryParams]="{ receiver: message.senderEmail }" class="btn btn-primary"> Reply
+                </button>
+                <button (click)="deleteMessage(message.id)" class="btn btn-danger">Delete message</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<div class="centerIt">
+  @if (currentPage===SENT_PAGE) {
+    <div>
+      @for (message of sent; track message) {
+        <div>
+          <div class="card center"> {{message.receiverEmail}}
+            <div class="card-body">
+              <h3 class="card-title">{{message.text}}</h3>
+              <p class="card-text">Created: {{message.createdTime.replace("T", " ")}}</p>
+              <div class="d-flex justify-content-evenly">
+                <button [routerLink]="['/newMessage']"
+                  [queryParams]="{ receiver: message.receiverEmail }" class="btn btn-primary"> Reply
+                </button>
+                <button (click)="deleteMessage(message.id)" class="btn btn-danger">Delete message</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
