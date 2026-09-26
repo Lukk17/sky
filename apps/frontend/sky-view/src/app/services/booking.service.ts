@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {catchError, tap} from 'rxjs/operators';
+import {catchError, map} from 'rxjs/operators';
 import {ResponseHandlerService} from './responseHandler.service';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../environments/environment';
@@ -28,7 +28,7 @@ export class BookingService {
       .get<Booking[]>(this.BOOKINGS)
       .pipe(
         catchError((err) => ResponseHandlerService.handleError(err, 'getBookedOffers()')),
-        tap(ResponseHandlerService.handleGetBookingsResponse)
+        map((resp) => ResponseHandlerService.handleGetBookingsResponse(resp))
       );
   }
 
