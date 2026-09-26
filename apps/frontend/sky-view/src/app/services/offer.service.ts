@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {catchError, tap} from 'rxjs/operators';
+import {catchError, map} from 'rxjs/operators';
 import {NgForm} from '@angular/forms';
 import {environment} from '../../environments/environment';
 import {ResponseHandlerService} from './responseHandler.service';
@@ -42,7 +42,7 @@ export class OfferService {
       .get<Offer[]>(this.ALL_OFFERS_URL)
       .pipe(
         catchError((err) => ResponseHandlerService.handleError(err, 'getAllOffers()')),
-        tap(ResponseHandlerService.handleGetOffersResponse)
+        map((resp) => ResponseHandlerService.handleGetOffersResponse(resp))
       );
   }
 
@@ -51,7 +51,7 @@ export class OfferService {
       .get<Offer[]>(this.OWNED_OFFERS_URL)
       .pipe(
         catchError((err) => ResponseHandlerService.handleError(err, 'getUserOffers()')),
-        tap(ResponseHandlerService.handleGetOffersResponse)
+        map((resp) => ResponseHandlerService.handleGetOffersResponse(resp))
       );
   }
 
@@ -79,7 +79,7 @@ export class OfferService {
       )
       .pipe(
         catchError((err) => ResponseHandlerService.handleError(err, 'searchOffer()')),
-        tap(ResponseHandlerService.handleGetOffersResponse)
+        map((resp) => ResponseHandlerService.handleGetOffersResponse(resp))
       );
   }
 

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {catchError, tap} from 'rxjs/operators';
+import {catchError, map} from 'rxjs/operators';
 import {NgForm} from '@angular/forms';
 import {ResponseHandlerService} from './responseHandler.service';
 import {environment} from '../../environments/environment';
@@ -29,14 +29,14 @@ export class MessageService {
   getReceived() {
     return this.http.get<Message[]>(this.RECEIVED_MESSAGES_URL).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getReceived()')),
-      tap(ResponseHandlerService.handleMessageResponse)
+      map((resp) => ResponseHandlerService.handleMessageResponse(resp))
     );
   }
 
   getSent() {
     return this.http.get<Message[]>(this.SENT_MESSAGES_URL).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getSent()')),
-      tap(ResponseHandlerService.handleMessageResponse)
+      map((resp) => ResponseHandlerService.handleMessageResponse(resp))
     );
   }
 
