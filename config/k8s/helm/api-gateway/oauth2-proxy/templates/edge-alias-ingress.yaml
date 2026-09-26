@@ -1,0 +1,55 @@
+---
+# Gateway-identical login/logout aliases (edge-session-parity 2.2/2.3).
+# /oauth2/authorization/keycloak -> /oauth2/start (oauth2-proxy serves no such
+# path natively; the /oauth2/* prefix already routes here, so this is an
+# ingress-level alias preserving rd return-to-frontend-origin).
+# POST /logout -> /oauth2/sign_out with method preserved (rewrite, not redirect).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: edge-alias-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /oauth2/start
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: {{ .Values.ingress.controller }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
+      http:
+        paths:
+          - path: /oauth2/authorization/keycloak
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Values.service.name }}
+                port:
+                  number: {{ $.Values.service.port }}
+    {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: edge-logout-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /oauth2/sign_out
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: {{ .Values.ingress.controller }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
+      http:
+        paths:
+          - path: /logout
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Values.service.name }}
+                port:
+                  number: {{ $.Values.service.port }}
+    {{- end }}

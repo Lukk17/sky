@@ -9,6 +9,7 @@ args:
   upstream: "file:///dev/null"
   httpAddress: "0.0.0.0:4180"
   cookieSecure: "true"
+  cookieSamesite: "strict"
   oidcIssuerUrl: ""
   insecureOidcAllowUnverifiedEmail: "true"
   redirectUrl: ""
@@ -30,6 +31,38 @@ secrets:
 service:
   name: oauth2-proxy
   port: 4180
+
+# Edge session parity (openspec edge-session-parity):
+# - Single session owner in Kubernetes is oauth2-proxy (sky-gateway ships no Helm chart).
+# - CSRF decision: oauth2-proxy cookie-CSRF (cookie-csrf-per-request=true, expire 15m,
+#   hardcoded in the deployment template) is the token layer; the session responder
+#   returns that per-session token as csrfToken; an nginx Origin/Referer snippet
+#   (edgeOriginCheck below) mirrors sky-gateway OriginCheckWebFilter: cross-origin
+#   cookie-authenticated mutations are rejected at the edge, headerless non-browser
+#   callers pass, services stay untouched (they ignore X-XSRF-TOKEN).
+# - Bearer passthrough: setAuthorizationHeader/passAuthorizationHeader already true,
+#   so caller-supplied Authorization: Bearer is forwarded verbatim and validated
+#   service-side.
+# - Login alias: /oauth2/authorization/keycloak rewrites to /oauth2/start (oauth2-proxy
+#   has no such path natively; the /oauth2 prefix already routes here, so this is an
+#   ingress-level alias preserving rd return-to-frontend-origin).
+# - Logout: POST /logout rewrites to /oauth2/sign_out with post-logout redirect to the
+#   frontend origin plus Keycloak end-session.
+session:
+  port: 4181
+  csrfHeader: "X-XSRF-TOKEN"
+
+# NOTE: edgeOriginCheck below is recorded but NOT applied: the k3d/prod
+# ingress-nginx admission webhook rejects configuration-snippet/server-snippet
+# ("Snippet directives are disabled by the Ingress administrator"), so the edge
+# CSRF layer is oauth2-proxy cookie-CSRF alone until the controller policy changes.
+edgeOriginCheck: |
+  set $edge_csrf_fail "";
+  if ($request_method ~ "^(POST|PUT|PATCH|DELETE)$") { set $edge_csrf_fail "${edge_csrf_fail}M"; }
+  if ($http_cookie ~ "_oauth2_proxy=") { set $edge_csrf_fail "${edge_csrf_fail}C"; }
+  if ($http_x_xsrf_token = "") { set $edge_csrf_fail "${edge_csrf_fail}T"; }
+  if ($http_origin ~ "^https?://$host(:[0-9]+)?$") { set $edge_csrf_fail ""; }
+  if ($edge_csrf_fail = "MCT") { return 403; }
 
 ingress:
   name: oauth2-ingress

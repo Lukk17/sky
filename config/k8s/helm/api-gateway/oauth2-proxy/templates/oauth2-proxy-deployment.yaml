@@ -23,6 +23,7 @@ spec:
             - --upstream={{ .Values.args.upstream }}
             - --http-address={{ .Values.args.httpAddress }}
             - --cookie-secure={{ .Values.args.cookieSecure }}
+            - --cookie-samesite={{ .Values.args.cookieSamesite }}
             - --oidc-issuer-url={{ required "args.oidcIssuerUrl must be set by a values-<env>.yaml overlay" .Values.args.oidcIssuerUrl }}
             - --insecure-oidc-allow-unverified-email={{ .Values.args.insecureOidcAllowUnverifiedEmail }}
             - --redirect-url={{ required "args.redirectUrl must be set by a values-<env>.yaml overlay" .Values.args.redirectUrl }}
@@ -36,6 +37,12 @@ spec:
             - --pass-basic-auth={{ .Values.args.passBasicAuth }}
             - --cookie-csrf-per-request=true
             - --cookie-csrf-expire=15m
+            # Bearer passthrough (edge-session-parity 2.6): callers presenting a
+            # valid Keycloak JWT in Authorization bypass the cookie session on the
+            # /oauth2/auth probe (validated against oidc-issuer-url JWKS) and the
+            # header continues upstream verbatim via set/pass-authorization-header,
+            # where services validate it themselves as today.
+            - --skip-jwt-bearer-tokens=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
@@ -59,3 +66,21 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
               protocol: TCP
+        # Session responder sidecar: answers GET /api/session as {email, csrfToken}
+        # behind the session ingress auth-url gate. Email comes from the
+        # auth-request headers oauth2-proxy sets (X-Auth-Request-Email/User);
+        # csrfToken is the per-session oauth2-proxy CSRF cookie value echoed back
+        # for the frontend in-memory store (X-XSRF-TOKEN on mutations).
+        - name: session-responder
+          image: "python:3.12-alpine"
+          command: ["python3", "/srv/server.py"]
+          volumeMounts:
+            - name: session-responder
+              mountPath: /srv
+          ports:
+            - containerPort: {{ .Values.session.port }}
+              protocol: TCP
+      volumes:
+        - name: session-responder
+          configMap:
+            name: session-responder
