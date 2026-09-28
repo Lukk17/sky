@@ -2,7 +2,11 @@
   @for (offer of offers; track offer; let i = $index) {
     <div class="col-md-4">
       <div (click)="goToDetails(offer)" class="card">
-        <img alt="Offer photo" class="card-img-top" src="{{offer.photoPath}}">
+        @if (offer.coverPhotoUrl) {
+          <img alt="Offer cover photo" class="card-img-top" src="{{offer.coverPhotoUrl}}">
+        } @else {
+          <p class="text-muted">No photos yet</p>
+        }
         <div class="card-body">
           <h3 class="card-title">{{offer.hotelName}}</h3>
           <div class="card-text">

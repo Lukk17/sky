@@ -1,0 +1,50 @@
+info:
+  name: Delete Gallery Photo
+  type: http
+  seq: 14
+
+http:
+  method: DELETE
+  url: "{{offerUrl}}/api/v1/owner/offers/{{offerId}}/photos/{{galleryPhotoId1}}"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const deletedUrl = bru.getVar("galleryPhotoUrl1");
+        const survivorUrl = res.status === 200 && res.body && res.body.gallery && res.body.gallery[0]
+          ? res.body.gallery[0].url : null;
+        if (survivorUrl) {
+          bru.setVar("gallerySurvivorUrl", survivorUrl);
+        }
+        bru.setVar("galleryDeletedStatus", 0);
+        if (res.status === 200 && deletedUrl) {
+          try {
+            const stored = await bru.sendRequest({
+              method: "GET",
+              url: deletedUrl,
+              responseType: "text"
+            });
+            bru.setVar("galleryDeletedStatus", stored.status);
+          } catch (err) {
+            bru.setVar("galleryDeletedStatus", (err && (err.status || (err.response && err.response.status))) || 0);
+          }
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.gallery.length
+      operator: eq
+      value: "1"
+    - expression: res.body.gallery[0].position
+      operator: eq
+      value: "0"
+    - expression: galleryDeletedStatus
+      operator: eq
+      value: "404"

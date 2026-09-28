@@ -1,0 +1,78 @@
+info:
+  name: Upload Gallery Photo 1
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{offerUrl}}/api/v1/owner/offers/{{offerId}}/photos"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - ../../../e2e/fixtures/offer-photo.png
+        contentType: image/png
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const marker = "SKY-OFFER-PHOTO-CANARY-4471";
+        const markerHex = marker.split("").map(function (c) { return ("0" + c.charCodeAt(0).toString(16)).slice(-2); }).join("");
+        bru.setVar("galleryPhotoStatus1", 0);
+        bru.setVar("galleryPhotoCanary1", "gallery presigned URL was not fetched");
+        if (res.status === 200 && res.body && res.body.gallery && res.body.gallery.length >= 1) {
+          bru.setVar("galleryPhotoId1", res.body.gallery[0].id);
+          bru.setVar("galleryPhotoUrl1", res.body.gallery[0].url);
+          try {
+            const stored = await bru.sendRequest({
+              method: "GET",
+              url: res.body.gallery[0].url,
+              responseType: "text",
+              responseEncoding: "hex"
+            });
+            bru.setVar("galleryPhotoStatus1", stored.status);
+            bru.setVar("galleryPhotoCanary1", String(stored.data).indexOf(markerHex) === -1
+              ? "stored object carries no canary marker"
+              : marker);
+          } catch (err) {
+            bru.setVar("galleryPhotoStatus1", (err && err.status) || 0);
+            bru.setVar("galleryPhotoCanary1", "presigned URL not fetchable: " + ((err && err.message) || "unknown error"));
+          }
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.gallery
+      operator: isDefined
+    - expression: res.body.gallery.length
+      operator: eq
+      value: "1"
+    - expression: res.body.gallery[0].position
+      operator: eq
+      value: "0"
+    - expression: res.body.gallery[0].id
+      operator: isDefined
+    - expression: res.body.gallery[0].url
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.gallery[0].url
+      operator: contains
+      value: "offers/"
+    - expression: res.body.coverPhotoUrl
+      operator: eq
+      value: "{{galleryPhotoUrl1}}"
+    - expression: galleryPhotoStatus1
+      operator: eq
+      value: "200"
+    - expression: galleryPhotoCanary1
+      operator: eq
+      value: "SKY-OFFER-PHOTO-CANARY-4471"

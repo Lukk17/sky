@@ -25,6 +25,17 @@
 - DELETE `/api/v1/owner/offers/{id}` returns HTTP 204, the offer no longer appears in the owner's page
   (persisted-state removal from `public.offer`), and the photo it was still holding answers 404, so deleting the
   offer deletes its object too.
+- POST `/api/v1/owner/offers/{id}/photos` twice (multipart, same canary fixture) returns HTTP 200 each time with an
+  ordered `gallery` of length 1 then 2 (`position` 0 then 0 and 1, distinct `id` values, distinct non-empty `url`
+  values) and `coverPhotoUrl` equal to `gallery[0].url`. Fetching both `url` values returns HTTP 200 with the canary
+  marker `SKY-OFFER-PHOTO-CANARY-4471` in the stored bytes, so both objects landed under `offers/{offerId}/` in the
+  `sky-offers` bucket.
+- PUT `/api/v1/owner/offers/{id}/photos/{secondPhotoId}/position?position=0` returns HTTP 200 with the gallery order
+  swapped (`gallery[0].id` equal to the second upload's `id`) and `coverPhotoUrl` equal to the new `gallery[0].url`,
+  so the reorder swapped the cover. A follow-up GET of the offer reflects the same order and cover.
+- DELETE `/api/v1/owner/offers/{id}/photos/{photoId}` for the non-cover photo returns HTTP 200 with a one-element
+  `gallery` whose `position` is 0, and fetching the deleted photo's `url` answers 404, so the object left the bucket
+  and the surviving row was renumbered. The remaining `url` still fetches the canary.
 
 ## Prerequisites
 
@@ -95,8 +106,11 @@ every response body, and a follow-up fetch of that URL returns HTTP 200 with the
 the edit returns HTTP 200, a follow-up read reflects the renamed `hotelName` and reprice, and the photo still fetches
 the canary; the photo replace returns a new `photoUrl` that fetches the canary while the replaced address answers
 404; the photo delete returns HTTP 204 and its address answers 404; the restore upload returns HTTP 200; and the
-cleanup delete returns HTTP 204 (persisted-state removal from `public.offer`, and the object it held answers 404,
-because the offer delete removes the stored photo with the row).
+  cleanup delete returns HTTP 204 (persisted-state removal from `public.offer`, and the object it held answers 404,
+  because the offer delete removes the stored photo with the row); the gallery assertions cover two uploads under
+  `offers/{offerId}/` in the `sky-offers` bucket (persisted in `public.offer_photo` ordered by `position` with the
+  cover at position 0), a reorder that swaps the cover, and a delete that removes the object and renumbers the
+  survivor to position 0.
 
 ## Fixtures
 
