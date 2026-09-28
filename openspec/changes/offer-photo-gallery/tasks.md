@@ -11,7 +11,7 @@
 - [ ] 2.1 Implement gallery reads on offer responses (full ordered gallery plus derived cover) and verify with a `@WebMvcTest` or integration test asserting order, cover, and empty state
 - [ ] 2.2 Implement photo upload appending to gallery end and photo delete removing both row and S3 object, and verify with an integration test using a fake object store asserting URLs are retrievable and deletes remove objects
 - [ ] 2.3 Implement reorder and set-cover with invalid-reference rejection leaving the gallery unchanged, and verify with tests asserting the new order, the new cover, and the error case
-- [ ] 2.4 Enforce the gallery cap (default 10, open question in design.md) with a 413 on overflow and verify with a test uploading past the cap
+- [ ] 2.4 Enforce the gallery cap (10, decided per design.md) with a 413 on overflow and verify with a test uploading past the cap
 
 ## 3. Frontend rendering
 

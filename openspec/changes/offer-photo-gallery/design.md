@@ -30,7 +30,7 @@ See proposal.md Why. Current state: `Offer.photoObjectKey` (server-owned column 
 
 - [Risk] Legacy slot and gallery diverge during dual-write window → Mitigation: gallery is write authority, legacy slot read-only fallback, backfill verified by count comparison before column drop.
 - [Risk] Orphaned S3 objects on failed deletes → Mitigation: delete DB row only after object delete succeeds, plus periodic orphan reconciliation job.
-- [Risk] Large galleries slow offer reads → Mitigation: cap gallery size (proposed 10) with a 413 on overflow, paginate only if measured read latency regresses.
+- [Risk] Large galleries slow offer reads → Mitigation: cap gallery size at 10 with a 413 on overflow, paginate only if measured read latency regresses.
 
 ## Migration Plan
 
@@ -40,7 +40,7 @@ See proposal.md Why. Current state: `Offer.photoObjectKey` (server-owned column 
 4. Cut over reads to gallery-only, deprecate `coverPhoto` field, drop legacy columns in a follow-up release.
 5. Rollback: before step 4, revert to legacy-slot reads; gallery rows are ignored.
 
-## Open Questions
+## Decided
 
-- Gallery cap: is 10 the right maximum, or should owners get more.
-- Should external URLs remain allowed for new uploads, or stored objects only going forward.
+- Gallery cap is 10 photos per offer.
+- Only stored uploads are allowed, no external URLs for new photos.
