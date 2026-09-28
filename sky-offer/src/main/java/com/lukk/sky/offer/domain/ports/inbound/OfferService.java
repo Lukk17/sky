@@ -29,4 +29,13 @@ public interface OfferService {
                          String validatedContentType, String filename);
 
     void deletePhoto(UUID offerId, String ownerEmail);
+
+    OfferDTO uploadGalleryPhoto(UUID offerId, String ownerEmail, InputStream content, long contentLength,
+                                String validatedContentType, String filename);
+
+    OfferDTO deleteGalleryPhoto(UUID offerId, UUID photoId, String ownerEmail);
+
+    OfferDTO reorderGalleryPhoto(UUID offerId, UUID photoId, int newPosition, String ownerEmail);
+
+    OfferDTO setGalleryCover(UUID offerId, UUID photoId, String ownerEmail);
 }
