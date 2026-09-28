@@ -1,7 +1,18 @@
 <div class="row">
   <div class="col-md-2"></div>
   <div class="col-md-8">
-    <img alt="Offer photo" class="card-img-top" src="{{offer.photoPath}}">
+    @if (coverUrl()) {
+      <img alt="Offer cover photo" class="card-img-top" src="{{coverUrl()}}">
+      @if (offer.gallery && offer.gallery.length > 1) {
+        <div class="d-flex gap-2 mt-2">
+          @for (photo of offer.gallery; track photo.id) {
+            <img alt="Offer gallery thumbnail" class="img-thumbnail" style="width: 96px; cursor: pointer;" src="{{photo.url}}" (click)="selectPhoto(photo.url)">
+          }
+        </div>
+      }
+    } @else {
+      <p class="text-muted">No photos yet</p>
+    }
   </div>
   <div class="col-md-2">
     <div class="row">

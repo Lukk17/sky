@@ -91,6 +91,12 @@ export class OfferService {
   }
 }
 
+export interface OfferPhoto {
+  id: string;
+  position: number;
+  url: string;
+}
+
 export class Offer {
 
   'id': number;
@@ -103,6 +109,10 @@ export class Offer {
   'city': string;
   'country': string;
   'photoPath': string;
+  'photoUrl'?: string | null;
+  'externalPhotoUrl'?: string | null;
+  'gallery'?: OfferPhoto[];
+  'coverPhotoUrl'?: string | null;
 
   constructor(hotelName: string, description: string, price: number, roomCapacity: number, city: string,
               country: string, photoPath: string) {

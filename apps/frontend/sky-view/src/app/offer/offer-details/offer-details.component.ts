@@ -18,6 +18,15 @@ export class OfferDetailsComponent implements OnInit {
   offer!: Offer;
   bookings!: Booking[];
   isOwner = false;
+  selectedPhotoUrl: string | null = null;
+
+  coverUrl(): string | null {
+    return this.selectedPhotoUrl ?? this.offer?.coverPhotoUrl ?? this.offer?.gallery?.[0]?.url ?? this.offer?.photoUrl ?? null;
+  }
+
+  selectPhoto(url: string): void {
+    this.selectedPhotoUrl = url;
+  }
 
   constructor(private offerService: OfferService, private auth: SkyAuthService, private bookingService: BookingService,
               private location: Location, private router: Router, private route: ActivatedRoute) {

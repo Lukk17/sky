@@ -1,0 +1,34 @@
+info:
+  name: Reorder Gallery Photo
+  type: http
+  seq: 13
+
+http:
+  method: PUT
+  url: "{{offerUrl}}/api/v1/owner/offers/{{offerId}}/photos/{{galleryPhotoId2}}/position?position=0"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.gallery.length
+      operator: eq
+      value: "2"
+    - expression: res.body.gallery[0].id
+      operator: eq
+      value: "{{galleryPhotoId2}}"
+    - expression: res.body.gallery[0].position
+      operator: eq
+      value: "0"
+    - expression: res.body.gallery[1].position
+      operator: eq
+      value: "1"
+    - expression: res.body.coverPhotoUrl
+      operator: eq
+      value: "{{galleryPhotoUrl2}}"
