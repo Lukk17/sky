@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Builder
@@ -55,6 +57,11 @@ public class OfferDTO {
      * Address a client fetches the photo from, derived per response and never persisted.
      */
     private String photoUrl;
+
+    @Builder.Default
+    private List<PhotoDTO> gallery = new ArrayList<>();
+
+    private String coverPhotoUrl;
 
     public static OfferDTO of(Offer offer) {
         return OfferDTO.builder()

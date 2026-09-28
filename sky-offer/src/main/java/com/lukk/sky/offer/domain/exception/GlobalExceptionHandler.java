@@ -57,6 +57,13 @@ public class GlobalExceptionHandler {
         return ErrorResponse.builder(ex, HttpStatus.BAD_GATEWAY, ex.getMessage()).build();
     }
 
+    @ExceptionHandler(GalleryLimitExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ErrorResponse handleGalleryLimit(GalleryLimitExceededException ex) {
+        log.warn("gallery_limit_exceeded message={}", ex.getMessage());
+        return ErrorResponse.builder(ex, HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage()).build();
+    }
+
     @ExceptionHandler(OfferException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleOfferExceptions(OfferException ex) {

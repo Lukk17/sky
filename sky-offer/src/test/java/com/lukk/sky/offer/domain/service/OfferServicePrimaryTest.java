@@ -9,7 +9,9 @@ import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
+import com.lukk.sky.offer.domain.model.OfferPhoto;
 import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
+import com.lukk.sky.offer.domain.ports.outbound.OfferPhotoRepository;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
 import com.lukk.sky.offer.domain.ports.outbound.OfferSearch;
 import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
@@ -79,8 +81,19 @@ class OfferServicePrimaryTest {
     @Mock
     OfferNotificationService offerNotificationService;
 
+    @Mock
+    OfferPhotoRepository offerPhotoRepository;
+
     @InjectMocks
     OfferServicePrimary offerService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void stubEmptyGallery() {
+        org.mockito.Mockito.lenient()
+                .when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(
+                        org.mockito.ArgumentMatchers.any()))
+                .thenReturn(List.of());
+    }
 
     @Test
     @DisplayName("getAllOffers_whenOffersExist_thenReturnMappedOfferDtoPage")
@@ -486,6 +499,29 @@ class OfferServicePrimaryTest {
         // then
         verify(offerRepository).delete(offer);
         verify(eventSourceService).saveEvent(offer, EventType.OFFER_DELETED);
+    }
+
+    @Test
+    @DisplayName("deleteOffer_whenGalleryHasRows_thenDeletesRowsBeforeOfferAndRemovesObjects")
+    void deleteOffer_whenGalleryHasRows_thenDeletesRowsBeforeOfferAndRemovesObjects() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        offer.setPhotoObjectKey(null);
+        OfferPhoto photo = OfferPhoto.builder().offer(offer).position(0)
+                .objectKey("offers/" + TEST_DEFAULT_OFFER_ID + "/g1.jpg").build();
+        doReturn(Optional.of(offer)).when(offerRepository).findById(TEST_DEFAULT_OFFER_ID);
+        doReturn(List.of(photo)).when(offerPhotoRepository)
+                .findAllByOfferIdOrderByPositionAsc(TEST_DEFAULT_OFFER_ID);
+        doNothing().when(eventSourceService).saveEvent(any(), any());
+
+        // when
+        offerService.deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL);
+
+        // then
+        InOrder order = org.mockito.Mockito.inOrder(offerPhotoRepository, offerRepository);
+        order.verify(offerPhotoRepository).deleteAll(List.of(photo));
+        order.verify(offerRepository).delete(offer);
+        verify(photoStorage).delete(TEST_DEFAULT_OFFER_ID, "offers/" + TEST_DEFAULT_OFFER_ID + "/g1.jpg");
     }
 
     @Test
