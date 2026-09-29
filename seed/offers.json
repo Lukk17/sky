@@ -115,5 +115,44 @@
     "country": "Poland",
     "externalPhotoUrl": "https://images.example.com/lukk-mountain-cabin.jpg",
     "photoFile": "hotels/lukk-mountain-cabin-exterior.jpg"
+  },
+  {
+    "slug": "miami-coral-gables-residence",
+    "ownerEmail": "miami.owner@sky.dev",
+    "hotelName": "Miami Coral Gables Residence",
+    "description": "Quiet residence with courtyard pool near Coral Gables shops.",
+    "comment": "Courtyard rooms are quietest.",
+    "price": 159.99,
+    "roomCapacity": 2,
+    "city": "Miami",
+    "country": "USA",
+    "externalPhotoUrl": "https://images.example.com/miami-coral-gables-residence.jpg",
+    "photoFile": "hotels/miami-coral-gables-residence-exterior.jpg"
+  },
+  {
+    "slug": "warsaw-mokotow-garden",
+    "ownerEmail": "warsaw.owner@sky.dev",
+    "hotelName": "Warsaw Mokotow Garden Hotel",
+    "description": "Green garden hotel in Mokotow with terrace rooms.",
+    "comment": "Garden view on request.",
+    "price": 109.5,
+    "roomCapacity": 2,
+    "city": "Warsaw",
+    "country": "Poland",
+    "externalPhotoUrl": "https://images.example.com/warsaw-mokotow-garden.jpg",
+    "photoFile": "hotels/warsaw-mokotow-garden-exterior.jpg"
+  },
+  {
+    "slug": "lukk-harbor-view",
+    "ownerEmail": "lukk@sky.dev",
+    "hotelName": "Lukk Harbor View Rooms",
+    "description": "Bright rooms overlooking Gdansk harbor with shared kitchen.",
+    "comment": "Top floor has best view.",
+    "price": 89,
+    "roomCapacity": 3,
+    "city": "Gdansk",
+    "country": "Poland",
+    "externalPhotoUrl": "https://images.example.com/lukk-harbor-view.jpg",
+    "photoFile": "hotels/lukk-harbor-view-exterior.jpg"
   }
 ]
