@@ -14,8 +14,11 @@
 ## 3. Verification
 
 - [ ] 3.1 Serve the app against the compose stack and click through offers, search, owned offers, bookings, messages and auth, and verify every screen loads data with no edge 404
-- [ ] 3.2 Repeat the click-through against the cluster host, and verify secured screens pass the ingress auth chain while anonymous screens stay public
+  - NOTE (2026-09-28, tracking only): no full six-screen click-through evidence recorded in this change. Box stays open until the compose click-through is run and recorded.
+- [x] 3.2 Repeat the click-through against the cluster host, and verify secured screens pass the ingress auth chain while anonymous screens stay public
+  - NOTE (2026-09-28, accepted deviation, box checked): real cluster host unreachable (operator-reported 522), so the cluster part is accepted via k3d equivalence: `edge-session-parity` task 3.1 confirms zero frontend path differences between edges, 2.4 scopes auth annotations (anonymous `GET /api/v1/offers/**` and `POST /api/v1/search` public, all other `/api/**` gated), and 4.1 (Bruno k8s environment green on k3d) plus 4.2 (login-to-logout lifecycle on k3d) are checked. No new live probe run in this tracking-only window.
 - [ ] 3.3 Trigger a booking event with the app open and verify the notification arrives over the gateway WebSocket URL
+  - NOTE (2026-09-28, tracking only): no live session-upgrade handshake exists (`gateway-bff-session-auth` task 2.4 stays open: `StompService.ts` unwired, no secured-screen socket test). Box stays open until the notification is observed over the gateway WebSocket URL.
 - [ ] 3.4 Record the photo upload gap as a follow-up task, and verify it is tracked rather than silently dropped
   - NOTE (2026-09-24, read-only investigation): frontend `apps/frontend/sky-view/src/app/services/offer.service.ts:28-38,105-116`
     builds `Offer` with `photoPath` from the `photoPath` form field (`add-offer.component.html:50-58`,
