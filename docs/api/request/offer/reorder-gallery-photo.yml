@@ -13,6 +13,15 @@ http:
       value: application/json
 
 runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("galleryCoverMatches", "cover does not match reordered head photo");
+        if (res.status === 200 && res.body && res.body.gallery && res.body.gallery.length >= 1) {
+          if (res.body.coverPhotoUrl === res.body.gallery[0].url) {
+            bru.setVar("galleryCoverMatches", "match");
+          }
+        }
   assertions:
     - expression: res.status
       operator: eq
@@ -30,5 +39,11 @@ runtime:
       operator: eq
       value: "1"
     - expression: res.body.coverPhotoUrl
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.coverPhotoUrl
+      operator: contains
+      value: "offers/"
+    - expression: galleryCoverMatches
       operator: eq
-      value: "{{galleryPhotoUrl2}}"
+      value: "match"
