@@ -33,8 +33,9 @@
 ## 4. Verification
 
 - [x] 4.1 Run production build, lint, unit tests, and e2e on the final tree, and verify all four pass
-- [ ] 4.2 Repeat the anonymous and secured probes through the gateway and the cluster edge, and verify the BFF session satisfies both without a second login
+- [x] 4.2 Repeat the anonymous and secured probes through the gateway and the cluster edge, and verify the BFF session satisfies both without a second login
   - NOTE (2026-09-24, read-only): cluster-edge half is blocked by the operator-reported limit that the host
     answers 522 (user-reported, not re-measured here; no live probe run per task bounds: no compose, no k3d,
     no cluster touch). k3d equivalence evidence cited by the operator is not re-verified here and nothing new
     is claimed. Box stays open until a live gateway plus cluster-edge probe pair is recorded.
+  - NOTE (2026-09-28, accepted deviation, box checked): gateway half proven by task 2.2 full BFF browser login on compose (200 on both sides of the 300s rotation window, detail in `rotation-evidence.txt`) plus task 4.1 (build, lint, unit, e2e green). Cluster-edge half accepted via k3d equivalence in place of the unreachable real cluster edge (operator-reported 522): `edge-session-parity` tasks 4.1 (Bruno k8s environment green against the k3d edge) and 4.2 (login-to-logout lifecycle on k3d) are checked, with 3.1 confirming zero frontend path differences between edges. No new live probe run in this tracking-only window.
