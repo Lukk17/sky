@@ -1,5 +1,7 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Message, MessageService} from '../services/message.service';
+import {StompService} from '../services/StompService';
 
 @Component({
     selector: 'app-message',
@@ -16,7 +18,9 @@ export class MessageComponent implements OnInit {
   received!: Message[];
   currentPage!: string;
 
-  constructor(private messageService: MessageService) {
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor(private messageService: MessageService, private stompService: StompService) {
   }
 
   ngOnInit(): void {
@@ -30,6 +34,12 @@ export class MessageComponent implements OnInit {
     });
 
     this.currentPage = this.RECEIVED_PAGE;
+
+    this.stompService.getMessages().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.messageService.getReceived().subscribe(messages => {
+        this.received = messages;
+      });
+    });
   }
 
   goToSent() {

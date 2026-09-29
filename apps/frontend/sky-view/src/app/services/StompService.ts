@@ -20,7 +20,7 @@ function buildSocketUrl(): string {
 })
 export class StompService {
   private client: Client;
-  private messages: BehaviorSubject<string> = new BehaviorSubject<string>(null);
+  private messages: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
   constructor() {
     this.client = Stomp.over(new WebSocket(buildSocketUrl()));
@@ -42,7 +42,7 @@ export class StompService {
     this.client.publish({destination: '/sky/notify', body: message});
   }
 
-  getMessages(): Observable<string> {
+  getMessages(): Observable<string | null> {
     return this.messages.asObservable();
   }
 }
