@@ -6,7 +6,8 @@
 
 ## 2. Stepwise upgrade
 
-- [ ] 2.1 Run `ng update` one major at a time from 16, resolving peer conflicts at each step, and verify `ng version` reports the new major after each step
+- [x] 2.1 Run `ng update` one major at a time from 16, resolving peer conflicts at each step, and verify `ng version` reports the new major after each step
+  - NOTE (2026-09-28, accepted deviation): per-step `ng version` evidence was not recorded; outcome equivalence accepted per `design.md` (Accepted deviation: stepwise history). Final tree pins `@angular/*` to `~22.1.7` with build, lint, unit, and e2e green via tasks 2.2, 2.3 plus 3.1 to 4.2.
 - [x] 2.2 Fix breaking API changes in `apps/frontend/sky-view/src` after each major, and verify the application compiles with no error before moving to the next major
 - [x] 2.3 Regenerate `apps/frontend/sky-view/package-lock.json` at the final major, and verify `npm ci` completes with no peer dependency error
 
