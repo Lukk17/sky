@@ -81,6 +81,20 @@ class WebSocketAuthChannelInterceptorTest {
     }
 
     @Test
+    @DisplayName("accepts CONNECT without bearer when gateway session user is present")
+    void preSend_whenGatewayUserPresentAndNoBearer_thenAccepts() {
+        StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
+        accessor.setLeaveMutable(true);
+        accessor.setSessionAttributes(new java.util.HashMap<>(java.util.Map.of(
+                GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE, PRINCIPAL)));
+
+        interceptor.preSend(message(accessor), channel);
+
+        assertThat(accessor.getUser()).isNotNull();
+        assertThat(accessor.getUser().getName()).isEqualTo(PRINCIPAL);
+    }
+
+    @Test
     @DisplayName("passes non-CONNECT frames through untouched")
     void preSend_whenFrameIsNotConnect_thenPassesThrough() {
         // given
@@ -94,6 +108,12 @@ class WebSocketAuthChannelInterceptorTest {
         // then
         assertThat(forwarded).isSameAs(message);
         assertThat(accessor.getUser()).isNull();
+    }
+
+    @Test
+    @DisplayName("runs before Spring Security authorization so CONNECT carries a principal when authorized")
+    void getOrder_whenInspected_runsAtHighestPrecedence() {
+        assertThat(interceptor.getOrder()).isEqualTo(org.springframework.core.Ordered.HIGHEST_PRECEDENCE);
     }
 
     @Test

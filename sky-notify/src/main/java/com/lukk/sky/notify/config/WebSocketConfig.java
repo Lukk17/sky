@@ -3,7 +3,9 @@ package com.lukk.sky.notify.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -26,8 +28,24 @@ import java.util.List;
  * session cookies).
  *
  * <p>{@link WebSocketAuthChannelInterceptor} continues to run first on STOMP CONNECT
- * and resolves the principal from the Bearer token. Subsequent frames are then
- * authorized by the {@link AuthorizationManager} bean below.
+ * and resolves the principal from the Bearer token or the gateway session user.
+ * Subsequent frames are then authorized by the {@link AuthorizationManager} bean
+ * below. This configurer runs at {@link Ordered#HIGHEST_PRECEDENCE} so its
+ * interceptor registers before Spring Security's authorization interceptor:
+ * channel interceptors run in registration order and neither security
+ * interceptor is {@link Ordered}, so without this the authorization check
+ * would deny CONNECT before authentication is set.
+ *
+ * <p>The STOMP CSRF token check that {@code @EnableWebSocketSecurity} installs
+ * is replaced with a pass-through by the {@code csrfChannelInterceptor} bean
+ * below (the name is the hook Spring Security's own configurer looks up).
+ * The check demands a synchronizer token in the WebSocket session, but nothing
+ * here mints one because authentication never rides on cookies: direct clients
+ * present a JWT bearer on CONNECT and browser clients arrive through the
+ * gateway session, whose identity the gateway forwards stripped of
+ * client-set copies. Cross-site upgrades are stopped one layer earlier, by
+ * the origin list on the endpoint, which rejects any browser origin that is
+ * not configured.
  *
  * <p>Per-user destination matching: Spring Security 6's
  * {@code MessageMatcherDelegatingAuthorizationManager} builder does not expose a
@@ -42,17 +60,26 @@ import java.util.List;
 @Configuration
 @EnableWebSocketMessageBroker
 @EnableWebSocketSecurity
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, Ordered {
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
+    }
+
 
     private static final String NOTIFY_ENDPOINT = "/notifyWebsocket";
     private static final String ORIGIN_SEPARATOR = "\\s*,\\s*";
 
     private final WebSocketAuthChannelInterceptor authInterceptor;
+    private final GatewayUserHandshakeInterceptor gatewayUserHandshakeInterceptor;
     private final List<String> allowedOrigins;
 
     public WebSocketConfig(WebSocketAuthChannelInterceptor authInterceptor,
+                           GatewayUserHandshakeInterceptor gatewayUserHandshakeInterceptor,
                            @Value("${sky.crossOrigin.allowed}") String allowedOrigins) {
         this.authInterceptor = authInterceptor;
+        this.gatewayUserHandshakeInterceptor = gatewayUserHandshakeInterceptor;
         this.allowedOrigins = List.of(allowedOrigins.split(ORIGIN_SEPARATOR));
     }
 
@@ -70,14 +97,22 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // CORS is defence-in-depth. STOMP CONNECT requires a JWT regardless of origin.
         registry.addEndpoint(NOTIFY_ENDPOINT)
                 .setAllowedOrigins(allowedOrigins())
+                .addInterceptors(gatewayUserHandshakeInterceptor)
                 .withSockJS();
         registry.addEndpoint(NOTIFY_ENDPOINT)
-                .setAllowedOrigins(allowedOrigins());
+                .setAllowedOrigins(allowedOrigins())
+                .addInterceptors(gatewayUserHandshakeInterceptor);
     }
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(authInterceptor);
+    }
+
+    @Bean("csrfChannelInterceptor")
+    public ChannelInterceptor csrfChannelInterceptor() {
+        return new ChannelInterceptor() {
+        };
     }
 
     @Bean

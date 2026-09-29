@@ -10,7 +10,7 @@ oauth2:
   issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"
 
 crossOrigin:
-  allowed: "http://localhost:5777,http://localhost:4200"
+  allowed: "http://localhost:5777,http://127.0.0.1:5777,http://localhost:4200,http://127.0.0.1:4200"
 
 ingress:
   tls:
