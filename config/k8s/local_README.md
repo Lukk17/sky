@@ -472,7 +472,6 @@ k3d cluster delete sky
 | [config/local-dev/local_README.md](../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |
 | [config/local-dev/e2e-stack_README.md](../local-dev/e2e-stack_README.md) | The self-contained Compose stack and the Bruno gate CI runs on it |
 | [config/k8s/helm/helm_README.md](helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
-| [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [config/k8s/k8s_README.md](k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |

@@ -286,7 +286,6 @@ docker images -a --filter "reference=sky-*" --format "{{.ID}}" | xargs -r docker
 | [config/local-dev/e2e-stack_README.md](e2e-stack_README.md) | The self-contained end-to-end stack and the Bruno gate in CI |
 | [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/k8s/helm/helm_README.md](../k8s/helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
-| [config/k8s/_deployment-scripts/deployment_README.md](../k8s/_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [config/k8s/k8s_README.md](../k8s/k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |

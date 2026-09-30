@@ -2,13 +2,13 @@
 
 kubectl reference for a sky cluster that is already running: how to reach the app, inspect it, scale it, and debug it.
 
-Deploying in the first place is [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md). What each chart contains is [config/k8s/helm/helm_README.md](helm/helm_README.md). Standing up a local cluster is [config/k8s/local_README.md](local_README.md).
+What each chart contains is [config/k8s/helm/helm_README.md](helm/helm_README.md). Standing up a local cluster is [config/k8s/local_README.md](local_README.md).
 
 ---
 
 ### Reaching the app
 
-The deployed platform answers at [https://skycloud.luksarna.com](https://skycloud.luksarna.com). To find the load balancer address directly, list the ingress controller service:
+The local platform answers at `http://localhost:5777` through the ingress. To find the load balancer address directly, list the ingress controller service:
 
 ```shell
 kubectl get svc -n ingress-nginx
@@ -20,29 +20,27 @@ ingress-nginx-controller             LoadBalancer   10.121.2.200   34.118.116.39
 ingress-nginx-controller-admission   ClusterIP      10.121.1.245   <none>          443/TCP
 ```
 
-`EXTERNAL-IP` on the first row is the address the DNS record points at. On GKE the same information is under Services and Ingress in the [Kubernetes console](https://console.cloud.google.com/kubernetes/discovery).
-
-`sky-notify` publishes its WebSocket endpoint through the same load balancer: its chart templates an Ingress on `/notifyWebsocket`, so a browser connects at `wss://skycloud.luksarna.com/notifyWebsocket`. Port forwarding, below, is a debugging route rather than the only way in.
+`sky-notify` publishes its WebSocket endpoint through the same ingress: its chart templates an Ingress on `/notifyWebsocket`, so a browser connects at `ws://localhost:5777/notifyWebsocket`. Port forwarding, below, is a debugging route rather than the only way in.
 
 ---
 
 ### Swagger
 
-Three services publish Swagger UI through the ingress. All three sit behind oauth2-proxy, so a browser session is required.
+Three services publish Swagger UI through the ingress.
 
 | Service | URL |
 |---|---|
-| sky-offer | https://skycloud.luksarna.com/offer/swagger-ui.html |
-| sky-booking | https://skycloud.luksarna.com/booking/swagger-ui.html |
-| sky-message | https://skycloud.luksarna.com/msg/swagger-ui.html |
+| sky-offer | http://localhost:5777/offer/swagger-ui.html |
+| sky-booking | http://localhost:5777/booking/swagger-ui.html |
+| sky-message | http://localhost:5777/msg/swagger-ui.html |
 
 Each of those redirects to `/<prefix>/swagger-ui/index.html`, and the page finds its own document from there. Nothing has to be pasted into the Explore box: the documentation ingresses hand the service the prefix they stripped, in `nginx.ingress.kubernetes.io/x-forwarded-prefix`, so springdoc names the prefixed document address and the dropdown names the service that answered. If a page ever does load empty, that annotation is the first thing to check. The document itself is at:
 
 | Service | api-docs URL |
 |---|---|
-| sky-offer | https://skycloud.luksarna.com/offer/v3/api-docs/public |
-| sky-booking | https://skycloud.luksarna.com/booking/v3/api-docs/public |
-| sky-message | https://skycloud.luksarna.com/msg/v3/api-docs/public |
+| sky-offer | http://localhost:5777/offer/v3/api-docs/public |
+| sky-booking | http://localhost:5777/booking/v3/api-docs/public |
+| sky-message | http://localhost:5777/msg/v3/api-docs/public |
 
 ---
 
@@ -198,7 +196,7 @@ Deleting a pod that belongs to a Deployment or StatefulSet only makes the contro
 
 ### Secrets
 
-The cluster reads one Secret, `sky-secrets`. Its keys and what reads each of them are in [config/k8s/helm/helm_README.md](helm/helm_README.md). No sealed copy of it is committed, so it is created and sealed per cluster before the first deploy, which is in [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md).
+The cluster reads one Secret, `sky-secrets`. Its keys and what reads each of them are in [config/k8s/helm/helm_README.md](helm/helm_README.md). No sealed copy of it is committed, so it is created and sealed per cluster before the first deploy.
 
 Check that a key is present without printing its value:
 
@@ -245,7 +243,6 @@ kubectl exec -it <pod-name> -- /bin/sh
 | Document | What it covers |
 |---|---|
 | [README.md](../../README.md) | Platform overview, modules, build, ports |
-| [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [config/k8s/helm/helm_README.md](helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
 | [config/k8s/local_README.md](local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/local-dev/local_README.md](../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |

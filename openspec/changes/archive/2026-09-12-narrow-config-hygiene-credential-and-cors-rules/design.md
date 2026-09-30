@@ -102,7 +102,7 @@ it. The mitigation that would cost nothing in local convenience is an `ACCESS_CO
 values of the three services, which is a chart change and a separate decision.
 
 Two production hostnames are in play and the requirement deliberately says nothing about which is right, which means it
-cannot catch the disagreement. The three REST services default to `https://skycloud.luksarna.com`, the `sky-offer`
+cannot catch the disagreement. The three REST services default to the since-retired API hostname, the `sky-offer`
 ingress annotation names `https://sky.luksarna.com`, and `sky-notify` hardcodes both. Leaving named origins out of the
 rule is what makes the rule stable, and it is also what makes this invisible to it. Reported instead.
 

@@ -104,8 +104,7 @@ The caller's identity comes from the `email` claim of the validated bearer token
 `SecurityUtils.currentUserEmail()` in `sky-common`. The service does not read the `x-auth-request-email` header that
 `oauth2-proxy` forwards.
 
-Swagger UI: `http://localhost:5552/swagger-ui/index.html` (local) or
-`https://skycloud.luksarna.com/offer/swagger-ui/index.html` (cluster).
+Swagger UI: `http://localhost:5552/swagger-ui/index.html` (local) or `http://localhost:5777/offer/swagger-ui.html` (gateway).
 
 ---
 

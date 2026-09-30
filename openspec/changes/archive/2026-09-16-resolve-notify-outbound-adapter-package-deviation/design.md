@@ -51,15 +51,14 @@ violation, both injected in one run so each failure could be read on its own. A 
 
 Feeding the bound property into the test would on its own prove only that the list was read. The test sets the
 property to two origins that no environment uses, drives the acceptance cases from that same value, and asserts a 403
-for two origins outside it. One of the two is `https://skycloud.luksarna.com`, which the deleted constant named, so a
+for two origins outside it. One of the two is a former production origin the deleted constant named, so a
 list that survived anywhere in the code fails the test rather than passing it. Run against the previous
 implementation, the suite fails four cases in both directions: it accepts an origin the property does not name and
 refuses two it does.
 
 ### The committed default keeps the production frontend and drops the API host
 
-The deleted constant named four origins. `https://sky.luksarna.com` is the frontend, `https://skycloud.luksarna.com`
-is the API host, and the two localhost entries are the gateway and the development server. The default that replaces
+The deleted constant named four origins. `https://sky.luksarna.com` is the frontend, a former production address is the API host, and the two localhost entries are the gateway and the development server. The default that replaces
 it names the frontend and the two local origins, matching the shape the three REST services carry, and drops the API
 host, which is not a browser origin for this stack. No per-service port is on any of the lists: in the cluster nothing
 publishes one, and under compose a page calling its own service is same origin and never consults the list.

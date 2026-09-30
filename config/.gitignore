@@ -9,7 +9,7 @@
 /k8s/secret/sealed-private.key
 
 
-# Sealed sky-secrets, generated per cluster before each deploy (see config/k8s/_deployment-scripts/deployment_README.md section 3)
+# Sealed sky-secrets, generated per cluster before each deploy
 /k8s/secret/sealed/sealed-secrets.yaml
 
 

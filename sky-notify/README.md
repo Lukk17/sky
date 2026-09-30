@@ -42,17 +42,14 @@ once with SockJS and once as a plain WebSocket. After connecting, subscribe to:
 Spring's user-destination machinery resolves the `{email}` prefix from the authenticated STOMP principal. Clients
 subscribe to `/user/queue/notify` and the broker rewrites it to the correct per-user destination automatically.
 
-Allowed origins (CORS): `https://sky.luksarna.com`, `https://skycloud.luksarna.com`, `http://localhost:5777`,
+Allowed origins (CORS): `https://sky.luksarna.com`, `http://localhost:5777`,
 `http://localhost:4200`. CORS is defence in depth here, a STOMP `CONNECT` needs a valid JWT regardless of origin.
 `http://localhost:5777` covers a page served from the gateway port or from the local k3d ingress, and
 `http://localhost:4200` covers the Angular dev server, so neither is refused at the origin check.
 
 Reaching the endpoint works the same way in every environment. Locally, `sky-gateway` passes `/notifyWebsocket/**`
 through to this service, so a client connects at `ws://localhost:5777/notifyWebsocket` through the gateway, or at
-`ws://localhost:5554/notifyWebsocket` straight to the published port. In a cluster the Helm chart at
-[../config/k8s/helm/service/sky-notify/](../config/k8s/helm/service/sky-notify/) templates an Ingress on
-`/notifyWebsocket` with `pathType: Prefix` and no rewrite, so the same path reaches a browser: `localhost` with the
-`dev-ssl-cert` secret locally, `skycloud.luksarna.com` with `sky-tls-cert` in production. The Ingress carries no
+`ws://localhost:5554/notifyWebsocket` straight to the published port. In a local cluster the Helm chart at [../config/k8s/helm/service/sky-notify/](../config/k8s/helm/service/sky-notify/) templates an Ingress on `/notifyWebsocket` with `pathType: Prefix` and no rewrite, so the same path reaches a browser over `localhost` with the `dev-ssl-cert` secret. The Ingress carries no
 oauth2-proxy auth annotations, because the JWT check belongs on the STOMP `CONNECT` frame and not on the HTTP
 handshake, and it raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not drop an idle
 socket after its default 60.

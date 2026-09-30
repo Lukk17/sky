@@ -21,7 +21,7 @@ These are all "fix once, never think about again" cleanups. Grouped because they
 - **Remove** `springdoc-openapi-starter-webflux-ui` from all three services. Keep `springdoc-openapi-starter-webmvc-ui` (matches the servlet stack).
 - **Replace** `WebClient` with `RestClient` in sky-booking's `RestClientWebflux` (rename to `OfferRestClient` while at it). Functional `Mono<String>` → blocking `String` is fine here; the call is point-to-point with no fan-out.
 - **Remove** default passwords from `application.yaml`. The env var becomes mandatory at startup; fail fast on missing config. Document the env vars in README (already documented; verify completeness).
-- **Tighten** default CORS. In `application.yaml`: `crossOrigin.allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com}` (named known prod origin as default; dev overrides).
+- **Tighten** default CORS. In `application.yaml`: `crossOrigin.allowed` default naming the then-known production origin (since retired; local overrides).
 - **Verify** Spring Security default user/password is fully suppressed (env-overridable as-is, but the literal `XYZ` default is a confused signal).
 
 ## Capabilities

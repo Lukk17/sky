@@ -26,7 +26,7 @@
 
 ## 5. CORS tightening
 
-- [x] 5.1 Change `crossOrigin.allowed` default in `application.yaml` to `https://skycloud.luksarna.com`.
+- [x] 5.1 Change `crossOrigin.allowed` default in `application.yaml` to the then-production origin (since retired).
 - [x] 5.2 In `application-local.yaml`, override to `http://localhost:4200`.
 - [x] 5.3 Update CorsConfiguration consumer code to parse comma-separated origins so the env var can carry a list.
 

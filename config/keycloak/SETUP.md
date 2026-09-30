@@ -15,7 +15,7 @@ What the file defines:
 - Realm `sky`, enabled, login with email allowed, self-registration disabled.
 - Realm roles `admin` and `user`.
 - Confidential client `sky-backend` with the standard flow, direct access grants (password grant), and service accounts (client credentials). An audience mapper puts `sky-backend` into every access token's `aud` claim, which the services enforce when `OAUTH2_AUDIENCE=sky-backend` is set.
-- Five redirect URIs on that client. Three are the originals: `http://localhost:8080/*`, `https://skycloud.luksarna.com/*`, and `https://skycloud.luksarna.com/oauth2/callback`. Two were added for the local Spring Cloud Gateway, which logs in on its own behalf once the `local` profile is off: `http://localhost:5777/oauth2/callback` for the oauth2-proxy-style path, and `http://localhost:5777/login/oauth2/code/keycloak` for the Spring Security default the gateway's `redirect-uri` template produces.
+- Three redirect URIs on that client: `http://localhost:8080/*`, `http://localhost:5777/oauth2/callback` for the oauth2-proxy-style path, and `http://localhost:5777/login/oauth2/code/keycloak` for the Spring Security default the gateway's `redirect-uri` template produces.
 - Three demo users whose emails match the Flyway demo seed data.
 
 Credentials are development-only, non-secret, intentionally committed values:
@@ -508,5 +508,4 @@ The environment variable name is deliberately provider-neutral, so pointing the 
 | [config/local-dev/e2e-stack_README.md](../local-dev/e2e-stack_README.md) | The self-contained Compose stack and the Bruno gate CI runs on it |
 | [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/k8s/helm/helm_README.md](../k8s/helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
-| [config/k8s/_deployment-scripts/deployment_README.md](../k8s/_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |

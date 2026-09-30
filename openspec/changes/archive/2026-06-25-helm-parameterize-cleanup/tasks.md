@@ -1,7 +1,7 @@
 ## 1. Inventory
 
 - [x] 1.1 List every `values.yaml` under `config/k8s/helm/`. For each, list values that are environment-specific but currently hardcoded.
-- [x] 1.2 Grep `skycloud.luksarna.com`, `dev-ssl-cert`, `imagePullPolicy: Always`, `namespace: default`. List all hits.
+- [x] 1.2 Grep the retired production hostname, `dev-ssl-cert`, `imagePullPolicy: Always`, `namespace: default`. List all hits.
 
 ## 2. Defaults & overlays
 

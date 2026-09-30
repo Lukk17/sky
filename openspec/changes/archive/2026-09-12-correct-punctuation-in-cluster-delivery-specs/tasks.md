@@ -75,8 +75,7 @@
   the scenario more checkable rather than less.
 - Task 2.1 found three kinds of environment literal in every default `values.yaml` under
   `config/k8s/helm/service/`. Read in `sky-booking`: `secretName: dev-ssl-cert` at line 43, the oauth2-proxy
-  `auth-url` and `auth-signin` annotations carrying `https://skycloud.luksarna.com` at lines 51 and 52, and
-  `host: "skycloud.luksarna.com"` at lines 59, 77 and 96. The other three charts carry the same set at the same lines.
+  `auth-url` and `auth-signin` annotations carrying the production address at lines 51 and 52, and `host:` with the production hostname at lines 59, 77 and 96. The other three charts carry the same set at the same lines.
 - Task 2.2 found no namespace literal in any default values file, so the requirement keeps namespaces in its list as a
   prohibition rather than as a description of something present.
 - Task 2.4 is where the divergence stopped looking accidental. The header comment of

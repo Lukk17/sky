@@ -2,7 +2,7 @@
 
 The Helm charts work but carry environment specifics in places they shouldn't:
 
-- **Hostname `skycloud.luksarna.com`** hardcoded in every service chart's `values.yaml` ingress section. Switching environments means copy-editing N values files.
+- **A hardcoded production hostname** in every service chart's `values.yaml` ingress section. Switching environments means copy-editing N values files.
 - **TLS secret name `dev-ssl-cert`** hardcoded across charts. Even prod uses a secret called `dev-ssl-cert` — misleading at minimum.
 - **Namespace `default`** hardcoded as the deployment namespace.
 - **`imagePullPolicy: Always`** hardcoded — guarantees a pull on every pod schedule, defeats Docker image caching, slows rollouts.
@@ -14,7 +14,7 @@ A small but real bonus: charts use mixed style for templating (sometimes plain H
 
 - **Add** environment-specific values files per service: `values-dev.yaml`, `values-prod.yaml` (or a single `values-local.yaml` if only one prod env exists). Defaults stay in `values.yaml`.
 - **Parameterize**:
-  - `ingress.host` (default `skycloud.luksarna.com` in `values.yaml`)
+  - `ingress.host` (a production default in `values.yaml`)
   - `ingress.tlsSecretName` (rename `dev-ssl-cert` → `sky-tls-cert` as part of this; document the cert rotation/rename procedure)
   - `namespace` (default `default`; chart accepts override)
   - `image.pullPolicy` (default `IfNotPresent`; `Always` only via override)

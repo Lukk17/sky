@@ -37,7 +37,7 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     static final String CONFIGURED_ORIGINS = FIRST_CONFIGURED_ORIGIN + "," + SECOND_CONFIGURED_ORIGIN;
 
     private static final String FOREIGN_ORIGIN = "https://attacker.example.com";
-    private static final String FORMERLY_HARDCODED_ORIGIN = "https://skycloud.luksarna.com";
+    private static final String UNCONFIGURED_ORIGIN = "http://localhost:5999";
     private static final String ALLOWED_ORIGIN_HEADER = "Access-Control-Allow-Origin";
     private static final int HANDSHAKE_TIMEOUT_SECONDS = 15;
     private static final int OK = 200;
@@ -61,7 +61,7 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
         // then
         assertThat(boundAllowedOrigins).isEqualTo(CONFIGURED_ORIGINS);
         assertThat(List.of(boundAllowedOrigins.split(",")))
-                .doesNotContain(FORMERLY_HARDCODED_ORIGIN, FOREIGN_ORIGIN);
+                .doesNotContain(UNCONFIGURED_ORIGIN, FOREIGN_ORIGIN);
     }
 
     @ParameterizedTest(name = "origin {0}")
@@ -79,7 +79,7 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     }
 
     @ParameterizedTest(name = "origin {0}")
-    @ValueSource(strings = {FOREIGN_ORIGIN, FORMERLY_HARDCODED_ORIGIN})
+    @ValueSource(strings = {FOREIGN_ORIGIN, UNCONFIGURED_ORIGIN})
     @DisplayName("the raw WebSocket handshake is refused with 403 when the browser origin is not on the configured list")
     void rawHandshake_whenOriginIsNotAllowed_thenForbidden(String origin) {
         // when
@@ -107,7 +107,7 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     }
 
     @ParameterizedTest(name = "origin {0}")
-    @ValueSource(strings = {FOREIGN_ORIGIN, FORMERLY_HARDCODED_ORIGIN})
+    @ValueSource(strings = {FOREIGN_ORIGIN, UNCONFIGURED_ORIGIN})
     @DisplayName("the SockJS fallback refuses its info request with 403 when the browser origin is not on the configured list")
     void sockJsInfo_whenOriginIsNotAllowed_thenForbidden(String origin) throws Exception {
         // when

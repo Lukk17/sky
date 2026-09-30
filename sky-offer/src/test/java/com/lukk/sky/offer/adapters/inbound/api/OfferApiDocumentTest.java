@@ -186,12 +186,10 @@ class OfferApiDocumentTest {
                 .as("each entry is a bare origin, because the published paths already carry /api/v1")
                 .containsExactly(
                         "http://localhost:5777",
-                        "https://skycloud.luksarna.com",
                         "http://localhost:5552");
         assertThat(fieldOf(servers, "description"))
                 .containsExactly(
                         "Local, through the gateway, one origin for the whole stack",
-                        "Production, through the ingress, behind oauth2-proxy",
                         "Local, straight at the service, bypassing the gateway");
         assertThat(servers.toString())
                 .as("port 7972 exists only while the documentation build forks a boot, and "
