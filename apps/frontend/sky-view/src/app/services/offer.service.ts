@@ -89,6 +89,12 @@ export class OfferService {
     return this.http.post<Offer>(this.ADD_OFFER_URL,
       offer);
   }
+
+  public uploadPhoto(offerId: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<Offer>(`${this.ADD_OFFER_URL}/${offerId}/photo`, formData);
+  }
 }
 
 export interface OfferPhoto {

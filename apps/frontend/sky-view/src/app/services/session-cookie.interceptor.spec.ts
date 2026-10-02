@@ -57,12 +57,12 @@ describe('sessionCookieInterceptor', () => {
     request.flush({});
   });
 
-  it('navigates to auth on 401 from api calls', () => {
+  it('never navigates away on 401 from api calls', () => {
     http.get(`${environment.apiBaseUrl}/api/v1/user/bookings`).subscribe({error: () => undefined});
 
     const request = httpMock.expectOne(`${environment.apiBaseUrl}/api/v1/user/bookings`);
     request.flush({}, {status: 401, statusText: 'Unauthorized'});
 
-    expect(router.navigate).toHaveBeenCalledWith(['/auth']);
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('add-offer validation blocks invalid submit then creates with photo preview', async ({ page }) => {
+test('add-offer validation blocks invalid submit then creates without photo link', async ({ page }) => {
   await page.goto('/addOffer');
   await expect(page.getByTestId('add-submit').locator('button')).toBeDisabled();
 
@@ -10,12 +10,9 @@ test('add-offer validation blocks invalid submit then creates with photo preview
   await page.getByTestId('add-description').fill('A lovely place');
   await page.getByTestId('add-city').fill('Warsaw');
   await page.getByTestId('add-country').fill('Poland');
-  const photoUrl = 'https://example.com/photo.jpg';
-  await page.getByTestId('add-photo').fill(photoUrl);
   await page.getByTestId('add-capacity').fill('2');
   await page.getByTestId('add-price').fill('199');
 
-  await expect(page.getByTestId('add-photo-preview')).toBeVisible();
   await expect(page.getByTestId('add-submit').locator('button')).toBeEnabled();
 
   await page.route('**/api/v1/owner/offers', async (route) => {
@@ -29,4 +26,36 @@ test('add-offer validation blocks invalid submit then creates with photo preview
   );
   await page.getByTestId('add-submit').locator('button').click();
   await postPromise;
+});
+
+test('add-offer uploads a photo file after creating the offer', async ({ page }) => {
+  await page.goto('/addOffer');
+  await page.getByTestId('add-hotel').fill('Grand Test Hotel');
+  await page.getByTestId('add-description').fill('A lovely place');
+  await page.getByTestId('add-city').fill('Warsaw');
+  await page.getByTestId('add-country').fill('Poland');
+  await page.getByTestId('add-capacity').fill('2');
+  await page.getByTestId('add-price').fill('199');
+
+  await page.getByTestId('add-photo-file').setInputFiles({
+    name: 'room.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+  });
+  await expect(page.getByTestId('add-photo-filename')).toContainText('room.png');
+
+  await page.route('**/api/v1/owner/offers', async (route) => {
+    if (route.request().method() === 'POST' && !route.request().url().includes('/photo')) {
+      return route.fulfill({ status: 201, json: { id: '123e4567-e89b-12d3-a456-426614174000' } });
+    }
+    return route.continue();
+  });
+  await page.route('**/api/v1/owner/offers/*/photo', async (route) => {
+    return route.fulfill({ status: 200, json: { id: '123e4567-e89b-12d3-a456-426614174000' } });
+  });
+  const uploadPromise = page.waitForResponse(
+    (resp) => resp.url().includes('/photo') && resp.request().method() === 'POST',
+  );
+  await page.getByTestId('add-submit').locator('button').click();
+  await uploadPromise;
 });

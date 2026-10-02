@@ -1,7 +1,8 @@
-import {Injectable} from '@angular/core';
-import {Client, IMessage, Stomp} from '@stomp/stompjs';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {Injectable, NgZone, OnDestroy} from '@angular/core';
+import {Client, IMessage} from '@stomp/stompjs';
+import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {environment} from '../../environments/environment';
+import {SkyAuthService} from './sky-auth.service';
 
 function buildSocketUrl(): string {
   const origin = `${environment.apiBaseUrl}`;
@@ -15,34 +16,91 @@ function buildSocketUrl(): string {
   return origin + path;
 }
 
+export interface NotifyEvent {
+  raw: string;
+  senderEmail?: string;
+  text?: string;
+}
+
+function parseNotifyEvent(raw: string): NotifyEvent {
+  try {
+    const parsed = JSON.parse(raw);
+    const payload = parsed?.payload ?? parsed;
+    const senderEmail = payload?.senderEmail ?? payload?.sender ?? undefined;
+    const text = payload?.text ?? payload?.message ?? undefined;
+    return {raw, senderEmail, text};
+  } catch {
+    return {raw};
+  }
+}
+
 @Injectable({
   providedIn: 'root'
 })
-export class StompService {
-  private client: Client;
-  private messages: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+export class StompService implements OnDestroy {
+  private client: Client | null = null;
+  private authSub: Subscription;
+  private connectedEmail: string | null = null;
+  private notifications: BehaviorSubject<NotifyEvent | null> = new BehaviorSubject<NotifyEvent | null>(null);
 
-  constructor() {
-    this.client = Stomp.over(new WebSocket(buildSocketUrl()));
+  constructor(private skyAuth: SkyAuthService, private zone: NgZone) {
+    this.authSub = this.skyAuth.currentUser$.subscribe((email) => {
+      if (email) {
+        this.ensureConnected(email);
+      } else {
+        this.disconnect();
+      }
+    });
+  }
 
-    this.client.onConnect = () => {
-      this.client.subscribe('/user/queue/notify', (message: IMessage) => {
-        this.messages.next(message.body);
+  ngOnDestroy(): void {
+    this.authSub.unsubscribe();
+    this.disconnect();
+  }
+
+  private ensureConnected(email: string): void {
+    if (this.client?.active && this.connectedEmail === email) {
+      return;
+    }
+    this.disconnect();
+    this.connectedEmail = email;
+    const client = new Client({
+      webSocketFactory: () => new WebSocket(buildSocketUrl()),
+      reconnectDelay: 5000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+    });
+    client.onConnect = () => {
+      client.subscribe('/user/queue/notify', (message: IMessage) => {
+        this.zone.run(() => {
+          this.notifications.next(parseNotifyEvent(message.body));
+        });
       });
     };
-
-    this.client.onStompError = (frame) => {
-      console.error(`Error: ${frame.headers['message']}`);
+    client.onStompError = (frame) => {
+      console.error(`STOMP error: ${frame.headers['message']}`);
     };
+    client.onWebSocketClose = () => {
+      this.zone.run(() => undefined);
+    };
+    this.client = client;
+    client.activate();
+  }
 
-    this.client.activate();
+  private disconnect(): void {
+    this.connectedEmail = null;
+    const client = this.client;
+    this.client = null;
+    if (client?.active) {
+      client.deactivate().then().catch(() => undefined);
+    }
   }
 
   sendMessage(message: string): void {
-    this.client.publish({destination: '/sky/notify', body: message});
+    this.client?.publish({destination: '/sky/notify', body: message});
   }
 
-  getMessages(): Observable<string | null> {
-    return this.messages.asObservable();
+  getMessages(): Observable<NotifyEvent | null> {
+    return this.notifications.asObservable();
   }
 }

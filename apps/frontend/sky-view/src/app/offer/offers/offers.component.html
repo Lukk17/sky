@@ -8,13 +8,16 @@
           } @else {
             <p class="aspect-video flex items-center justify-center text-surface-400">No photos yet</p>
           }
-          <p-badge value="${{offer.price}}" severity="success" styleClass="absolute top-2 right-2"></p-badge>
         </div>
       </ng-template>
       <h3 class="text-xl font-semibold">{{offer.hotelName}}</h3>
       <div class="flex items-center gap-4 mt-2 text-sm">
         <span class="flex items-center gap-1"><i class="pi pi-map-marker"></i>{{offer.city}}, {{offer.country}}</span>
         <span class="flex items-center gap-1"><i class="pi pi-users"></i>{{offer.roomCapacity}}</span>
+      </div>
+      <div class="flex items-center justify-between mt-3">
+        <span class="offer-price" data-testid="offer-price">${{offer.price}}</span>
+        <p-button label="Book" severity="info" size="small" (onClick)="goToDetails(offer); $event.stopPropagation()" data-testid="offer-book"></p-button>
       </div>
     </p-card>
   }

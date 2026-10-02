@@ -1,8 +1,15 @@
 <p-toolbar styleClass="sky-toolbar">
   <ng-template #start>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1">
       <img src="assets/logo.png" alt="Sky logo" class="sky-brand-mark" (click)="routeToHome()" data-testid="brand-logo" />
-      <a (click)="routeToHome()" class="sky-brand" data-testid="brand-home">Sky</a>
+      <a (click)="routeToHome()" class="sky-nav-link sky-brand" data-testid="brand-home">Sky</a>
+      <a routerLink="/home" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-home">Home</a>
+      @if (isAuth) {
+        <a routerLink="/myOffers" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-my-offers">My Offers</a>
+        <a routerLink="/addOffer" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-add-offer">Add Offer</a>
+      } @else {
+        <a routerLink="/" routerLinkActive="activated" [routerLinkActiveOptions]="{exact: true}" class="sky-nav-link" data-testid="nav-offers">Public Offers</a>
+      }
       <p-button icon="pi pi-bars" [text]="true" [rounded]="true" ariaLabel="Toggle navigation"
         (onClick)="navOpen = !navOpen" data-testid="nav-toggler" class="lg:hidden"></p-button>
     </div>
@@ -18,17 +25,16 @@
   </ng-template>
   <ng-template #end>
     <div class="hidden lg:flex items-center gap-1">
-      <a routerLink="/home" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-home">Home</a>
       @if (isAuth) {
-        <a routerLink="/myOffers" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-my-offers">My Offers</a>
-        <a routerLink="/addOffer" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-add-offer">Add Offer</a>
         <a routerLink="/messages" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-messages"><i class="pi pi-comments"></i></a>
         <a routerLink="/userDetails" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-user"><i class="pi pi-user"></i></a>
-        <p-button icon="pi pi-bell" [rounded]="true" [text]="true" severity="secondary"
-          (onClick)="panel.toggle($event)" data-testid="notify-bell" ariaLabel="Notifications"></p-button>
-        @if (unreadCount > 0) {
-          <p-badge value="{{unreadCount}}" severity="danger" data-testid="notify-badge"></p-badge>
-        }
+        <span class="notify-bell-wrap">
+          <p-button icon="pi pi-bell" [rounded]="true" [text]="true" severity="secondary"
+            (onClick)="panel.toggle($event)" data-testid="notify-bell" ariaLabel="Notifications"></p-button>
+          @if (unreadCount > 0) {
+            <p-badge value="{{unreadCount}}" severity="danger" data-testid="notify-badge" styleClass="notify-badge"></p-badge>
+          }
+        </span>
         <p-popover #panel>
           <div class="notify-list" data-testid="notify-dropdown">
             @for (message of unread; track message.id) {
@@ -50,6 +56,12 @@
     </div>
   </ng-template>
 </p-toolbar>
+@if (banner) {
+  <div class="notify-banner" data-testid="notify-banner" (click)="dismissBanner()">
+    <i class="pi pi-envelope"></i>
+    <span><strong>{{banner.sender}}</strong> {{banner.text}}</span>
+  </div>
+}
 <div id="navbarSupportedContent" class="collapse lg:hidden" [class.show]="navOpen">
   <div class="flex flex-col gap-2 p-4">
     <a routerLink="/home" class="sky-nav-link" (click)="navOpen = false">Home</a>
@@ -60,6 +72,7 @@
       <a routerLink="/userDetails" class="sky-nav-link" (click)="navOpen = false">Profile</a>
       <p-button label="Logout" icon="pi pi-sign-out" [text]="true" (onClick)="logout()" data-testid="nav-logout-mobile"></p-button>
     } @else {
+      <a routerLink="/" class="sky-nav-link" (click)="navOpen = false">Public Offers</a>
       <p-button label="Login" icon="pi pi-sign-in" (onClick)="login()" data-testid="nav-login-mobile"></p-button>
     }
     <form #searchFormMobile="ngForm" (ngSubmit)="search(searchFormMobile)" class="flex items-center gap-2 md:hidden">

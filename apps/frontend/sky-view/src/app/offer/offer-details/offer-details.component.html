@@ -26,15 +26,21 @@
     <p-card header="About"><p class="text-center">{{offer.description}}</p></p-card>
     <p-card header="Comment"><p>{{offer.comment}}</p></p-card>
     <p-card header="Bookings" styleClass="bookings-card">
-      @for (booked of bookings; track booked.id) {
-        <div class="flex items-center justify-between gap-2 py-2 border-b border-surface-800" data-testid="booking-row">
-          <span>{{booked.bookedDate}} by {{booked.bookingUser}}</span>
-          @if (isOwner) {
-            <p-button label="Delete booking" icon="pi pi-trash" severity="danger" size="small" (onClick)="deleteBooking(booked.id)"></p-button>
+      @if (isLoggedIn) {
+        <mwl-calendar-month-view [viewDate]="viewDate" [events]="events" data-testid="booking-calendar">
+        </mwl-calendar-month-view>
+        @if (isOwner) {
+          @for (booked of bookings; track booked.id) {
+            <div class="flex items-center justify-between gap-2 py-2 border-b border-surface-800" data-testid="booking-row">
+              <span>{{booked.bookedDate}} by {{booked.bookingUser}}</span>
+              <p-button label="Delete booking" icon="pi pi-trash" severity="danger" size="small" (onClick)="deleteBooking(booked.id)"></p-button>
+            </div>
+          } @empty {
+            <p class="text-surface-400">No bookings yet</p>
           }
-        </div>
-      } @empty {
-        <p class="text-surface-400">No bookings yet</p>
+        }
+      } @else {
+        <p class="text-surface-400">Log in to see bookings</p>
       }
     </p-card>
   </div>

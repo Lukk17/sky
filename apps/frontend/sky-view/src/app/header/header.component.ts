@@ -4,6 +4,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {SkyAuthService} from '../services/sky-auth.service';
 
 import {NgForm} from '@angular/forms';
+import {interval, switchMap} from 'rxjs';
 import {OfferService} from '../services/offer.service';
 import {Message, MessageReadStore, MessageService} from '../services/message.service';
 import {StompService} from '../services/StompService';
@@ -20,6 +21,8 @@ export class HeaderComponent implements OnInit {
   userEmail: string | null = null;
   unread: Message[] = [];
   navOpen = false;
+  banner: { sender: string; text: string } | null = null;
+  private bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
   get unreadCount(): number {
     return this.unread.length;
@@ -46,21 +49,63 @@ export class HeaderComponent implements OnInit {
         this.refreshUnread();
       } else {
         this.unread = [];
+        this.dismissBanner();
       }
     });
-    this.stompService.getMessages().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.stompService.getMessages().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       if (this.isAuth) {
         this.refreshUnread();
+      }
+      if (event && this.isAuth) {
+        this.showBanner(event.senderEmail ?? 'Sky', event.text ?? 'You have a new message');
+      }
+    });
+    // Chat messages publish no push event (sky-message has no Kafka/outbound),
+    // so poll while logged in; STOMP still covers offer/booking events instantly.
+    interval(5000).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      switchMap(() => this.isAuth ? this.messageService.getReceived() : []),
+    ).subscribe((messages) => {
+      if (this.isAuth && messages) {
+        this.applyUnread(messages);
       }
     });
   }
 
+  private showBanner(sender: string, text: string) {
+    this.banner = {sender, text};
+    if (this.bannerTimer) {
+      clearTimeout(this.bannerTimer);
+    }
+    this.bannerTimer = setTimeout(() => {
+      this.banner = null;
+    }, 6000);
+  }
+
+  dismissBanner() {
+    this.banner = null;
+    if (this.bannerTimer) {
+      clearTimeout(this.bannerTimer);
+      this.bannerTimer = null;
+    }
+  }
+
   private refreshUnread() {
     this.messageService.getReceived().subscribe((messages) => {
-      this.unread = [...(messages ?? [])]
-        .filter((m) => !this.readStore.isRead(m))
-        .sort((a, b) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime());
+      this.applyUnread(messages ?? []);
     });
+  }
+
+  private applyUnread(messages: Message[]) {
+    const previousIds = new Set(this.unread.map((m) => m.id));
+    this.unread = [...(messages ?? [])]
+      .filter((m) => !this.readStore.isRead(m))
+      .sort((a, b) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime());
+    const fresh = this.unread.filter((m) => !previousIds.has(m.id));
+    if (previousIds.size > 0 && fresh.length > 0) {
+      const newest = fresh[0];
+      this.showBanner(newest.senderEmail ?? 'Sky', newest.text ?? 'You have a new message');
+    }
   }
 
   openThread(message: Message) {

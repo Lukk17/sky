@@ -32,13 +32,15 @@
       @if (country.invalid && country.touched) {
         <small class="text-red-400">Country is required</small>
       }
-      <p-floatlabel variant="on">
-        <input pInputText id="photoPath" name="photoPath" ngModel required type="url" class="w-full" #photoPath="ngModel" data-testid="add-photo" />
-        <label for="photoPath">Photo Link</label>
-      </p-floatlabel>
-      @if (photoPath.invalid && photoPath.touched) {
-        <small class="text-red-400">Photo link is required</small>
+      <label for="photoFile">Photo upload</label>
+      <input id="photoFile" name="photoFile" type="file" accept="image/*" class="w-full" (change)="onFileSelected($event)" data-testid="add-photo-file" />
+      @if (selectedFileName) {
+        <small class="text-surface-400" data-testid="add-photo-filename">{{selectedFileName}}</small>
       }
+      <p-floatlabel variant="on">
+        <input pInputText id="photoPath" name="photoPath" ngModel type="url" class="w-full" #photoPath="ngModel" data-testid="add-photo" />
+        <label for="photoPath">Photo Link (fallback if no file)</label>
+      </p-floatlabel>
       @if (photoPath.value) {
         <img [src]="photoPath.value" alt="Photo preview" class="w-full aspect-video object-cover rounded-xl" data-testid="add-photo-preview" />
       }

@@ -12,14 +12,40 @@ import {Router} from '@angular/router';
 })
 export class AddOfferComponent {
   error: string | null = null;
+  selectedFile: File | null = null;
+  selectedFileName: string | null = null;
+  uploading = false;
 
   constructor(private offerService: OfferService, private router: Router) {
   }
 
-  onSubmit(offerForm: NgForm) {
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.selectedFile = file;
+    this.selectedFileName = file?.name ?? null;
+  }
 
-    this.offerService.addOffer(offerForm).subscribe(() => {
-      this.router.navigate(['/myOffers']).then();
+  onSubmit(offerForm: NgForm) {
+    this.error = null;
+    this.offerService.addOffer(offerForm).subscribe({
+      next: (offer) => {
+        if (this.selectedFile && offer?.id) {
+          this.uploading = true;
+          this.offerService.uploadPhoto(offer.id, this.selectedFile).subscribe({
+            next: () => this.router.navigate(['/myOffers']).then(),
+            error: () => {
+              this.uploading = false;
+              this.error = 'Offer created but photo upload failed. You can add the photo later.';
+            },
+          });
+        } else {
+          this.router.navigate(['/myOffers']).then();
+        }
+      },
+      error: () => {
+        this.error = 'Could not create the offer. Please try again.';
+      },
     });
   }
 }

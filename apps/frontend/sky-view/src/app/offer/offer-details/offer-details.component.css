@@ -4,6 +4,14 @@
 .bookings-card {
   margin-top: 0.5rem;
 }
+.bookings-card .cal-event {
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+.bookings-card .cal-day-cell.cal-has-events .cal-day-number {
+  color: #ef4444;
+  font-weight: 700;
+}
 .offer-galleria img {
   max-width: 100%;
 }

@@ -16,27 +16,55 @@ const offer = {
   gallery: [],
 };
 
+async function mockLoggedOut(page) {
+  await page.route('**/api/session', (route) => route.fulfill({ status: 401, json: {} }));
+}
+
+async function mockLoggedIn(page, email: string) {
+  await page.route('**/api/session', (route) => route.fulfill({ json: { email } }));
+}
+
 test('clicking an offer card opens details without crashing', async ({ page }) => {
+  await mockLoggedOut(page);
   await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
-  await page.route('**/api/v1/user/bookings', (route) => route.fulfill({ json: [] }));
 
   await page.goto('/');
   await page.getByText('Grand Test Hotel').first().click();
 
   await expect(page).toHaveURL(new RegExp(`offerDetails\\?offerId=${offerId}`));
   await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
-  await expect(page.getByText('No bookings yet')).toBeVisible();
+});
+
+test('logged-out details never call secured bookings and prompt login', async ({ page }) => {
+  await mockLoggedOut(page);
+  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
+  let bookingsHit = false;
+  await page.route('**/api/v1/user/bookings', (route) => {
+    bookingsHit = true;
+    return route.fulfill({ json: [] });
+  });
+
+  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
+  await expect(page.getByText('Log in to see bookings')).toBeVisible();
+  expect(bookingsHit).toBe(false);
+  await expect(page).toHaveURL(new RegExp('offerDetails'));
 });
 
 test('offer details render from query param after reload (no service memory)', async ({ page }) => {
+  await mockLoggedOut(page);
   await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
-  await page.route('**/api/v1/user/bookings', (route) => route.fulfill({ json: [] }));
 
   await page.goto(`/offerDetails?offerId=${offerId}`);
   await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
 });
 
-test('bookings list refreshes after booking and 409 shows friendly message', async ({ page }) => {
+test('calendar shows red booked day and refreshes after booking without reload', async ({ page }) => {
+  const now = new Date();
+  const day = '15';
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const targetDate = `${now.getFullYear()}-${month}-${day}`;
+  await mockLoggedIn(page, 'guest@test.local');
   await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
   let bookingsCall = 0;
   await page.route('**/api/v1/user/bookings', (route) => {
@@ -44,7 +72,7 @@ test('bookings list refreshes after booking and 409 shows friendly message', asy
     if (bookingsCall === 1) {
       return route.fulfill({ json: [] });
     }
-    return route.fulfill({ json: [{ id: 1, offerId, bookedDate: '2026-11-01', bookingUser: 'lukk', ownerEmail: 'owner@test.local' }] });
+    return route.fulfill({ json: [{ id: 1, offerId, bookedDate: targetDate, bookingUser: 'guest@test.local', ownerEmail: 'owner@test.local' }] });
   });
   await page.route('**/api/v1/bookings', async (route) => {
     if (route.request().method() === 'POST') {
@@ -54,12 +82,15 @@ test('bookings list refreshes after booking and 409 shows friendly message', asy
   });
 
   await page.goto(`/offerDetails?offerId=${offerId}`);
-  await page.getByTestId('booking-date').fill('2026-11-01');
+  await expect(page.getByTestId('booking-calendar')).toBeVisible();
+  await page.getByTestId('booking-date').fill(targetDate);
   await page.getByTestId('booking-submit').locator('button').click();
-  await expect(page.getByTestId('booking-row')).toBeVisible();
+  const bookedCell = page.getByTestId('booking-calendar').locator('.cal-day-cell.cal-has-events', { hasText: day });
+  await expect(bookedCell.first()).toBeVisible();
 });
 
 test('duplicate booking date shows friendly taken message without console error', async ({ page }) => {
+  await mockLoggedIn(page, 'guest@test.local');
   const errors: string[] = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') {

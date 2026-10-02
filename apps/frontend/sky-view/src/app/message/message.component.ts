@@ -1,7 +1,7 @@
 import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
-import {forkJoin} from 'rxjs';
+import {forkJoin, interval, switchMap} from 'rxjs';
 import {Message, MessageReadStore, MessageService} from '../services/message.service';
 import {StompService} from '../services/StompService';
 import {SkyAuthService} from '../services/sky-auth.service';
@@ -65,6 +65,17 @@ export class MessageComponent implements OnInit {
 
     this.stompService.getMessages().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.refresh();
+    });
+
+    // Chat messages publish no push event (sky-message has no Kafka/outbound),
+    // so poll while logged in; STOMP still covers offer/booking events instantly.
+    interval(5000).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      switchMap(() => this.ownEmail ? this.messageService.getReceived() : []),
+    ).subscribe(() => {
+      if (this.ownEmail) {
+        this.refresh();
+      }
     });
   }
 
