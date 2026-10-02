@@ -65,7 +65,7 @@ export class OfferService {
     );
   }
 
-  public deleteOffer(id: number) {
+  public deleteOffer(id: string) {
     return this.http.delete<void>(this.DELETE_OFFER_URL + id)
       .pipe(
         catchError((err) => ResponseHandlerService.handleError(err, 'deleteOffer()'))
@@ -99,7 +99,7 @@ export interface OfferPhoto {
 
 export class Offer {
 
-  'id': number;
+  'id': string;
   'hotelName': string;
   'description': string;
   'comment': string;

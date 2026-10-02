@@ -59,12 +59,12 @@ export class BookingPayload {
 
 export class Booking {
   'id': number;
-  'offerId': number;
+  'offerId': string;
   'bookedDate': string;
   'bookingUser': string;
   'ownerEmail': string;
 
-  constructor(id: number, offerId: number, bookedDate: string, bookingUser: string, ownerEmail: string) {
+  constructor(id: number, offerId: string, bookedDate: string, bookingUser: string, ownerEmail: string) {
     this.id = id;
     this.offerId = offerId;
     this.bookedDate = bookedDate;

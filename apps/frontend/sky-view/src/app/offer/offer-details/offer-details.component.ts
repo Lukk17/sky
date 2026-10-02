@@ -39,8 +39,8 @@ export class OfferDetailsComponent implements OnInit {
       this.isOwner = email != null && this.offer?.ownerEmail === email;
     });
     this.route.queryParams.subscribe((params) => {
-      const id = Number(params['offerId']);
-      if (Number.isFinite(id) && id > 0 && this.offer?.id !== id) {
+      const id = String(params['offerId'] ?? '');
+      if (id.length > 0 && this.offer?.id !== id) {
         this.loadOfferById(id);
       }
     });
@@ -52,7 +52,7 @@ export class OfferDetailsComponent implements OnInit {
     this.router.navigate(['/editOffer']).then();
   }
 
-  deleteOffer(id: number) {
+  deleteOffer(id: string) {
     this.offerService.deleteOffer(id).subscribe(value => {
       console.log(value);
       this.router.navigate(['/myOffers']).then();
@@ -66,7 +66,9 @@ export class OfferDetailsComponent implements OnInit {
     });
   }
 
-  private loadOfferById(id: number) {
+  bookingError: string | null = null;
+
+  private loadOfferById(id: string) {
     this.offerService.getAllOffers().subscribe(offers => {
       const found = (offers ?? []).find((o) => o.id === id);
       if (found) {
@@ -86,11 +88,22 @@ export class OfferDetailsComponent implements OnInit {
   }
 
   onSubmit(bookingForm: NgForm, offer: Offer | null) {
-    console.log(bookingForm);
     if (!offer) {
       return;
     }
-    this.bookingService.addBooking(bookingForm, offer).subscribe();
+    this.bookingError = null;
+    this.bookingService.addBooking(bookingForm, offer).subscribe({
+      next: () => {
+        this.getBookings();
+      },
+      error: (err: { status?: number }) => {
+        if (err?.status === 409) {
+          this.bookingError = 'This date is already taken. Please choose another date.';
+        } else {
+          this.bookingError = 'Booking failed. Please try again.';
+        }
+      },
+    });
   }
 }
 

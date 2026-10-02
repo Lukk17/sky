@@ -47,6 +47,9 @@
         </p-floatlabel>
         <p-button label="Book now" icon="pi pi-calendar-plus" type="submit" [disabled]="bookingForm.invalid" data-testid="booking-submit"></p-button>
       </form>
+      @if (bookingError) {
+        <p class="text-red-400" data-testid="booking-error">{{bookingError}}</p>
+      }
       @if (isOwner) {
         <div class="flex flex-col gap-2 mt-4">
           <p-button label="Edit offer" icon="pi pi-pencil" severity="warn" (onClick)="editOffer(offer)" data-testid="offer-edit"></p-button>
