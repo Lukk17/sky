@@ -12,7 +12,7 @@
         <input pInputText id="receiver" name="receiver" [(ngModel)]="receiver" required type="email" class="w-full" />
         <label for="receiver">Receiver</label>
       </p-floatlabel>
-      <p-button label="Send Message" icon="pi pi-send" type="submit" [disabled]="messageForm.invalid"></p-button>
+      <p-button label="Send Message" icon="pi pi-send" type="submit" styleClass="glass-btn-accent" [disabled]="messageForm.invalid"></p-button>
     </form>
   </p-card>
 </div>

@@ -1,7 +1,7 @@
 <div class="msg-layout">
   <div class="msg-toolbar">
     <a routerLink="/newMessage">
-      <p-button label="New message" icon="pi pi-plus" data-testid="new-thread"></p-button>
+      <p-button label="New message" icon="pi pi-plus" styleClass="glass-btn-accent" data-testid="new-thread"></p-button>
     </a>
     @if (unreadCount > 0) {
       <span class="toolbar-unread" data-testid="threads-unread">{{unreadCount}} unread</span>
@@ -21,7 +21,7 @@
             <span class="thread-bottom">
               <span class="thread-excerpt">{{thread.latest.text}}</span>
               @if (thread.unread > 0) {
-                <p-badge value="{{thread.unread}}" severity="danger"
+                <p-badge value="{{thread.unread}}" severity="warn"
                   [attr.data-testid]="'unread-' + thread.email"></p-badge>
               }
             </span>
@@ -50,7 +50,7 @@
         <div class="reply-box">
           <input pInputText [(ngModel)]="replyText" placeholder="Write a reply"
             data-testid="reply-input" (keyup.enter)="sendReply()" />
-          <p-button label="Send" icon="pi pi-send" (onClick)="sendReply()"
+          <p-button label="Send" icon="pi pi-send" styleClass="send-ghost-btn" (onClick)="sendReply()"
             [disabled]="!replyText.trim()" data-testid="reply-send"></p-button>
         </div>
       } @else {

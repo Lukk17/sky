@@ -261,6 +261,51 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    void coverPhotoUrl_whenMainFlagSet_thenPrefersMainOverPosition() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").main(false).build();
+        OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").main(true).build();
+        List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
+        when(photoStorage.presignedUrl("k0")).thenReturn("u0");
+        when(photoStorage.presignedUrl("k1")).thenReturn("u1");
+        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
+
+        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+
+        verify(offerPhotoRepository).delete(p0);
+    }
+
+    @Test
+    void setGalleryCover_whenCalled_thenSetsMainFlag() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").main(true).build();
+        OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").main(false).build();
+        List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
+        when(photoStorage.presignedUrl(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(inv -> "u-" + inv.getArgument(0));
+
+        OfferDTO dto = offerService.setGalleryCover(offerId, p1.getId(), OWNER);
+
+        org.junit.jupiter.api.Assertions.assertTrue(p1.isMain());
+        org.junit.jupiter.api.Assertions.assertFalse(p0.isMain());
+        org.junit.jupiter.api.Assertions.assertTrue(dto.getGallery().stream()
+                .filter(g -> g.getId().equals(p1.getId())).findFirst().orElseThrow().isMain());
+    }
+
+    @Test
+    void uploadGalleryPhoto_whenFirstPhoto_thenMarkedMain() {
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
+        when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
+        org.mockito.ArgumentCaptor<OfferPhoto> captor = org.mockito.ArgumentCaptor.forClass(OfferPhoto.class);
+
+        offerService.uploadGalleryPhoto(offerId, OWNER,
+                new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
+
+        verify(offerPhotoRepository).save(captor.capture());
+        org.junit.jupiter.api.Assertions.assertTrue(captor.getValue().isMain());
+    }
+
+    @Test
     void deleteGalleryPhoto_whenPhotoExists_thenRemovesRowAndObject() {
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));

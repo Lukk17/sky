@@ -101,6 +101,7 @@ export interface OfferPhoto {
   id: string;
   position: number;
   url: string;
+  main: boolean;
 }
 
 export class Offer {

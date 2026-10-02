@@ -37,10 +37,11 @@ export class ResponseHandlerService {
     const raw = Array.isArray((offer as Offer).gallery) ? [...(offer.gallery as unknown[])] : [];
     const gallery = (raw as Partial<import('./offer.service').OfferPhoto>[])
       .filter((p) => p != null && typeof (p as { url?: unknown }).url === 'string' && ((p as { url: string }).url as string).length > 0)
-      .map((p) => ({ id: String((p as { id?: unknown }).id ?? ''), position: Number((p as { position?: unknown }).position ?? 0), url: (p as { url: string }).url }))
+      .map((p) => ({ id: String((p as { id?: unknown }).id ?? ''), position: Number((p as { position?: unknown }).position ?? 0), url: (p as { url: string }).url, main: (p as { main?: unknown }).main === true }))
       .sort((a, b) => a.position - b.position);
     (offer as Offer).gallery = gallery as import('./offer.service').OfferPhoto[];
-    const fallback = gallery.length > 0 ? gallery[0].url : (offer.photoUrl ?? offer.externalPhotoUrl ?? (offer as Offer).photoPath ?? null);
+    const mainPhoto = gallery.find((g) => g.main) ?? gallery[0];
+    const fallback = mainPhoto ? mainPhoto.url : (offer.photoUrl ?? offer.externalPhotoUrl ?? (offer as Offer).photoPath ?? null);
     (offer as Offer).coverPhotoUrl = (offer as Offer).coverPhotoUrl ?? fallback;
     if ((offer as Offer).coverPhotoUrl == null) {
       (offer as Offer).coverPhotoUrl = fallback;

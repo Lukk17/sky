@@ -36,9 +36,38 @@ body {
   background: rgba(249,115,22,0.16);
   border: 1px solid rgba(249,115,22,0.55);
   color: #fdba74;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+  backdrop-filter: blur(12px);
 }
 .p-button:not(.glass-btn-accent):not(.glass-btn-danger):not(.glass-btn):hover {
   background: rgba(249,115,22,0.32);
+}
+.glass-btn-accent {
+  background: linear-gradient(135deg,#f97316,#dc2626);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 16px rgba(220,38,38,0.35);
+  color: #fff;
+}
+.glass-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+  backdrop-filter: blur(12px);
+  color: #fff;
+}
+.send-ghost-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-image: linear-gradient(135deg,#f97316,#ef4444,#dc2626) 1;
+  color: #fdba74;
+}
+.send-ghost-btn:hover {
+  background: rgba(249,115,22,0.12);
+}
+.p-badge-warn, .p-badge.p-badge-warn {
+  background: linear-gradient(135deg,#f97316,#dc2626);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
 }
 button.p-button-success, .p-button-success {
   background: rgba(249,115,22,0.16);
@@ -58,6 +87,16 @@ input, textarea, .p-inputtext {
 .glass-file-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 0.7rem; background: linear-gradient(135deg,#f97316,#dc2626); color: #fff; cursor: pointer; width: fit-content; }
 .glass-file-input { display: block; margin-top: 0.4rem; color: rgba(255,255,255,0.8); }
 .glass-dialog .p-dialog-header, .glass-dialog .p-dialog-content { background: rgba(18,18,24,0.85); backdrop-filter: blur(18px); color: #fff; }
+.cal-month-view { background: rgba(18,18,24,0.72); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.10); border-radius: 0.8rem; color: #fff; }
+.cal-month-view .cal-cell-row:hover { background: rgba(255,255,255,0.04); }
+.cal-month-view .cal-day-cell { border-color: rgba(255,255,255,0.07); }
+.cal-month-view .cal-day-cell.cal-today { background: rgba(249,115,22,0.14); }
+.cal-month-view .cal-day-cell.cal-today .cal-day-number { color: #fdba74; font-weight: 800; }
+.cal-month-view .cal-day-cell.cal-weekend .cal-day-number { color: rgba(255,255,255,0.65); }
+.cal-month-view .cal-day-cell.cal-out-month .cal-day-number { color: rgba(255,255,255,0.3); }
+.cal-month-view .cal-day-number { color: rgba(255,255,255,0.85); }
+.cal-month-view .cal-header .cal-cell { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.07); }
+.offer-galleria .p-galleria-content, .offer-galleria .p-galleria-thumbnail-container { background: rgba(18,18,24,0.72); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.10); }
 
 .center {
   margin: auto;

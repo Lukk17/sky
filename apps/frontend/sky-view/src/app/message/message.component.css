@@ -1,30 +1,31 @@
 .msg-layout { max-width: 1100px; margin: 16px auto; padding: 0 12px; }
-.msg-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.toolbar-unread { color: #ffb4a2; font-weight: 600; }
+.msg-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; position: relative; }
+.toolbar-unread { position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: #fdba74; font-weight: 600; }
 .msg-columns { display: grid; grid-template-columns: 320px 1fr; gap: 12px; }
-.msg-threads { display: flex; flex-direction: column; gap: 4px; }
-.thread-row { display: flex; gap: 10px; align-items: center; text-align: left; padding: 10px; border-radius: 10px; border: 1px solid transparent; background: #232323; color: inherit; cursor: pointer; width: 100%; }
-.thread-row.active { border-color: #4caf50; }
+.msg-threads { display: flex; flex-direction: column; gap: 4px; max-height: 60vh; overflow-y: auto; padding-right: 4px; }
+.thread-row { display: flex; gap: 10px; align-items: center; text-align: left; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.05); backdrop-filter: blur(14px); color: inherit; cursor: pointer; width: 100%; }
+.thread-row.active { border-color: rgba(249,115,22,0.65); box-shadow: 0 0 0 1px rgba(249,115,22,0.35); }
 .thread-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .thread-top { display: flex; justify-content: space-between; gap: 8px; }
 .thread-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .thread-time { font-size: 12px; opacity: 0.7; white-space: nowrap; }
 .thread-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .thread-excerpt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.85; }
-.msg-conversation { background: #1e1e1e; border-radius: 12px; padding: 12px; min-height: 320px; display: flex; flex-direction: column; }
+.msg-conversation { background: rgba(255,255,255,0.05); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 12px; min-height: 320px; display: flex; flex-direction: column; }
 .conv-title { margin: 0 0 8px; }
-.bubbles { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.bubbles { display: flex; flex-direction: column; gap: 8px; flex: 1; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
 .bubble-row { display: flex; justify-content: flex-start; }
 .bubble-row.own { justify-content: flex-end; }
-.bubble { max-width: 70%; background: #2f2f2f; border-radius: 12px; padding: 8px 12px; }
-.bubble-row.own .bubble { background: #2e7d32; }
+.bubble { max-width: 70%; background: rgba(255,255,255,0.07); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 8px 12px; }
+.bubble-row.own .bubble { background: rgba(249,115,22,0.18); border-color: rgba(249,115,22,0.45); }
 .bubble-text { margin: 0 0 4px; }
 .bubble-time { font-size: 12px; opacity: 0.75; }
-.bubble-unread { margin-left: 8px; font-size: 12px; color: #90caf9; }
+.bubble-unread { margin-left: 8px; font-size: 12px; color: #fdba74; }
 .reply-box { display: flex; gap: 8px; margin-top: 12px; }
-.reply-box input { flex: 1; }
+.reply-box input { flex: 1; background: rgba(18,18,24,0.72); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.14); border-radius: 0.7rem; color: #fff; padding: 0.6rem 0.9rem; }
+.reply-box input:focus { outline: none; border-color: transparent; box-shadow: 0 0 0 2px rgba(249,115,22,0.55), 0 0 0 4px rgba(220,38,38,0.25); }
 .notify-list { display: flex; flex-direction: column; min-width: 280px; max-width: 360px; }
-.notify-row { display: flex; flex-direction: column; text-align: left; gap: 2px; padding: 8px; border: 0; background: transparent; color: inherit; cursor: pointer; border-bottom: 1px solid #eee; }
+.notify-row { display: flex; flex-direction: column; text-align: left; gap: 2px; padding: 8px; border: 0; background: transparent; color: inherit; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.10); }
 .notify-excerpt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.85; }
 .notify-time { font-size: 12px; opacity: 0.7; }
 .bell-item { display: flex; align-items: center; gap: 4px; }

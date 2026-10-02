@@ -189,7 +189,7 @@ public class OfferServicePrimary implements OfferService {
         }
         String key = photoStorage.upload(offerId, content, contentLength, validatedContentType, filename);
         OfferPhoto photo = OfferPhoto.builder().offer(offer).position(photos.size())
-                .objectKey(key).build();
+                .objectKey(key).main(photos.isEmpty()).build();
         offerPhotoRepository.save(photo);
         log.info("Gallery photo uploaded for offer ID: {} key={}", offerId, key);
         return toDto(offer);
@@ -204,8 +204,16 @@ public class OfferServicePrimary implements OfferService {
             throw new OfferNotFoundException("Photo not found.");
         }
         String key = photo.getObjectKey();
+        boolean wasMain = photo.isMain();
         offerPhotoRepository.delete(photo);
         renumber(offerId);
+        if (wasMain) {
+            List<OfferPhoto> remaining = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
+            if (!remaining.isEmpty() && remaining.stream().noneMatch(OfferPhoto::isMain)) {
+                remaining.get(0).setMain(true);
+                offerPhotoRepository.saveAndFlush(remaining.get(0));
+            }
+        }
         if (key != null && !key.isBlank()) {
             try {
                 photoStorage.delete(offerId, key);
@@ -254,7 +262,17 @@ public class OfferServicePrimary implements OfferService {
 
     @Override
     public OfferDTO setGalleryCover(UUID offerId, UUID photoId, String ownerEmail) {
-        return reorderGalleryPhoto(offerId, photoId, 0, ownerEmail);
+        OfferDTO dto = reorderGalleryPhoto(offerId, photoId, 0, ownerEmail);
+        List<OfferPhoto> photos = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
+        for (OfferPhoto photo : photos) {
+            boolean shouldBeMain = photo.getId().equals(photoId);
+            if (photo.isMain() != shouldBeMain) {
+                photo.setMain(shouldBeMain);
+                offerPhotoRepository.saveAndFlush(photo);
+            }
+        }
+        return toDto(offerRepository.findById(offerId)
+                .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId))));
     }
 
     private void renumber(UUID offerId) {
@@ -294,7 +312,8 @@ public class OfferServicePrimary implements OfferService {
         dto.setPhotoUrl(photoAddress(offer));
         List<PhotoDTO> gallery = galleryOf(offer);
         dto.setGallery(gallery);
-        dto.setCoverPhotoUrl(gallery.isEmpty() ? null : gallery.get(0).getUrl());
+        dto.setCoverPhotoUrl(gallery.isEmpty() ? null : gallery.stream()
+                .filter(PhotoDTO::isMain).findFirst().orElse(gallery.get(0)).getUrl());
         if (dto.getPhotoUrl() == null) {
             dto.setPhotoUrl(dto.getCoverPhotoUrl());
         }
@@ -309,14 +328,14 @@ public class OfferServicePrimary implements OfferService {
                 return new java.util.ArrayList<>();
             }
             return new java.util.ArrayList<>(List.of(
-                    PhotoDTO.builder().id(null).position(0).url(fallback).build()));
+                    PhotoDTO.builder().id(null).position(0).url(fallback).main(true).build()));
         }
         List<PhotoDTO> result = new java.util.ArrayList<>();
         for (OfferPhoto photo : photos) {
             String url = photo.getObjectKey() != null && !photo.getObjectKey().isBlank()
                     ? photoStorage.presignedUrl(photo.getObjectKey())
                     : photo.getExternalUrl();
-            result.add(PhotoDTO.builder().id(photo.getId()).position(photo.getPosition()).url(url).build());
+            result.add(PhotoDTO.builder().id(photo.getId()).position(photo.getPosition()).url(url).main(photo.isMain()).build());
         }
         return result;
     }

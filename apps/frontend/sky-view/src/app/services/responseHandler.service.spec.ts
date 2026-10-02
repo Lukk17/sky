@@ -13,12 +13,21 @@ describe('ResponseHandlerService', () => {
   });
 
   it('sorts gallery by position and derives cover from position 0', () => {
-    const payload = [{ id: 1, hotelName: 'H', gallery: [{ id: 'b', position: 1, url: 'u2' }, { id: 'a', position: 0, url: 'u1' }], coverPhotoUrl: null } as unknown as Offer];
+    const payload = [{ id: 1, hotelName: 'H', gallery: [{ id: 'b', position: 1, url: 'u2', main: false }, { id: 'a', position: 0, url: 'u1', main: false }], coverPhotoUrl: null } as unknown as Offer];
 
     const result = ResponseHandlerService.handleGetOffersResponse(payload);
 
     expect(result[0].gallery!.map((p) => p.id)).toEqual(['a', 'b']);
     expect(result[0].coverPhotoUrl).toBe('u1');
+  });
+
+  it('prefers the main-flagged photo for cover when it is not first', () => {
+    const payload = [{ id: 5, hotelName: 'M', gallery: [{ id: 'a', position: 0, url: 'u1', main: false }, { id: 'b', position: 1, url: 'u2', main: true }], coverPhotoUrl: null } as unknown as Offer];
+
+    const result = ResponseHandlerService.handleGetOffersResponse(payload);
+
+    expect(result[0].coverPhotoUrl).toBe('u2');
+    expect(result[0].gallery!.find((p) => p.id === 'b')!.main).toBeTrue();
   });
 
   it('leaves an empty gallery with a null cover', () => {

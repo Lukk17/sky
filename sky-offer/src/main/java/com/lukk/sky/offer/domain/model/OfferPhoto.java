@@ -45,6 +45,10 @@ public class OfferPhoto {
     @Column(name = "external_url", length = 1024)
     private String externalUrl;
 
+    @Column(name = "main", nullable = false)
+    @Builder.Default
+    private boolean main = false;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

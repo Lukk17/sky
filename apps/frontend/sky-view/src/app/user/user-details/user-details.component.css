@@ -1,0 +1,4 @@
+.user-head { padding: 1rem; text-align: center; width: fit-content; margin: 0 auto; }
+.user-head h2 { margin: 0; }
+.compact-row { width: fit-content; min-width: 12rem; max-width: 100%; margin: 0.25rem auto; text-align: center; justify-content: center; }
+.compact-name, .compact-meta { text-align: center; }

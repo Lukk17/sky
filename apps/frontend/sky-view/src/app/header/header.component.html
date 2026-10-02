@@ -32,7 +32,7 @@
           <p-button icon="pi pi-bell" [rounded]="true" [text]="true" severity="secondary"
             (onClick)="panel.toggle($event)" data-testid="notify-bell" ariaLabel="Notifications"></p-button>
           @if (unreadCount > 0) {
-            <p-badge value="{{unreadCount}}" severity="danger" data-testid="notify-badge" styleClass="notify-badge"></p-badge>
+            <p-badge value="{{unreadCount}}" severity="warn" data-testid="notify-badge" styleClass="notify-badge"></p-badge>
           }
         </span>
         <p-popover #panel>

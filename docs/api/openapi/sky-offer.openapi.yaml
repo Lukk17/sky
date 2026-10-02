@@ -1196,6 +1196,8 @@ components:
         id:
           type: string
           format: uuid
+        main:
+          type: boolean
         position:
           type: integer
           format: int32

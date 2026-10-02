@@ -18,4 +18,6 @@ public class PhotoDTO {
     private int position;
 
     private String url;
+
+    private boolean main;
 }
