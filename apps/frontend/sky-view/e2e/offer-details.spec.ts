@@ -91,14 +91,14 @@ test('calendar shows red booked day and refreshes after booking without reload',
   await expect(bookedCell.first()).toBeVisible();
 });
 
-test('gallery renders cover plus thumbnails', async ({ page }) => {
+test('gallery renders cover plus arrows without thumbnails', async ({ page }) => {
   await mockLoggedOut(page);
   const withGallery = { ...offer, coverPhotoUrl: 'https://img.test/a.jpg', gallery: [{ id: 'p1', position: 0, url: 'https://img.test/a.jpg' }, { id: 'p2', position: 1, url: 'https://img.test/b.jpg' }] };
   await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [withGallery] }));
   await page.goto(`/offerDetails?offerId=${offerId}`);
-  await expect(page.getByTestId('offer-hero')).toBeVisible();
   await expect(page.getByTestId('offer-gallery')).toBeVisible();
-  await expect(page.getByTestId('offer-thumb').first()).toBeVisible();
+  await expect(page.getByTestId('offer-hero')).toHaveCount(0);
+  await expect(page.getByTestId('offer-thumb')).toHaveCount(0);
 });
 
 test('day click opens dialog with who plus price and cancel works', async ({ page }) => {

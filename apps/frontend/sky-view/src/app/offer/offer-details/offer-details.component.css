@@ -15,7 +15,13 @@
 .fact { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
 .muted { color: rgba(255,255,255,0.6); }
 .err { color: #f87171; }
-.date-label { font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+.date-wrap { position: relative; display: flex; align-items: center; }
+.date-field { padding-right: 2.5rem; }
+.cal-btn { position: absolute; right: 0.4rem; display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 0.6rem; background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#a855f7,#3b82f6) border-box; border: 1px solid transparent; color: #fdba74; cursor: pointer; }
+.mini-picker { border: 1px solid rgba(255,255,255,0.12); border-radius: 0.8rem; overflow: hidden; background: rgba(18,18,24,0.85); }
+.about-row .fit-card { height: fit-content; }
+.delete-btn .p-button-label, p-button.delete-btn .p-button-label { color: #f87171; }
+.reserve-card { height: 100%; }
 .glass-input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 0.6rem; padding: 0.6rem; }
 .glass-btn-accent { background: linear-gradient(135deg,#f97316,#dc2626); border: none; }
 .glass-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }

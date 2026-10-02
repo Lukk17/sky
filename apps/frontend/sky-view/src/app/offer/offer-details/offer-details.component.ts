@@ -30,6 +30,49 @@ export class OfferDetailsComponent implements OnInit {
   selectedDayLabel = '';
   selectedDayBookings: Booking[] = [];
   bookingDateText = '';
+  pickerVisible = false;
+  pickerDate: Date = new Date();
+
+  galleryPhotos(): { url: string }[] {
+    const fromCover = this.coverUrl() ? [{url: this.coverUrl() as string}] : [];
+    const rest = (this.offer?.gallery ?? []).map((g) => ({url: g.url})).filter((g) => !!g.url && g.url !== this.coverUrl());
+    return [...fromCover, ...rest];
+  }
+
+  onDateFocus(): void {
+    if (!this.bookingDateText) {
+      this.bookingDateText = '';
+    }
+  }
+
+  onDateInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = (input.value ?? '').replace(/\D/g, '').slice(0, 8);
+    let out = '';
+    for (let i = 0; i < digits.length; i++) {
+      if (i === 2 || i === 4) {
+        out += '/';
+      }
+      out += digits[i];
+    }
+    if (digits.length > 2 && out.charAt(2) !== '/') {
+      out = digits.slice(0, 2) + '/' + digits.slice(2);
+    }
+    this.bookingDateText = out;
+    input.value = out;
+  }
+
+  onPickerDay(date: Date): void {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    this.bookingDateText = `${dd}/${mm}/${date.getFullYear()}`;
+    this.pickerDate = date;
+    this.pickerVisible = false;
+  }
+
+  isDateValid(): boolean {
+    return this.toIso((this.bookingDateText ?? '').trim()) !== null;
+  }
   galleriaResponsive = [{breakpoint: '1024px', numVisible: 5}, {breakpoint: '768px', numVisible: 3}];
 
   coverUrl(): string | null {

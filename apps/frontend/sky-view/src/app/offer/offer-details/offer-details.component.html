@@ -1,64 +1,62 @@
 @if (offer) {
-<div class="glass-page grid grid-cols-1 xl:grid-cols-3 gap-4">
-  <div class="xl:col-span-2 flex flex-col gap-4">
-    @if (isOwner) {
-      <div class="glass-card owner-bar">
-        <p-button label="Edit offer" icon="pi pi-pencil" styleClass="glass-btn" (onClick)="editOffer(offer)" data-testid="offer-edit"></p-button>
-        <p-button label="Delete offer" icon="pi pi-trash" styleClass="glass-btn-danger" (onClick)="deleteOffer(offer.id)" data-testid="offer-delete"></p-button>
-      </div>
-    }
-    @if (coverUrl()) {
-      <div class="glass-card hero-card">
-        <img alt="Offer cover photo" class="hero-img" src="{{coverUrl()}}" data-testid="offer-hero" />
-      </div>
-      @if (galleryUrls().length > 0) {
-        <p-galleria [value]="offer.gallery" [numVisible]="5" [showThumbnails]="true" [showItemNavigators]="true" [showIndicators]="true" [responsiveOptions]="galleriaResponsive" styleClass="glass-card offer-galleria" data-testid="offer-gallery">
-          <ng-template #item let-photo>
-            <img alt="Offer gallery photo" class="hero-img" src="{{photo.url}}" />
-          </ng-template>
-          <ng-template #thumbnail let-photo>
-            <img alt="Offer gallery thumbnail" class="thumb-img" src="{{photo.url}}" (click)="selectPhoto(photo.url)" data-testid="offer-thumb" />
-          </ng-template>
-        </p-galleria>
-      }
-    } @else {
-      <p class="muted">No photos yet</p>
-    }
-    <div class="glass-card title-card">
-      <h3 class="offer-title">{{offer.hotelName}}</h3>
-      <p class="price-line"><span class="price" data-testid="offer-price">${{offer.price}}</span><span class="per-night"> / night</span></p>
-      @if (!isOwner) {
-        <p-button label="Message owner" icon="pi pi-comments" styleClass="glass-btn-accent" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
-      }
+<div class="glass-page flex flex-col gap-4">
+  @if (isOwner) {
+    <div class="glass-card owner-bar">
+      <p-button label="Edit offer" icon="pi pi-pencil" styleClass="glass-btn" (onClick)="editOffer(offer)" data-testid="offer-edit"></p-button>
+      <p-button label="Delete offer" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" (onClick)="deleteOffer(offer.id)" data-testid="offer-delete"></p-button>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-tag"></i><span class="muted">Price</span><strong>${{offer.price}}</strong></div></p-card>
-      <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-users"></i><span class="muted">Capacity</span><strong>{{offer.roomCapacity}}</strong></div></p-card>
-      <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-map-marker"></i><span class="muted">Location</span><strong>{{offer.city}}, {{offer.country}}</strong></div></p-card>
-      <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-briefcase"></i><span class="muted">Owner</span><strong>{{offer.ownerEmail}}</strong></div></p-card>
-    </div>
-    <p-card header="About" styleClass="glass-card"><p class="text-center">{{offer.description}}</p></p-card>
-    <p-card header="Comment" styleClass="glass-card"><p>{{offer.comment}}</p></p-card>
-    <p-card header="Bookings" styleClass="glass-card bookings-card">
-      <mwl-calendar-month-view [viewDate]="viewDate" [events]="events" (dayClicked)="onDayClicked($event.day.date)" data-testid="booking-calendar">
-      </mwl-calendar-month-view>
-      @if (!isLoggedIn) {
-        <p class="muted">Calendar is read-only. Log in to book.</p>
-      }
-    </p-card>
+  }
+  @if (galleryPhotos().length > 0) {
+    <p-galleria [value]="galleryPhotos()" [numVisible]="5" [showThumbnails]="false" [showItemNavigators]="true" [showIndicators]="false" [circular]="true" styleClass="glass-card offer-galleria" data-testid="offer-gallery">
+      <ng-template #item let-photo>
+        <img alt="Offer gallery photo" class="hero-img" src="{{photo.url ?? photo}}" />
+      </ng-template>
+    </p-galleria>
+  } @else {
+    <p class="muted">No photos yet</p>
+  }
+  <div class="glass-card title-card">
+    <h3 class="offer-title">{{offer.hotelName}}</h3>
+    <p class="price-line"><span class="price" data-testid="offer-price">${{offer.price}}</span><span class="per-night"> / night</span></p>
+    @if (!isOwner) {
+      <p-button label="Message owner" icon="pi pi-comments" styleClass="glass-btn" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
+    }
   </div>
-  <div class="xl:col-span-1">
-    <p-card header="Make your reservation" styleClass="glass-card reserve-card">
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-stretch">
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-tag"></i><span class="muted">Price</span><strong>${{offer.price}}</strong></div></p-card>
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-users"></i><span class="muted">Capacity</span><strong>{{offer.roomCapacity}}</strong></div></p-card>
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-map-marker"></i><span class="muted">Location</span><strong>{{offer.city}}, {{offer.country}}</strong></div></p-card>
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-briefcase"></i><span class="muted">Owner</span><strong>{{offer.ownerEmail}}</strong></div></p-card>
+    <p-card header="Make your reservation" styleClass="glass-card fact-card reserve-card">
       <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm, offer)" class="flex flex-col gap-3">
-        <label class="date-label" for="dateToBook">Date (dd/mm/yyyy)</label>
-        <input pInputText id="dateToBook" name="dateToBook" ngModel required placeholder="dd/mm/yyyy" pattern="\d{2}/\d{2}/\d{4}" class="w-full glass-input" data-testid="booking-date" />
-        <p-button label="Book now" icon="pi pi-calendar-plus" type="submit" styleClass="glass-btn-accent" [disabled]="bookingForm.invalid" data-testid="booking-submit"></p-button>
+        <div class="date-wrap">
+          <input pInputText id="dateToBook" name="dateToBook" [(ngModel)]="bookingDateText" required placeholder="dd/mm/yyyy" maxlength="10" class="w-full glass-input date-field" data-testid="booking-date" (input)="onDateInput($event)" (focus)="onDateFocus()" />
+          <button type="button" class="cal-btn" (click)="pickerVisible = !pickerVisible" aria-label="Open calendar" data-testid="booking-calendar-btn"><i class="pi pi-calendar"></i></button>
+        </div>
+        @if (pickerVisible) {
+          <div class="mini-picker" data-testid="booking-picker">
+            <mwl-calendar-month-view [viewDate]="pickerDate" [events]="events" (dayClicked)="onPickerDay($event.day.date)">
+            </mwl-calendar-month-view>
+          </div>
+        }
+        <p-button label="Book now" icon="pi pi-calendar-plus" type="submit" styleClass="glass-btn" [disabled]="!isDateValid()" data-testid="booking-submit"></p-button>
       </form>
       @if (bookingError) {
         <p class="err" data-testid="booking-error">{{bookingError}}</p>
       }
     </p-card>
   </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 about-row">
+    <p-card header="About" styleClass="glass-card fit-card"><p class="text-center">{{offer.description}}</p></p-card>
+    <p-card header="Comment" styleClass="glass-card fit-card"><p>{{offer.comment}}</p></p-card>
+  </div>
+  <p-card header="Bookings" styleClass="glass-card bookings-card">
+    <mwl-calendar-month-view [viewDate]="viewDate" [events]="events" (dayClicked)="onDayClicked($event.day.date)" data-testid="booking-calendar">
+    </mwl-calendar-month-view>
+    @if (!isLoggedIn) {
+      <p class="muted">Calendar is read-only. Log in to book.</p>
+    }
+  </p-card>
 </div>
 <p-dialog header="Bookings on {{selectedDayLabel}}" [(visible)]="dayDialogVisible" [modal]="true" styleClass="glass-dialog">
 <div data-testid="day-dialog">
