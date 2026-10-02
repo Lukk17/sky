@@ -1,5 +1,9 @@
 <div class="flex justify-center mt-10 px-4">
-  <p-card header="Add Offer" styleClass="w-full max-w-xl glass-card">
+  <p-card styleClass="w-full max-w-xl glass-card add-offer-card">
+    <ng-template #header>
+      <h2 class="add-offer-title" data-testid="add-offer-title">Add Offer</h2>
+      <p class="add-offer-subtitle">Share your place with travelers</p>
+    </ng-template>
     @if (error) {
       <p class="text-red-400" data-testid="add-offer-error">{{error}}</p>
     }
@@ -33,16 +37,11 @@
         <small class="text-red-400">Country is required</small>
       }
       <label class="glass-file-btn" for="photoFile"><i class="pi pi-upload"></i> Choose photo file</label>
-      <input id="photoFile" name="photoFile" type="file" accept="image/*" class="glass-file-input" (change)="onFileSelected($event)" data-testid="add-photo-file" />
+      <input id="photoFile" name="photoFile" type="file" accept="image/*" class="glass-file-input" (change)="onFileSelected($event)" data-testid="add-photo-file" required />
       @if (selectedFileName) {
         <small class="text-surface-400" data-testid="add-photo-filename">{{selectedFileName}}</small>
-      }
-      <p-floatlabel variant="on">
-        <input pInputText id="photoPath" name="photoPath" ngModel type="url" class="w-full" #photoPath="ngModel" data-testid="add-photo" />
-        <label for="photoPath">Photo Link (fallback if no file)</label>
-      </p-floatlabel>
-      @if (photoPath.value) {
-        <img [src]="photoPath.value" alt="Photo preview" class="w-full aspect-video object-cover rounded-xl" data-testid="add-photo-preview" />
+      } @else {
+        <small class="muted" data-testid="add-photo-hint">A photo file is required</small>
       }
       <p-floatlabel variant="on">
         <input pInputText id="roomCapacity" name="roomCapacity" ngModel required type="number" min="1" class="w-full" #roomCapacity="ngModel" data-testid="add-capacity" />
@@ -58,7 +57,7 @@
       @if (price.invalid && price.touched) {
         <small class="text-red-400">Price is required</small>
       }
-      <p-button label="Add Offer" icon="pi pi-plus" type="submit" styleClass="glass-btn-accent" [disabled]="offerForm.invalid" data-testid="add-submit"></p-button>
+      <p-button label="Add Offer" icon="pi pi-plus" type="submit" styleClass="glass-btn-accent" [disabled]="offerForm.invalid || !selectedFile" data-testid="add-submit"></p-button>
     </form>
   </p-card>
 </div>

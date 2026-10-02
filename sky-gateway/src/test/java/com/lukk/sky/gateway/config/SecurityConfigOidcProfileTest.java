@@ -134,6 +134,13 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
+    void logout_whenBrowserNavigatesWithGet_thenRunsOidcLogoutInsteadOf404() {
+        client.get().uri("/logout")
+                .exchange()
+                .expectStatus().is3xxRedirection();
+    }
+
+    @Test
     void routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas() {
         List<String> routeIds = routeLocator.getRoutes()
                 .map(Route::getId)

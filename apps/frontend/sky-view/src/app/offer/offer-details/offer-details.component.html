@@ -15,18 +15,13 @@
   } @else {
     <p class="muted">No photos yet</p>
   }
-  <div class="glass-card title-card">
-    <h3 class="offer-title">{{offer.hotelName}}</h3>
-    <p class="price-line"><span class="price" data-testid="offer-price">${{offer.price}}</span><span class="per-night"> / night</span></p>
-    @if (!isOwner) {
-      <p-button label="Message owner" icon="pi pi-comments" styleClass="glass-btn" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
-    }
+  <div class="fit-row">
+    <div class="glass-card title-card">
+      <h3 class="offer-title">{{offer.hotelName}}</h3>
+      <p class="price-line"><span class="price" data-testid="offer-price">${{offer.price}}</span></p>
+    </div>
   </div>
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-stretch">
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-tag"></i><span class="muted">Price</span><strong>${{offer.price}}</strong></div></p-card>
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-users"></i><span class="muted">Capacity</span><strong>{{offer.roomCapacity}}</strong></div></p-card>
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-map-marker"></i><span class="muted">Location</span><strong>{{offer.city}}, {{offer.country}}</strong></div></p-card>
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-briefcase"></i><span class="muted">Owner</span><strong>{{offer.ownerEmail}}</strong></div></p-card>
+  <div class="fit-row booking-row">
     <p-card header="Make your reservation" styleClass="glass-card fact-card reserve-card">
       <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm, offer)" class="flex flex-col gap-3">
         <div class="date-wrap">
@@ -45,8 +40,20 @@
         <p class="err" data-testid="booking-error">{{bookingError}}</p>
       }
     </p-card>
+    @if (!isOwner) {
+      <p-card header="Contact owner" styleClass="glass-card fact-card contact-card">
+        <p class="muted owner-mail">{{offer.ownerEmail}}</p>
+        <p-button label="Chat with owner" icon="pi pi-comments" styleClass="glass-btn" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
+      </p-card>
+    }
   </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 about-row">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-tag"></i><span class="muted">Price</span><strong>${{offer.price}}</strong></div></p-card>
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-users"></i><span class="muted">Capacity</span><strong>{{offer.roomCapacity}}</strong></div></p-card>
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-map-marker"></i><span class="muted">Location</span><strong>{{offer.city}}, {{offer.country}}</strong></div></p-card>
+    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-briefcase"></i><span class="muted">Owner</span><strong>{{offer.ownerEmail}}</strong></div></p-card>
+  </div>
+  <div class="fit-row about-row">
     <p-card header="About" styleClass="glass-card fit-card"><p class="text-center">{{offer.description}}</p></p-card>
     <p-card header="Comment" styleClass="glass-card fit-card"><p>{{offer.comment}}</p></p-card>
   </div>
@@ -58,7 +65,14 @@
     }
   </p-card>
 </div>
-<p-dialog header="Bookings on {{selectedDayLabel}}" [(visible)]="dayDialogVisible" [modal]="true" styleClass="glass-dialog">
+<p-dialog header="Booking confirmed" [(visible)]="bookingConfirmVisible" [modal]="true" styleClass="glass-dialog rgb-dialog" [style]="{width: '24rem'}">
+  <div data-testid="booking-confirm-dialog" class="confirm-body">
+    <i class="pi pi-check-circle confirm-icon"></i>
+    <p>Your stay on <strong>{{confirmedDateLabel}}</strong> is booked.</p>
+    <p-button label="Great" icon="pi pi-check" styleClass="glass-btn" (onClick)="bookingConfirmVisible = false" data-testid="booking-confirm-ok"></p-button>
+  </div>
+</p-dialog>
+<p-dialog header="Bookings on {{selectedDayLabel}}" [(visible)]="dayDialogVisible" [modal]="true" styleClass="glass-dialog rgb-dialog">
 <div data-testid="day-dialog">
   @for (b of selectedDayBookings; track b.id) {
     <div class="day-row" data-testid="booking-row">

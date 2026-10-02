@@ -2,9 +2,15 @@
 .glass-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.12); border-radius: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.45); }
 .owner-bar { display: flex; gap: 0.75rem; padding: 0.75rem; }
 .hero-card { padding: 0.5rem; display: flex; justify-content: center; }
-.hero-img { width: auto; max-width: min(42rem, 100%); max-height: 32vh; object-fit: cover; border-radius: 0.9rem; margin: 0 auto; display: block; }
+.hero-img { width: auto; max-width: min(56rem, 92%); max-height: 58vh; object-fit: cover; border-radius: 0.9rem; margin: 0 auto; display: block; }
 .thumb-img { width: 5rem; height: 3.4rem; object-fit: cover; border-radius: 0.6rem; cursor: pointer; margin: 0 auto; }
-.offer-galleria { max-width: min(46rem, 100%); margin: 0 auto; }
+.offer-galleria { max-width: min(60rem, 94%); margin: 0 auto; }
+.fit-row { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+.fit-row .title-card, .fit-row .fit-card { width: fit-content; max-width: min(46rem, 94%); }
+.fit-row.booking-row .reserve-card, .fit-row.booking-row .contact-card { width: fit-content; max-width: min(30rem, 94%); }
+.owner-mail { overflow-wrap: anywhere; margin-bottom: 0.75rem; }
+.confirm-body { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; }
+.confirm-icon { font-size: 2.2rem; color: #fdba74; }
 .owner-bar { background: rgba(18,18,24,0.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255,255,255,0.10); }
 .bookings-card { background: rgba(18,18,24,0.72); backdrop-filter: blur(16px); }
 .title-card { padding: 1rem; text-align: center; }

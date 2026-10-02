@@ -101,6 +101,13 @@
   display: flex;
   flex-direction: column;
   min-width: 16rem;
+  background: rgba(18,18,24,0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0.8rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  padding: 0.4rem;
 }
 .notify-row {
   display: flex;
@@ -108,17 +115,18 @@
   text-align: left;
   padding: 0.6rem;
   border-radius: 8px;
-  background: transparent;
-  border: 0;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #fff;
   cursor: pointer;
 }
 .notify-row:hover {
-  background: var(--p-surface-800);
+  background: rgba(255,255,255,0.10);
 }
 .notify-excerpt {
-  color: var(--p-surface-300);
+  color: rgba(255,255,255,0.75);
 }
 .notify-time {
   font-size: 0.75rem;
-  color: var(--p-surface-400);
+  color: rgba(255,255,255,0.5);
 }

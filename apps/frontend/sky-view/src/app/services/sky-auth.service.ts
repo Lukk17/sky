@@ -1,6 +1,5 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {Router} from '@angular/router';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {CsrfTokenStore} from './csrf-token.store';
@@ -46,7 +45,6 @@ export class SkyAuthService {
 
   constructor(
     private http: HttpClient,
-    private router: Router,
     private csrfTokenStore: CsrfTokenStore
   ) {
     this.refreshSession();
@@ -78,29 +76,21 @@ export class SkyAuthService {
 
   logout(): void {
     this.currentUser.next(null);
-    // Clear the edge session first, then route the full browser through the
-    // Keycloak end-session endpoint so the SSO session dies too. An XHR POST
-    // alone leaves the Keycloak cookie alive and the next login is silent.
-    this.http.post(this.logoutUrl, {}).subscribe({
-      next: () => this.afterLogout(),
-      error: () => this.afterLogout(),
-    });
+    // Full-browser GET through the edge logout endpoint so the edge clears
+    // its server-side session (tokens never touch the browser) and Keycloak
+    // never shows a confirm page: the browser never navigates to the
+    // end-session endpoint without an id_token_hint. An XHR POST followed by
+    // a manual redirect bypasses that handler and lands on the confirm page.
+    // rd returns the browser to the app home after sign-out.
+    this.csrfTokenStore.setToken(null);
+    this.endSessionUrl = null;
+    const rd = encodeURIComponent(window.location.origin + '/home');
+    window.location.assign(`${this.logoutUrl}?rd=${rd}`);
   }
 
   consumePostLoginPath(): string | null {
     const path = sessionStorage.getItem(POST_LOGIN_PATH_KEY);
     sessionStorage.removeItem(POST_LOGIN_PATH_KEY);
     return isSafePostLoginPath(path) ? path : null;
-  }
-
-  private afterLogout(): void {
-    this.csrfTokenStore.setToken(null);
-    const endSessionUrl = this.endSessionUrl;
-    this.endSessionUrl = null;
-    if (endSessionUrl) {
-      window.location.assign(endSessionUrl);
-      return;
-    }
-    this.router.navigate(['/home']).then();
   }
 }

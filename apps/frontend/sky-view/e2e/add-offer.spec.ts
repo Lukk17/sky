@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('add-offer validation blocks invalid submit then creates without photo link', async ({ page }) => {
+test('add-offer requires a photo file then creates and uploads', async ({ page }) => {
   await page.goto('/addOffer');
   await expect(page.getByTestId('add-submit').locator('button')).toBeDisabled();
 
@@ -13,6 +13,15 @@ test('add-offer validation blocks invalid submit then creates without photo link
   await page.getByTestId('add-capacity').fill('2');
   await page.getByTestId('add-price').fill('199');
 
+  await expect(page.getByTestId('add-submit').locator('button')).toBeDisabled();
+  await expect(page.getByTestId('add-photo-hint')).toBeVisible();
+
+  await page.getByTestId('add-photo-file').setInputFiles({
+    name: 'room.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+  });
+  await expect(page.getByTestId('add-photo-filename')).toContainText('room.png');
   await expect(page.getByTestId('add-submit').locator('button')).toBeEnabled();
 
   await page.route('**/api/v1/owner/offers', async (route) => {

@@ -27,6 +27,8 @@ export class OfferDetailsComponent implements OnInit {
   selectedPhotoUrl: string | null = null;
   loadError: string | null = null;
   dayDialogVisible = false;
+  bookingConfirmVisible = false;
+  confirmedDateLabel = '';
   selectedDayLabel = '';
   selectedDayBookings: Booking[] = [];
   bookingDateText = '';
@@ -205,6 +207,9 @@ export class OfferDetailsComponent implements OnInit {
     bookingForm.value.dateToBook = iso;
     this.bookingService.addBooking(bookingForm, offer).subscribe({
       next: () => {
+        this.confirmedDateLabel = raw;
+        this.bookingConfirmVisible = true;
+        this.bookingDateText = '';
         this.getBookings();
       },
       error: (err: { status?: number }) => {
