@@ -1,171 +1,63 @@
-<div class="row">
-  <div class="col-md-2"></div>
-  <div class="col-md-8">
+@if (offer) {
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+  <div class="xl:col-span-2 flex flex-col gap-4">
     @if (coverUrl()) {
-      <img alt="Offer cover photo" class="card-img-top" src="{{coverUrl()}}">
+      <img alt="Offer cover photo" class="w-full aspect-video object-cover rounded-xl" src="{{coverUrl()}}" data-testid="offer-hero" />
       @if (offer.gallery && offer.gallery.length > 1) {
-        <div class="d-flex gap-2 mt-2">
-          @for (photo of offer.gallery; track photo.id) {
-            <img alt="Offer gallery thumbnail" class="img-thumbnail" style="width: 96px; cursor: pointer;" src="{{photo.url}}" (click)="selectPhoto(photo.url)">
-          }
-        </div>
+        <p-galleria [value]="offer.gallery" [numVisible]="5" [showThumbnails]="true" [showItemNavigators]="false" [showIndicators]="false" styleClass="offer-galleria">
+          <ng-template #item let-photo>
+            <img alt="Offer gallery photo" class="w-full aspect-video object-cover rounded-xl" src="{{photo.url}}" />
+          </ng-template>
+          <ng-template #thumbnail let-photo>
+            <img alt="Offer gallery thumbnail" class="w-24 h-16 object-cover rounded-lg cursor-pointer" src="{{photo.url}}" (click)="selectPhoto(photo.url)" data-testid="offer-thumb" />
+          </ng-template>
+        </p-galleria>
       }
     } @else {
-      <p class="text-muted">No photos yet</p>
+      <p class="text-surface-400">No photos yet</p>
     }
-  </div>
-  <div class="col-md-2">
-    <div class="row">
-      <div class="col-md-2"></div>
-      <div class="col-md-8">
-        @if (isOwner) {
-          <button (click)="editOffer(offer)" class="btn btn-warning">Edit offer</button>
-        }
-        @if (isOwner) {
-          <span></span>
-        }
-      </div>
-      <div class="col-md-2"></div>
-
+    <h3 class="text-2xl font-semibold text-center">{{offer.hotelName}}</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <p-card styleClass="fact-card"><div class="flex flex-col items-center gap-1"><i class="pi pi-tag"></i><span class="text-sm text-surface-400">Price</span><strong>${{offer.price}}</strong></div></p-card>
+      <p-card styleClass="fact-card"><div class="flex flex-col items-center gap-1"><i class="pi pi-users"></i><span class="text-sm text-surface-400">Capacity</span><strong>{{offer.roomCapacity}}</strong></div></p-card>
+      <p-card styleClass="fact-card"><div class="flex flex-col items-center gap-1"><i class="pi pi-map-marker"></i><span class="text-sm text-surface-400">Location</span><strong>{{offer.city}}, {{offer.country}}</strong></div></p-card>
+      <p-card styleClass="fact-card"><div class="flex flex-col items-center gap-1"><i class="pi pi-briefcase"></i><span class="text-sm text-surface-400">Owner</span><strong>{{offer.ownerEmail}}</strong></div></p-card>
     </div>
-    <p></p>
-    <div class="row">
-      <div class="col-md-2"></div>
-      <div class="col-md-8">
-        @if (isOwner) {
-          <button (click)="deleteOffer(offer.id)" class="btn btn-danger">Delete offer</button>
-        }
-        @if (isOwner) {
-          <span></span>
-        }
-      </div>
-      <div class="col-md-2"></div>
-    </div>
-  </div>
-</div>
-
-<div class="container d-flex align-items-center justify-content-center">
-  <div class="card border-light">
-    <div class="card-body">
-      <h3 class="card-title text-center">{{offer.hotelName}}</h3>
-      <div class="verticalSpacing"></div>
-
-      <div class="row">
-        <div class="col-md-3">
-          <div class="container d-flex align-items-center justify-content-center">
-            <i class="bi bi-tag horizontalSpacing"></i> Price
-          </div>
-          <div class="container d-flex align-items-center justify-content-center">
-            <p class="card-text fw-bold">${{offer.price}}</p>
-          </div>
+    <p-card header="About"><p class="text-center">{{offer.description}}</p></p-card>
+    <p-card header="Comment"><p>{{offer.comment}}</p></p-card>
+    <p-card header="Bookings" styleClass="bookings-card">
+      @for (booked of bookings; track booked.id) {
+        <div class="flex items-center justify-between gap-2 py-2 border-b border-surface-800" data-testid="booking-row">
+          <span>{{booked.bookedDate}} by {{booked.bookingUser}}</span>
+          @if (isOwner) {
+            <p-button label="Delete booking" icon="pi pi-trash" severity="danger" size="small" (onClick)="deleteBooking(booked.id)"></p-button>
+          }
         </div>
-        <div class="col-md-3">
-          <div class="container d-flex align-items-center justify-content-center">
-            <div class="horizontalSpacing">
-              <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 25 25">
-                <path
-                d="M0 16L3 5V1a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4l3 11v5a1 1 0 0 1-1 1v2h-1v-2H2v2H1v-2a1 1 0 0 1-1-1v-5zM19 5h1V1H4v4h1V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1h2V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1zm0 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V6h-2v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6H3.76L1.04 16h21.92L20.24 6H19zM1 17v4h22v-4H1zM6 4v4h4V4H6zm8 0v4h4V4h-4z"></path>
-              </svg> </div> Capacity
-            </div>
-            <div class="container d-flex align-items-center justify-content-center">
-              <div class="fw-bold">{{offer.roomCapacity}}</div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="container d-flex align-items-center justify-content-center">
-              <i class="bi bi-geo-alt horizontalSpacing"></i> Location
-            </div>
-            <div class="container d-flex align-items-center justify-content-center">
-              <div class="fw-bold">{{offer.city}}, &nbsp;</div>
-              <div class="fw-bold">{{offer.country}}</div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="container d-flex align-items-center justify-content-center">
-              <i class="bi bi-person-workspace horizontalSpacing"></i> Owner
-            </div>
-            <div class="container d-flex align-items-center justify-content-center">
-              <div class="fw-bold">
-                <p class="card-text fw-bold">{{offer.ownerEmail}}</p>
-              </div>
-            </div>
-            <!--            <div class="row">-->
-            <!--              <div class="col-md-2">-->
-            <!--                <i class="bi bi-person-workspace"></i>-->
-          <!--              </div>-->
-          <!--              <div class="col-md-6">Owner</div>-->
-        <!--            </div>-->
-        <!--            <div class="card-text">-->
-        <!--              <div class="fw-bold">-->
-        <!--                <p class="card-text fw-bold">{{offer.ownerEmail}}</p>-->
-      <!--              </div>-->
-    <!--            </div>-->
+      } @empty {
+        <p class="text-surface-400">No bookings yet</p>
+      }
+    </p-card>
   </div>
-</div>
-<div class="verticalSpacing"></div>
-<div class="row fst-italic">About:</div>
-<div class="row">
-  <p class="card-text text-center">{{offer.description}}</p>
-</div>
-<div class="row fst-italic">Comment:</div>
-<div class="row">
-  <p class="card-text"> {{offer.comment}}</p>
-</div>
-</div>
-</div>
-</div>
-
-<div id="booking" class="section">
-  <div class="container">
-    <div class="row">
-      <div class="booking-form">
-        <div class="form-header">
-          <h1>Make your reservation</h1>
-        </div>
-        <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm, offer)">
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <input class="form-control"
-                  id="dateToBook"
-                  name="dateToBook"
-                  ngModel
-                  required
-                  type="date">
-                <span class="form-label">Check In</span>
-              </div>
-            </div>
-          </div>
-          <div class="form-btn">
-            <button [disabled]="bookingForm.invalid" class="btn btn-primary"
-              type="submit">Book now
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-3"></div>
-  <div class="col-md-6">
-    <div class="card-body">
-      <p>Booked:</p>
-      @for (booked of bookings; track booked) {
-        <div>
-          <div class="row verticalSpacing">
-            <div class="col-md-6">
-              {{booked.bookedDate}} by {{booked.bookingUser}}
-            </div>
-            <div class="col-md-3">
-              @if (isOwner) {
-                <button (click)="deleteBooking(booked.id)" class="btn btn-danger">Delete booking</button>
-              }
-            </div>
-          </div>
+  <div class="xl:col-span-1">
+    <p-card header="Make your reservation" styleClass="sticky top-4">
+      <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm, offer)" class="flex flex-col gap-3">
+        <p-floatlabel variant="on">
+          <input pInputText id="dateToBook" name="dateToBook" ngModel required type="date" class="w-full" data-testid="booking-date" />
+          <label for="dateToBook">Check In</label>
+        </p-floatlabel>
+        <p-button label="Book now" icon="pi pi-calendar-plus" type="submit" [disabled]="bookingForm.invalid" data-testid="booking-submit"></p-button>
+      </form>
+      @if (isOwner) {
+        <div class="flex flex-col gap-2 mt-4">
+          <p-button label="Edit offer" icon="pi pi-pencil" severity="warn" (onClick)="editOffer(offer)" data-testid="offer-edit"></p-button>
+          <p-button label="Delete offer" icon="pi pi-trash" severity="danger" (onClick)="deleteOffer(offer.id)" data-testid="offer-delete"></p-button>
         </div>
       }
-    </div>
+    </p-card>
   </div>
 </div>
+} @else if (loadError) {
+  <p class="text-red-400">{{loadError}}</p>
+} @else {
+  <p class="text-surface-400">Loading offer details</p>
+}

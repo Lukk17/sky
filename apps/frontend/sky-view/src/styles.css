@@ -1,24 +1,20 @@
-/* You can add global styles to this file, and also import other style files */
-@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css");
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
 
 html {
-  background-color: #121212 !important;
+  background-color: #121212;
 }
 
 body {
-  background-color: #121212 !important;
-  color: #BCC9D3 !important;
-}
-
-.card {
-  background-color: #323232;
-  margin: 10px !important;
-  width: 90% !important;
-  color: #BCC9D3;
+  background-color: #121212;
+  color: var(--p-surface-200);
 }
 
 .activated {
-  border-bottom: 1px solid #ff0000;
+  border-bottom: 1px solid var(--p-red-500);
 }
 
 .center {
@@ -66,7 +62,7 @@ body {
   margin-bottom: 2vh;
 }
 
-.horizontalSpacing{
+.horizontalSpacing {
   margin-left: 1em;
   margin-right: 1em;
 }

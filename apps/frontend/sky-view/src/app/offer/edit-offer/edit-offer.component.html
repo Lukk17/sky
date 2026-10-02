@@ -1,95 +1,41 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-xs-12 col-md-5">
-      @if (error) {
-        <div class="alert-danger">
-          <p>{{error}}</p>
-        </div>
+<div class="flex justify-center mt-10 px-4">
+  <p-card header="Edit Offer" styleClass="w-full max-w-xl">
+    @if (error) {
+      <p class="text-red-400">{{error}}</p>
+    }
+    <form #offerForm="ngForm" (ngSubmit)="onSubmit(offerForm)" class="flex flex-col gap-4">
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.hotelName" id="hotelName" name="hotelName" ngModel required type="text" class="w-full" />
+        <label for="hotelName">Hotel Name</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.description" id="description" name="description" ngModel required type="text" class="w-full" />
+        <label for="description">Description</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.city" id="city" name="city" ngModel required type="text" class="w-full" />
+        <label for="city">City</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.country" id="country" name="country" ngModel required type="text" class="w-full" />
+        <label for="country">Country</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.photoPath" id="photoPath" name="photoPath" ngModel required type="text" class="w-full" />
+        <label for="photoPath">Photo Link</label>
+      </p-floatlabel>
+      @if (offer.photoPath) {
+        <img [src]="offer.photoPath" alt="Photo preview" class="w-full aspect-video object-cover rounded-xl" />
       }
-      <form #offerForm="ngForm" (ngSubmit)="onSubmit(offerForm)">
-        <div class="form-group">
-          <label for="hotelName">Hotel Name</label>
-          <input [(ngModel)]=offer.hotelName
-            class="form-control"
-            id="hotelName"
-            name="hotelName"
-            ngModel
-            required
-            type="text"
-            />
-        </div>
-        <div class="form-group">
-          <label for="description">Description</label>
-          <input [(ngModel)]=offer.description
-            class="form-control"
-            id="description"
-            name="description"
-            ngModel
-            required
-            type="text"
-            />
-        </div>
-        <div class="form-group">
-          <label for="city">City</label>
-          <input [(ngModel)]=offer.city
-            class="form-control"
-            id="city"
-            name="city"
-            ngModel
-            required
-            type="text"
-            />
-        </div>
-        <div class="form-group">
-          <label for="country">Country</label>
-          <input [(ngModel)]=offer.country
-            class="form-control"
-            id="country"
-            name="country"
-            ngModel
-            required
-            type="text"
-            />
-        </div>
-        <div class="form-group">
-          <label for="photoPath">Photo Link</label>
-          <input [(ngModel)]=offer.photoPath
-            class="form-control"
-            id="photoPath"
-            name="photoPath"
-            ngModel
-            required
-            type="text"
-            />
-        </div>
-        <div class="form-group">
-          <label for="roomCapacity">Room capacity</label>
-          <input [(ngModel)]=offer.roomCapacity
-            class="form-control"
-            id="roomCapacity"
-            name="roomCapacity"
-            ngModel
-            required
-            type="number"
-            />
-        </div>
-        <div class="form-group">
-          <label for="price">Price</label>
-          <input [(ngModel)]=offer.price
-            class="form-control"
-            id="price"
-            name="price"
-            ngModel
-            required
-            type="number"
-            />
-        </div>
-        <div>
-          <button [disabled]="offerForm.invalid" class="btn btn-primary"
-            type="submit">Save Offer
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.roomCapacity" id="roomCapacity" name="roomCapacity" ngModel required type="number" class="w-full" />
+        <label for="roomCapacity">Room capacity</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.price" id="price" name="price" ngModel required type="number" class="w-full" />
+        <label for="price">Price</label>
+      </p-floatlabel>
+      <p-button label="Save Offer" icon="pi pi-check" type="submit" [disabled]="offerForm.invalid"></p-button>
+    </form>
+  </p-card>
 </div>

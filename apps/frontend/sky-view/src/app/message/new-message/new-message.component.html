@@ -1,36 +1,18 @@
-<div class="centerIt">
-  <div class="container-fluid">
+<div class="flex justify-center mt-10 px-4">
+  <p-card header="New message" styleClass="w-full max-w-xl">
     @if (error) {
-      <div class="alert-danger">
-        <p>{{error}}</p>
-      </div>
+      <p class="text-red-400">{{error}}</p>
     }
-    <form #messageForm="ngForm" (ngSubmit)="onSubmit(messageForm)">
-      <div class="form-group">
+    <form #messageForm="ngForm" (ngSubmit)="onSubmit(messageForm)" class="flex flex-col gap-4">
+      <p-floatlabel variant="on">
+        <textarea pTextarea id="text" name="text" ngModel required rows="5" class="w-full"></textarea>
         <label for="text">Message Text</label>
-        <textarea class="form-control"
-          id="text"
-          name="text"
-          ngModel
-          required
-          rows="5"
-        type="text"></textarea>
-      </div>
-      <div class="form-group">
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText id="receiver" name="receiver" [(ngModel)]="receiver" required type="email" class="w-full" />
         <label for="receiver">Receiver</label>
-        <input class="form-control"
-          id="receiver"
-          name="receiver"
-          [(ngModel)]="receiver"
-          required
-          type="email"
-          />
-      </div>
-      <div>
-        <button [disabled]="messageForm.invalid" class="btn btn-primary"
-          type="submit">Send Message
-        </button>
-      </div>
+      </p-floatlabel>
+      <p-button label="Send Message" icon="pi pi-send" type="submit" [disabled]="messageForm.invalid"></p-button>
     </form>
-  </div>
+  </p-card>
 </div>

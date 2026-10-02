@@ -1,60 +1,61 @@
-<div class="toggleStyle">
-  <div class="btn-group btn-group-toggle" data-toggle="buttons">
-    <label (click)="goToReceived()" class="btn btn-success active">
-      <input autocomplete="off" checked id="option1" name="options" type="radio"> Received
-    </label>
-    <label (click)="goToSent()" class="btn btn-success">
-      <input autocomplete="off" id="option2" name="options" type="radio"> Sent
-    </label>
+<div class="msg-layout">
+  <div class="msg-toolbar">
+    <a routerLink="/newMessage">
+      <p-button label="New message" icon="pi pi-plus" data-testid="new-thread"></p-button>
+    </a>
+    @if (unreadCount > 0) {
+      <span class="toolbar-unread" data-testid="threads-unread">{{unreadCount}} unread</span>
+    }
   </div>
-</div>
-<div class="writeNew">
-  <a routerLink="/newMessage">
-    <button class="btn btn-success">Send message</button>
-  </a>
-</div>
-<div class="centerIt">
-  @if (currentPage===RECEIVED_PAGE) {
-    <div>
-      @for (message of received; track message) {
-        <div>
-          <div class="card center">{{message.createdTime.replace("T", " ")}}
-            <div class="card-body">
-              <h3 class="card-title">{{message.senderEmail}}</h3>
-              <p class="card-text">{{message.text}}</p>
-              <div class="d-flex justify-content-evenly">
-                <button [routerLink]="['/newMessage']"
-                  [queryParams]="{ receiver: message.senderEmail }" class="btn btn-primary"> Reply
-                </button>
-                <button (click)="deleteMessage(message.id)" class="btn btn-danger">Delete message</button>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div class="msg-columns">
+    <div class="msg-threads" data-testid="thread-list">
+      @for (thread of threads; track thread.email) {
+        <button type="button" class="thread-row" [class.active]="thread.email === selectedEmail"
+          (click)="selectThread(thread.email)" [attr.data-testid]="'thread-' + thread.email">
+          <p-avatar [label]="thread.email.charAt(0).toUpperCase()" shape="circle"></p-avatar>
+          <span class="thread-main">
+            <span class="thread-top">
+              <strong class="thread-name">{{thread.email}}</strong>
+              <span class="thread-time">{{thread.latest.createdTime?.replace("T", " ")}}</span>
+            </span>
+            <span class="thread-bottom">
+              <span class="thread-excerpt">{{thread.latest.text}}</span>
+              @if (thread.unread > 0) {
+                <p-badge value="{{thread.unread}}" severity="danger"
+                  [attr.data-testid]="'unread-' + thread.email"></p-badge>
+              }
+            </span>
+          </span>
+        </button>
+      } @empty {
+        <p class="text-surface-400">No conversations yet</p>
       }
     </div>
-  }
-</div>
-
-<div class="centerIt">
-  @if (currentPage===SENT_PAGE) {
-    <div>
-      @for (message of sent; track message) {
-        <div>
-          <div class="card center"> {{message.receiverEmail}}
-            <div class="card-body">
-              <h3 class="card-title">{{message.text}}</h3>
-              <p class="card-text">Created: {{message.createdTime.replace("T", " ")}}</p>
-              <div class="d-flex justify-content-evenly">
-                <button [routerLink]="['/newMessage']"
-                  [queryParams]="{ receiver: message.receiverEmail }" class="btn btn-primary"> Reply
-                </button>
-                <button (click)="deleteMessage(message.id)" class="btn btn-danger">Delete message</button>
+    <div class="msg-conversation" data-testid="conversation">
+      @if (selected; as thread) {
+        <h3 class="conv-title">{{thread.email}}</h3>
+        <div class="bubbles">
+          @for (message of thread.messages; track message.id) {
+            <div class="bubble-row" [class.own]="isOwn(message)">
+              <div class="bubble" [attr.data-testid]="'bubble-' + message.id">
+                <p class="bubble-text">{{message.text}}</p>
+                <span class="bubble-time">{{message.createdTime?.replace("T", " ")}}</span>
+                @if (!isOwn(message) && !message.read) {
+                  <span class="bubble-unread">Unread</span>
+                }
               </div>
             </div>
-          </div>
+          }
         </div>
+        <div class="reply-box">
+          <input pInputText [(ngModel)]="replyText" placeholder="Write a reply"
+            data-testid="reply-input" (keyup.enter)="sendReply()" />
+          <p-button label="Send" icon="pi pi-send" (onClick)="sendReply()"
+            [disabled]="!replyText.trim()" data-testid="reply-send"></p-button>
+        </div>
+      } @else {
+        <p class="text-surface-400">Select a conversation</p>
       }
     </div>
-  }
+  </div>
 </div>

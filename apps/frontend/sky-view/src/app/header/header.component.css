@@ -1,0 +1,67 @@
+/* Keep Tailwind v4 .collapse override so the mobile menu still toggles via navOpen. */
+#navbarSupportedContent.collapse {
+  visibility: visible;
+}
+#navbarSupportedContent.collapse:not(.show) {
+  display: none;
+}
+#navbarSupportedContent.collapse.show {
+  display: block;
+}
+.sky-toolbar {
+  background: var(--p-surface-900);
+  border-bottom: 1px solid var(--p-surface-800);
+}
+.sky-brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.sky-brand {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--p-surface-0);
+  cursor: pointer;
+}
+.sky-nav-link {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  color: var(--p-surface-200);
+  text-decoration: none;
+}
+.sky-nav-link:hover {
+  background: var(--p-surface-800);
+  color: var(--p-surface-0);
+}
+.sky-nav-link.activated {
+  border-bottom: 1px solid var(--p-red-500);
+}
+.sky-search input {
+  border-radius: 9999px;
+}
+.notify-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 16rem;
+}
+.notify-row {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0.6rem;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.notify-row:hover {
+  background: var(--p-surface-800);
+}
+.notify-excerpt {
+  color: var(--p-surface-300);
+}
+.notify-time {
+  font-size: 0.75rem;
+  color: var(--p-surface-400);
+}

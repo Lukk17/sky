@@ -15,10 +15,11 @@ import {NgForm} from '@angular/forms';
 })
 export class OfferDetailsComponent implements OnInit {
 
-  offer!: Offer;
-  bookings!: Booking[];
+  offer: Offer | null = null;
+  bookings: Booking[] = [];
   isOwner = false;
   selectedPhotoUrl: string | null = null;
+  loadError: string | null = null;
 
   coverUrl(): string | null {
     return this.selectedPhotoUrl ?? this.offer?.coverPhotoUrl ?? this.offer?.gallery?.[0]?.url ?? this.offer?.photoUrl ?? null;
@@ -33,9 +34,15 @@ export class OfferDetailsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.offer = this.offerService.detailedOffer;
+    this.offer = this.offerService.detailedOffer ?? null;
     this.auth.currentUser$.subscribe((email) => {
-      this.isOwner = email != null && this.offer.ownerEmail === email;
+      this.isOwner = email != null && this.offer?.ownerEmail === email;
+    });
+    this.route.queryParams.subscribe((params) => {
+      const id = Number(params['offerId']);
+      if (Number.isFinite(id) && id > 0 && this.offer?.id !== id) {
+        this.loadOfferById(id);
+      }
     });
     this.getBookings();
   }
@@ -55,7 +62,19 @@ export class OfferDetailsComponent implements OnInit {
 
   private getBookings() {
     this.bookingService.getBookedOffers().subscribe(bookings => {
-      this.bookings = bookings;
+      this.bookings = bookings ?? [];
+    });
+  }
+
+  private loadOfferById(id: number) {
+    this.offerService.getAllOffers().subscribe(offers => {
+      const found = (offers ?? []).find((o) => o.id === id);
+      if (found) {
+        this.offer = found;
+        this.loadError = null;
+      } else if (!this.offer) {
+        this.loadError = 'Offer not found';
+      }
     });
   }
 
@@ -66,8 +85,11 @@ export class OfferDetailsComponent implements OnInit {
     });
   }
 
-  onSubmit(bookingForm: NgForm, offer: Offer) {
+  onSubmit(bookingForm: NgForm, offer: Offer | null) {
     console.log(bookingForm);
+    if (!offer) {
+      return;
+    }
     this.bookingService.addBooking(bookingForm, offer).subscribe();
   }
 }

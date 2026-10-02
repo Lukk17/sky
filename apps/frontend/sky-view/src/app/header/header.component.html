@@ -1,77 +1,70 @@
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <!-- Container wrapper -->
-  <div class="container-fluid">
-    <!-- Navbar brand -->
-    <a (click)="routeToHome()" class="navbar-brand">Sky</a>
-    <!-- Toggle button -->
-    <button
-      class="navbar-toggler"
-      type="button"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-      >
-      <i class="fas fa-bars"></i>
-    </button>
-
-    <!-- Collapsible wrapper -->
-    <div
-      class="collapse navbar-collapse"
-      id="navbarSupportedContent"
-      >
-      <!-- Left links -->
-      <ul class="navbar-nav me-auto">
-        <li routerLinkActive="activated" class="nav-item">
-          <a routerLink="/home" class="nav-link active">Home</a>
-        </li>
-        @if (isAuth) {
-          <li routerLinkActive="activated" class="nav-item">
-            <a routerLink="/myOffers" class="nav-link active">My Offers</a>
-          </li>
-        }
-        @if (isAuth) {
-          <li routerLinkActive="activated" class="nav-item">
-            <a routerLink="/addOffer" class="nav-link active">Add Offer</a>
-          </li>
-        }
-      </ul>
-      <!-- Left links -->
-
-      <!-- Right Links-->
-      <ul class="navbar-nav ms-auto">
-        @if (isAuth) {
-          <li routerLinkActive="activated" class="nav-item">
-            <a routerLink="/messages" class="nav-link active"><i class="bi bi-chat-left-text-fill"></i></a>
-          </li>
-        }
-        @if (isAuth) {
-          <li routerLinkActive="activated" class="nav-item">
-            <a routerLink="/userDetails" class="nav-link active"><i class="bi bi-person-fill"></i></a>
-          </li>
-        }
-        @if (!isAuth) {
-          <li class="nav-item horizontalSpacing">
-            <button class="btn btn-success btn-block" (click)="login()">Login</button>
-          </li>
-        }
-        @if (isAuth) {
-          <li class="nav-item horizontalSpacing">
-            <button class="btn btn-dark btn-block" (click)="logout()">Logout</button>
-          </li>
-        }
-        <!-- Search form -->
-        <li>
-          <form #searchForm="ngForm" (ngSubmit)="search(searchForm)" class="d-flex input-group w-auto">
-            <input class="form-control" name="search" ngModel placeholder="Search" type="text">
-            <button class="btn btn-primary" type="submit">
-              Search
-            </button>
-          </form>
-        </li>
-      </ul>
+<p-toolbar styleClass="sky-toolbar">
+  <ng-template #start>
+    <div class="flex items-center gap-2">
+      <img src="assets/logo.png" alt="Sky logo" class="sky-brand-mark" (click)="routeToHome()" data-testid="brand-logo" />
+      <a (click)="routeToHome()" class="sky-brand" data-testid="brand-home">Sky</a>
+      <p-button icon="pi pi-bars" [text]="true" [rounded]="true" ariaLabel="Toggle navigation"
+        (onClick)="navOpen = !navOpen" data-testid="nav-toggler" class="lg:hidden"></p-button>
     </div>
-    <!-- Collapsible wrapper -->
+  </ng-template>
+  <ng-template #center>
+    <form #searchForm="ngForm" (ngSubmit)="search(searchForm)" class="hidden md:flex items-center">
+      <p-iconfield iconPosition="left" class="sky-search">
+        <p-inputicon styleClass="pi pi-search"></p-inputicon>
+        <input pInputText class="w-64 rounded-full" name="search" ngModel placeholder="Search offers" type="text" data-testid="nav-search" />
+      </p-iconfield>
+      <p-button label="Search" type="submit" styleClass="ml-2" data-testid="nav-search-btn"></p-button>
+    </form>
+  </ng-template>
+  <ng-template #end>
+    <div class="hidden lg:flex items-center gap-1">
+      <a routerLink="/home" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-home">Home</a>
+      @if (isAuth) {
+        <a routerLink="/myOffers" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-my-offers">My Offers</a>
+        <a routerLink="/addOffer" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-add-offer">Add Offer</a>
+        <a routerLink="/messages" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-messages"><i class="pi pi-comments"></i></a>
+        <a routerLink="/userDetails" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-user"><i class="pi pi-user"></i></a>
+        <p-button icon="pi pi-bell" [rounded]="true" [text]="true" severity="secondary"
+          (onClick)="panel.toggle($event)" data-testid="notify-bell" ariaLabel="Notifications"></p-button>
+        @if (unreadCount > 0) {
+          <p-badge value="{{unreadCount}}" severity="danger" data-testid="notify-badge"></p-badge>
+        }
+        <p-popover #panel>
+          <div class="notify-list" data-testid="notify-dropdown">
+            @for (message of unread; track message.id) {
+              <button type="button" class="notify-row" (click)="openThread(message); panel.hide()"
+                [attr.data-testid]="'notify-' + message.id">
+                <strong>{{message.senderEmail}}</strong>
+                <span class="notify-excerpt">{{message.text}}</span>
+                <span class="notify-time">{{message.createdTime?.replace("T", " ")}}</span>
+              </button>
+            } @empty {
+              <p class="text-surface-400">No new messages</p>
+            }
+          </div>
+        </p-popover>
+        <p-button label="Logout" icon="pi pi-sign-out" [text]="true" (onClick)="logout()" data-testid="nav-logout"></p-button>
+      } @else {
+        <p-button label="Login" icon="pi pi-sign-in" (onClick)="login()" data-testid="nav-login"></p-button>
+      }
+    </div>
+  </ng-template>
+</p-toolbar>
+<div id="navbarSupportedContent" class="collapse lg:hidden" [class.show]="navOpen">
+  <div class="flex flex-col gap-2 p-4">
+    <a routerLink="/home" class="sky-nav-link" (click)="navOpen = false">Home</a>
+    @if (isAuth) {
+      <a routerLink="/myOffers" class="sky-nav-link" (click)="navOpen = false">My Offers</a>
+      <a routerLink="/addOffer" class="sky-nav-link" (click)="navOpen = false">Add Offer</a>
+      <a routerLink="/messages" class="sky-nav-link" (click)="navOpen = false">Messages</a>
+      <a routerLink="/userDetails" class="sky-nav-link" (click)="navOpen = false">Profile</a>
+      <p-button label="Logout" icon="pi pi-sign-out" [text]="true" (onClick)="logout()" data-testid="nav-logout-mobile"></p-button>
+    } @else {
+      <p-button label="Login" icon="pi pi-sign-in" (onClick)="login()" data-testid="nav-login-mobile"></p-button>
+    }
+    <form #searchFormMobile="ngForm" (ngSubmit)="search(searchFormMobile)" class="flex items-center gap-2 md:hidden">
+      <input pInputText class="flex-1 rounded-full" name="search" ngModel placeholder="Search offers" type="text" data-testid="nav-search-mobile" />
+      <p-button label="Search" type="submit"></p-button>
+    </form>
   </div>
-  <!-- Container wrapper -->
-</nav>
-<!-- Navbar -->
+</div>

@@ -8,6 +8,21 @@ import {environment} from '../../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
+export class MessageReadStore {
+  private readIds = new Set<number>();
+
+  markRead(id: number): void {
+    this.readIds.add(id);
+  }
+
+  isRead(m: Message): boolean {
+    return m.read || this.readIds.has(m.id);
+  }
+}
+
+@Injectable({
+  providedIn: 'root'
+})
 export class MessageService {
   private BASE_ADDRESS = `${environment.apiBaseUrl}`;
 
@@ -42,8 +57,12 @@ export class MessageService {
 
   sendMessage(messageForm: NgForm) {
     const message = MessageService.buildMessage(messageForm);
+    return this.sendDirect(message.receiverEmail, message.text);
+  }
+
+  sendDirect(receiverEmail: string, text: string) {
     return this.http.post<Message>(this.SEND_MESSAGE_URL,
-      message).pipe(
+      {receiverEmail, text}).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'sendMessage()'))
     );
   }

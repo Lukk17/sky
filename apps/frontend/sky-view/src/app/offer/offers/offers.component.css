@@ -1,0 +1,8 @@
+.offer-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.offer-card:hover {
+  box-shadow: var(--p-card-shadow);
+  transform: translateY(-2px);
+}

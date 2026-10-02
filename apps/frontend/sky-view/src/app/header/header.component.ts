@@ -1,9 +1,12 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SkyAuthService} from '../services/sky-auth.service';
 
 import {NgForm} from '@angular/forms';
 import {OfferService} from '../services/offer.service';
+import {Message, MessageReadStore, MessageService} from '../services/message.service';
+import {StompService} from '../services/StompService';
 
 @Component({
     selector: 'app-header',
@@ -15,20 +18,55 @@ import {OfferService} from '../services/offer.service';
 export class HeaderComponent implements OnInit {
   isAuth = false;
   userEmail: string | null = null;
+  unread: Message[] = [];
+  navOpen = false;
+
+  get unreadCount(): number {
+    return this.unread.length;
+  }
+
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private offerService: OfferService,
     private skyAuth: SkyAuthService,
+    private messageService: MessageService,
+    private readStore: MessageReadStore,
+    private stompService: StompService,
   ) {
   }
 
   ngOnInit() {
-    this.skyAuth.currentUser$.subscribe((email) => {
+    this.skyAuth.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((email) => {
       this.userEmail = email;
       this.isAuth = email != null;
+      if (this.isAuth) {
+        this.refreshUnread();
+      } else {
+        this.unread = [];
+      }
     });
+    this.stompService.getMessages().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (this.isAuth) {
+        this.refreshUnread();
+      }
+    });
+  }
+
+  private refreshUnread() {
+    this.messageService.getReceived().subscribe((messages) => {
+      this.unread = [...(messages ?? [])]
+        .filter((m) => !this.readStore.isRead(m))
+        .sort((a, b) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime());
+    });
+  }
+
+  openThread(message: Message) {
+    this.readStore.markRead(message.id);
+    this.unread = this.unread.filter((m) => m.id !== message.id);
+    this.router.navigate(['/messages'], {queryParams: {with: message.senderEmail}}).then();
   }
 
   routeToHome() {
