@@ -14,8 +14,50 @@ body {
 }
 
 .activated {
-  border-bottom: 1px solid var(--p-red-500);
+  border-bottom: 1px solid #f97316;
 }
+
+.glass-card, .p-card.glass-card, .glass-dialog .p-dialog-content {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  color: #fff;
+}
+.p-card, .p-dialog, .p-popover, .p-toolbar {
+  background: rgba(20,20,25,0.72);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: #fff;
+}
+.p-button:not(.glass-btn-accent):not(.glass-btn-danger):not(.glass-btn) {
+  background: rgba(249,115,22,0.16);
+  border: 1px solid rgba(249,115,22,0.55);
+  color: #fdba74;
+}
+.p-button:not(.glass-btn-accent):not(.glass-btn-danger):not(.glass-btn):hover {
+  background: rgba(249,115,22,0.32);
+}
+button.p-button-success, .p-button-success {
+  background: rgba(249,115,22,0.16);
+  border-color: rgba(249,115,22,0.55);
+  color: #fdba74;
+}
+input, textarea, .p-inputtext {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+}
+.offer-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.10); }
+.compact-row { display: flex; justify-content: space-between; gap: 0.5rem; width: 100%; text-align: left; padding: 0.55rem 0.7rem; border-radius: 0.6rem; border: 1px solid transparent; cursor: pointer; }
+.compact-row:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
+.msg-layout, .msg-threads, .msg-conversation, .bubble { background: rgba(255,255,255,0.05); backdrop-filter: blur(14px); border-color: rgba(255,255,255,0.10); }
+.bubble-row.own .bubble { background: rgba(249,115,22,0.20); border-color: rgba(249,115,22,0.4); }
+.glass-file-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 0.7rem; background: linear-gradient(135deg,#f97316,#dc2626); color: #fff; cursor: pointer; width: fit-content; }
+.glass-file-input { display: block; margin-top: 0.4rem; color: rgba(255,255,255,0.8); }
+.glass-dialog .p-dialog-header, .glass-dialog .p-dialog-content { background: rgba(18,18,24,0.85); backdrop-filter: blur(18px); color: #fff; }
 
 .center {
   margin: auto;

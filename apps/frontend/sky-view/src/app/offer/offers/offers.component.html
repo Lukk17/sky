@@ -17,7 +17,7 @@
       </div>
       <div class="flex items-center justify-between mt-3">
         <span class="offer-price" data-testid="offer-price">${{offer.price}}</span>
-        <p-button label="Book" severity="info" size="small" (onClick)="goToDetails(offer); $event.stopPropagation()" data-testid="offer-book"></p-button>
+        <p-button label="Book" styleClass="glass-btn-accent" size="small" (onClick)="goToDetails(offer); $event.stopPropagation()" data-testid="offer-book"></p-button>
       </div>
     </p-card>
   }

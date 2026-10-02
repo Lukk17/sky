@@ -20,7 +20,7 @@
         <p-inputicon styleClass="pi pi-search"></p-inputicon>
         <input pInputText class="w-64 rounded-full" name="search" ngModel placeholder="Search offers" type="text" data-testid="nav-search" />
       </p-iconfield>
-      <p-button label="Search" type="submit" styleClass="ml-2" data-testid="nav-search-btn"></p-button>
+      <p-button icon="pi pi-search" type="submit" styleClass="ml-2 glass-btn-accent" ariaLabel="Search" data-testid="nav-search-btn"></p-button>
     </form>
   </ng-template>
   <ng-template #end>
@@ -49,7 +49,7 @@
             }
           </div>
         </p-popover>
-        <p-button label="Logout" icon="pi pi-sign-out" [text]="true" (onClick)="logout()" data-testid="nav-logout"></p-button>
+        <p-button label="Logout" icon="pi pi-sign-out" styleClass="glass-btn-accent" (onClick)="logout()" data-testid="nav-logout"></p-button>
       } @else {
         <p-button label="Login" icon="pi pi-sign-in" (onClick)="login()" data-testid="nav-login"></p-button>
       }

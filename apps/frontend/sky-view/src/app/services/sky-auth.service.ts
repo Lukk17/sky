@@ -68,13 +68,12 @@ export class SkyAuthService {
   }
 
   login(returnPath: string): void {
-    sessionStorage.setItem(
-      POST_LOGIN_PATH_KEY,
-      isSafePostLoginPath(returnPath) ? returnPath : DEFAULT_POST_LOGIN_PATH
-    );
-    // rd returns the browser to the frontend origin after the edge callback;
-    // without it the callback lands on the edge root (nginx 404 under k3d).
-    window.location.assign(`${this.loginUrl}?rd=${encodeURIComponent(window.location.href)}`);
+    const safePath = isSafePostLoginPath(returnPath) ? returnPath : DEFAULT_POST_LOGIN_PATH;
+    sessionStorage.setItem(POST_LOGIN_PATH_KEY, safePath as string);
+    // rd carries a relative in-app path encoded exactly once; the edge
+    // callback decodes once and returns to frontendOrigin + rd.
+    const rd = encodeURIComponent(window.location.origin + (safePath as string));
+    window.location.assign(`${this.loginUrl}?rd=${rd}`);
   }
 
   logout(): void {

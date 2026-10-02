@@ -19,7 +19,7 @@ export class AuthComponent implements OnInit {
     this.skyAuthService.currentUser$.subscribe((email) => {
       if (email != null) {
         const returnPath = this.skyAuthService.consumePostLoginPath();
-        this.router.navigate([isSafePostLoginPath(returnPath) ? returnPath as string : '/home']).then();
+        this.router.navigateByUrl(isSafePostLoginPath(returnPath) ? (returnPath as string) : '/home').then();
       }
     });
   }

@@ -13,8 +13,9 @@
   top: 0;
   z-index: 1000;
   margin-bottom: 0.75rem;
-  background: var(--p-surface-900);
-  border-bottom: 1px solid var(--p-surface-800);
+  background: rgba(18,18,24,0.72);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255,255,255,0.10);
 }
 .sky-brand-mark {
   width: 32px;
@@ -39,7 +40,7 @@
   color: var(--p-surface-0);
 }
 .sky-nav-link.activated {
-  border-bottom: 1px solid var(--p-red-500);
+  border-bottom: 2px solid #f97316;
 }
 .sky-search input {
   border-radius: 9999px;

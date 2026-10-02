@@ -24,6 +24,7 @@ import {AvatarModule} from 'primeng/avatar';
 import {BadgeModule} from 'primeng/badge';
 import {ButtonModule} from 'primeng/button';
 import {CardModule} from 'primeng/card';
+import {DialogModule} from 'primeng/dialog';
 import {FloatLabelModule} from 'primeng/floatlabel';
 import {GalleriaModule} from 'primeng/galleria';
 import {IconFieldModule} from 'primeng/iconfield';
@@ -62,6 +63,7 @@ import {sessionCookieInterceptor} from './services/session-cookie.interceptor';
         BadgeModule,
         ButtonModule,
         CardModule,
+        DialogModule,
         FloatLabelModule,
         GalleriaModule,
         IconFieldModule,

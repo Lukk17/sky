@@ -34,7 +34,7 @@ export class AppComponent implements OnInit {
       if (email != null) {
         const returnPath = this.skyAuth.consumePostLoginPath();
         if (isSafePostLoginPath(returnPath)) {
-          this.router.navigate([returnPath as string]).then();
+          this.router.navigateByUrl(returnPath as string).then();
         }
       }
     });
