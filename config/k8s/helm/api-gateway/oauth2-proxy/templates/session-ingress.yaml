@@ -11,6 +11,14 @@ metadata:
     nginx.ingress.kubernetes.io/auth-url: "http://{{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/oauth2/auth"
     nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    {{- if .Values.session.corsOrigin }}
+    # Local dev only: the Angular dev server (http://localhost:4200) calls
+    # /api/session cross-origin with credentials; the python responder sends
+    # no CORS headers itself.
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: {{ .Values.session.corsOrigin | quote }}
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.controller }}
   rules:

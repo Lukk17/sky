@@ -145,6 +145,41 @@ class EntityEqualityContractTest {
         assertTrue(events.contains(event));
     }
 
+    @Test
+    @DisplayName("A photo is equal to itself, never equal to null, and never equal to another entity type")
+    void equals_whenPhotoComparedWithItselfNullAndOtherType_thenContractHolds() {
+        OfferPhoto photo = OfferPhoto.builder().id(UUID.randomUUID()).position(0).objectKey("k").build();
+
+        assertEquals(photo, photo);
+        assertNotEquals(photo, null);
+        assertNotEquals(photo, unsavedOffer());
+    }
+
+    @Test
+    @DisplayName("Two photos share identity only through a non-null matching id")
+    void equals_whenPhotoIdsMatchDifferOrAreMissing_thenContractHolds() {
+        UUID id = UUID.randomUUID();
+        OfferPhoto photo = OfferPhoto.builder().id(id).position(0).objectKey("k").build();
+        OfferPhoto same = OfferPhoto.builder().id(id).position(3).objectKey("other").build();
+        OfferPhoto other = OfferPhoto.builder().id(UUID.randomUUID()).position(0).objectKey("k").build();
+
+        assertEquals(photo, same);
+        assertNotEquals(photo, other);
+        assertNotEquals(OfferPhoto.builder().position(0).build(), OfferPhoto.builder().position(0).build());
+    }
+
+    @Test
+    @DisplayName("A photo hash never moves when its position changes")
+    void hashCode_whenPhotoPositionChanges_thenPhotoIsStillFound() {
+        OfferPhoto photo = OfferPhoto.builder().id(UUID.randomUUID()).position(0).objectKey("k").build();
+        Set<OfferPhoto> photos = new HashSet<>();
+        photos.add(photo);
+
+        photo.setPosition(7);
+
+        assertTrue(photos.contains(photo));
+    }
+
     private static Offer unsavedOffer() {
         return Offer.builder()
                 .hotelName("Grand Hotel")

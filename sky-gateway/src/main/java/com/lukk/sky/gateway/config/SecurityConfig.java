@@ -87,8 +87,10 @@ public class SecurityConfig {
                 .oauth2Login(login -> login.authenticationSuccessHandler(
                         new RedirectServerAuthenticationSuccessHandler(validatedFrontendUrl(frontendUrl))))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .logout(logout -> logout.logoutSuccessHandler(
-                        new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository)))
+                .logout(logout -> logout
+                        .requiresLogout(new PathPatternParserServerWebExchangeMatcher("/logout"))
+                        .logoutSuccessHandler(oidcLogoutSuccessHandler(
+                                clientRegistrationRepository, validatedFrontendUrl(frontendUrl))))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(sessionCsrfTokenRepository())
                         .requireCsrfProtectionMatcher(exchange -> {
@@ -108,6 +110,13 @@ public class SecurityConfig {
         var repository = new WebSessionServerCsrfTokenRepository();
         repository.setHeaderName("X-XSRF-TOKEN");
         return repository;
+    }
+
+    private static OidcClientInitiatedServerLogoutSuccessHandler oidcLogoutSuccessHandler(
+            ReactiveClientRegistrationRepository clientRegistrationRepository, String frontendUrl) {
+        var handler = new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
+        handler.setPostLogoutRedirectUri(frontendUrl + "/home");
+        return handler;
     }
 
     static String validatedFrontendUrl(String candidate) {

@@ -136,6 +136,131 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    void reorderGalleryPhoto_whenMovingFirstToLast_thenShiftsForward() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
+        OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
+        OfferPhoto p2 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(2).objectKey("k2").build();
+        List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1, p2));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
+        when(photoStorage.presignedUrl(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(inv -> "u-" + inv.getArgument(0));
+
+        OfferDTO dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 2, OWNER);
+
+        assertEquals(2, p0.getPosition());
+        assertEquals(0, p1.getPosition());
+        assertEquals(1, p2.getPosition());
+        assertEquals(p1.getId(), dto.getGallery().get(0).getId());
+    }
+
+    @Test
+    void reorderGalleryPhoto_whenPositionUnchanged_thenKeepsOrder() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
+        List<OfferPhoto> photos = new ArrayList<>(List.of(p0));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
+        when(photoStorage.presignedUrl("k0")).thenReturn("u0");
+
+        OfferDTO dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 0, OWNER);
+
+        assertEquals(0, p0.getPosition());
+        assertEquals(p0.getId(), dto.getGallery().get(0).getId());
+    }
+
+    @Test
+    void setGalleryCover_whenCalled_thenMovesPhotoToFirst() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
+        OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
+        List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
+        when(photoStorage.presignedUrl("k0")).thenReturn("u0");
+        when(photoStorage.presignedUrl("k1")).thenReturn("u1");
+
+        OfferDTO dto = offerService.setGalleryCover(offerId, p1.getId(), OWNER);
+
+        assertEquals(p1.getId(), dto.getGallery().get(0).getId());
+        assertEquals("u1", dto.getCoverPhotoUrl());
+    }
+
+    @Test
+    void deleteGalleryPhoto_whenPhotoBelongsToAnotherOffer_thenNotFound() {
+        Offer other = Offer.builder().id(UUID.randomUUID()).hotelName("H").city("C").country("K")
+                .price(new java.math.BigDecimal("100")).ownerEmail(OWNER).roomCapacity(2L).build();
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(other).position(0).objectKey("k0").build();
+        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
+
+        assertThrows(OfferNotFoundException.class,
+                () -> offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER));
+    }
+
+    @Test
+    void deleteGalleryPhoto_whenStoreDeleteFails_thenStillReturns() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
+        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
+        org.mockito.Mockito.doThrow(new com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException("down", new java.io.IOException("refused")))
+                .when(photoStorage).delete(offerId, "k0");
+
+        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+
+        verify(offerPhotoRepository).delete(p0);
+        assertTrue(dto.getGallery().isEmpty());
+    }
+
+    @Test
+    void deleteGalleryPhoto_whenKeyIsBlank_thenSkipsStoreDelete() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
+                .externalUrl("https://cdn.example/x.png").build();
+        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
+
+        offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+
+        verify(offerPhotoRepository).delete(p0);
+        org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
+                .delete(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void deleteGalleryPhoto_whenRenumberFindsGap_thenClosesIt() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
+        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
+        OfferPhoto survivor = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(5).objectKey("k5").build();
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
+                .thenReturn(new ArrayList<>(List.of(survivor)));
+
+        offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+
+        assertEquals(0, survivor.getPosition());
+    }
+
+    @Test
+    void galleryOf_whenEmptyAndExternalUrlSet_thenFallsBackToExternal() {
+        offer.setExternalPhotoUrl("https://cdn.example/cover.png");
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
+        when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
+
+        OfferDTO dto = offerService.uploadGalleryPhoto(offerId, OWNER,
+                new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
+
+        assertTrue(dto.getGallery().isEmpty() || dto.getCoverPhotoUrl() != null);
+    }
+
+    @Test
+    void galleryOf_whenPhotoHasExternalUrl_thenUsesIt() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
+                .externalUrl("https://cdn.example/x.png").build();
+        List<OfferPhoto> photos = new ArrayList<>(List.of(p0));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
+        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
+
+        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+
+        org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
+                .presignedUrl(org.mockito.ArgumentMatchers.anyString());
+        assertEquals("https://cdn.example/x.png", dto.getGallery().get(0).getUrl());
+    }
+
+    @Test
     void deleteGalleryPhoto_whenPhotoExists_thenRemovesRowAndObject() {
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));

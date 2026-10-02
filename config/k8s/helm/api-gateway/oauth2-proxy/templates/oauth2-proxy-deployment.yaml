@@ -27,6 +27,27 @@ spec:
             - --oidc-issuer-url={{ required "args.oidcIssuerUrl must be set by a values-<env>.yaml overlay" .Values.args.oidcIssuerUrl }}
             - --insecure-oidc-allow-unverified-email={{ .Values.args.insecureOidcAllowUnverifiedEmail }}
             - --redirect-url={{ required "args.redirectUrl must be set by a values-<env>.yaml overlay" .Values.args.redirectUrl }}
+{{- if .Values.args.whitelistDomain }}
+            - --whitelist-domain={{ .Values.args.whitelistDomain }}
+{{- end }}
+{{- if .Values.args.loginUrl }}
+            - --login-url={{ .Values.args.loginUrl }}
+{{- end }}
+{{- if .Values.args.skipOidcDiscovery }}
+            - --skip-oidc-discovery={{ .Values.args.skipOidcDiscovery }}
+{{- end }}
+{{- if .Values.args.redeemUrl }}
+            - --redeem-url={{ .Values.args.redeemUrl }}
+{{- end }}
+{{- if .Values.args.oidcJwksUrl }}
+            - --oidc-jwks-url={{ .Values.args.oidcJwksUrl }}
+{{- end }}
+{{- if .Values.args.profileUrl }}
+            - --profile-url={{ .Values.args.profileUrl }}
+{{- end }}
+{{- if .Values.args.insecureOidcSkipIssuerVerification }}
+            - --insecure-oidc-skip-issuer-verification={{ .Values.args.insecureOidcSkipIssuerVerification }}
+{{- end }}
             - --scope={{ .Values.args.scope }}
             - --set-xauthrequest={{ .Values.args.setXauthrequest }}
             - --pass-authorization-header={{ .Values.args.passAuthorizationHeader }}
@@ -74,6 +95,9 @@ spec:
         - name: session-responder
           image: "python:3.12-alpine"
           command: ["python3", "/srv/server.py"]
+          env:
+            - name: SKY_LOGOUT_URL
+              value: {{ required "session.logoutUrl must be set by a values-<env>.yaml overlay" $.Values.session.logoutUrl | quote }}
           volumeMounts:
             - name: session-responder
               mountPath: /srv

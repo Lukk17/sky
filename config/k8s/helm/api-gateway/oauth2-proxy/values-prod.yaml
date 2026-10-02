@@ -8,6 +8,10 @@ args:
   oidcIssuerUrl: "https://keycloak.luksarna.com/realms/sky"
   redirectUrl: "https://skycloud.luksarna.com/oauth2/callback"
 
+session:
+  corsOrigin: ""
+  logoutUrl: "https://keycloak.luksarna.com/realms/sky/protocol/openid-connect/logout?post_logout_redirect_uri=https://skycloud.luksarna.com/home&client_id=sky-backend"
+
 ingress:
   tls:
     secretName: sky-tls-cert

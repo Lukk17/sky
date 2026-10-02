@@ -5,8 +5,36 @@
 
 args:
   cookieSecure: "false"
+  # Lax so the CSRF cookie set at /oauth2/start is sent back on the cross-site
+  # Keycloak -> /oauth2/callback navigation (Strict withholds it -> 403
+  # "unable to obtain CSRF cookie").
+  cookieSamesite: "lax"
   oidcIssuerUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky"
   redirectUrl: "http://localhost:5777/oauth2/callback"
+  # Request the roles scope so ID/access tokens carry realm_access.roles
+  # (client-level mapper in sky-realm.json emits it); the portless default
+  # scope in values.yaml would otherwise leave it to default-scope luck.
+  scope: "openid email roles"
+  # Browser-facing login URL override: discovery/issuer stay portless (in-cluster
+  # port 80 + token iss validation), but the browser is sent to :5777 so the
+  # Keycloak login page renders instead of connection-refused on port 80.
+  # NOTE: keycloak-oidc discovery overwrites login-url, so discovery is skipped
+  # and every server-side endpoint is pinned portless explicitly.
+  skipOidcDiscovery: "true"
+  loginUrl: "http://keycloak.127.0.0.1.nip.io:5777/realms/sky/protocol/openid-connect/auth"
+  redeemUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky/protocol/openid-connect/token"
+  oidcJwksUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky/protocol/openid-connect/certs"
+  profileUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky/protocol/openid-connect/userinfo"
+  # Allow rd (post-login return) to the local frontend origin on :4200.
+  whitelistDomain: "localhost:4200"
+
+session:
+  corsOrigin: "http://localhost:4200"
+  # Browser-reachable Keycloak end-session endpoint (port 5777 serves the login
+  # page, like loginUrl above); post-logout returns to the dev-server origin.
+  # The post_logout_redirect_uri host must be allowlisted in the sky-backend
+  # client attributes (post.logout.redirect.uris in sky-realm.json).
+  logoutUrl: "http://keycloak.127.0.0.1.nip.io:5777/realms/sky/protocol/openid-connect/logout?post_logout_redirect_uri=http://localhost:4200/home&client_id=sky-backend"
 
 ingress:
   tls:

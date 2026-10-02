@@ -38,6 +38,9 @@
         "http://localhost:5777/oauth2/callback",
         "http://localhost:5777/login/oauth2/code/keycloak"
       ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:5777/*"
+      },
       "webOrigins": ["+"],
       "defaultClientScopes": ["email", "profile", "roles", "web-origins", "acr"],
       "protocolMappers": [
@@ -50,6 +53,21 @@
             "included.client.audience": "sky-backend",
             "id.token.claim": "false",
             "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "sky-backend-realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
           }
         }
       ]

@@ -2,7 +2,7 @@
 
 Single source of commands for standing the full sky backend stack up on a local k3d cluster and verifying it with the Bruno collection.
 
-The cluster is named `k3d-sky`. Host port 5777 maps to the cluster load balancer port 80. All traffic enters through nginx-ingress. Keycloak is the OIDC provider at `http://keycloak.127.0.0.1.nip.io:5777`. The nip.io domain resolves to 127.0.0.1 on the host without touching the hosts file, and CoreDNS resolves it to the nginx-ingress ClusterIP inside the cluster so services can reach Keycloak for OIDC discovery.
+The cluster is named `k3d-sky`. Host ports 5777 and 80 both map to the cluster load balancer port 80. All traffic enters through nginx-ingress. Keycloak is the OIDC provider at `http://keycloak.127.0.0.1.nip.io:5777`. The nip.io domain resolves to 127.0.0.1 on the host without touching the hosts file, and CoreDNS resolves it to the nginx-ingress ClusterIP inside the cluster so services can reach Keycloak for OIDC discovery.
 
 Every command below is a single line and runs unchanged in a Unix shell and in PowerShell 7. Run all of them from the repository root.
 
@@ -15,7 +15,7 @@ For running the services without Kubernetes (Gradle or Docker Compose) see [conf
 The cluster the create command in step 1 produces runs as exactly two Docker containers, regardless of how many applications you deploy:
 
 - `k3d-sky-server-0`, the single k3s node. Every pod (the four services plus PostgreSQL, floci, Kafka, Keycloak, and Keycloak's own PostgreSQL) runs inside this one container as a containerd container, not as a Docker container. `docker ps` does not show them, `kubectl get pods` does.
-- `k3d-sky-serverlb`, a small proxy. It is not a second Kubernetes server. It is the load balancer that forwards host port 5777 into the cluster's nginx-ingress on port 80.
+- `k3d-sky-serverlb`, a small proxy. It is not a second Kubernetes server. It is the load balancer that forwards host ports 5777 and 80 into the cluster's nginx-ingress on port 80.
 
 So you do not run two Docker containers per app. You run two Docker containers for the entire cluster, and the sky pods live inside the server node. The name "serverlb" is k3d's, it means "load balancer in front of the server", not "a second server".
 
@@ -70,7 +70,7 @@ Building by hand works too and is documented in [config/local-dev/local_README.m
 Run once. Skip if the cluster already exists. Traefik is disabled because the stack uses nginx-ingress.
 
 ```bash
-k3d cluster create sky --port "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
+k3d cluster create sky --port "5777:80@loadbalancer" --port "80:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
 ```
 
 If every `kubectl` command from here on fails to connect while the cluster itself is healthy, the kubeconfig address k3d just wrote is the likely cause. See item 6 under [Known issues](#known-issues-and-design-notes).
@@ -141,7 +141,7 @@ The self-signed development certificate and its ready-made Secret manifest are c
 kubectl apply -f config/k8s/secret/ssl/dev-ssl-cert.yaml
 ```
 
-The certificate carries `CN=localhost` and is valid for ten years. Its subject alternative names are `localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`, which is every host a local Ingress serves: the four services on `localhost` and Keycloak on the nip.io name. Trust it in a browser and those names verify, anything else does not. The local overlays set `ssl-redirect: "false"` and the cluster only maps host port 5777 to the load balancer's port 80, so the default local path is plain HTTP and the certificate mostly just satisfies the `tls` block on each Ingress.
+The certificate carries `CN=localhost` and is valid for ten years. Its subject alternative names are `localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`, which is every host a local Ingress serves: the four services on `localhost` and Keycloak on the nip.io name. Trust it in a browser and those names verify, anything else does not. The local overlays set `ssl-redirect: "false"` and the default local path is plain HTTP on host port 5777 (host port 80 serves the same ingress for Keycloak's portless browser URLs), and the certificate mostly just satisfies the `tls` block on each Ingress.
 
 ---
 
@@ -203,6 +203,12 @@ Kafka has one definition, the chart at [config/k8s/helm/kafka/](helm/kafka/), wh
 helm upgrade --install kafka-service config/k8s/helm/kafka -f config/k8s/helm/kafka/values-local.yaml -n default
 ```
 
+The service overlays point `auth-url` at oauth2-proxy, so every authenticated write answers 500 on a fresh cluster until it is deployed:
+
+```bash
+helm upgrade --install oauth2-proxy config/k8s/helm/api-gateway/oauth2-proxy -f config/k8s/helm/api-gateway/oauth2-proxy/values-local.yaml -n default
+```
+
 Wait for infrastructure to be ready, one wait per command:
 
 ```bash
@@ -219,6 +225,10 @@ kubectl wait pod -l component=keycloak --for=condition=Ready --timeout=180s
 
 ```bash
 kubectl wait pod -l component=floci --for=condition=Ready --timeout=120s
+```
+
+```bash
+kubectl wait pod -l k8s-app=oauth2-proxy --for=condition=Ready --timeout=120s
 ```
 
 ```bash
@@ -296,6 +306,12 @@ curl -s "http://keycloak.127.0.0.1.nip.io:5777/realms/sky/.well-known/openid-con
 ```
 
 The `issuer` field must read `http://keycloak.127.0.0.1.nip.io/realms/sky`. If it reads anything else the services will reject every token the cluster Keycloak mints.
+
+---
+
+### 9b. Browser login needs no helper process
+
+API clients (Bruno, curl) only ever touch Keycloak on `:5777`. A browser login additionally `POST`s the Keycloak login form to the portless URL `http://keycloak.127.0.0.1.nip.io/...` (Keycloak builds all browser URLs from `KC_HOSTNAME`, which is deliberately portless so discovery and the token issuer stay portless for service-side validation). Host port 80 is mapped to the load balancer at cluster creation (step 1), so the portless URL answers through the ingress with no helper process. Binding host port 80 needs no extra privilege beyond what Docker already has; the mapping lives in the load balancer container, not in a per-test background forwarder.
 
 ---
 
@@ -385,7 +401,7 @@ Docker Desktop will not show the k3d containers as one grouped stack with a sing
 Remove the chart releases:
 
 ```bash
-helm uninstall sky-offer sky-booking sky-message sky-notify keycloak floci postgres database-persistent-volume-claim -n default
+helm uninstall sky-offer sky-booking sky-message sky-notify keycloak floci postgres database-persistent-volume-claim oauth2-proxy -n default
 ```
 
 That line takes the stored photos with it. [config/k8s/helm/infra/floci/templates/floci-pvc.yaml](helm/infra/floci/templates/floci-pvc.yaml) is a plain template rather than a StatefulSet volume claim template, so Helm owns `floci-pvc` and `helm uninstall floci` deletes the claim and every object in the store. To pause work and keep the objects, do not tear down at all, use `k3d cluster stop sky` from the section above.

@@ -627,6 +627,343 @@ paths:
       summary: Upload a photo for an offer (owner only)
       tags:
       - Owner offers
+  /api/v1/owner/offers/{offerId}/photos:
+    post:
+      operationId: uploadGalleryPhoto
+      parameters:
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferDTO"
+          description: Photo appended to gallery
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer not found
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Content Too Large: gallery holds at most 10 photos."
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Unsupported Media Type: the request body was not sent in the\
+            \ media type this operation consumes."
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+        "502":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Gateway: a dependency this operation needs answered, and\
+            \ answered in a way the service cannot act on. The caller's own request\
+            \ was well formed and retrying it unchanged will not help, so there is\
+            \ no Retry-After. The cause is between the service and its dependency."
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      summary: Upload a photo to the offer gallery (owner only)
+      tags:
+      - Owner offers
+  /api/v1/owner/offers/{offerId}/photos/{photoId}:
+    delete:
+      operationId: deleteGalleryPhoto
+      parameters:
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: photoId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferDTO"
+          description: Photo removed
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer or photo not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Delete a gallery photo (owner only)
+      tags:
+      - Owner offers
+  /api/v1/owner/offers/{offerId}/photos/{photoId}/cover:
+    put:
+      operationId: setGalleryCover
+      parameters:
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: photoId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferDTO"
+          description: Cover updated
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer or photo not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Set a gallery photo as cover (owner only)
+      tags:
+      - Owner offers
+  /api/v1/owner/offers/{offerId}/photos/{photoId}/position:
+    put:
+      operationId: reorderGalleryPhoto
+      parameters:
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: photoId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: position
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferDTO"
+          description: Gallery reordered
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer or photo not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Reorder a gallery photo (owner only)
+      tags:
+      - Owner offers
   /api/v1/search:
     post:
       description: "Searches the offer inventory for the term sent as the request\
@@ -714,12 +1051,18 @@ components:
           type: string
           maxLength: 255
           minLength: 0
+        coverPhotoUrl:
+          type: string
         description:
           type: string
           maxLength: 3000
           minLength: 0
         externalPhotoUrl:
           type: string
+        gallery:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhotoDTO"
         hotelName:
           type: string
           maxLength: 255
@@ -847,6 +1190,17 @@ components:
           $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
+    PhotoDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          format: int32
+        url:
+          type: string
     ProblemDetail:
       type: object
       properties:

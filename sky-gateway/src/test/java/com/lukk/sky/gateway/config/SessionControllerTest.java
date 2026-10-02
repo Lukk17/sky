@@ -49,7 +49,9 @@ class SessionControllerTest {
         assertThat(controller
                 .session(Mono.just(authentication(user)), exchangeWithCsrfToken())
                 .block())
-                .isEqualTo(Map.of("email", "user@sky.dev", "csrfToken", "csrf-token-value"));
+                .containsEntry("email", "user@sky.dev")
+                .containsEntry("csrfToken", "csrf-token-value")
+                .containsKey("logoutUrl");
     }
 
     @Test
@@ -58,7 +60,8 @@ class SessionControllerTest {
                 .session(Mono.just(authentication("plain-user")), MockServerWebExchange.from(
                         org.springframework.mock.http.server.reactive.MockServerHttpRequest.get("/api/session")))
                 .block())
-                .isEqualTo(Map.of("email", "plain-user"));
+                .containsEntry("email", "plain-user")
+                .containsKey("logoutUrl");
     }
 
     @Test

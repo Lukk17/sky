@@ -24,6 +24,12 @@ ingress:
       nginx.ingress.kubernetes.io/proxy-send-timeout: "90"
       nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local:4180/oauth2/auth"
       nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
+      # Local dev: Angular dev server (http://localhost:4200) calls the API
+      # cross-origin with credentials (session cookie + X-XSRF-TOKEN).
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:4200"
+      nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+      nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-XSRF-TOKEN"
     controller: "nginx"
     hosts:
       - host: "localhost"

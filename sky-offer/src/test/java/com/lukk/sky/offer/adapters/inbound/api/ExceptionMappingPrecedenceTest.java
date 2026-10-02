@@ -101,7 +101,11 @@ class ExceptionMappingPrecedenceTest {
                         502, "Photo delete failed. The object store rejected the request."),
                 Arguments.of("OfferException",
                         new OfferException("Uploaded file must not be empty."),
-                        400, "Uploaded file must not be empty."));
+                        400, "Uploaded file must not be empty."),
+                Arguments.of("GalleryLimitExceededException",
+                        new com.lukk.sky.offer.domain.exception.GalleryLimitExceededException(
+                                "Gallery holds at most 10 photos."),
+                        413, "Gallery holds at most 10 photos."));
     }
 
     @ParameterizedTest(name = "{0} still answers {2}")

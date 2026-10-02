@@ -26,7 +26,7 @@ export class StompService {
     this.client = Stomp.over(new WebSocket(buildSocketUrl()));
 
     this.client.onConnect = () => {
-      this.client.subscribe('/sky/notify', (message: IMessage) => {
+      this.client.subscribe('/user/queue/notify', (message: IMessage) => {
         this.messages.next(message.body);
       });
     };

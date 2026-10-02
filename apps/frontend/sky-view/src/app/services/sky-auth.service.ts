@@ -8,6 +8,7 @@ import {CsrfTokenStore} from './csrf-token.store';
 export interface SessionInfo {
   email: string;
   csrfToken?: string;
+  logoutUrl?: string;
 }
 
 const POST_LOGIN_PATH_KEY = 'postLoginPath';
@@ -40,6 +41,7 @@ export class SkyAuthService {
   private logoutUrl = `${environment.apiBaseUrl}/logout`;
 
   private currentUser = new BehaviorSubject<string | null>(null);
+  private endSessionUrl: string | null = null;
   readonly currentUser$: Observable<string | null> = this.currentUser.asObservable();
 
   constructor(
@@ -54,10 +56,12 @@ export class SkyAuthService {
     this.http.get<SessionInfo>(this.sessionUrl).subscribe({
       next: (session) => {
         this.csrfTokenStore.setToken(session.csrfToken ?? null);
+        this.endSessionUrl = session.logoutUrl ?? null;
         this.currentUser.next(session.email);
       },
       error: () => {
         this.csrfTokenStore.setToken(null);
+        this.endSessionUrl = null;
         this.currentUser.next(null);
       },
     });
@@ -68,11 +72,16 @@ export class SkyAuthService {
       POST_LOGIN_PATH_KEY,
       isSafePostLoginPath(returnPath) ? returnPath : DEFAULT_POST_LOGIN_PATH
     );
-    window.location.assign(this.loginUrl);
+    // rd returns the browser to the frontend origin after the edge callback;
+    // without it the callback lands on the edge root (nginx 404 under k3d).
+    window.location.assign(`${this.loginUrl}?rd=${encodeURIComponent(window.location.href)}`);
   }
 
   logout(): void {
     this.currentUser.next(null);
+    // Clear the edge session first, then route the full browser through the
+    // Keycloak end-session endpoint so the SSO session dies too. An XHR POST
+    // alone leaves the Keycloak cookie alive and the next login is silent.
     this.http.post(this.logoutUrl, {}).subscribe({
       next: () => this.afterLogout(),
       error: () => this.afterLogout(),
@@ -87,6 +96,12 @@ export class SkyAuthService {
 
   private afterLogout(): void {
     this.csrfTokenStore.setToken(null);
+    const endSessionUrl = this.endSessionUrl;
+    this.endSessionUrl = null;
+    if (endSessionUrl) {
+      window.location.assign(endSessionUrl);
+      return;
+    }
     this.router.navigate(['/home']).then();
   }
 }

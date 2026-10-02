@@ -51,6 +51,13 @@ service:
 session:
   port: 4181
   csrfHeader: "X-XSRF-TOKEN"
+  # Empty by default; values-local.yaml sets the dev-server origin so
+  # cross-origin credentialed calls to /api/session receive CORS headers.
+  corsOrigin: ""
+  # Keycloak RP-initiated logout URL served as logoutUrl by /api/session; the
+  # frontend routes the browser through it after POST /logout so the Keycloak
+  # SSO session dies too. Set per environment in values-<env>.yaml.
+  logoutUrl: ""
 
 # NOTE: edgeOriginCheck below is recorded but NOT applied: the k3d/prod
 # ingress-nginx admission webhook rejects configuration-snippet/server-snippet
@@ -71,6 +78,8 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
 
   controller: "nginx"
   hosts:

@@ -22,6 +22,12 @@ ingress:
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      # Session gate for the websocket handshake: oauth2-proxy validates the
+      # session cookie and the validated email reaches sky-notify as
+      # X-Auth-Request-Email (auth-response-headers overwrites a caller-sent
+      # header of the same name, so it stays edge-asserted).
+      nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local:4180/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email"
     controller: "nginx"
     hosts:
       - host: "localhost"
