@@ -39,44 +39,64 @@ body {
 .p-button:not(.glass-btn-accent):not(.glass-btn-danger):not(.glass-btn),
 .p-button.glass-btn, .p-button.glass-btn-accent, .p-button.glass-btn-danger, .p-button.send-ghost-btn,
 button.p-button, p-button .p-button {
-  background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box;
+  position: relative;
+  background: transparent;
   border: 1px solid transparent;
   color: #fff;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 16px rgba(0,0,0,0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-radius: 0.7rem;
+}
+.p-button:not(.glass-btn-accent):not(.glass-btn-danger):not(.glass-btn)::before,
+.p-button.glass-btn::before, .p-button.glass-btn-accent::before, .p-button.glass-btn-danger::before, .p-button.send-ghost-btn::before,
+button.p-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from 0deg, #ff2222, #22ff44, #3388ff, #ff2222) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }
 .p-button:not(.glass-btn-accent):not(.glass-btn-danger):not(.glass-btn):hover,
 .p-button.glass-btn:hover, .p-button.glass-btn-accent:hover, .p-button.glass-btn-danger:hover, .p-button.send-ghost-btn:hover {
-  background: linear-gradient(rgba(40,40,52,0.65), rgba(40,40,52,0.65)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box;
+  background: transparent;
 }
 .glass-btn-accent {
-  background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box;
+  position: relative;
+  background: transparent;
   border: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 16px rgba(249,115,22,0.25);
+  box-shadow: none;
   color: #fff;
 }
 .glass-btn {
-  background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box;
+  position: relative;
+  background: transparent;
   border: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
-  backdrop-filter: blur(12px);
+  box-shadow: none;
+  backdrop-filter: none;
   color: #fff;
 }
 .glass-btn-danger {
-  background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box;
+  position: relative;
+  background: transparent;
   border: 1px solid transparent;
   color: #f87171;
 }
 .glass-btn-danger .p-button-label, .glass-btn-danger.p-button .p-button-label { color: #f87171; }
 .send-ghost-btn {
-  background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box;
+  position: relative;
+  background: transparent;
   border: 1px solid transparent;
   color: #fff;
 }
 .send-ghost-btn:hover {
-  background: linear-gradient(rgba(40,40,52,0.65), rgba(40,40,52,0.65)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box;
+  background: transparent;
 }
 .p-card .p-card-title { text-align: center; }
 .p-badge-warn, .p-badge.p-badge-warn {
@@ -85,10 +105,12 @@ button.p-button, p-button .p-button {
   border: 1px solid rgba(255,255,255,0.25);
 }
 button.p-button-success, .p-button-success {
-  background: rgba(249,115,22,0.16);
-  border-color: rgba(249,115,22,0.55);
+  position: relative;
+  background: transparent;
+  border: 1px solid transparent;
   color: #fdba74;
 }
+button.p-button-success::before, .p-button-success::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: conic-gradient(from 0deg, #ff2222, #22ff44, #3388ff, #ff2222) border-box; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; pointer-events: none; }
 input, textarea, .p-inputtext {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
@@ -107,9 +129,11 @@ input, textarea, .p-inputtext {
 .compact-row:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
 .msg-layout, .msg-threads, .msg-conversation, .bubble { background: rgba(255,255,255,0.05); backdrop-filter: blur(14px); border-color: rgba(255,255,255,0.10); }
 .bubble-row.own .bubble { background: rgba(249,115,22,0.20); border-color: rgba(249,115,22,0.4); }
-.glass-file-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 0.7rem; background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box; border: 1px solid transparent; color: #fff; cursor: pointer; width: fit-content; box-shadow: inset 0 1px 0 rgba(255,255,255,0.22); }
+.glass-file-btn { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 0.7rem; background: transparent; border: 1px solid transparent; color: #fff; cursor: pointer; width: fit-content; box-shadow: none; }
+.glass-file-btn::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: conic-gradient(from 0deg, #ff2222, #22ff44, #3388ff, #ff2222) border-box; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; pointer-events: none; }
 .glass-file-input { display: none; width: 0; height: 0; opacity: 0; position: absolute; pointer-events: none; }
-.glossy-search-btn.p-button { background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box; border: 1px solid transparent; border-radius: 9999px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25); }
+.glossy-search-btn.p-button { position: relative; background: transparent; border: 1px solid transparent; border-radius: 9999px; box-shadow: none; }
+.glossy-search-btn.p-button::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: conic-gradient(from 0deg, #ff2222, #22ff44, #3388ff, #ff2222) border-box; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; pointer-events: none; }
 .glossy-search-btn .pi-search { background: linear-gradient(180deg,#fff,#fdba74 55%,#f97316); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 1px 1px rgba(255,255,255,0.4)); font-size: 1.05rem; }
 .glass-dialog .p-dialog-header, .glass-dialog .p-dialog-content { background: rgba(18,18,24,0.85); backdrop-filter: blur(18px); color: #fff; }
 .cal-month-view { background: rgba(18,18,24,0.72); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.10); border-radius: 0.8rem; color: #fff; }

@@ -17,7 +17,8 @@
 .err { color: #f87171; }
 .date-wrap { position: relative; display: flex; align-items: center; }
 .date-field { padding-right: 2.5rem; }
-.cal-btn { position: absolute; right: 0.4rem; display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 0.6rem; background: linear-gradient(rgba(24,24,32,0.55), rgba(24,24,32,0.55)) padding-box, linear-gradient(135deg,#ff2d2d,#f97316,#facc15,#a855f7,#3b82f6) border-box; border: 1px solid transparent; color: #fdba74; cursor: pointer; }
+.cal-btn { position: absolute; right: 0.4rem; display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 0.6rem; background: transparent; border: 1px solid transparent; color: #fdba74; cursor: pointer; }
+.cal-btn::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: conic-gradient(from 0deg, #ff2222, #22ff44, #3388ff, #ff2222) border-box; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; pointer-events: none; }
 .mini-picker { border: 1px solid rgba(255,255,255,0.12); border-radius: 0.8rem; overflow: hidden; background: rgba(18,18,24,0.85); }
 .about-row .fit-card { height: fit-content; }
 .delete-btn .p-button-label, p-button.delete-btn .p-button-label { color: #f87171; }
