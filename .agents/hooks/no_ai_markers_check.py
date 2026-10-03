@@ -7,19 +7,12 @@ en dash (U+2013), a semicolon, bold, or italic. Bold and italic are matched as
 paired delimiters in both spellings, `**text**` and `__text__` for bold,
 `*text*` and `_text_` for italic, so a bullet marker, a multiplication sign and
 a snake_case identifier are not mistaken for emphasis. No bold line is
-allowed anywhere, including the status block: per
-.agents/skills/user-communication/references/status-block.md the block carries
-a 21-hyphen rule above the word Status and nowhere else, Done as crossed
-plain text with no fence, every other group (Running, NOW, Next/Then,
-Waiting on, State) in its own text code block, Running omitted when empty,
-and State last with exactly WAITING FOR YOU, WORKING, or DONE. Fenced
-status groups are already stripped as code, so their text is not checked,
-while the Status heading, the hyphen rule, and the Done lines are checked
-as ordinary prose with no emphasis allowed.
+allowed. The status block carries NOW inside a fenced text block, which is
+stripped from the check like any other fenced block.
 
 Four of those markers can be fixed mechanically, and `fix_prose` does it: a
 dash becomes a comma with clean spacing (a hyphen in a digit range), and bold
-and italic lose their delimiters everywhere with no exception. Code spans, fenced
+and italic lose their delimiters. Code spans, fenced
 blocks, link targets and URLs stay as written. The fix works line by line, so a
 batch of whole lines comes out the same as the whole text would. A semicolon
 joining two clauses cannot be fixed without reading the sentence, so it is only
@@ -175,16 +168,14 @@ REASON_FIXES = (
 )
 
 REASON_TAIL = (
-    ". That reply is already on screen, so do not repeat it and do not rewrite it "
-    "in full. Write only the sentences or lines that needed fixing, one per line, "
-    'each starting with "Correction:" followed by the fixed text in quotes, and '
-    "write nothing else." + REASON_FIXES
+    ". Send a normal corrected reply with every violation fixed, ending with "
+    "the status tail." + REASON_FIXES
 )
 
 SUBAGENT_REASON_TAIL = (
     ". That reply is the report your caller receives, and your next reply "
-    "replaces it, so write the whole report again with every violation fixed and "
-    "nothing left out." + REASON_FIXES
+    "replaces it, so write the whole report again as a normal corrected reply "
+    "with every violation fixed, ending with the status tail." + REASON_FIXES
 )
 
 # Claude Code names the event and carries agent_id only inside a subagent. The
@@ -295,9 +286,7 @@ def strip_code(text: str) -> str:
     Fenced blocks, table rows, inline code spans, escaped delimiters, link
     targets, bare URLs and HTML entities all go. A table row goes whole, because its cell separators
     and its entities are markup rather than punctuation, and `&amp;` ends in a
-    semicolon that is not one. The status block's fenced groups go with the
-    fences, while its Status heading, hyphen rule, and Done lines are checked
-    as ordinary prose with no emphasis allowed.
+    semicolon that is not one.
     """
     kept: list[str] = []
     fence = ""

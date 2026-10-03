@@ -4,8 +4,8 @@
     "sessionStart": [
       {
         "type": "command",
-        "bash": "printf '%s\\n' '{\"additionalContext\": \"Before code work, name the skills and subagents that own this task and invoke them, or say none apply and why, in one line. Follow the user-communication skill when writing to the user. End every reply with the status block from the skill references/status-block.md exactly: one 21-hyphen rule above Status and nowhere else, Done as crossed plain text, every other group in its own text code block in order Running (omit when nothing runs, no backticks), NOW, Next and Then, Waiting on, State last with exactly WAITING FOR YOU, WORKING, or DONE, no bold anywhere, nothing after State.\"}'",
-        "powershell": "echo '{\"additionalContext\": \"Before code work, name the skills and subagents that own this task and invoke them, or say none apply and why, in one line. Follow the user-communication skill when writing to the user. End every reply with the status block from the skill references/status-block.md exactly: one 21-hyphen rule above Status and nowhere else, Done as crossed plain text, every other group in its own text code block in order Running (omit when nothing runs, no backticks), NOW, Next and Then, Waiting on, State last with exactly WAITING FOR YOU, WORKING, or DONE, no bold anywhere, nothing after State.\"}'"
+        "bash": "printf '%s\\n' '{\"additionalContext\": \"Before code work, name the skills and subagents that own this task and invoke them, or say none apply and why, in one line. Follow the user-communication skill when writing to the user. End every reply with the status block the skill describes, plain text only.\"}'",
+        "powershell": "echo '{\"additionalContext\": \"Before code work, name the skills and subagents that own this task and invoke them, or say none apply and why, in one line. Follow the user-communication skill when writing to the user. End every reply with the status block the skill describes, plain text only.\"}'"
       },
       {
         "type": "command",
