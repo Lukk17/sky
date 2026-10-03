@@ -31,4 +31,11 @@ test('session login through the gateway', async ({ page }) => {
   const sessionState = await page.evaluate(() =>
     fetch('http://localhost:5777/api/session', { credentials: 'include' }).then((response) => response.status));
   expect(sessionState).toBe(401);
+
+  // Immediate re-login must land straight on the Keycloak form with zero
+  // extra clicks and zero confirm page: the SSO session died at logout.
+  await page.goto('/auth');
+  await page.locator('app-auth').getByRole('button', { name: 'Login' }).click();
+  await expect(page.locator('#username')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('text=Logging out')).toHaveCount(0);
 });

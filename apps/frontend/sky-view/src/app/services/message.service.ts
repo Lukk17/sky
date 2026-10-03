@@ -41,15 +41,19 @@ export class MessageService {
     );
   }
 
+  // Threads are built client-side from the whole inbox, so ask for one big
+  // page: the default size 20 hides older threads and any message past it.
+  private static readonly PAGE = '?size=500';
+
   getReceived() {
-    return this.http.get<Message[]>(this.RECEIVED_MESSAGES_URL).pipe(
+    return this.http.get<Message[]>(`${this.RECEIVED_MESSAGES_URL}${MessageService.PAGE}`).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getReceived()')),
       map((resp) => ResponseHandlerService.handleMessageResponse(resp))
     );
   }
 
   getSent() {
-    return this.http.get<Message[]>(this.SENT_MESSAGES_URL).pipe(
+    return this.http.get<Message[]>(`${this.SENT_MESSAGES_URL}${MessageService.PAGE}`).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getSent()')),
       map((resp) => ResponseHandlerService.handleMessageResponse(resp))
     );

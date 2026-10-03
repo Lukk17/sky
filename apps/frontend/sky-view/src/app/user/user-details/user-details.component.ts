@@ -27,7 +27,19 @@ export class UserDetailsComponent implements OnInit {
       if (email) {
         this.offerService.getAllOffers().subscribe({
           next: (all) => {
-            const byId = new Map((all ?? []).map((o) => [o.id, o]));
+            const list = all ?? [];
+            const byId = new Map(list.map((o) => [o.id, o]));
+            const wanted = email.trim().toLowerCase();
+            this.offerService.getUserOffers().subscribe({
+              next: (owned) => {
+                this.myOffers = (owned && owned.length > 0)
+                  ? owned
+                  : list.filter((o) => (o.ownerEmail ?? '').toLowerCase() === wanted);
+              },
+              error: () => {
+                this.myOffers = list.filter((o) => (o.ownerEmail ?? '').toLowerCase() === wanted);
+              },
+            });
             this.bookingService.getBookedOffers().subscribe({
               next: (bookings) => {
                 this.bookedOffers = (bookings ?? []).map(
@@ -39,10 +51,6 @@ export class UserDetailsComponent implements OnInit {
           },
           error: (e) => this.handleError(e),
         });
-        this.offerService.getUserOffers().subscribe({
-          next: (o) => { this.myOffers = o ?? []; },
-          error: (e) => this.handleError(e),
-        });
       }
     });
   }
@@ -51,6 +59,15 @@ export class UserDetailsComponent implements OnInit {
     const found = this.myOffers.find((o) => o.id === id);
     if (found) {
       this.offerService.detailedOffer = found;
+    } else {
+      this.offerService.getAllOffers().subscribe({
+        next: (all) => {
+          const match = (all ?? []).find((o) => o.id === id);
+          if (match) {
+            this.offerService.detailedOffer = match;
+          }
+        },
+      });
     }
     this.router.navigate(['/offerDetails'], {queryParams: {offerId: id}}).then();
   }

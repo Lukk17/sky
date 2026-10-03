@@ -15,7 +15,22 @@
   margin-bottom: 0.75rem;
   background: rgba(18,18,24,0.72);
   backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255,255,255,0.10);
+  border: 1px solid transparent;
+  border-bottom-left-radius: 0.9rem;
+  border-bottom-right-radius: 0.9rem;
+}
+.sky-toolbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px 1px 1px 1px;
+  background: conic-gradient(from 0deg, #ff2222, #22ff44, #3388ff, #ff2222) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }
 .sky-brand-mark {
   width: 32px;

@@ -1,69 +1,75 @@
 @if (offer) {
-<div class="glass-page flex flex-col gap-4">
+<div class="glass-page fifths" data-testid="offer-fifths">
   @if (isOwner) {
     <div class="glass-card owner-bar">
       <p-button label="Edit offer" icon="pi pi-pencil" styleClass="glass-btn" (onClick)="editOffer(offer)" data-testid="offer-edit"></p-button>
       <p-button label="Delete offer" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" (onClick)="deleteOffer(offer.id)" data-testid="offer-delete"></p-button>
     </div>
   }
-  @if (galleryPhotos().length > 0) {
-    <p-galleria [value]="galleryPhotos()" [numVisible]="5" [showThumbnails]="false" [showItemNavigators]="true" [showIndicators]="false" [circular]="true" styleClass="glass-card offer-galleria" data-testid="offer-gallery">
-      <ng-template #item let-photo>
-        <img alt="Offer gallery photo" class="hero-img" src="{{photo.url ?? photo}}" />
-      </ng-template>
-    </p-galleria>
-  } @else {
-    <p class="muted">No photos yet</p>
-  }
-  <div class="fit-row">
-    <div class="glass-card title-card">
-      <h3 class="offer-title">{{offer.hotelName}}</h3>
-      <p class="price-line"><span class="price" data-testid="offer-price">${{offer.price}}</span></p>
-    </div>
-  </div>
-  <div class="fit-row booking-row">
-    <p-card header="Make your reservation" styleClass="glass-card fact-card reserve-card">
-      <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm, offer)" class="flex flex-col gap-3">
-        <div class="date-wrap">
-          <input pInputText id="dateToBook" name="dateToBook" [(ngModel)]="bookingDateText" required placeholder="dd/mm/yyyy" maxlength="10" class="w-full glass-input date-field" data-testid="booking-date" (input)="onDateInput($event)" (focus)="onDateFocus()" />
-          <button type="button" class="cal-btn" (click)="pickerVisible = !pickerVisible" aria-label="Open calendar" data-testid="booking-calendar-btn"><i class="pi pi-calendar"></i></button>
-        </div>
-        @if (pickerVisible) {
-          <div class="mini-picker" data-testid="booking-picker">
-            <mwl-calendar-month-view [viewDate]="pickerDate" [events]="events" (dayClicked)="onPickerDay($event.day.date)">
-            </mwl-calendar-month-view>
-          </div>
-        }
-        <p-button label="Book now" icon="pi pi-calendar-plus" type="submit" styleClass="glass-btn" [disabled]="!isDateValid()" data-testid="booking-submit"></p-button>
-      </form>
-      @if (bookingError) {
-        <p class="err" data-testid="booking-error">{{bookingError}}</p>
+  <div class="fifths-grid">
+    <div class="fifth empty-left" aria-hidden="true"></div>
+    <section class="fifth gallery-col">
+      <h3 class="offer-title-plain" data-testid="offer-title">{{offer.hotelName}}</h3>
+      @if (galleryPhotos().length > 0) {
+        <p-galleria [value]="galleryPhotos()" [numVisible]="5" [showThumbnails]="false" [showItemNavigators]="true" [showIndicators]="false" [circular]="true" styleClass="glass-card offer-galleria" data-testid="offer-gallery">
+          <ng-template #item let-photo>
+            <img alt="Offer gallery photo" class="hero-img" src="{{photo.url ?? photo}}" />
+          </ng-template>
+        </p-galleria>
+      } @else {
+        <p class="muted">No photos yet</p>
       }
-    </p-card>
-    @if (!isOwner) {
-      <p-card header="Contact owner" styleClass="glass-card fact-card contact-card">
-        <p class="muted owner-mail">{{offer.ownerEmail}}</p>
-        <p-button label="Chat with owner" icon="pi pi-comments" styleClass="glass-btn" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
+      <div class="contact-row">
+        @if (!isOwner) {
+          <p-button label="Contact owner" icon="pi pi-comments" styleClass="glass-btn" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
+        }
+      </div>
+      <div class="facts-row">
+        <span class="fact-chip"><i class="pi pi-users"></i>{{offer.roomCapacity}} guests</span>
+        <span class="fact-chip"><i class="pi pi-map-marker"></i>{{offer.city}}, {{offer.country}}</span>
+        <span class="fact-chip"><i class="pi pi-briefcase"></i>{{offer.ownerEmail}}</span>
+      </div>
+      <p-card header="About this place" styleClass="glass-card about-card">
+        <p class="about-text">{{offer.description}}</p>
       </p-card>
-    }
+      <p-card header="Bookings" styleClass="glass-card bookings-card quarter-cal">
+        <mwl-calendar-month-view [viewDate]="viewDate" [events]="events" (dayClicked)="onDayClicked($event.day.date)" data-testid="booking-calendar">
+        </mwl-calendar-month-view>
+        @if (!isLoggedIn) {
+          <p class="muted">Calendar is read-only. Log in to book.</p>
+        }
+      </p-card>
+      <p-card header="Comments" styleClass="glass-card comments-card" data-testid="offer-comments">
+        <p>{{offer.comment}}</p>
+      </p-card>
+    </section>
+    <aside class="fifth side-col">
+      <p-card header="Your reservation" styleClass="glass-card reserve-card" data-testid="reserve-card">
+        <p class="price-refined" data-testid="offer-price"><span class="price-amount">${{offer.price}}</span><span class="price-per"> / night</span></p>
+        <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm, offer)" class="flex flex-col gap-3">
+          <div class="date-wrap">
+            <input pInputText id="dateToBook" name="dateToBook" [(ngModel)]="bookingDateText" required placeholder="dd/mm/yyyy" maxlength="10" class="w-full glass-input date-field" data-testid="booking-date" (input)="onDateInput($event)" (focus)="onDateFocus()" />
+            <button type="button" class="cal-btn" (click)="pickerVisible = !pickerVisible" aria-label="Open calendar" data-testid="booking-calendar-btn"><i class="pi pi-calendar"></i></button>
+          </div>
+          @if (pickerVisible) {
+            <div class="mini-picker" data-testid="booking-picker">
+              <mwl-calendar-month-view [viewDate]="pickerDate" [events]="events" (dayClicked)="onPickerDay($event.day.date)">
+              </mwl-calendar-month-view>
+            </div>
+          }
+          <p-button label="Book now" icon="pi pi-calendar-plus" type="submit" styleClass="glass-btn" [disabled]="!isDateValid()" data-testid="booking-submit"></p-button>
+        </form>
+        @if (bookingError) {
+          <p class="err" data-testid="booking-error">{{bookingError}}</p>
+        }
+      </p-card>
+      <div class="map-tile glass-card" data-testid="location-map" role="img" [attr.aria-label]="'Map of ' + offer.city + ', ' + offer.country">
+        <i class="pi pi-map-marker map-pin"></i>
+        <span class="map-label">{{offer.city}}, {{offer.country}}</span>
+      </div>
+    </aside>
+    <div class="fifth empty-right" aria-hidden="true"></div>
   </div>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-tag"></i><span class="muted">Price</span><strong>${{offer.price}}</strong></div></p-card>
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-users"></i><span class="muted">Capacity</span><strong>{{offer.roomCapacity}}</strong></div></p-card>
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-map-marker"></i><span class="muted">Location</span><strong>{{offer.city}}, {{offer.country}}</strong></div></p-card>
-    <p-card styleClass="glass-card fact-card"><div class="fact"><i class="pi pi-briefcase"></i><span class="muted">Owner</span><strong>{{offer.ownerEmail}}</strong></div></p-card>
-  </div>
-  <div class="fit-row about-row">
-    <p-card header="About" styleClass="glass-card fit-card"><p class="text-center">{{offer.description}}</p></p-card>
-    <p-card header="Comment" styleClass="glass-card fit-card"><p>{{offer.comment}}</p></p-card>
-  </div>
-  <p-card header="Bookings" styleClass="glass-card bookings-card">
-    <mwl-calendar-month-view [viewDate]="viewDate" [events]="events" (dayClicked)="onDayClicked($event.day.date)" data-testid="booking-calendar">
-    </mwl-calendar-month-view>
-    @if (!isLoggedIn) {
-      <p class="muted">Calendar is read-only. Log in to book.</p>
-    }
-  </p-card>
 </div>
 <p-dialog header="Booking confirmed" [(visible)]="bookingConfirmVisible" [modal]="true" styleClass="glass-dialog rgb-dialog" [style]="{width: '24rem'}">
   <div data-testid="booking-confirm-dialog" class="confirm-body">

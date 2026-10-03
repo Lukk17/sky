@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test('add-offer requires a photo file then creates and uploads', async ({ page }) => {
   await page.goto('/addOffer');
+  await expect(page.getByTestId('add-offer-title')).toBeVisible();
+  await expect(page.locator('[data-testid="add-photo"]')).toHaveCount(0);
   await expect(page.getByTestId('add-submit').locator('button')).toBeDisabled();
 
   await page.getByTestId('add-hotel').fill('Grand Test Hotel');

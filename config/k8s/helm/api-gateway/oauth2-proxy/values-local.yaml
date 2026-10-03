@@ -25,8 +25,13 @@ args:
   redeemUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky/protocol/openid-connect/token"
   oidcJwksUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky/protocol/openid-connect/certs"
   profileUrl: "http://keycloak.127.0.0.1.nip.io/realms/sky/protocol/openid-connect/userinfo"
-  # Allow rd (post-login return) to the local frontend origin on :4200.
-  whitelistDomain: "localhost:4200"
+  # Allow rd (post-login return) to the local frontend origin on :4200, plus
+  # the browser-reachable Keycloak host: logout navigates the full browser to
+  # /logout?rd=<keycloak end-session with id_token_hint={id_token}> and
+  # oauth2-proxy substitutes the server-side ID token before redirecting, so
+  # Keycloak ends the SSO session at once with no confirm page. Without this
+  # entry the rd is dropped and only the proxy cookie dies (silent re-login).
+  whitelistDomain: "localhost:4200,keycloak.127.0.0.1.nip.io:5777,keycloak.127.0.0.1.nip.io"
 
 session:
   corsOrigin: "http://localhost:4200"

@@ -87,6 +87,10 @@ test('calendar shows red booked day and refreshes after booking without reload',
   await expect(page.getByTestId('booking-calendar')).toBeVisible();
   await page.getByTestId('booking-date').fill(fillDate);
   await page.getByTestId('booking-submit').locator('button').click();
+  await expect(page.getByTestId('booking-confirm-dialog')).toBeVisible();
+  await expect(page.getByTestId('booking-confirm-dialog')).toContainText(fillDate);
+  await page.getByTestId('booking-confirm-ok').locator('button').click();
+  await expect(page.getByTestId('booking-confirm-dialog')).toBeHidden();
   const bookedCell = page.getByTestId('booking-calendar').locator('.cal-day-cell.cal-has-events', { hasText: day });
   await expect(bookedCell.first()).toBeVisible();
 });
@@ -116,6 +120,7 @@ test('day click opens dialog with who plus price and cancel works', async ({ pag
   await page.goto(`/offerDetails?offerId=${offerId}`);
   await page.getByTestId('booking-calendar').locator('.cal-day-cell', { hasText: '15' }).first().click();
   await expect(page.getByTestId('day-dialog')).toBeVisible();
+  await expect(page.locator('.p-dialog.glass-dialog.rgb-dialog')).toBeVisible();
   await expect(page.getByTestId('booking-row').first()).toContainText('guest@test.local');
   await expect(page.getByTestId('booking-row').first()).toContainText('$199');
   await page.getByTestId('booking-row').first().getByRole('button', { name: 'Cancel' }).click();

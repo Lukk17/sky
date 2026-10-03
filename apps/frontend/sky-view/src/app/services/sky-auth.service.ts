@@ -76,16 +76,20 @@ export class SkyAuthService {
 
   logout(): void {
     this.currentUser.next(null);
-    // Full-browser GET through the edge logout endpoint so the edge clears
-    // its server-side session (tokens never touch the browser) and Keycloak
-    // never shows a confirm page: the browser never navigates to the
-    // end-session endpoint without an id_token_hint. An XHR POST followed by
-    // a manual redirect bypasses that handler and lands on the confirm page.
-    // rd returns the browser to the app home after sign-out.
+    // Full-browser GET through the edge /logout endpoint. rd carries the
+    // Keycloak end-session URL with the {id_token} placeholder; the edge
+    // substitutes the server-side ID token as id_token_hint so Keycloak ends
+    // the SSO session at once with no confirm page. An XHR POST followed by a
+    // manual redirect bypasses that substitution and lands on the confirm
+    // page (or leaves SSO alive). The compose gateway ignores rd and uses its
+    // own OIDC handler, which already appends the hint server side.
     this.csrfTokenStore.setToken(null);
+    const endSession = this.endSessionUrl;
     this.endSessionUrl = null;
-    const rd = encodeURIComponent(window.location.origin + '/home');
-    window.location.assign(`${this.logoutUrl}?rd=${rd}`);
+    const inner = endSession && endSession.length > 0
+      ? (endSession.includes('id_token_hint=') ? endSession : `${endSession}&id_token_hint={id_token}`)
+      : `${window.location.origin}/home`;
+    window.location.assign(`${this.logoutUrl}?rd=${encodeURIComponent(inner)}`);
   }
 
   consumePostLoginPath(): string | null {
