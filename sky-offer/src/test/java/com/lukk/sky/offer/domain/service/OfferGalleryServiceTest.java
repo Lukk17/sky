@@ -29,7 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -79,7 +81,7 @@ class OfferGalleryServiceTest {
         OfferDTO dto = offerService.uploadGalleryPhoto(offerId, OWNER,
                 new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
 
-        verify(offerPhotoRepository).save(any(OfferPhoto.class));
+        verify(offerPhotoRepository).saveAndFlush(any(OfferPhoto.class));
         verify(photoStorage).upload(any(), any(), anyLong(), any(), any());
     }
 
@@ -111,8 +113,9 @@ class OfferGalleryServiceTest {
         assertEquals("u1", dto.getCoverPhotoUrl());
         assertEquals(0, p1.getPosition());
         assertEquals(1, p0.getPosition());
-        verify(offerPhotoRepository, org.mockito.Mockito.atLeast(3)).saveAndFlush(any(OfferPhoto.class));
-        org.mockito.Mockito.verify(offerPhotoRepository, org.mockito.Mockito.never()).saveAll(any());
+        verify(offerPhotoRepository).saveAllAndFlush(org.mockito.ArgumentMatchers.anyList());
+        org.mockito.Mockito.verify(offerPhotoRepository, org.mockito.Mockito.never())
+                .saveAndFlush(org.mockito.ArgumentMatchers.any(OfferPhoto.class));
     }
 
     @Test
@@ -167,7 +170,7 @@ class OfferGalleryServiceTest {
     }
 
     @Test
-    void setGalleryCover_whenCalled_thenMovesPhotoToFirst() {
+    void setGalleryCover_whenCalled_thenSetsMainFlagWithoutReordering() {
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
@@ -177,8 +180,11 @@ class OfferGalleryServiceTest {
 
         OfferDTO dto = offerService.setGalleryCover(offerId, p1.getId(), OWNER);
 
-        assertEquals(p1.getId(), dto.getGallery().get(0).getId());
+        assertEquals(0, p0.getPosition());
+        assertEquals(1, p1.getPosition());
+        assertEquals(p0.getId(), dto.getGallery().get(0).getId());
         assertEquals("u1", dto.getCoverPhotoUrl());
+        verify(offerPhotoRepository).saveAllAndFlush(anyList());
     }
 
     @Test
@@ -251,9 +257,8 @@ class OfferGalleryServiceTest {
                 .externalUrl("https://cdn.example/x.png").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
-        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
 
-        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+        OfferDTO dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 0, OWNER);
 
         org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
                 .presignedUrl(org.mockito.ArgumentMatchers.anyString());
@@ -301,7 +306,7 @@ class OfferGalleryServiceTest {
         offerService.uploadGalleryPhoto(offerId, OWNER,
                 new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
 
-        verify(offerPhotoRepository).save(captor.capture());
+        verify(offerPhotoRepository).saveAndFlush(captor.capture());
         org.junit.jupiter.api.Assertions.assertTrue(captor.getValue().isMain());
     }
 
@@ -316,5 +321,42 @@ class OfferGalleryServiceTest {
         verify(offerPhotoRepository).delete(p0);
         verify(photoStorage).delete(offerId, "k0");
         assertTrue(dto.getGallery().isEmpty());
+    }
+
+    @Test
+    void deleteGalleryPhoto_whenCoverDeleted_thenFirstRemainingIsPromoted() {
+        OfferPhoto cover = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
+                .objectKey("k0").main(true).build();
+        OfferPhoto next = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1)
+                .objectKey("k1").main(false).build();
+        when(offerPhotoRepository.findById(cover.getId())).thenReturn(Optional.of(cover));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
+                .thenReturn(new ArrayList<>(List.of(cover, next)), new ArrayList<>(List.of(next)));
+        when(photoStorage.presignedUrl(anyString())).thenAnswer(inv -> "u-" + inv.getArgument(0));
+
+        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, cover.getId(), OWNER);
+
+        verify(offerPhotoRepository).delete(cover);
+        verify(offerPhotoRepository).saveAllAndFlush(anyList());
+        assertTrue(next.isMain());
+        assertEquals(0, next.getPosition());
+        assertEquals(next.getId(), dto.getGallery().get(0).getId());
+        assertTrue(dto.getGallery().get(0).isMain());
+        assertEquals("u-k1", dto.getCoverPhotoUrl());
+    }
+
+    @Test
+    void setGalleryCover_whenConcurrentCoverWins_thenAnswers409() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
+                .objectKey("k0").main(true).build();
+        OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1)
+                .objectKey("k1").main(false).build();
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
+                .thenReturn(new ArrayList<>(List.of(p0, p1)));
+        org.mockito.Mockito.doThrow(new org.springframework.dao.DataIntegrityViolationException("two mains"))
+                .when(offerPhotoRepository).saveAllAndFlush(org.mockito.ArgumentMatchers.anyList());
+
+        assertThrows(com.lukk.sky.offer.domain.exception.GalleryCoverConflictException.class,
+                () -> offerService.setGalleryCover(offerId, p1.getId(), OWNER));
     }
 }

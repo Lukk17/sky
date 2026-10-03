@@ -3,6 +3,7 @@ package com.lukk.sky.offer.domain.service;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.adapters.dto.PhotoDTO;
+import com.lukk.sky.offer.domain.exception.GalleryCoverConflictException;
 import com.lukk.sky.offer.domain.exception.GalleryLimitExceededException;
 import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferException;
@@ -20,12 +21,14 @@ import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,7 +51,7 @@ public class OfferServicePrimary implements OfferService {
     public Page<OfferDTO> getAllOffers(Pageable pageable) {
         log.info("Pulling all offers page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
 
-        return offerRepository.findAll(pageable).map(this::toDto);
+        return offerRepository.findAll(pageable).map(offer -> toDto(offer, false));
     }
 
     @Override
@@ -100,7 +103,7 @@ public class OfferServicePrimary implements OfferService {
         log.info("Pulling offers which owner is user: {} page={} size={}",
                 ownerEmail, pageable.getPageNumber(), pageable.getPageSize());
 
-        return offerRepository.findAllByOwnerEmail(ownerEmail, pageable).map(this::toDto);
+        return offerRepository.findAllByOwnerEmail(ownerEmail, pageable).map(offer -> toDto(offer, false));
     }
 
     @Override
@@ -108,7 +111,7 @@ public class OfferServicePrimary implements OfferService {
     public Page<OfferDTO> searchOffers(String searched, Pageable pageable) {
         log.info("Searching offers for: {}", searched);
 
-        return offerSearch.searchByTerm(searched, pageable).map(this::toDto);
+        return offerSearch.searchByTerm(searched, pageable).map(offer -> toDto(offer, false));
     }
 
     @Override
@@ -141,7 +144,7 @@ public class OfferServicePrimary implements OfferService {
                 .map(Offer::getOwnerEmail)
                 .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId)));
 
-        log.info("Found owner with ID:{} of offer with ID: {}", ownerEmail, offerId);
+        log.info("Found owner of offer with ID: {}", offerId);
 
         return ownerEmail;
     }
@@ -177,7 +180,7 @@ public class OfferServicePrimary implements OfferService {
         removeStoredPhoto(offerId, key);
     }
 
-    public static final int GALLERY_CAP = 10;
+    private static final int GALLERY_CAP = 10;
 
     @Override
     public OfferDTO uploadGalleryPhoto(UUID offerId, String ownerEmail, InputStream content, long contentLength,
@@ -190,9 +193,13 @@ public class OfferServicePrimary implements OfferService {
         String key = photoStorage.upload(offerId, content, contentLength, validatedContentType, filename);
         OfferPhoto photo = OfferPhoto.builder().offer(offer).position(photos.size())
                 .objectKey(key).main(photos.isEmpty()).build();
-        offerPhotoRepository.save(photo);
+        try {
+            offerPhotoRepository.saveAndFlush(photo);
+        } catch (DataIntegrityViolationException ex) {
+            throw new GalleryCoverConflictException("Gallery cover was changed concurrently.", ex);
+        }
         log.info("Gallery photo uploaded for offer ID: {} key={}", offerId, key);
-        return toDto(offer);
+        return toDto(offer, true);
     }
 
     @Override
@@ -203,89 +210,60 @@ public class OfferServicePrimary implements OfferService {
         if (!photo.getOffer().getId().equals(offerId)) {
             throw new OfferNotFoundException("Photo not found.");
         }
-        String key = photo.getObjectKey();
         boolean wasMain = photo.isMain();
+        List<OfferPhoto> remaining = new ArrayList<>(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId));
+        remaining.removeIf(candidate -> candidate.getId().equals(photoId));
         offerPhotoRepository.delete(photo);
-        renumber(offerId);
-        if (wasMain) {
-            List<OfferPhoto> remaining = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
-            if (!remaining.isEmpty() && remaining.stream().noneMatch(OfferPhoto::isMain)) {
-                remaining.get(0).setMain(true);
-                offerPhotoRepository.saveAndFlush(remaining.get(0));
-            }
+        GalleryOrdering.renumber(remaining);
+        if (wasMain && !remaining.isEmpty()) {
+            remaining.get(0).setMain(true);
         }
-        if (key != null && !key.isBlank()) {
-            try {
-                photoStorage.delete(offerId, key);
-            } catch (PhotoStorageException ex) {
-                log.warn("photo_delete_failed key={} reason={}", key, ex.getMessage());
-            }
+        try {
+            offerPhotoRepository.saveAllAndFlush(remaining);
+        } catch (DataIntegrityViolationException ex) {
+            throw new GalleryCoverConflictException("Gallery cover was changed concurrently.", ex);
         }
-        return toDto(offer);
+        removeGalleryStoredPhoto(offerId, photo.getObjectKey());
+        return toDto(offer, true);
     }
 
     @Override
     public OfferDTO reorderGalleryPhoto(UUID offerId, UUID photoId, int newPosition, String ownerEmail) {
         Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only reorder photos of your own offers.");
-        List<OfferPhoto> photos = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
-        OfferPhoto target = photos.stream().filter(p -> p.getId().equals(photoId)).findFirst()
-                .orElseThrow(() -> new OfferNotFoundException("Photo not found."));
+        List<OfferPhoto> photos = new ArrayList<>(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId));
         if (newPosition < 0 || newPosition >= photos.size()) {
             throw new OfferException("Invalid position.");
         }
-        int oldPosition = photos.indexOf(target);
-        photos.remove(oldPosition);
-        photos.add(newPosition, target);
-        target.setPosition(photos.size() + 10000);
-        offerPhotoRepository.saveAndFlush(target);
-        if (newPosition < oldPosition) {
-            for (int i = oldPosition; i >= newPosition; i--) {
-                OfferPhoto current = photos.get(i);
-                if (current != target) {
-                    current.setPosition(i);
-                    offerPhotoRepository.saveAndFlush(current);
-                }
-            }
-        } else if (newPosition > oldPosition) {
-            for (int i = oldPosition; i <= newPosition; i++) {
-                OfferPhoto current = photos.get(i);
-                if (current != target) {
-                    current.setPosition(i);
-                    offerPhotoRepository.saveAndFlush(current);
-                }
-            }
-        }
-        target.setPosition(newPosition);
-        offerPhotoRepository.saveAndFlush(target);
-        return toDto(offer);
+        List<OfferPhoto> ordered = GalleryOrdering.moved(photos, photoId, newPosition);
+        offerPhotoRepository.saveAllAndFlush(ordered);
+        return toDto(offer, true);
     }
 
     @Override
     public OfferDTO setGalleryCover(UUID offerId, UUID photoId, String ownerEmail) {
-        OfferDTO dto = reorderGalleryPhoto(offerId, photoId, 0, ownerEmail);
-        List<OfferPhoto> photos = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
+        Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only reorder photos of your own offers.");
+        List<OfferPhoto> photos = new ArrayList<>(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId));
+        OfferPhoto target = photos.stream()
+                .filter(photo -> photo.getId().equals(photoId))
+                .findFirst()
+                .orElseThrow(() -> new OfferNotFoundException("Photo not found."));
         for (OfferPhoto photo : photos) {
-            boolean shouldBeMain = photo.getId().equals(photoId);
-            if (photo.isMain() != shouldBeMain) {
-                photo.setMain(shouldBeMain);
-                offerPhotoRepository.saveAndFlush(photo);
-            }
+            photo.setMain(photo.getId().equals(target.getId()));
         }
-        return toDto(offerRepository.findById(offerId)
-                .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId))));
+        try {
+            offerPhotoRepository.saveAllAndFlush(photos);
+        } catch (DataIntegrityViolationException ex) {
+            throw new GalleryCoverConflictException("Gallery cover was changed concurrently.", ex);
+        }
+        return toDto(offer, true);
     }
 
-    private void renumber(UUID offerId) {
-        List<OfferPhoto> photos = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
-        for (int i = 0; i < photos.size(); i++) {
-            if (photos.get(i).getPosition() != i) {
-                photos.get(i).setPosition(i);
-                offerPhotoRepository.saveAndFlush(photos.get(i));
-            }
-        }
+    private void removeGalleryStoredPhoto(UUID offerId, String key) {
+        removeStoredPhoto(offerId, key);
     }
 
-    private Offer requireOwnedOffer(UUID offerId, String ownerEmail, String accessDeniedMessage) {        Offer offer = offerRepository.findById(offerId)
+    private Offer requireOwnedOffer(UUID offerId, String ownerEmail, String accessDeniedMessage) {
+        Offer offer = offerRepository.findById(offerId)
                 .orElseThrow(() -> new OfferNotFoundException(String.format("Offer with ID: %s not exist.", offerId)));
 
         if (!offer.getOwnerEmail().equals(ownerEmail)) {
@@ -308,9 +286,13 @@ public class OfferServicePrimary implements OfferService {
     }
 
     private OfferDTO toDto(Offer offer) {
+        return toDto(offer, true);
+    }
+
+    private OfferDTO toDto(Offer offer, boolean presignGallery) {
         OfferDTO dto = OfferDTO.of(offer);
         dto.setPhotoUrl(photoAddress(offer));
-        List<PhotoDTO> gallery = galleryOf(offer);
+        List<PhotoDTO> gallery = galleryOf(offer, presignGallery);
         dto.setGallery(gallery);
         dto.setCoverPhotoUrl(gallery.isEmpty() ? null : gallery.stream()
                 .filter(PhotoDTO::isMain).findFirst().orElse(gallery.get(0)).getUrl());
@@ -321,23 +303,29 @@ public class OfferServicePrimary implements OfferService {
     }
 
     private List<PhotoDTO> galleryOf(Offer offer) {
+        return galleryOf(offer, true);
+    }
+
+    private List<PhotoDTO> galleryOf(Offer offer, boolean presignGallery) {
         List<OfferPhoto> photos = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offer.getId());
         if (photos.isEmpty()) {
-            String fallback = photoAddress(offer);
-            if (fallback == null) {
-                return new java.util.ArrayList<>();
-            }
-            return new java.util.ArrayList<>(List.of(
-                    PhotoDTO.builder().id(null).position(0).url(fallback).main(true).build()));
+            return new ArrayList<>();
         }
-        List<PhotoDTO> result = new java.util.ArrayList<>();
-        for (OfferPhoto photo : photos) {
-            String url = photo.getObjectKey() != null && !photo.getObjectKey().isBlank()
-                    ? photoStorage.presignedUrl(photo.getObjectKey())
-                    : photo.getExternalUrl();
+        List<OfferPhoto> ordered = new ArrayList<>(photos);
+        ordered.sort(java.util.Comparator.comparingInt(OfferPhoto::getPosition));
+        List<PhotoDTO> result = new ArrayList<>();
+        for (OfferPhoto photo : ordered) {
+            String url = galleryPhotoUrl(photo, presignGallery);
             result.add(PhotoDTO.builder().id(photo.getId()).position(photo.getPosition()).url(url).main(photo.isMain()).build());
         }
         return result;
+    }
+
+    private String galleryPhotoUrl(OfferPhoto photo, boolean presignGallery) {
+        if (photo.getObjectKey() != null && !photo.getObjectKey().isBlank()) {
+            return presignGallery ? photoStorage.presignedUrl(photo.getObjectKey()) : null;
+        }
+        return photo.getExternalUrl();
     }
 
     private String photoAddress(Offer offer) {

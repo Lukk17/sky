@@ -23,14 +23,12 @@ class GatewayUserHandshakeInterceptorTest {
     private final ServerHttpResponse response = mock(ServerHttpResponse.class);
 
     @Test
-    @DisplayName("prefers X-Sky-User when both edge headers are present")
-    void beforeHandshake_whenBothHeadersPresent_thenPrefersGatewayHeader() {
+    @DisplayName("accepts X-Sky-User set by the gateway")
+    void beforeHandshake_whenGatewayHeaderPresent_thenUsesGatewayIdentity() {
         Map<String, Object> attributes = new HashMap<>();
 
         boolean result = interceptor.beforeHandshake(
-                request(Map.of(
-                        GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("gateway@test.com"),
-                        GatewayUserHandshakeInterceptor.EDGE_USER_HEADER, List.of("edge@test.com"))),
+                request(Map.of(GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("gateway@test.com"))),
                 response, handler, attributes);
 
         assertThat(result).isTrue();
@@ -39,21 +37,20 @@ class GatewayUserHandshakeInterceptorTest {
     }
 
     @Test
-    @DisplayName("falls back to X-Auth-Request-Email when X-Sky-User is absent")
-    void beforeHandshake_whenOnlyEdgeHeaderPresent_thenUsesEdgeIdentity() {
+    @DisplayName("rejects spoofed email header when X-Sky-User is absent")
+    void beforeHandshake_whenOnlySpoofedEmailPresent_thenSetsNothing() {
         Map<String, Object> attributes = new HashMap<>();
 
         boolean result = interceptor.beforeHandshake(
-                request(Map.of(GatewayUserHandshakeInterceptor.EDGE_USER_HEADER, List.of("edge@test.com"))),
+                request(Map.of("X-Auth-Request-Email", List.of("spoofed@evil.test"))),
                 response, handler, attributes);
 
         assertThat(result).isTrue();
-        assertThat(attributes).containsEntry(
-                GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE, "edge@test.com");
+        assertThat(attributes).doesNotContainKey(GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE);
     }
 
     @Test
-    @DisplayName("sets no attribute when neither edge header is present")
+    @DisplayName("sets no attribute when no identity header is present")
     void beforeHandshake_whenNoIdentityHeaders_thenSetsNothing() {
         Map<String, Object> attributes = new HashMap<>();
 
@@ -64,19 +61,32 @@ class GatewayUserHandshakeInterceptorTest {
     }
 
     @Test
-    @DisplayName("ignores blank gateway header and falls back to the edge header")
-    void beforeHandshake_whenGatewayHeaderBlank_thenFallsBack() {
+    @DisplayName("ignores blank gateway header and sets nothing")
+    void beforeHandshake_whenGatewayHeaderBlank_thenSetsNothing() {
+        Map<String, Object> attributes = new HashMap<>();
+
+        boolean result = interceptor.beforeHandshake(
+                request(Map.of(GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("  "))),
+                response, handler, attributes);
+
+        assertThat(result).isTrue();
+        assertThat(attributes).doesNotContainKey(GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE);
+    }
+
+    @Test
+    @DisplayName("ignores an unknown email header and keeps the gateway identity")
+    void beforeHandshake_whenHeadersDisagree_thenPrefersGatewayIdentity() {
         Map<String, Object> attributes = new HashMap<>();
 
         boolean result = interceptor.beforeHandshake(
                 request(Map.of(
-                        GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("  "),
-                        GatewayUserHandshakeInterceptor.EDGE_USER_HEADER, List.of("edge@test.com"))),
+                        GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("gateway@test.com"),
+                        "X-Auth-Request-Email", List.of("edge@test.com"))),
                 response, handler, attributes);
 
         assertThat(result).isTrue();
         assertThat(attributes).containsEntry(
-                GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE, "edge@test.com");
+                GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE, "gateway@test.com");
     }
 
     private static ServerHttpRequest request(Map<String, List<String>> headers) {

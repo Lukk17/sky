@@ -14,14 +14,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.Hibernate;
 
 import java.util.UUID;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -48,6 +46,14 @@ public class OfferPhoto {
     @Column(name = "main", nullable = false)
     @Builder.Default
     private boolean main = false;
+
+    public void setPosition(int position) {
+        this.position = position;
+    }
+
+    public void setMain(boolean main) {
+        this.main = main;
+    }
 
     @Override
     public boolean equals(Object o) {

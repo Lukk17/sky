@@ -4,7 +4,7 @@ import {ResponseHandlerService} from './responseHandler.service';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../environments/environment';
 import {Offer} from './offer.service';
-import {NgForm} from '@angular/forms';
+
 
 @Injectable({
   providedIn: 'root'
@@ -19,8 +19,8 @@ export class BookingService {
   constructor(private http: HttpClient) {
   }
 
-  private static buildBookingPayload(bookingForm: NgForm, offer: Offer) {
-    return new BookingPayload(String(offer.id), bookingForm.value.dateToBook);
+  private static buildBookingPayload(offer: Offer, dateToBook: string) {
+    return new BookingPayload(String(offer.id), dateToBook);
   }
 
   public getBookedOffers() {
@@ -39,11 +39,12 @@ export class BookingService {
       );
   }
 
-  addBooking(bookingForm: NgForm, offer: Offer) {
-    const bookingPayload = BookingService.buildBookingPayload(bookingForm, offer);
-    console.log(bookingPayload);
+  addBooking(offer: Offer, dateToBook: string) {
+    const bookingPayload = BookingService.buildBookingPayload(offer, dateToBook);
     return this.http.post<Booking>(this.ADD_BOOKING,
-      bookingPayload);
+      bookingPayload).pipe(
+      catchError((err) => ResponseHandlerService.handleError(err, 'addBooking()'))
+    );
   }
 }
 
@@ -75,11 +76,11 @@ export class Booking {
 
 export class PersonalBooking {
   'hotelName': string;
-  'id': string;
+  'id': number;
   'offerId': string;
   'date': string;
 
-  constructor(hotelName: string, id: string, offerId: string, date: string) {
+  constructor(hotelName: string, id: number, offerId: string, date: string) {
     this.hotelName = hotelName;
     this.id = id;
     this.date = date;

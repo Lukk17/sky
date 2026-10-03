@@ -47,12 +47,16 @@ describe('ResponseHandlerService', () => {
     expect(result[0].coverPhotoUrl).toBe('legacy');
   });
 
-  it('handleError completes without emitting', (done) => {
+  it('handleError rethrows the http error', (done) => {
     const error = { status: 500, message: 'boom', error: 'boom' } as HttpErrorResponse;
 
     ResponseHandlerService.handleError(error, 'test()').subscribe({
       next: () => fail('expected no emission'),
-      complete: () => done(),
+      error: (err) => {
+        expect(err).toBe(error);
+        expect((err as HttpErrorResponse).status).toBe(500);
+        done();
+      },
     });
   });
 });

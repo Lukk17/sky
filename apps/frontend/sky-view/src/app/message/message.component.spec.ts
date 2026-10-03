@@ -9,9 +9,11 @@ import { SkyAuthService } from '../services/sky-auth.service';
 
 function setup(received: Message[] = [], sent: Message[] = []) {
   const socketMessages = new Subject<string | null>();
+  const unreadSubject = new Subject<Message[]>();
   const messageService = {
     getReceived: () => of(received),
     getSent: () => of(sent),
+    unread$: unreadSubject.asObservable(),
   } as unknown as MessageService;
   TestBed.configureTestingModule({
     declarations: [MessageComponent],

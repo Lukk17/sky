@@ -150,6 +150,57 @@ class S3PhotoStorageTest {
     }
 
     @Test
+    @DisplayName("upload_whenFilenameHasPathSeparators_thenStripsDirectories")
+    void upload_whenFilenameHasPathSeparators_thenStripsDirectories() {
+        // given
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(PutObjectResponse.builder().build());
+        byte[] bytes = "bytes".getBytes();
+        InputStream stream = new ByteArrayInputStream(bytes);
+
+        // when
+        String key = photoStorage.upload(OFFER_ID, stream, bytes.length, "image/png", "../../etc/hotel.png");
+
+        // then
+        assertThat(key).endsWith("-hotel.png");
+        assertThat(key).doesNotContain("..");
+    }
+
+    @Test
+    @DisplayName("upload_whenFilenameHasWindowsSeparators_thenStripsDirectories")
+    void upload_whenFilenameHasWindowsSeparators_thenStripsDirectories() {
+        // given
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(PutObjectResponse.builder().build());
+        byte[] bytes = "bytes".getBytes();
+        InputStream stream = new ByteArrayInputStream(bytes);
+
+        // when
+        String key = photoStorage.upload(OFFER_ID, stream, bytes.length, "image/png", "C:\\temp\\hotel.png");
+
+        // then
+        assertThat(key).endsWith("-hotel.png");
+    }
+
+    @Test
+    @DisplayName("upload_whenFilenameIsTooLong_thenCapsLength")
+    void upload_whenFilenameIsTooLong_thenCapsLength() {
+        // given
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(PutObjectResponse.builder().build());
+        byte[] bytes = "bytes".getBytes();
+        InputStream stream = new ByteArrayInputStream(bytes);
+        String longName = "a".repeat(200) + ".png";
+
+        // when
+        String key = photoStorage.upload(OFFER_ID, stream, bytes.length, "image/png", longName);
+
+        // then
+        String suffix = key.substring(key.lastIndexOf('-') + 1);
+        assertThat(suffix).hasSizeLessThanOrEqualTo(100);
+    }
+
+    @Test
     @DisplayName("upload_whenTheStoreRefusesTheConnection_thenThrowsPhotoStorageUnavailableException")
     void upload_whenTheStoreRefusesTheConnection_thenThrowsPhotoStorageUnavailableException() {
         // given

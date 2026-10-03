@@ -1,0 +1,5 @@
+apiVersion: v2
+name: sky-common
+description: Shared Sky Helm helpers (ingress shape)
+type: library
+version: 1.0.0

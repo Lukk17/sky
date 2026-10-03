@@ -5,68 +5,18 @@
 //   TLS_INSECURE=1 to skip TLS verification (self-signed Keycloak cert),
 //   KEYCLOAK_ADMIN_USER / KEYCLOAK_ADMIN_PASSWORD (default admin/admin),
 //   KEYCLOAK_CLIENT_ID / KEYCLOAK_CLIENT_SECRET (default sky-backend/dev-only-change-in-prod).
+import { HERE, KEYCLOAK_BASE, EDGE, CLIENT_ID, CLIENT_SECRET, REALM, failures, load, join, basename, ok, fail, req, tokensFor, userToken } from "./lib/http.mjs";
 import { readFileSync, existsSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const KEYCLOAK_BASE = (process.env.KEYCLOAK_BASE || "https://keycloak.test:9443").replace(/\/$/, "");
-const EDGE = (process.env.EDGE_BASE || "http://localhost:5777").replace(/\/$/, "");
 const INSECURE = process.env.TLS_INSECURE === "1";
 const ADMIN_USER = process.env.KEYCLOAK_ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.KEYCLOAK_ADMIN_PASSWORD || "admin";
-const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "sky-backend";
-const CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "dev-only-change-in-prod";
-const REALM = "sky";
-
-if (INSECURE) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-const failures = [];
-const load = (f) => JSON.parse(readFileSync(join(HERE, f), "utf8"));
-
-async function req(method, url, { token, json, form, file } = {}) {
-  const headers = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  let body;
-  if (json !== undefined) {
-    headers["Content-Type"] = "application/json";
-    headers.Accept = "application/json";
-    body = JSON.stringify(json);
-  } else if (form !== undefined) {
-    headers["Content-Type"] = "application/x-www-form-urlencoded";
-    body = new URLSearchParams(form).toString();
-  } else if (file !== undefined) {
-    const { bytes, filename } = file;
-    const boundary = "seed" + Date.now().toString(16);
-    headers["Content-Type"] = `multipart/form-data; boundary=${boundary}`;
-    const head = Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: image/jpeg\r\n\r\n`,
-      "utf8",
-    );
-    const tail = Buffer.from(`\r\n--${boundary}--\r\n`, "utf8");
-    body = Buffer.concat([head, bytes, tail]);
-  }
-  const res = await fetch(url, { method, headers, body });
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-  return { status: res.status, data };
-}
-const ok = (s, extra = []) => [200, 201, 204, ...extra].includes(s);
-function fail(msg) { failures.push(msg); console.log(`FAIL ${msg}`); }
 
 async function adminToken() {
   const r = await req("POST", `${KEYCLOAK_BASE}/realms/master/protocol/openid-connect/token`, {
     form: { grant_type: "password", client_id: "admin-cli", username: ADMIN_USER, password: ADMIN_PASSWORD },
   });
   if (!ok(r.status)) throw new Error(`admin login ${r.status}: ${JSON.stringify(r.data)}`);
-  return r.data.access_token;
-}
-async function userToken(username, password) {
-  const r = await req("POST", `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
-    form: { grant_type: "password", client_id: CLIENT_ID, client_secret: CLIENT_SECRET, username, password },
-  });
-  if (!ok(r.status)) throw new Error(`token for ${username}: ${r.status} ${JSON.stringify(r.data)}`);
   return r.data.access_token;
 }
 

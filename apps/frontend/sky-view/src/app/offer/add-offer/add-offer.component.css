@@ -1,5 +1,5 @@
 :host { display: block; }
-:host ::ng-deep .p-card.glass-card { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03) 35%, rgba(20,20,28,0.6)); backdrop-filter: blur(20px) saturate(1.4); border: 1px solid rgba(255,255,255,0.14); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 12px 32px rgba(0,0,0,0.5); }
+:host ::ng-deep .p-card.glass-card { background: var(--glass-bg); backdrop-filter: var(--glass-blur-strong); border: var(--glass-border); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 12px 32px rgba(0,0,0,0.5); }
 :host ::ng-deep .p-card .p-card-title { text-align: center; }
 .add-offer-title { text-align: center; font-size: 1.9rem; font-weight: 800; letter-spacing: 0.02em; line-height: 1.2; margin: 1.25rem 0 0.15rem; background: linear-gradient(180deg,#fff,#fdba74 60%,#f97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .add-offer-subtitle { text-align: center; color: rgba(255,255,255,0.55); font-size: 0.9rem; margin: 0 0 1rem; }

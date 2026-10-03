@@ -17,18 +17,8 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
 
-    if (`${environment.localDev}` === 'true') {
-      console.log('Local Dev');
-      console.log(`Is localDev: ${environment.localDev}`);
-      console.log(`Base url: ${environment.apiBaseUrl}`);
-    } else {
-      console.log(`Base url: ${environment.apiBaseUrl}`);
-    }
-
-    if (`${environment.production}` === 'true') {
-      console.log('Production build');
-      console.log(`Is prod: ${environment.production}`);
-    }
+    void environment.localDev;
+    void environment.production;
 
     this.skyAuth.currentUser$.subscribe((email) => {
       if (email != null) {

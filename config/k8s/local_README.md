@@ -123,25 +123,73 @@ kubectl wait pod -n ingress-nginx -l app.kubernetes.io/component=controller --fo
 
 ### 4. Apply the local secrets
 
-The local credentials are committed at [config/k8s/local/sky-secrets-local.yaml](local/sky-secrets-local.yaml), so there is nothing to type and nothing to keep in sync by hand. They are plain-text development values. Never use them anywhere else.
+The real credentials are never committed. Copy the committed template and fill every
+`REPLACE_WITH_*` value with a per-machine random secret:
+
+```bash
+cp config/k8s/local/sky-secrets-local.yaml.example config/k8s/local/sky-secrets-local.yaml
+```
+
+PowerShell, one value per key (repeat for each `REPLACE_WITH_*` entry):
+
+```powershell
+[Convert]::ToHexString((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }) -replace '-','')
+```
+
+Unix shell:
+
+```bash
+openssl rand -hex 32
+```
+
+Use 16 bytes (`openssl rand -hex 16`) for `s3-access-key` and 12 bytes for
+`keycloak-admin-password`. Keep `keycloak-client-id` as `sky-backend`, and set
+`keycloak-client-secret` to the value you sourced into Keycloak at deploy time
+(the realm file ships no secret; step 7 sets it with the same value, otherwise
+oauth2-proxy and the Bruno password grant cannot authenticate).
 
 ```bash
 kubectl apply -f config/k8s/local/sky-secrets-local.yaml
 ```
 
-The cluster charts read this one `sky-secrets` Secret. The production path uses the same key names through a SealedSecret instead, see [config/k8s/helm/helm_README.md](helm/helm_README.md) for the full key inventory.
+The cluster charts read this one `sky-secrets` Secret. The production path uses the same key names through a SealedSecret instead, see [config/k8s/helm/helm_README.md](helm/helm_README.md) for the full key inventory. The gitignored real file stays on your machine only.
 
 ---
 
-### 5. Apply the development TLS secret
+### 5. Generate and apply the development TLS secret
 
-The self-signed development certificate and its ready-made Secret manifest are committed under [config/k8s/secret/ssl/](secret/ssl/). Apply the manifest rather than regenerating a certificate:
+The TLS key material is never committed. Each machine generates its own self-signed
+certificate and creates the `dev-ssl-cert` Secret the local ingresses reference:
+
+Unix shell:
 
 ```bash
-kubectl apply -f config/k8s/secret/ssl/dev-ssl-cert.yaml
+openssl req -x509 -newkey rsa:2048 -keyout /tmp/dev-ssl-cert.key -out /tmp/dev-ssl-cert.crt -days 825 -nodes -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,DNS:keycloak.127.0.0.1.nip.io,IP:127.0.0.1,IP:::1"
 ```
 
-The certificate carries `CN=localhost` and is valid for ten years. Its subject alternative names are `localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`, which is every host a local Ingress serves: the four services on `localhost` and Keycloak on the nip.io name. Trust it in a browser and those names verify, anything else does not. The local overlays set `ssl-redirect: "false"` and the default local path is plain HTTP on host port 5777 (host port 80 serves the same ingress for Keycloak's portless browser URLs), and the certificate mostly just satisfies the `tls` block on each Ingress.
+```bash
+kubectl create secret tls dev-ssl-cert --cert=/tmp/dev-ssl-cert.crt --key=/tmp/dev-ssl-cert.key
+```
+
+With mkcert (trusted by your browsers automatically):
+
+```bash
+mkcert -key-file /tmp/dev-ssl-cert.key -cert-file /tmp/dev-ssl-cert.crt localhost keycloak.127.0.0.1.nip.io 127.0.0.1 ::1
+```
+
+```bash
+kubectl create secret tls dev-ssl-cert --cert=/tmp/dev-ssl-cert.crt --key=/tmp/dev-ssl-cert.key
+```
+
+Then delete the temp files. The certificate must carry `CN=localhost` with subject
+alternative names `localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`,
+which is every host a local Ingress serves: the four services on `localhost` and
+Keycloak on the nip.io name. Trust it in a browser and those names verify, anything
+else does not. The local overlays set `ssl-redirect: "false"` and the default local
+path is plain HTTP on host port 5777 (host port 80 serves the same ingress for
+Keycloak's portless browser URLs), and the certificate mostly just satisfies the
+`tls` block on each Ingress. See [config/keycloak/SETUP.md](../keycloak/SETUP.md)
+for the per-machine generation reference.
 
 ---
 
@@ -360,17 +408,34 @@ The environment file is [docs/api/request/environments/k8s.yml](../../docs/api/r
 
 ### Credentials
 
-Development-only, non-secret, intentionally committed. They come from [config/k8s/local/sky-secrets-local.yaml](local/sky-secrets-local.yaml) and the realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](helm/infra/keycloak/files/sky-realm.json). Never use them anywhere else.
+No credential is committed. The realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](helm/infra/keycloak/files/sky-realm.json) carries only usernames, emails and realm roles. Passwords and the client secret are sourced at deploy time:
+
+- User passwords are set by the seed script through the Keycloak admin API (`reset-password` per user in `seed/seed.mjs`, lines 79 and 98), so local login keeps working with no password stored in the repo. Proof: `ensureUser` calls `PUT /admin/realms/sky/users/{id}/reset-password` with the password from `seed/users.json` on both the update and the create path, then mints a token per user with it. All seed users share password `local` (see [seed/README.md](../../seed/README.md)).
+- The `sky-backend` client secret is generated per deploy (for example `openssl rand -hex 32`), stored in the `keycloak-client-secret` entry of your `sky-secrets-local.yaml` (step 4), and set on the imported client once Keycloak is up:
+
+```bash
+kcadm.sh set-password --help >/dev/null 2>&1
+```
+
+```bash
+docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
+```
+
+```bash
+docker exec keycloak /opt/keycloak/bin/kcadm.sh update clients/$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -q clientId=sky-backend --fields id --format csv --noquotes) -s secret=<the value from step 4>
+```
+
+- `oauth2-proxy` and the Bruno password grant read that same secret, so all three must agree.
+
+The redirect URIs and post-logout URIs stay localhost-only by direction: this stack is localhost-only (the deployed cluster references are out of scope), so `http://localhost:5777/oauth2/callback`, `http://localhost:5777/login/oauth2/code/keycloak` and the `post.logout.redirect.uris` localhost entries are correct here. `webOrigins` names the explicit local origins (`http://localhost:5777`, `http://localhost:4200`) instead of `+`. A production deploy must override both lists with its own public origins and never carry the localhost entries over.
 
 | What | Username | Password |
 |---|---|---|
-| PostgreSQL (sky database) | postgres | local |
-| S3 access key and secret | root | localdev |
-| Keycloak admin console | admin | admin |
-| Keycloak realm user (admin role) | lukk | test1234 |
-| Keycloak realm user (admin role) | owner | owner |
-| Keycloak realm user (user role) | user | user |
-| Keycloak client `sky-backend` | client secret | dev-only-change-in-prod |
+| PostgreSQL (sky database) | postgres | per-machine value in your `sky-secrets-local.yaml` |
+| S3 access key and secret | per-machine values in your `sky-secrets-local.yaml` | per-machine values in your `sky-secrets-local.yaml` |
+| Keycloak admin console | admin | per-machine value in your `sky-secrets-local.yaml` |
+| Keycloak realm users (roles in the realm file) | lukk, owner, user | `local`, set by the seed script |
+| Keycloak client `sky-backend` | client secret | per-deploy value shared by step 4, step 7 and the seed env |
 
 The last row is still needed and the list of who needs it has shrunk, which is worth saying so nobody puts it back where it no longer belongs. `oauth2-proxy` reads the secret to run its OIDC session flow, and [docs/api/request/auth/get-token.yml](../../docs/api/request/auth/get-token.yml) reads it to run the password grant that mints the caller's token, which is also why `sky-backend` is the `keycloakClientId` in the table above. No sky service reads it any more: `sky-message` used to fetch a service-account token with it for a receiver lookup against the Keycloak administration interface, and both the lookup and its `USER_DIRECTORY_CLIENT_SECRET` are gone. Validating a JWT needs no client secret, so a service environment block should never carry one.
 

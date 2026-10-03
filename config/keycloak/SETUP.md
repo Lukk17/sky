@@ -15,16 +15,28 @@ What the file defines:
 - Realm `sky`, enabled, login with email allowed, self-registration disabled.
 - Realm roles `admin` and `user`.
 - Confidential client `sky-backend` with the standard flow, direct access grants (password grant), and service accounts (client credentials). An audience mapper puts `sky-backend` into every access token's `aud` claim, which the services enforce when `OAUTH2_AUDIENCE=sky-backend` is set.
-- Three redirect URIs on that client: `http://localhost:8080/*`, `http://localhost:5777/oauth2/callback` for the oauth2-proxy-style path, and `http://localhost:5777/login/oauth2/code/keycloak` for the Spring Security default the gateway's `redirect-uri` template produces.
-- Three demo users whose emails match the Flyway demo seed data.
+- Two redirect URIs on that client, both localhost-only by direction (this project is
+  localhost-only): `http://localhost:5777/oauth2/callback` for the oauth2-proxy-style
+  path, and `http://localhost:5777/login/oauth2/code/keycloak` for the Spring Security
+  default the gateway's `redirect-uri` template produces. `webOrigins` names the
+  explicit local origins rather than `+`. A production deploy must override both lists
+  with its own public origins and never carry the localhost entries over.
+- Three demo users whose emails match the Flyway demo seed data. The file carries
+  only usernames, emails and realm roles: no password and no client secret is committed.
+  Passwords are set after import by the seed script through the Keycloak admin API
+  (`reset-password` per user in `seed/seed.mjs`), and the `sky-backend` client secret
+  is generated per deploy and set on the imported client as described under
+  [Sourcing the client secret at deploy time](#sourcing-the-client-secret-at-deploy-time).
 
-Credentials are development-only, non-secret, intentionally committed values:
+Credentials are never committed. The development values below live only in your
+gitignored `sky-secrets-local.yaml` (see [config/k8s/local_README.md](../k8s/local_README.md)
+step 4) and in the seed script's runtime environment:
 
-| Username | Email | Password | Realm roles |
+| Username | Email | Password source | Realm roles |
 |---|---|---|---|
-| lukk | lukk@sky.dev | test1234 | admin, user |
-| owner | owner@sky.dev | owner | admin, user |
-| user | user@sky.dev | user | user |
+| lukk | lukk@sky.dev | seed script sets `local` via admin API | admin, user |
+| owner | owner@sky.dev | seed script sets `local` via admin API | admin, user |
+| user | user@sky.dev | seed script sets `local` via admin API | admin, user |
 
 | What | Value |
 |---|---|
@@ -32,7 +44,7 @@ Credentials are development-only, non-secret, intentionally committed values:
 | Admin console | https://keycloak.test:9443/admin, signed in with that instance's own administrator |
 | Realm | sky |
 | Client | sky-backend |
-| Client secret | dev-only-change-in-prod |
+| Client secret | per-deploy value in your `sky-secrets-local.yaml`, sourced as below |
 
 Realm, client, roles and users all come out of that one file, so a Keycloak whose database is empty is fully seeded by mounting it. Two places get that for free and need no steps at all: the Helm chart, and the self-contained end-to-end Compose stack in [config/docker/docker-compose.ci.yaml](../docker/docker-compose.ci.yaml), which mounts the same directory at `/opt/keycloak/data/import` and starts with `--import-realm`.
 
@@ -251,6 +263,71 @@ Expected: realm `sky`, enabled true.
 
 ---
 
+### Sourcing the client secret at deploy time
+
+The realm file ships no client secret, so importing it creates the `sky-backend`
+client with a server-generated secret nobody knows. Generate your own per deploy
+and set it on the imported client, then use that same value everywhere else
+(`sky-secrets-local.yaml` for oauth2-proxy, `KEYCLOAK_CLIENT_SECRET` for the seed
+script, the Bruno `k8s` environment for the password grant):
+
+Unix shell:
+
+```bash
+CLIENT_SECRET=$(openssl rand -hex 32)
+```
+
+```bash
+docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server https://localhost:8443 --realm master --user admin --password admin
+```
+
+```bash
+CLIENT_UUID=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -q clientId=sky-backend --fields id --format csv --noquotes)
+```
+
+```bash
+docker exec keycloak /opt/keycloak/bin/kcadm.sh update clients/$CLIENT_UUID -s secret=$CLIENT_SECRET
+```
+
+PowerShell:
+
+```powershell
+$ClientSecret = -join ((1..32 | ForEach-Object { '{0:x2}' -f (Get-Random -Minimum 0 -Maximum 256) }))
+```
+
+Then run the same `kcadm.sh get` / `update` pair from inside the container with
+`-s secret=$ClientSecret`. Until the three copies agree, oauth2-proxy logins and
+the Bruno password grant fail while JWT validation (which needs no secret) keeps
+working, which is the tell-tale sign the secret was not sourced through.
+
+### Generating the development TLS material per machine
+
+The dev TLS keypair under [config/k8s/secret/ssl/](../k8s/secret/ssl/) is generated
+per machine and never committed (`*.key`, `*.csr`, `*.crt` and the rendered
+`dev-ssl-cert.yaml` manifest are all gitignored). Generate it with openssl:
+
+Unix shell:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -keyout dev-ssl-cert.key -out dev-ssl-cert.crt -days 825 -nodes -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,DNS:keycloak.127.0.0.1.nip.io,IP:127.0.0.1,IP:::1"
+```
+
+Or with mkcert (trusted by your browsers automatically):
+
+```bash
+mkcert -key-file dev-ssl-cert.key -cert-file dev-ssl-cert.crt localhost keycloak.127.0.0.1.nip.io 127.0.0.1 ::1
+```
+
+Then create the Secret the local ingresses reference (named `dev-ssl-cert` in every
+`values-local.yaml`) from those two files rather than applying a committed manifest:
+
+```bash
+kubectl create secret tls dev-ssl-cert --cert=dev-ssl-cert.crt --key=dev-ssl-cert.key
+```
+
+The certificate must carry `CN=localhost` with subject alternative names
+`localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`.
+
 ### Verify the sky-backend client
 
 PowerShell:
@@ -305,18 +382,18 @@ Expected: `lukk`, `owner`, and `user`, matching the credentials table at the top
 
 ### Mint a token
 
-This is the same password grant the Bruno collection runs in `auth/get-token.yml`, so if this works the collection works.
+This is the same password grant the Bruno collection runs in `auth/get-token.yml`, so if this works the collection works. Substitute your per-deploy client secret (from [Sourcing the client secret at deploy time](#sourcing-the-client-secret-at-deploy-time)) for `$CLIENT_SECRET` and the seed-set password (`local`) for the user password.
 
 PowerShell:
 
 ```powershell
-Invoke-RestMethod -SkipCertificateCheck -Uri "https://keycloak.test:9443/realms/sky/protocol/openid-connect/token" -Method Post -ContentType "application/x-www-form-urlencoded" -Body "grant_type=password&client_id=sky-backend&client_secret=dev-only-change-in-prod&username=owner&password=owner" | Select-Object access_token, token_type, expires_in
+Invoke-RestMethod -SkipCertificateCheck -Uri "https://keycloak.test:9443/realms/sky/protocol/openid-connect/token" -Method Post -ContentType "application/x-www-form-urlencoded" -Body "grant_type=password&client_id=sky-backend&client_secret=$ClientSecret&username=owner&password=local" | Select-Object access_token, token_type, expires_in
 ```
 
 Unix shell:
 
 ```bash
-curl -sk -d "grant_type=password&client_id=sky-backend&client_secret=dev-only-change-in-prod&username=owner&password=owner" https://keycloak.test:9443/realms/sky/protocol/openid-connect/token
+curl -sk -d "grant_type=password&client_id=sky-backend&client_secret=$CLIENT_SECRET&username=owner&password=local" https://keycloak.test:9443/realms/sky/protocol/openid-connect/token
 ```
 
 A non-empty `access_token` confirms the realm issues tokens. `expires_in` is 300 seconds, which is why the collection re-runs the token request rather than caching one.

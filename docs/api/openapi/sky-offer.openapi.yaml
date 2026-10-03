@@ -111,6 +111,22 @@ paths:
               schema:
                 type: string
               style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
         "404":
           description: Offer not found
         "500":
@@ -629,6 +645,8 @@ paths:
       - Owner offers
   /api/v1/owner/offers/{offerId}/photos:
     post:
+      description: "Appends a photo at the end of the gallery, which holds at most\
+        \ 10 photos. A concurrent cover change is answered with 409."
       operationId: uploadGalleryPhoto
       parameters:
       - in: path
@@ -692,6 +710,17 @@ paths:
               style: simple
         "404":
           description: Offer not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Conflict: the request is well formed and lost a race. Either\
+            \ another writer advanced the event sequence of the resource, or another\
+            \ caller already claimed the state this request asked for. There is no\
+            \ Retry-After, because waiting changes nothing: re-read the resource and\
+            \ send the change again against its current state. The detail is a fixed\
+            \ sentence rather than the internal message."
         "413":
           content:
             application/problem+json:

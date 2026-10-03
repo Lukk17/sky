@@ -1,5 +1,11 @@
 # Local-environment overlay for oauth2-proxy.
 #
+# No client secret lives in this file. The OIDC client secret is sourced per
+# deploy from the `sky-secrets` Secret entry `keycloak-client-secret`
+# (your gitignored sky-secrets-local.yaml, see config/keycloak/SETUP.md
+# "Sourcing the client secret at deploy time"); the deployment template reads
+# it via .Values.secrets. Keep it that way.
+#
 # Apply on top of values.yaml:
 #   helm upgrade --install oauth2-proxy ./config/k8s/helm/api-gateway/oauth2-proxy -f ./config/k8s/helm/api-gateway/oauth2-proxy/values-local.yaml
 

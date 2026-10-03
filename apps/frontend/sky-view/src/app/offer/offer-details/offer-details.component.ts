@@ -1,11 +1,12 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {maskDateInput, toIsoDate} from '../../utils/date-input.util';
 import {CalendarEvent} from 'angular-calendar';
 import {Offer, OfferService} from '../../services/offer.service';
 import {SkyAuthService} from '../../services/sky-auth.service';
 import {Location} from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Booking, BookingService} from '../../services/booking.service';
-import {NgForm} from '@angular/forms';
 
 const BOOKED_COLOR = {primary: '#ef4444', secondary: '#7f1d1d'};
 
@@ -49,19 +50,8 @@ export class OfferDetailsComponent implements OnInit {
 
   onDateInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const digits = (input.value ?? '').replace(/\D/g, '').slice(0, 8);
-    let out = '';
-    for (let i = 0; i < digits.length; i++) {
-      if (i === 2 || i === 4) {
-        out += '/';
-      }
-      out += digits[i];
-    }
-    if (digits.length > 2 && out.charAt(2) !== '/') {
-      out = digits.slice(0, 2) + '/' + digits.slice(2);
-    }
-    this.bookingDateText = out;
-    input.value = out;
+    this.bookingDateText = maskDateInput(input.value ?? '');
+    input.value = this.bookingDateText;
   }
 
   onPickerDay(date: Date): void {
@@ -89,37 +79,64 @@ export class OfferDetailsComponent implements OnInit {
     this.selectedPhotoUrl = url;
   }
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private offerService: OfferService, private auth: SkyAuthService, private bookingService: BookingService,
               private location: Location, private router: Router, private route: ActivatedRoute) {
   }
 
   ngOnInit(): void {
-    this.offer = this.offerService.detailedOffer ?? null;
-    this.auth.currentUser$.subscribe((email) => {
+    this.onKeydown = (e: KeyboardEvent) => this.onGalleryKey(e);
+    window.addEventListener('keydown', this.onKeydown);
+    this.destroyRef.onDestroy(() => {
+      if (this.onKeydown) {
+        window.removeEventListener('keydown', this.onKeydown);
+      }
+    });
+    this.auth.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (email) => {
       this.isLoggedIn = email != null;
       this.isOwner = email != null && this.offer?.ownerEmail === email;
       if (this.isLoggedIn) {
         this.getBookings();
       }
-    });
-    this.route.queryParams.subscribe((params) => {
-      const id = String(params['offerId'] ?? '');
-      if (id.length > 0 && this.offer?.id !== id) {
-        this.loadOfferById(id);
-      }
-    });
+    },
+      error: (e: { message?: string }) => {
+        this.loadError = e?.message ?? 'Failed to load session.';
+      }});
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (params) => {
+        const id = String(params['offerId'] ?? '');
+        if (id.length > 0 && this.offer?.id !== id) {
+          this.loadOfferById(id);
+        }
+      },
+      error: (e: { message?: string }) => {
+        this.loadError = e?.message ?? 'Failed to read route.';
+      }});
+  }
+
+  private onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
+  private onGalleryKey(e: KeyboardEvent): void {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const photos = this.galleryPhotos();
+    if (photos.length < 2) return;
+    const current = this.coverUrl();
+    let idx = photos.findIndex((ph) => ph.url === current);
+    idx = e.key === 'ArrowRight' ? (idx + 1) % photos.length : (idx - 1 + photos.length) % photos.length;
+    this.selectedPhotoUrl = photos[idx].url;
   }
 
   editOffer(offer: Offer) {
-    this.offerService.editedOffer = offer;
-    this.router.navigate(['/editOffer']).then();
+    this.router.navigate(['/editOffer'], {queryParams: {offerId: offer.id}}).then();
   }
 
   deleteOffer(id: string) {
-    this.offerService.deleteOffer(id).subscribe(value => {
-      this.router.navigate(['/myOffers']).then();
-      return value;
-    });
+    this.offerService.deleteOffer(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.router.navigate(['/myOffers']).then(),
+      error: () => {
+        this.loadError = 'Could not delete the offer. Please try again.';
+      }});
   }
 
   messageOwner(): void {
@@ -145,7 +162,7 @@ export class OfferDetailsComponent implements OnInit {
   }
 
   private getBookings() {
-    this.bookingService.getBookedOffers().subscribe(bookings => {
+    this.bookingService.getBookedOffers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (bookings) => {
       const all = bookings ?? [];
       this.bookings = this.offer ? all.filter((b) => b.offerId === this.offer?.id) : all;
       this.events = this.bookings.map((b) => ({
@@ -154,14 +171,16 @@ export class OfferDetailsComponent implements OnInit {
         color: BOOKED_COLOR,
         allDay: true,
       }));
-    });
+      },
+      error: () => {
+        this.loadError = 'Could not load bookings. Please try again.';
+      }});
   }
 
   bookingError: string | null = null;
 
   private loadOfferById(id: string) {
-    this.offerService.getAllOffers().subscribe(offers => {
-      const found = (offers ?? []).find((o) => o.id === id);
+    this.offerService.getOfferById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (found) => {
       if (found) {
         this.offer = found;
         this.loadError = null;
@@ -171,7 +190,10 @@ export class OfferDetailsComponent implements OnInit {
       } else if (!this.offer) {
         this.loadError = 'Offer not found';
       }
-    });
+      },
+      error: () => {
+        this.loadError = 'Could not load the offer. Please try again.';
+      }});
   }
 
   cancelBooking(id: number) {
@@ -179,17 +201,21 @@ export class OfferDetailsComponent implements OnInit {
       this.auth.login(this.router.url);
       return;
     }
-    this.bookingService.deleteBooking(id).subscribe(() => {
-      this.dayDialogVisible = false;
-      this.getBookings();
-    });
+    this.bookingService.deleteBooking(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.dayDialogVisible = false;
+        this.getBookings();
+      },
+      error: () => {
+        this.loadError = 'Could not cancel the booking. Please try again.';
+      }});
   }
 
   deleteBooking(id: number) {
     this.cancelBooking(id);
   }
 
-  onSubmit(bookingForm: NgForm, offer: Offer | null) {
+  onSubmit(dateToBookRaw: string, offer: Offer | null) {
     if (!offer) {
       return;
     }
@@ -198,14 +224,13 @@ export class OfferDetailsComponent implements OnInit {
       return;
     }
     this.bookingError = null;
-    const raw = String(bookingForm.value.dateToBook ?? this.bookingDateText ?? '').trim();
+    const raw = String(dateToBookRaw ?? this.bookingDateText ?? '').trim();
     const iso = this.toIso(raw);
     if (!iso) {
       this.bookingError = 'Use format dd/mm/yyyy.';
       return;
     }
-    bookingForm.value.dateToBook = iso;
-    this.bookingService.addBooking(bookingForm, offer).subscribe({
+    this.bookingService.addBooking(offer, iso).subscribe({
       next: () => {
         this.confirmedDateLabel = raw;
         this.bookingConfirmVisible = true;
@@ -225,13 +250,6 @@ export class OfferDetailsComponent implements OnInit {
   }
 
   private toIso(raw: string): string | null {
-    const m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (m) {
-      return `${m[3]}-${m[2]}-${m[1]}`;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-      return raw;
-    }
-    return null;
+    return toIsoDate(raw);
   }
 }

@@ -1,4 +1,5 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Offer, OfferService} from '../../services/offer.service';
 
 @Component({
@@ -9,7 +10,9 @@ import {Offer, OfferService} from '../../services/offer.service';
     standalone: false
 })
 export class OffersOwnedComponent implements OnInit {
-  offers!: Offer[];
+  offers: Offer[] = [];
+  error: string | null = null;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(private offerService: OfferService) {
   }
@@ -19,9 +22,13 @@ export class OffersOwnedComponent implements OnInit {
   }
 
   getUserOffers() {
-    this.offerService.getUserOffers().subscribe(offers => {
-        this.offers = offers;
-      }
+    this.offerService.getUserOffers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (offers) => {
+          this.offers = offers ?? [];
+        },
+        error: () => {
+          this.error = 'Could not load your offers. Please try again.';
+        }}
     );
   }
 }

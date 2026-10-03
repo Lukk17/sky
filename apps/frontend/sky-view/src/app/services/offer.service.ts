@@ -1,7 +1,17 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
-import {NgForm} from '@angular/forms';
+
+export interface OfferDraft {
+  hotelName: string;
+  description: string;
+  price: number;
+  roomCapacity: number;
+  city: string;
+  country: string;
+  photoPath: string;
+}
+
 import {environment} from '../../environments/environment';
 import {ResponseHandlerService} from './responseHandler.service';
 
@@ -11,9 +21,7 @@ import {ResponseHandlerService} from './responseHandler.service';
 })
 export class OfferService {
 
-  searched!: Offer[];
-  editedOffer!: Offer;
-  detailedOffer!: Offer;
+  searched: Offer[] = [];
   private BASE_ADDRESS = `${environment.apiBaseUrl}`;
   private ALL_OFFERS_URL = this.BASE_ADDRESS + `${environment.allOfferPath}`;
   private OWNED_OFFERS_URL = this.BASE_ADDRESS + `${environment.ownedOffersPath}`;
@@ -25,15 +33,15 @@ export class OfferService {
   constructor(private http: HttpClient) {
   }
 
-  private static buildOffer(offerForm: NgForm) {
+  private static buildOffer(draft: OfferDraft) {
     return new Offer(
-      offerForm.value.hotelName,
-      offerForm.value.description,
-      offerForm.value.price,
-      offerForm.value.roomCapacity,
-      offerForm.value.city,
-      offerForm.value.country,
-      offerForm.value.photoPath,
+      draft.hotelName,
+      draft.description,
+      draft.price,
+      draft.roomCapacity,
+      draft.city,
+      draft.country,
+      draft.photoPath,
     );
   }
 
@@ -55,9 +63,9 @@ export class OfferService {
       );
   }
 
-  public editOffer(offerForm: NgForm) {
-    const offer = OfferService.buildOffer(offerForm);
-    offer.id = this.editedOffer.id;
+  public editOffer(id: string, draft: OfferDraft) {
+    const offer = OfferService.buildOffer(draft);
+    offer.id = id;
 
     return this.http.put<Offer>(this.EDIT_OFFER_URL,
       offer).pipe(
@@ -83,11 +91,17 @@ export class OfferService {
       );
   }
 
-  public addOffer(offerForm: NgForm) {
-    const offer = OfferService.buildOffer(offerForm);
+  public addOffer(draft: OfferDraft) {
+    const offer = OfferService.buildOffer(draft);
 
     return this.http.post<Offer>(this.ADD_OFFER_URL,
-      offer);
+      offer).pipe(
+      catchError((err) => ResponseHandlerService.handleError(err, 'addOffer()'))
+    );
+  }
+
+  public getOfferById(id: string) {
+    return this.getAllOffers().pipe(map((offers) => (offers ?? []).find((o) => o.id === id) ?? null));
   }
 
   public uploadPhoto(offerId: string, file: File) {

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
-import {EMPTY, Observable} from 'rxjs';
+import {Observable, throwError} from 'rxjs';
 import {Offer} from './offer.service';
 import {Message} from './message.service';
 import {Booking} from './booking.service';
@@ -10,11 +10,9 @@ import {Booking} from './booking.service';
 })
 export class ResponseHandlerService {
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static handleError(errorResp: HttpErrorResponse, method: string): Observable<never> {
-    console.log(`Error in Offer service method: ${method} with status: ${errorResp.status}
-    with message: ${JSON.stringify(errorResp.message)} with error: ${JSON.stringify(errorResp.error)}`);
-
-    return EMPTY;
+    return throwError(() => errorResp);
   }
 
   private static unwrap<T>(respData: T[] | { content?: T[] } | Record<string, T>): T[] {
@@ -55,7 +53,6 @@ export class ResponseHandlerService {
   public static handleGetOffersResponse(respData: Offer[] | { content?: Offer[] }) {
     const offers = ResponseHandlerService.unwrap<Offer>(respData as Offer[]);
     offers.forEach((o) => ResponseHandlerService.normalizeOfferGallery(o));
-    console.log(offers.toString());
     return offers;
   }
 
@@ -65,13 +62,11 @@ export class ResponseHandlerService {
 
   public static handleGetBookingsResponse(respData: Booking[] | { content?: Booking[] }) {
     const bookings = ResponseHandlerService.unwrap<Booking>(respData as Booking[]);
-    console.log(bookings.toString());
     return bookings;
   }
 
   public static handleMessageResponse(respData: Message[] | { content?: Message[] }) {
     const messages = ResponseHandlerService.unwrap<Message>(respData as Message[]);
-    console.log(messages);
     return messages;
   }
 }

@@ -1,7 +1,7 @@
 <p-toolbar styleClass="sky-toolbar">
   <ng-template #start>
     <div class="flex items-center gap-1">
-      <img src="assets/logo.png" alt="Sky logo" class="sky-brand-mark" (click)="routeToHome()" data-testid="brand-logo" />
+      <img src="assets/logo.png" alt="Sky logo" class="sky-brand-mark" data-testid="brand-logo" />
       <a (click)="routeToHome()" class="sky-nav-link sky-brand" data-testid="brand-home">Sky</a>
       <a routerLink="/home" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-home">Home</a>
       @if (isAuth) {
@@ -15,10 +15,10 @@
     </div>
   </ng-template>
   <ng-template #center>
-    <form #searchForm="ngForm" (ngSubmit)="search(searchForm)" class="hidden md:flex items-center">
+    <form #searchForm="ngForm" (ngSubmit)="search(searchForm.value.search)" class="hidden md:flex items-center">
       <p-iconfield iconPosition="left" class="sky-search">
         <p-inputicon styleClass="pi pi-search"></p-inputicon>
-        <input pInputText class="w-64 rounded-full" name="search" ngModel placeholder="Search offers" type="text" data-testid="nav-search" />
+        <input pInputText class="w-64 rounded-full" name="search" ngModel aria-label="Search offers" placeholder="Search offers" type="text" data-testid="nav-search" />
       </p-iconfield>
       <p-button icon="pi pi-search" type="submit" styleClass="glossy-search-btn" ariaLabel="Search" data-testid="nav-search-btn"></p-button>
     </form>
@@ -35,7 +35,7 @@
             <p-badge value="{{unreadCount}}" severity="warn" data-testid="notify-badge" styleClass="notify-badge"></p-badge>
           }
         </span>
-        <p-popover #panel>
+        <p-popover #panel aria-label="Notifications panel">
           <div class="notify-list" data-testid="notify-dropdown">
             @for (message of unread; track message.id) {
               <button type="button" class="notify-row" (click)="openThread(message); panel.hide()"
@@ -57,7 +57,7 @@
   </ng-template>
 </p-toolbar>
 @if (banner) {
-  <div class="notify-banner" data-testid="notify-banner" (click)="dismissBanner()">
+  <div class="notify-banner" data-testid="notify-banner" (click)="dismissBanner()" role="alert" aria-live="polite">
     <i class="pi pi-envelope"></i>
     <span><strong>{{banner.sender}}</strong> {{banner.text}}</span>
   </div>
@@ -75,8 +75,8 @@
       <a routerLink="/" class="sky-nav-link" (click)="navOpen = false">Public Offers</a>
       <p-button label="Login" icon="pi pi-sign-in" (onClick)="login()" data-testid="nav-login-mobile"></p-button>
     }
-    <form #searchFormMobile="ngForm" (ngSubmit)="search(searchFormMobile)" class="flex items-center gap-2 md:hidden">
-      <input pInputText class="flex-1 rounded-full" name="search" ngModel placeholder="Search offers" type="text" data-testid="nav-search-mobile" />
+    <form #searchFormMobile="ngForm" (ngSubmit)="search(searchFormMobile.value.search)" class="flex items-center gap-2 md:hidden">
+      <input pInputText class="flex-1 rounded-full" name="search" ngModel aria-label="Search offers" placeholder="Search offers" type="text" data-testid="nav-search-mobile" />
       <p-button label="Search" type="submit"></p-button>
     </form>
   </div>

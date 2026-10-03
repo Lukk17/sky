@@ -10,19 +10,17 @@ import {Router} from '@angular/router';
     standalone: false
 })
 export class OffersComponent {
-  @Input() offers!: Offer[];
+  @Input() offers: Offer[] = [];
   error = null;
 
   constructor(private offerService: OfferService, private router: Router  ) {
   }
 
   editOffer(offer: Offer) {
-    this.offerService.editedOffer = offer;
-    this.router.navigate(['/editOffer']).then();
+    this.router.navigate(['/editOffer'], {queryParams: {offerId: offer.id}}).then();
   }
 
   goToDetails(offer: Offer) {
-    this.offerService.detailedOffer = offer;
-    this.router.navigate(['/offerDetails'], { queryParams: { offerId: offer.id } }).then();
+    this.router.navigate(['/offerDetails'], {queryParams: {offerId: offer.id}}).then();
   }
 }

@@ -1,7 +1,7 @@
 @if (offer) {
 <div class="glass-page fifths" data-testid="offer-fifths">
   @if (isOwner) {
-    <div class="glass-card owner-bar">
+    <div class="glass-panel glass-card owner-bar">
       <p-button label="Edit offer" icon="pi pi-pencil" styleClass="glass-btn" (onClick)="editOffer(offer)" data-testid="offer-edit"></p-button>
       <p-button label="Delete offer" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" (onClick)="deleteOffer(offer.id)" data-testid="offer-delete"></p-button>
     </div>
@@ -13,7 +13,7 @@
       @if (galleryPhotos().length > 0) {
         <p-galleria [value]="galleryPhotos()" [numVisible]="5" [showThumbnails]="false" [showItemNavigators]="true" [showIndicators]="false" [circular]="true" styleClass="glass-card offer-galleria" data-testid="offer-gallery">
           <ng-template #item let-photo>
-            <img alt="Offer gallery photo" class="hero-img" src="{{photo.url ?? photo}}" />
+            <img [alt]="'Photo of ' + (offer?.hotelName ?? 'offer') + ' photo ' + photo.url" class="hero-img" src="{{photo.url ?? photo}}" />
           </ng-template>
         </p-galleria>
       } @else {
@@ -26,23 +26,24 @@
         <span class="fact-chip"><i class="pi pi-map-marker"></i>{{offer.city}}, {{offer.country}}</span>
         <span class="fact-chip"><i class="pi pi-briefcase"></i>{{offer.ownerEmail}}</span>
       </div>
-      <p-card header="About this place" styleClass="glass-card about-card">
+      <p-card header="About this place" styleClass="glass-panel glass-card about-card">
         <p class="about-text">{{offer.description}}</p>
       </p-card>
       <div class="booking-cal-bare" data-testid="booking-calendar-wrap">
         <mwl-calendar-month-view [viewDate]="viewDate" [events]="events" (dayClicked)="onDayClicked($event.day.date)" data-testid="booking-calendar">
         </mwl-calendar-month-view>
       </div>
-      <p-card header="Comments" styleClass="glass-card comments-card" data-testid="offer-comments">
+      <p-card header="Comments" styleClass="glass-panel glass-card comments-card" data-testid="offer-comments">
         <p>{{offer.comment}}</p>
       </p-card>
     </section>
     <aside class="fifth side-col">
-      <p-card header="Your reservation" styleClass="glass-card reserve-card" data-testid="reserve-card">
+      <p-card header="Your reservation" styleClass="glass-panel glass-card reserve-card" data-testid="reserve-card">
         <p class="price-refined" data-testid="offer-price"><span class="price-amount">${{offer.price}}</span><span class="price-per"> / night</span></p>
-        <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm, offer)" class="flex flex-col gap-3">
+        <form #bookingForm="ngForm" (ngSubmit)="onSubmit(bookingForm.value.dateToBook, offer)" class="flex flex-col gap-3">
           <div class="date-wrap">
-            <input pInputText id="dateToBook" name="dateToBook" [(ngModel)]="bookingDateText" required placeholder="dd/mm/yyyy" maxlength="10" class="w-full glass-input date-field" data-testid="booking-date" (input)="onDateInput($event)" (focus)="onDateFocus()" />
+            <label for="dateToBook" class="sr-only">Booking date dd/mm/yyyy</label>
+            <input pInputText id="dateToBook" name="dateToBook" aria-label="Booking date dd/mm/yyyy" [(ngModel)]="bookingDateText" required placeholder="dd/mm/yyyy" maxlength="10" class="w-full glass-input date-field" data-testid="booking-date" (input)="onDateInput($event)" (focus)="onDateFocus()" />
             <button type="button" class="cal-btn" (click)="pickerVisible = !pickerVisible" aria-label="Open calendar" data-testid="booking-calendar-btn"><i class="pi pi-calendar"></i></button>
           </div>
           @if (pickerVisible) {
@@ -64,14 +65,14 @@
     <div class="fifth empty-right" aria-hidden="true"></div>
   </div>
 </div>
-<p-dialog header="Booking confirmed" [(visible)]="bookingConfirmVisible" [modal]="true" styleClass="glass-dialog rgb-dialog" [style]="{width: '24rem'}">
+<p-dialog header="Booking confirmed" [(visible)]="bookingConfirmVisible" [modal]="true" [focusOnShow]="true" [focusTrap]="true" ariaLabel="Booking confirmed dialog" styleClass="glass-card glass-dialog rgb-border rgb-dialog" [style]="{width: '24rem'}">
   <div data-testid="booking-confirm-dialog" class="confirm-body">
     <i class="pi pi-check-circle confirm-icon"></i>
     <p>Your stay on <strong>{{confirmedDateLabel}}</strong> is booked.</p>
     <p-button label="Great" icon="pi pi-check" styleClass="glass-btn" (onClick)="bookingConfirmVisible = false" data-testid="booking-confirm-ok"></p-button>
   </div>
 </p-dialog>
-<p-dialog header="Bookings on {{selectedDayLabel}}" [(visible)]="dayDialogVisible" [modal]="true" styleClass="glass-dialog rgb-dialog">
+<p-dialog header="Bookings on {{selectedDayLabel}}" [(visible)]="dayDialogVisible" [modal]="true" [focusOnShow]="true" [focusTrap]="true" ariaLabel="Bookings for day dialog" styleClass="glass-card glass-dialog rgb-border rgb-dialog">
 <div data-testid="day-dialog">
   @for (b of selectedDayBookings; track b.id) {
     <div class="day-row" data-testid="booking-row">

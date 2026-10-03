@@ -3,14 +3,15 @@ package com.lukk.sky.gateway.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.server.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,8 +32,8 @@ public class SessionController {
     @Value("${spring.security.oauth2.client.registration.keycloak.client-id:}")
     private String clientId;
 
-    @Value("${sky-gateway.frontend-url:http://localhost:4200}")
-    private String frontendUrl;
+    @Value("${sky-gateway.allowed-frontend-urls:http://localhost:4200}")
+    private List<String> allowedFrontendUrls;
 
     @GetMapping("/api/session")
     public Mono<Map<String, String>> session(Mono<Authentication> authentication, ServerWebExchange exchange) {
@@ -42,7 +43,7 @@ public class SessionController {
                 : Mono.empty();
 
         return authentication
-                .map(auth -> emailOf(auth.getPrincipal()))
+                .map(GatewayIdentity::emailOf)
                 .flatMap(email -> tokenValue
                         .map(token -> Map.of("email", email, "csrfToken", token, "logoutUrl", endSessionUrl()))
                         .defaultIfEmpty(Map.of("email", email, "logoutUrl", endSessionUrl())))
@@ -51,19 +52,29 @@ public class SessionController {
 
     private String endSessionUrl() {
         String issuer = issuerUri == null ? "" : issuerUri.trim().replaceAll("/+$", "");
-        String origin = frontendUrl == null || frontendUrl.isBlank()
-                ? "http://localhost:4200"
-                : frontendUrl.trim().replaceAll("/+$", "");
+        String origin = allowedFrontendUrl();
         String client = clientId == null ? "" : clientId.trim();
-        return issuer + "/protocol/openid-connect/logout"
-                + "?post_logout_redirect_uri=" + origin + "/home"
-                + "&client_id=" + client;
+        return UriComponentsBuilder.fromUriString(issuer + "/protocol/openid-connect/logout")
+                .queryParam("post_logout_redirect_uri", origin + "/home")
+                .queryParam("client_id", client)
+                .encode()
+                .build()
+                .toUriString();
     }
 
-    private static String emailOf(Object principal) {
-        if (principal instanceof OidcUser oidcUser && oidcUser.getEmail() != null) {
-            return oidcUser.getEmail();
+    private String allowedFrontendUrl() {
+        String fallback = "http://localhost:4200";
+        if (allowedFrontendUrls == null || allowedFrontendUrls.isEmpty()) {
+            return fallback;
         }
-        return String.valueOf(principal);
+        String candidate = allowedFrontendUrls.get(0) == null ? "" : allowedFrontendUrls.get(0).trim();
+        if (candidate.isEmpty()) {
+            return fallback;
+        }
+        String normalized = candidate.replaceAll("/+$", "");
+        if (!allowedFrontendUrls.contains(candidate) && !allowedFrontendUrls.contains(normalized)) {
+            return fallback;
+        }
+        return normalized;
     }
 }

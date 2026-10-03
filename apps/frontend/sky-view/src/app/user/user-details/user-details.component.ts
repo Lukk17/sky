@@ -1,4 +1,5 @@
-import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Router} from '@angular/router';
 import {PersonalBooking, BookingService} from '../../services/booking.service';
 import {SkyAuthService} from '../../services/sky-auth.service';
@@ -17,12 +18,14 @@ export class UserDetailsComponent implements OnInit {
   bookedOffers: PersonalBooking[] = [];
   myOffers: Offer[] = [];
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private skyAuthService: SkyAuthService, private bookingService: BookingService,
     private offerService: OfferService, private router: Router) {
   }
 
   ngOnInit() {
-    this.skyAuthService.currentUser$.subscribe((email) => {
+    this.skyAuthService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (email) => {
       this.user = email;
       if (email) {
         this.offerService.getAllOffers().subscribe({
@@ -30,7 +33,7 @@ export class UserDetailsComponent implements OnInit {
             const list = all ?? [];
             const byId = new Map(list.map((o) => [o.id, o]));
             const wanted = email.trim().toLowerCase();
-            this.offerService.getUserOffers().subscribe({
+            this.offerService.getUserOffers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
               next: (owned) => {
                 this.myOffers = (owned && owned.length > 0)
                   ? owned
@@ -40,10 +43,10 @@ export class UserDetailsComponent implements OnInit {
                 this.myOffers = list.filter((o) => (o.ownerEmail ?? '').toLowerCase() === wanted);
               },
             });
-            this.bookingService.getBookedOffers().subscribe({
+            this.bookingService.getBookedOffers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
               next: (bookings) => {
                 this.bookedOffers = (bookings ?? []).map(
-                  (x) => new PersonalBooking(byId.get(x.offerId)?.hotelName ?? x.offerId, String(x.id), x.offerId, x.bookedDate)
+                  (x) => new PersonalBooking(byId.get(x.offerId)?.hotelName ?? x.offerId, x.id, x.offerId, x.bookedDate)
                 );
               },
               error: (e) => this.handleError(e),
@@ -52,23 +55,11 @@ export class UserDetailsComponent implements OnInit {
           error: (e) => this.handleError(e),
         });
       }
-    });
+    },
+      error: (e) => this.handleError(e)});
   }
 
   openOffer(id: string): void {
-    const found = this.myOffers.find((o) => o.id === id);
-    if (found) {
-      this.offerService.detailedOffer = found;
-    } else {
-      this.offerService.getAllOffers().subscribe({
-        next: (all) => {
-          const match = (all ?? []).find((o) => o.id === id);
-          if (match) {
-            this.offerService.detailedOffer = match;
-          }
-        },
-      });
-    }
     this.router.navigate(['/offerDetails'], {queryParams: {offerId: id}}).then();
   }
 

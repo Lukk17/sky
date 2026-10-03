@@ -11,8 +11,8 @@ import {Router} from '@angular/router';
 })
 export class OfferSearchComponent implements OnInit {
 
-  offers!: Offer[];
-
+  offers: Offer[] = [];
+  error: string | null = null;
   constructor(private offerService: OfferService, private router: Router) {
   }
 

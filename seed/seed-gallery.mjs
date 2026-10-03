@@ -1,18 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync } from "node:fs";
-import { basename, join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-const HERE = dirname(fileURLToPath(import.meta.url));
-const EDGE = (process.env.EDGE_BASE || "http://localhost:5777").replace(/\/$/, "");
-const KEYCLOAK_BASE = (process.env.KEYCLOAK_BASE || "https://keycloak.test:9443").replace(/\/$/, "");
-if (process.env.TLS_INSECURE === "1") process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "sky-backend";
-const CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "dev-only-change-in-prod";
-const users = JSON.parse(readFileSync(join(HERE, "users.json"), "utf8"));
-const offers = JSON.parse(readFileSync(join(HERE, "offers.json"), "utf8"));
+import { HERE, EDGE, KEYCLOAK_BASE, CLIENT_ID, CLIENT_SECRET, load, join, basename, ok, req, userToken } from "./lib/http.mjs";
+const users = load("users.json");
+const offers = load("offers.json");
 const rooms = ["rooms/lukk-mountain-cabin-room.jpg","rooms/lukk-seaside-flat-room.jpg","rooms/miami-bay-view-room.jpg","rooms/miami-palm-breeze-room.jpg","rooms/miami-sunshine-suites-room.jpg","rooms/warsaw-chopin-residence-room.jpg","rooms/warsaw-old-town-stay-room.jpg","rooms/warsaw-prestige-tower-room.jpg","rooms/warsaw-vistula-lofts-room.jpg"];
-async function token(u){const r=await fetch(`${KEYCLOAK_BASE}/realms/sky/protocol/openid-connect/token`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({grant_type:"password",client_id:CLIENT_ID,client_secret:CLIENT_SECRET,username:u.username,password:u.password})});const t=await r.text();let j={};try{j=JSON.parse(t);}catch{throw new Error(`token ${u.username}: ${r.status} ${t.slice(0,120)}`);}if(!j.access_token)throw new Error(`token ${u.username}: ${r.status} ${t.slice(0,120)}`);return j.access_token;}
-async function upload(token_,id,path){const bytes=readFileSync(path);const b="g"+Date.now().toString(16);const head=Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="file"; filename="${basename(path)}"\r\nContent-Type: image/jpeg\r\n\r\n`);const tail=Buffer.from(`\r\n--${b}--\r\n`);const r=await fetch(`${EDGE}/api/v1/owner/offers/${id}/photos`,{method:"POST",headers:{Authorization:`Bearer ${token_}`,"Content-Type":`multipart/form-data; boundary=${b}`},body:Buffer.concat([head,bytes,tail])});return r.status;}
+async function token(u){ return userToken(u.username, u.password); }
+async function upload(token_,id,path){const bytes=readFileSync(path);const r=await req("POST",`${EDGE}/api/v1/owner/offers/${id}/photos`,{token:token_,file:{bytes,filename:basename(path)}});return r.status;}
 const toks={};for(const u of users){toks[u.email]=await token(u);}
 const lr=await fetch(`${EDGE}/api/v1/offers?size=100`,{headers:{Authorization:`Bearer ${toks[users[0].email]}`}});const lj=await lr.json();const live=lj.content??lj;
 let ri=0;

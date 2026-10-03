@@ -3,9 +3,8 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {SkyAuthService} from '../services/sky-auth.service';
 
-import {NgForm} from '@angular/forms';
-import {interval, switchMap} from 'rxjs';
-import {OfferService} from '../services/offer.service';
+
+import {OfferService, Offer} from '../services/offer.service';
 import {Message, MessageReadStore, MessageService} from '../services/message.service';
 import {StompService} from '../services/StompService';
 
@@ -60,15 +59,13 @@ export class HeaderComponent implements OnInit {
         this.showBanner(event.senderEmail ?? 'Sky', event.text ?? 'You have a new message');
       }
     });
-    // Chat messages publish no push event (sky-message has no Kafka/outbound),
-    // so poll while logged in; STOMP still covers offer/booking events instantly.
-    interval(5000).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      switchMap(() => this.isAuth ? this.messageService.getReceived() : []),
-    ).subscribe((messages) => {
-      if (this.isAuth && messages) {
-        this.applyUnread(messages);
-      }
+    this.messageService.unread$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (messages) => {
+        if (this.isAuth && messages) {
+          this.applyUnread(messages);
+        }
+      },
+      error: () => undefined,
     });
   }
 
@@ -90,9 +87,12 @@ export class HeaderComponent implements OnInit {
     }
   }
 
+  bannerError: string | null = null;
+
   private refreshUnread() {
-    this.messageService.getReceived().subscribe((messages) => {
-      this.applyUnread(messages ?? []);
+    this.messageService.getReceived().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (messages) => this.applyUnread(messages ?? []),
+      error: () => undefined,
     });
   }
 
@@ -131,13 +131,19 @@ export class HeaderComponent implements OnInit {
     this.skyAuth.logout();
   }
 
-  search(searchForm: NgForm) {
-    this.offerService.searchOffer(searchForm.value.search).subscribe(offers => {
+  searchError: string | null = null;
+
+  search(term: string) {
+    this.searchError = null;
+    this.offerService.searchOffer(term).subscribe({next: (offers: Offer[]) => {
       this.offerService.searched = offers;
       // mid navigating to "/home" required to reload "/offerSearch" items [workaround]
       this.router.navigate(['/home']).then(() => {
         this.router.navigate(['/offerSearch']).then();
       });
-    });
+      },
+      error: () => {
+        this.searchError = 'Search failed. Please try again.';
+      }});
   }
 }

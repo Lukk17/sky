@@ -1,7 +1,8 @@
 import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
-import {forkJoin, interval, switchMap} from 'rxjs';
+import {forkJoin} from 'rxjs';
+import {groupThreads} from '../utils/message-threads.util';
 import {Message, MessageReadStore, MessageService} from '../services/message.service';
 import {StompService} from '../services/StompService';
 import {SkyAuthService} from '../services/sky-auth.service';
@@ -63,19 +64,17 @@ export class MessageComponent implements OnInit {
       }
     });
 
-    this.stompService.getMessages().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.stompService.getMessages()?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.refresh();
     });
 
-    // Chat messages publish no push event (sky-message has no Kafka/outbound),
-    // so poll while logged in; STOMP still covers offer/booking events instantly.
-    interval(5000).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      switchMap(() => this.ownEmail ? this.messageService.getReceived() : []),
-    ).subscribe(() => {
-      if (this.ownEmail) {
-        this.refresh();
-      }
+    this.messageService.unread$?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        if (this.ownEmail) {
+          this.refresh();
+        }
+      },
+      error: () => undefined,
     });
   }
 
@@ -89,11 +88,13 @@ export class MessageComponent implements OnInit {
       new Date(a.createdTime).getTime() - new Date(b.createdTime).getTime());
   }
 
+  loadError: string | null = null;
+
   private refresh() {
     forkJoin({
       received: this.messageService.getReceived(),
       sent: this.messageService.getSent(),
-    }).subscribe(({received, sent}) => {
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: ({received, sent}) => {
       this.sentIds = new Set((sent ?? []).map((m) => m.id));
       this.threads = this.buildThreads(received ?? [], sent ?? []);
       if (this.selectedEmail && !this.threads.some((t) => t.email === this.selectedEmail)) {
@@ -104,33 +105,14 @@ export class MessageComponent implements OnInit {
       } else if (this.selectedEmail && this.selectedFromUrl) {
         this.markThreadRead(this.selectedEmail);
       }
-    });
+      },
+      error: () => {
+        this.loadError = 'Could not load messages. Please try again.';
+      }});
   }
 
   private buildThreads(received: Message[], sent: Message[]): Thread[] {
-    const byOther = new Map<string, Message[]>();
-    const receivedIds = new Set(received.map((m) => m.id));
-    for (const m of MessageComponent.newestFirst([...received, ...sent])) {
-      const other = receivedIds.has(m.id)
-        ? (m.senderEmail ?? this.otherParty(m))
-        : (m.receiverEmail ?? this.otherParty(m));
-      if (!other) {
-        continue;
-      }
-      if (!byOther.has(other)) {
-        byOther.set(other, []);
-      }
-      byOther.get(other)?.push(m);
-    }
-    const threads: Thread[] = [];
-    for (const [email, msgs] of byOther) {
-      const ordered = MessageComponent.oldestFirst(msgs);
-      const latest = MessageComponent.newestFirst(msgs)[0];
-      const unread = msgs.filter((m) => receivedIds.has(m.id) && !this.readStore.isRead(m)).length;
-      threads.push({email, messages: ordered, latest, unread});
-    }
-    return threads.sort((a, b) =>
-      new Date(b.latest.createdTime).getTime() - new Date(a.latest.createdTime).getTime());
+    return groupThreads(received, sent, this.ownEmail, (m) => this.readStore.isRead(m));
   }
 
   private otherParty(m: Message): string | null {
@@ -180,17 +162,21 @@ export class MessageComponent implements OnInit {
     if (!text || !this.selectedEmail) {
       return;
     }
-    this.messageService.sendDirect(this.selectedEmail, text).subscribe(() => {
-      this.replyText = '';
-      this.refresh();
-    });
+    this.messageService.sendDirect(this.selectedEmail, text).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.replyText = '';
+        this.refresh();
+      },
+      error: () => {
+        this.loadError = 'Could not send the reply. Please try again.';
+      }});
   }
 
   deleteMessage(id: number) {
-    this.messageService.deleteMessage(id).subscribe(value => {
-      console.log(value);
-      this.refresh();
-      return value;
-    });
+    this.messageService.deleteMessage(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.refresh(),
+      error: () => {
+        this.loadError = 'Could not delete the message. Please try again.';
+      }});
   }
 }

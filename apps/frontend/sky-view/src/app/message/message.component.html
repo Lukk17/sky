@@ -48,7 +48,8 @@
           }
         </div>
         <div class="reply-box">
-          <input pInputText [(ngModel)]="replyText" placeholder="Write a reply"
+          <label for="replyInput" class="sr-only">Reply message</label>
+          <input pInputText id="replyInput" [(ngModel)]="replyText" name="replyText" aria-label="Reply message" placeholder="Write a reply"
             data-testid="reply-input" (keyup.enter)="sendReply()" />
           <p-button label="Send" icon="pi pi-send" styleClass="send-ghost-btn" (onClick)="sendReply()"
             [disabled]="!replyText.trim()" data-testid="reply-send"></p-button>

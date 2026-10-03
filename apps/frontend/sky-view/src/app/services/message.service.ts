@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
-import {NgForm} from '@angular/forms';
+import {shareReplay, switchMap, timer} from 'rxjs';
 import {ResponseHandlerService} from './responseHandler.service';
 import {environment} from '../../environments/environment';
 
@@ -34,16 +34,21 @@ export class MessageService {
   constructor(private http: HttpClient) {
   }
 
-  private static buildMessage(messageForm: NgForm) {
+  private static buildMessage(draft: MessageDraft) {
     return new Message(
-      messageForm.value.text,
-      messageForm.value.receiver,
+      draft.text,
+      draft.receiver,
     );
   }
 
   // Threads are built client-side from the whole inbox, so ask for one big
   // page: the default size 20 hides older threads and any message past it.
+  // PAGE is the inbox page size used by getReceived/getSent; increase only with backend pagination support.
   private static readonly PAGE = '?size=500';
+  public readonly unread$ = timer(0, 5000).pipe(
+    switchMap(() => this.getReceived()),
+    shareReplay({bufferSize: 1, refCount: true}),
+  );
 
   getReceived() {
     return this.http.get<Message[]>(`${this.RECEIVED_MESSAGES_URL}${MessageService.PAGE}`).pipe(
@@ -59,8 +64,8 @@ export class MessageService {
     );
   }
 
-  sendMessage(messageForm: NgForm) {
-    const message = MessageService.buildMessage(messageForm);
+  sendMessage(draft: MessageDraft) {
+    const message = MessageService.buildMessage(draft);
     return this.sendDirect(message.receiverEmail, message.text);
   }
 
@@ -91,4 +96,9 @@ export class Message {
     this.text = text;
     this.receiverEmail = receiverEmail;
   }
+}
+
+export interface MessageDraft {
+  text: string;
+  receiver: string;
 }

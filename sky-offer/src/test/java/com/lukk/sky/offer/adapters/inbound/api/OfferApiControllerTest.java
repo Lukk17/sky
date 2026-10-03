@@ -477,12 +477,22 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
         // then
         assertEquals(TEST_OWNER_EMAIL, result.getResponse().getContentAsString());
+    }
+
+    @Test
+    @DisplayName("getOfferOwner_whenJwtHasNoUserRole_thenReturn403")
+    void getOfferOwner_whenJwtHasNoUserRole_thenReturn403() throws Exception {
+        mvc.perform(
+                        get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -497,7 +507,7 @@ class OfferApiControllerTest {
         MvcResult result = mvc.perform(
                         get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL))))
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
@@ -601,6 +611,54 @@ class OfferApiControllerTest {
 
         // then
         assertTrue(result.getResponse().getContentAsString().contains("Unsupported image format"));
+    }
+
+    @Test
+    @DisplayName("uploadPhoto_whenFileExceeds5Mb_thenReturn413")
+    void uploadPhoto_whenFileExceeds5Mb_thenReturn413() throws Exception {
+        // given
+        byte[] header = VALID_PNG_BYTES;
+        byte[] big = new byte[(5 * 1024 * 1024) + 1];
+        System.arraycopy(header, 0, big, 0, header.length);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.png", "image/png", big
+        );
+
+        // when
+        MvcResult result = mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isPayloadTooLarge())
+                .andReturn();
+
+        // then
+        assertTrue(result.getResponse().getContentAsString().contains("5 MB"));
+    }
+
+    @Test
+    @DisplayName("uploadGalleryPhoto_whenFileExceeds5Mb_thenReturn413")
+    void uploadGalleryPhoto_whenFileExceeds5Mb_thenReturn413() throws Exception {
+        // given
+        byte[] header = VALID_PNG_BYTES;
+        byte[] big = new byte[(5 * 1024 * 1024) + 1];
+        System.arraycopy(header, 0, big, 0, header.length);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "hotel.png", "image/png", big
+        );
+
+        // when
+        MvcResult result = mvc.perform(
+                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photos")
+                                .file(file)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isPayloadTooLarge())
+                .andReturn();
+
+        // then
+        assertTrue(result.getResponse().getContentAsString().contains("5 MB"));
     }
 
     @Test
@@ -940,5 +998,32 @@ class OfferApiControllerTest {
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(offerService);
+    }
+
+    @Test
+    @DisplayName("deleteGalleryPhoto_whenCoverDeleted_thenReturn200WithFirstRemainingPromoted")
+    void deleteGalleryPhoto_whenCoverDeleted_thenReturn200WithPromotedCover() throws Exception {
+        // given
+        java.util.UUID survivorId = java.util.UUID.randomUUID();
+        OfferDTO response = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        com.lukk.sky.offer.adapters.dto.PhotoDTO survivor =
+                com.lukk.sky.offer.adapters.dto.PhotoDTO.builder()
+                        .id(survivorId).position(0).url("https://cdn.example/next.png").main(true).build();
+        response.setGallery(java.util.List.of(survivor));
+        response.setCoverPhotoUrl("https://cdn.example/next.png");
+        java.util.UUID photoId = java.util.UUID.randomUUID();
+        when(offerService.deleteGalleryPhoto(eq(TEST_DEFAULT_OFFER_ID), eq(photoId), eq(TEST_USER_EMAIL)))
+                .thenReturn(response);
+
+        // when / then
+        mvc.perform(
+                        delete(String.format("/owner/offers/%s/photos/%s", TEST_DEFAULT_OFFER_ID, photoId))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gallery[0].id").value(survivorId.toString()))
+                .andExpect(jsonPath("$.gallery[0].main").value(true))
+                .andExpect(jsonPath("$.coverPhotoUrl").value("https://cdn.example/next.png"));
     }
 }

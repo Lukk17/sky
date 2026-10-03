@@ -10,6 +10,7 @@ import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
 import com.lukk.sky.common.openapi.ApiUnsupportedMediaTypeResponse;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.offer.domain.exception.GalleryLimitExceededException;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,6 +63,8 @@ public class OfferApiController {
             "Create, edit, delete, and photograph the offers the caller owns.";
 
     private static final int SEARCH_TERM_MAX_LENGTH = 100;
+
+    private static final long MAX_UPLOAD_BYTES = 5L * 1024 * 1024;
 
     private static final String IMAGE_WEBP_VALUE = "image/webp";
     private static final Set<String> SNIFFED_IMAGE_TYPES =
@@ -121,7 +124,7 @@ public class OfferApiController {
     @PostMapping("/owner/offers")
     public ResponseEntity<OfferDTO> addOffer(@Valid @RequestBody OfferDTO offer) {
         String ownerEmail = SecurityUtils.currentUserEmail();
-        log.info("Adding new offer from owner:{}", ownerEmail);
+        log.info("Adding new offer.");
 
         offer.setOwnerEmail(ownerEmail);
         OfferDTO addedOffer = offerService.addOffer(offer);
@@ -146,7 +149,7 @@ public class OfferApiController {
     @PutMapping("/owner/offers")
     public ResponseEntity<OfferDTO> edit(@Valid @RequestBody OfferEditDTO offer) {
         String ownerEmail = SecurityUtils.currentUserEmail();
-        log.info("Editing offer with ID: {} from owner:{}", offer.getId(), ownerEmail);
+        log.info("Editing offer with ID: {}", offer.getId());
 
         OfferDTO edited = offerService.editOffer(offer, ownerEmail);
 
@@ -167,7 +170,7 @@ public class OfferApiController {
     @DeleteMapping("/owner/offers/{offerId}")
     public ResponseEntity<Void> deleteOffer(@PathVariable UUID offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
-        log.info("Deleting offer with ID:{}, from owner:{}", offerId, ownerEmail);
+        log.info("Deleting offer with ID: {}", offerId);
 
         offerService.deleteOffer(offerId, ownerEmail);
 
@@ -211,6 +214,8 @@ public class OfferApiController {
                     content = @Content)
     })
     @Tag(name = OFFERS_TAG, description = OFFERS_TAG_DESCRIPTION)
+    @ApiSecuredErrorResponses
+    @IsUser
     @GetMapping("/offers/{offerId}/owner")
     public ResponseEntity<String> getOfferOwner(@PathVariable UUID offerId) {
         log.info("Trying to find owner of offer with ID: {}", offerId);
@@ -245,11 +250,12 @@ public class OfferApiController {
         if (file.isEmpty()) {
             throw new OfferException("Uploaded file must not be empty.");
         }
+        rejectWhenTooLarge(file);
 
         String validatedContentType = detectContentType(file);
 
         String ownerEmail = SecurityUtils.currentUserEmail();
-        log.info("Uploading photo for offer ID: {} from owner: {}", offerId, ownerEmail);
+        log.info("Uploading photo for offer ID: {}", offerId);
 
         InputStream inputStream = file.getInputStream();
 
@@ -278,14 +284,16 @@ public class OfferApiController {
     @DeleteMapping("/owner/offers/{offerId}/photo")
     public ResponseEntity<Void> deletePhoto(@PathVariable UUID offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
-        log.info("Deleting photo of offer ID: {} from owner: {}", offerId, ownerEmail);
+        log.info("Deleting photo of offer ID: {}", offerId);
 
         offerService.deletePhoto(offerId, ownerEmail);
 
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Upload a photo to the offer gallery (owner only)")
+    @Operation(summary = "Upload a photo to the offer gallery (owner only)",
+            description = "Appends a photo at the end of the gallery, which holds at most 10 photos. "
+                    + "A concurrent cover change is answered with 409.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Photo appended to gallery",
                     content = {@Content(mediaType = "application/json",
@@ -299,6 +307,7 @@ public class OfferApiController {
     })
     @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
     @ApiSecuredErrorResponses
+    @ApiConflictResponse
     @ApiUnsupportedMediaTypeResponse
     @ApiDependencyBadGatewayResponse
     @ApiDependencyUnavailableResponse
@@ -310,6 +319,7 @@ public class OfferApiController {
         if (file.isEmpty()) {
             throw new OfferException("Uploaded file must not be empty.");
         }
+        rejectWhenTooLarge(file);
         String validatedContentType = detectContentType(file);
         String ownerEmail = SecurityUtils.currentUserEmail();
         InputStream inputStream = file.getInputStream();
@@ -341,6 +351,8 @@ public class OfferApiController {
             @ApiResponse(responseCode = "200", description = "Gallery reordered",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "400", description = "Invalid position",
+                    content = @Content),
             @ApiResponse(responseCode = "404", description = "Offer or photo not found",
                     content = @Content)
     })
@@ -371,6 +383,13 @@ public class OfferApiController {
             @PathVariable UUID offerId, @PathVariable UUID photoId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         return ResponseEntity.ok(offerService.setGalleryCover(offerId, photoId, ownerEmail));
+    }
+
+    private static void rejectWhenTooLarge(MultipartFile file) {
+        if (file.getSize() > MAX_UPLOAD_BYTES) {
+            throw new GalleryLimitExceededException(
+                    "Uploaded file must not exceed 5 MB.");
+        }
     }
 
     private static String detectContentType(MultipartFile file) throws IOException {

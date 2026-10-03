@@ -7,7 +7,8 @@
     @if (error) {
       <p class="text-red-400">{{error}}</p>
     }
-    <form #offerForm="ngForm" (ngSubmit)="onSubmit(offerForm)" class="flex flex-col gap-4">
+    @if (offer) {
+    <form #offerForm="ngForm" (ngSubmit)="onSubmit(offerForm)" aria-label="Edit offer form" class="flex flex-col gap-4">
       <p-floatlabel variant="on">
         <input pInputText [(ngModel)]="offer.hotelName" id="hotelName" name="hotelName" ngModel required type="text" class="w-full" />
         <label for="hotelName">Hotel Name</label>
@@ -29,7 +30,7 @@
         <label for="photoPath">Photo Link</label>
       </p-floatlabel>
       @if (offer.photoPath) {
-        <img [src]="offer.photoPath" alt="Photo preview" class="w-full aspect-video object-cover rounded-xl" />
+        <img [src]="offer.photoPath" alt="Preview photo of offer" class="w-full aspect-video object-cover rounded-xl" />
       }
       <p-floatlabel variant="on">
         <input pInputText [(ngModel)]="offer.roomCapacity" id="roomCapacity" name="roomCapacity" ngModel required type="number" class="w-full" />
@@ -41,5 +42,8 @@
       </p-floatlabel>
       <p-button label="Save Offer" icon="pi pi-check" type="submit" styleClass="glass-btn-accent" [disabled]="offerForm.invalid" data-testid="edit-submit"></p-button>
     </form>
+    } @else if (!error) {
+      <p class="muted">Loading offer</p>
+    }
   </p-card>
 </div>

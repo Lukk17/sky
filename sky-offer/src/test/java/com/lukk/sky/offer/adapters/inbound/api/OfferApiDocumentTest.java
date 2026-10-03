@@ -167,12 +167,12 @@ class OfferApiDocumentTest {
     }
 
     @Test
-    @DisplayName("getOfferOwner declares 401 but not 403, because it needs a token and no realm role")
-    void getOfferOwner_declares401ButNot403() {
+    @DisplayName("getOfferOwner declares 401 and 403, because it needs a token with a user realm role")
+    void getOfferOwner_declares401And403() {
         JsonNode responses = responsesOf("getOfferOwner");
 
         assertThat(responses.has("401")).as("owner lookup declares %s", responses.propertyNames()).isTrue();
-        assertThat(responses.has("403")).as("owner lookup declares %s", responses.propertyNames()).isFalse();
+        assertThat(responses.has("403")).as("owner lookup declares %s", responses.propertyNames()).isTrue();
     }
 
     @Test

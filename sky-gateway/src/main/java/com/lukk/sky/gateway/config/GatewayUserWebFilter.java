@@ -6,8 +6,6 @@ import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -49,19 +47,6 @@ public class GatewayUserWebFilter implements GlobalFilter, Ordered {
     }
 
     static String principalName(Authentication authentication) {
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof OidcUser oidcUser) {
-            String email = oidcUser.getEmail();
-            if (email != null && !email.isBlank()) {
-                return email;
-            }
-        }
-        if (authentication instanceof OAuth2AuthenticationToken oauth2) {
-            Object email = oauth2.getPrincipal().getAttribute("email");
-            if (email != null && !email.toString().isBlank()) {
-                return email.toString();
-            }
-        }
-        return authentication.getName();
+        return GatewayIdentity.emailOf(authentication);
     }
 }
