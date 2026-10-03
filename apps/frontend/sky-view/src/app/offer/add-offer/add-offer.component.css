@@ -10,4 +10,4 @@
 :host ::ng-deep .p-floatlabel:has(input:not(:placeholder-shown)) label,
 :host ::ng-deep .p-floatlabel:has(input:focus) label,
 :host ::ng-deep .p-floatlabel.p-floatlabel-focus label,
-:host ::ng-deep .p-floatlabel.p-floatlabel-filled label { color: rgba(255,255,255,0.92); background: rgba(18,18,24,0.9); padding: 0 0.35rem; border-radius: 0.3rem; }
+:host ::ng-deep .p-floatlabel.p-floatlabel-filled label { color: rgba(255,255,255,0.92); background: transparent; padding: 0 0.35rem; border-radius: 0.3rem; }

@@ -47,7 +47,7 @@ test('logged-out details never call secured bookings and prompt login', async ({
   await page.goto(`/offerDetails?offerId=${offerId}`);
   await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
   await expect(page.getByTestId('booking-calendar')).toBeVisible();
-  await expect(page.getByText('Calendar is read-only')).toBeVisible();
+  await expect(page.getByText('Calendar is read-only')).toHaveCount(0);
   expect(bookingsHit).toBe(false);
   await expect(page).toHaveURL(new RegExp('offerDetails'));
 });

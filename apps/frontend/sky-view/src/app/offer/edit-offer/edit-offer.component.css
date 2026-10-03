@@ -6,6 +6,6 @@
 :host ::ng-deep .p-floatlabel:has(input:not(:placeholder-shown)) label,
 :host ::ng-deep .p-floatlabel:has(input:focus) label,
 :host ::ng-deep .p-floatlabel.p-floatlabel-focus label,
-:host ::ng-deep .p-floatlabel.p-floatlabel-filled label { color: rgba(255,255,255,0.92); background: rgba(18,18,24,0.9); padding: 0 0.35rem; border-radius: 0.3rem; }
+:host ::ng-deep .p-floatlabel.p-floatlabel-filled label { color: rgba(255,255,255,0.92); background: transparent; padding: 0 0.35rem; border-radius: 0.3rem; }
 .edit-offer-title { text-align: center; font-size: 1.9rem; font-weight: 800; letter-spacing: 0.02em; line-height: 1.2; margin: 1.25rem 0 0.15rem; background: linear-gradient(180deg,#fff,#fdba74 60%,#f97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .edit-offer-subtitle { text-align: center; color: rgba(255,255,255,0.55); font-size: 0.9rem; margin: 0 0 1rem; }

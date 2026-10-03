@@ -6,10 +6,10 @@
       <p-button label="Delete offer" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" (onClick)="deleteOffer(offer.id)" data-testid="offer-delete"></p-button>
     </div>
   }
+  <h3 class="offer-title-plain" data-testid="offer-title">{{offer.hotelName}}</h3>
   <div class="fifths-grid">
     <div class="fifth empty-left" aria-hidden="true"></div>
     <section class="fifth gallery-col">
-      <h3 class="offer-title-plain" data-testid="offer-title">{{offer.hotelName}}</h3>
       @if (galleryPhotos().length > 0) {
         <p-galleria [value]="galleryPhotos()" [numVisible]="5" [showThumbnails]="false" [showItemNavigators]="true" [showIndicators]="false" [circular]="true" styleClass="glass-card offer-galleria" data-testid="offer-gallery">
           <ng-template #item let-photo>
@@ -20,11 +20,8 @@
         <p class="muted">No photos yet</p>
       }
       <div class="contact-row">
-        @if (!isOwner) {
-          <p-button label="Contact owner" icon="pi pi-comments" styleClass="glass-btn" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
-        }
       </div>
-      <div class="facts-row">
+      <div class="facts-row facts-centered">
         <span class="fact-chip"><i class="pi pi-users"></i>{{offer.roomCapacity}} guests</span>
         <span class="fact-chip"><i class="pi pi-map-marker"></i>{{offer.city}}, {{offer.country}}</span>
         <span class="fact-chip"><i class="pi pi-briefcase"></i>{{offer.ownerEmail}}</span>
@@ -32,13 +29,10 @@
       <p-card header="About this place" styleClass="glass-card about-card">
         <p class="about-text">{{offer.description}}</p>
       </p-card>
-      <p-card header="Bookings" styleClass="glass-card bookings-card quarter-cal">
+      <div class="booking-cal-bare" data-testid="booking-calendar-wrap">
         <mwl-calendar-month-view [viewDate]="viewDate" [events]="events" (dayClicked)="onDayClicked($event.day.date)" data-testid="booking-calendar">
         </mwl-calendar-month-view>
-        @if (!isLoggedIn) {
-          <p class="muted">Calendar is read-only. Log in to book.</p>
-        }
-      </p-card>
+      </div>
       <p-card header="Comments" styleClass="glass-card comments-card" data-testid="offer-comments">
         <p>{{offer.comment}}</p>
       </p-card>
@@ -63,10 +57,9 @@
           <p class="err" data-testid="booking-error">{{bookingError}}</p>
         }
       </p-card>
-      <div class="map-tile glass-card" data-testid="location-map" role="img" [attr.aria-label]="'Map of ' + offer.city + ', ' + offer.country">
-        <i class="pi pi-map-marker map-pin"></i>
-        <span class="map-label">{{offer.city}}, {{offer.country}}</span>
-      </div>
+      @if (!isOwner) {
+        <p-button label="Contact owner" icon="pi pi-comments" styleClass="glass-btn contact-under" (onClick)="messageOwner()" data-testid="message-owner"></p-button>
+      }
     </aside>
     <div class="fifth empty-right" aria-hidden="true"></div>
   </div>

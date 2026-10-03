@@ -2,6 +2,8 @@
   cursor: pointer;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
+:host { display: block; padding: 0 1rem 1rem; }
+:host .grid { gap: 1rem; }
 .offer-card:hover {
   box-shadow: var(--p-card-shadow);
   transform: translateY(-2px);
