@@ -132,12 +132,12 @@ export class OfferDetailsComponent implements OnInit {
   }
 
   editOffer(offer: Offer) {
-    this.router.navigate(['/editOffer'], {queryParams: {offerId: offer.id}}).then();
+    this.router.navigate(['/edit-offer'], {queryParams: {offerId: offer.id}}).then();
   }
 
   deleteOffer(id: string) {
     this.offerService.deleteOffer(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.router.navigate(['/myOffers']).then(),
+      next: () => this.router.navigate(['/my-offers']).then(),
       error: () => {
         this.loadError = 'Could not delete the offer. Please try again.';
       }});

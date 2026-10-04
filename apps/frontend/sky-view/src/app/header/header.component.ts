@@ -130,9 +130,9 @@ export class HeaderComponent implements OnInit {
     }
     this.offerService.searchOffer(q).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (offers: Offer[]) => {
       this.offerService.searched = offers;
-      // mid navigating to "/home" required to reload "/offerSearch" items [workaround]
+      // mid navigating to "/home" required to reload "/offer-search" items [workaround]
       this.router.navigate(['/home']).then(() => {
-        this.router.navigate(['/offerSearch']).then();
+        this.router.navigate(['/offer-search']).then();
       });
       },
       error: () => {

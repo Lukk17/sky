@@ -31,7 +31,7 @@ test('clicking an offer card opens details without crashing', async ({ page }) =
   await page.goto('/');
   await page.getByText('Grand Test Hotel').first().click();
 
-  await expect(page).toHaveURL(new RegExp(`offerDetails\\?offerId=${offerId}`));
+  await expect(page).toHaveURL(new RegExp(`offer-details\\?offerId=${offerId}`));
   await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
 });
 
@@ -44,19 +44,19 @@ test('logged-out details never call secured bookings and prompt login', async ({
     return route.fulfill({ json: [] });
   });
 
-  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await page.goto(`/offer-details?offerId=${offerId}`);
   await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
   await expect(page.getByTestId('booking-calendar')).toBeVisible();
   await expect(page.getByText('Calendar is read-only')).toHaveCount(0);
   expect(bookingsHit).toBe(false);
-  await expect(page).toHaveURL(new RegExp('offerDetails'));
+  await expect(page).toHaveURL(new RegExp('offer-details'));
 });
 
 test('offer details render from query param after reload (no service memory)', async ({ page }) => {
   await mockLoggedOut(page);
   await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
 
-  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await page.goto(`/offer-details?offerId=${offerId}`);
   await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
 });
 
@@ -83,7 +83,7 @@ test('calendar shows red booked day and refreshes after booking without reload',
     return route.continue();
   });
 
-  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await page.goto(`/offer-details?offerId=${offerId}`);
   await expect(page.getByTestId('booking-calendar')).toBeVisible();
   await page.getByTestId('booking-date').fill(fillDate);
   await page.getByTestId('booking-submit').locator('button').click();
@@ -99,7 +99,7 @@ test('gallery renders cover plus arrows without thumbnails', async ({ page }) =>
   await mockLoggedOut(page);
   const withGallery = { ...offer, coverPhotoUrl: 'https://img.test/a.jpg', gallery: [{ id: 'p1', position: 0, url: 'https://img.test/a.jpg' }, { id: 'p2', position: 1, url: 'https://img.test/b.jpg' }] };
   await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [withGallery] }));
-  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await page.goto(`/offer-details?offerId=${offerId}`);
   await expect(page.getByTestId('offer-gallery')).toBeVisible();
   await expect(page.getByTestId('offer-hero')).toHaveCount(0);
   await expect(page.getByTestId('offer-thumb')).toHaveCount(0);
@@ -117,7 +117,7 @@ test('day click opens dialog with who plus price and cancel works', async ({ pag
     }
     return route.continue();
   });
-  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await page.goto(`/offer-details?offerId=${offerId}`);
   await page.getByTestId('booking-calendar').locator('.cal-day-cell', { hasText: '15' }).first().click();
   await expect(page.getByTestId('day-dialog')).toBeVisible();
   await expect(page.locator('.p-dialog.glass-dialog.rgb-dialog')).toBeVisible();
@@ -129,14 +129,14 @@ test('day click opens dialog with who plus price and cancel works', async ({ pag
 test('login from details preserves return url with single encoding', async ({ page }) => {
   await mockLoggedOut(page);
   await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
-  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await page.goto(`/offer-details?offerId=${offerId}`);
   await page.evaluate(() => sessionStorage.clear());
   await page.getByTestId('booking-date').fill('20/11/2026');
   const loginReq = page.waitForRequest((req) => req.url().includes('/oauth2/authorization/keycloak'));
   await page.getByTestId('booking-submit').locator('button').click();
   const req = await loginReq;
   const rd = new URL(req.url()).searchParams.get('rd') ?? '';
-  expect(decodeURIComponent(rd)).toBe(`http://localhost:4200/offerDetails?offerId=${offerId}`);
+  expect(decodeURIComponent(rd)).toBe(`http://localhost:4200/offer-details?offerId=${offerId}`);
   expect(req.url()).not.toContain('%253F');
 });
 
@@ -157,7 +157,7 @@ test('duplicate booking date shows friendly taken message without console error'
     return route.continue();
   });
 
-  await page.goto(`/offerDetails?offerId=${offerId}`);
+  await page.goto(`/offer-details?offerId=${offerId}`);
   await page.getByTestId('booking-date').fill('01/11/2026');
   await page.getByTestId('booking-submit').locator('button').click();
   await expect(page.getByTestId('booking-error')).toContainText('already taken');

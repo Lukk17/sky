@@ -64,14 +64,14 @@ export class AddOfferComponent {
         if (this.selectedFile && offer?.id) {
           this.uploading = true;
           this.offerService.uploadPhoto(offer.id, this.selectedFile).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-            next: () => this.router.navigate(['/myOffers']).then(),
+            next: () => this.router.navigate(['/my-offers']).then(),
             error: () => {
               this.uploading = false;
               this.error = 'Offer created but photo upload failed. You can add the photo later.';
             },
           });
         } else {
-          this.router.navigate(['/myOffers']).then();
+          this.router.navigate(['/my-offers']).then();
         }
       },
       error: () => {

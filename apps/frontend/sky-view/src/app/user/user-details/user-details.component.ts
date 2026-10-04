@@ -53,7 +53,7 @@ export class UserDetailsComponent implements OnInit {
   }
 
   openOffer(id: string): void {
-    this.router.navigate(['/offerDetails'], {queryParams: {offerId: id}}).then();
+    this.router.navigate(['/offer-details'], {queryParams: {offerId: id}}).then();
   }
 
   private handleError(error: { message?: string }) {

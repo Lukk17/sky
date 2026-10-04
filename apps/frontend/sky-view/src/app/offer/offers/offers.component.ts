@@ -17,10 +17,10 @@ export class OffersComponent {
   }
 
   editOffer(offer: Offer) {
-    this.router.navigate(['/editOffer'], {queryParams: {offerId: offer.id}}).then();
+    this.router.navigate(['/edit-offer'], {queryParams: {offerId: offer.id}}).then();
   }
 
   goToDetails(offer: Offer) {
-    this.router.navigate(['/offerDetails'], {queryParams: {offerId: offer.id}}).then();
+    this.router.navigate(['/offer-details'], {queryParams: {offerId: offer.id}}).then();
   }
 }

@@ -50,7 +50,7 @@ export class EditOfferComponent implements OnInit {
     }
     this.error = null;
     this.offerService.editOffer(this.offerId, draft).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.router.navigate(['/myOffers']).then(),
+      next: () => this.router.navigate(['/my-offers']).then(),
       error: () => {
         this.error = 'Could not save the offer. Please try again.';
       }});

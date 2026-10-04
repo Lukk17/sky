@@ -5,8 +5,8 @@
       <a routerLink="/" href="/" class="sky-nav-link sky-brand" data-testid="brand-home">Sky</a>
       <a routerLink="/home" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-home">Home</a>
       @if (isAuth) {
-        <a routerLink="/myOffers" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-my-offers">My Offers</a>
-        <a routerLink="/addOffer" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-add-offer">Add Offer</a>
+        <a routerLink="/my-offers" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-my-offers">My Offers</a>
+        <a routerLink="/add-offer" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-add-offer">Add Offer</a>
       } @else {
         <a routerLink="/" routerLinkActive="activated" [routerLinkActiveOptions]="{exact: true}" class="sky-nav-link" data-testid="nav-offers">Public Offers</a>
       }
@@ -27,7 +27,7 @@
     <div class="hidden lg:flex items-center gap-1">
       @if (isAuth) {
         <a routerLink="/messages" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-messages"><i class="pi pi-comments"></i></a>
-        <a routerLink="/userDetails" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-user"><i class="pi pi-user"></i></a>
+        <a routerLink="/user-details" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-user"><i class="pi pi-user"></i></a>
         <span class="notify-bell-wrap">
           <p-button icon="pi pi-bell" [rounded]="true" [text]="true" severity="secondary"
             (onClick)="panel.toggle($event)" data-testid="notify-bell" ariaLabel="Notifications"></p-button>
@@ -66,10 +66,10 @@
   <div class="flex flex-col gap-2 p-4">
     <a routerLink="/home" class="sky-nav-link" (click)="navOpen = false">Home</a>
     @if (isAuth) {
-      <a routerLink="/myOffers" class="sky-nav-link" (click)="navOpen = false">My Offers</a>
-      <a routerLink="/addOffer" class="sky-nav-link" (click)="navOpen = false">Add Offer</a>
+      <a routerLink="/my-offers" class="sky-nav-link" (click)="navOpen = false">My Offers</a>
+      <a routerLink="/add-offer" class="sky-nav-link" (click)="navOpen = false">Add Offer</a>
       <a routerLink="/messages" class="sky-nav-link" (click)="navOpen = false">Messages</a>
-      <a routerLink="/userDetails" class="sky-nav-link" (click)="navOpen = false">Profile</a>
+      <a routerLink="/user-details" class="sky-nav-link" (click)="navOpen = false">Profile</a>
       <p-button label="Logout" icon="pi pi-sign-out" [text]="true" (onClick)="logout()" data-testid="nav-logout-mobile"></p-button>
     } @else {
       <a routerLink="/" class="sky-nav-link" (click)="navOpen = false">Public Offers</a>

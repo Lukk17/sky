@@ -1,6 +1,8 @@
-import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {filter} from 'rxjs/operators';
 import {Offer, OfferService} from '../../services/offer.service';
+import {SkyAuthService} from '../../services/sky-auth.service';
 
 @Component({
     selector: 'app-my-offers',
@@ -14,20 +16,28 @@ export class OffersOwnedComponent implements OnInit {
   error: string | null = null;
   private readonly destroyRef = inject(DestroyRef);
 
-  constructor(private offerService: OfferService) {
+  constructor(private offerService: OfferService, private skyAuth: SkyAuthService, private cdr: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
-    this.getUserOffers();
+    this.skyAuth.currentUser$.pipe(filter((email) => email != null), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.getUserOffers(),
+      error: () => {
+        this.error = 'Could not load your offers. Please try again.';
+        this.cdr.markForCheck();
+      }});
   }
 
   getUserOffers() {
     this.offerService.getUserOffers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (offers) => {
           this.offers = offers ?? [];
+          this.error = null;
+          this.cdr.markForCheck();
         },
         error: () => {
           this.error = 'Could not load your offers. Please try again.';
+          this.cdr.markForCheck();
         }}
     );
   }
