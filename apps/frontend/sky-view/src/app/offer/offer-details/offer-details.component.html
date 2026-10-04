@@ -11,7 +11,7 @@
     <div class="fifth empty-left" aria-hidden="true"></div>
     <section class="fifth gallery-col">
       @if (galleryPhotos().length > 0) {
-        <p-galleria [value]="galleryPhotos()" [numVisible]="5" [showThumbnails]="false" [showItemNavigators]="true" [showIndicators]="false" [circular]="true" styleClass="glass-card offer-galleria" data-testid="offer-gallery">
+        <p-galleria [value]="galleryPhotos()" [numVisible]="5" [showThumbnails]="false" [showItemNavigators]="true" [showIndicators]="false" [circular]="true" class="offer-galleria" data-testid="offer-gallery">
           <ng-template #item let-photo let-i="index">
             <img [src]="photo.url ?? photo" [alt]="'Photo ' + (i + 1) + ' of ' + (offer?.hotelName ?? 'offer')" class="hero-img" />
           </ng-template>
