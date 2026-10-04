@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {catchError, map} from 'rxjs/operators';
+import {catchError, map, of} from 'rxjs';
+import {switchMap} from 'rxjs/operators';
 
 export interface OfferDraft {
   hotelName: string;
@@ -9,7 +10,6 @@ export interface OfferDraft {
   roomCapacity: number;
   city: string;
   country: string;
-  photoPath: string;
 }
 
 import {environment} from '../../environments/environment';
@@ -41,7 +41,6 @@ export class OfferService {
       draft.roomCapacity,
       draft.city,
       draft.country,
-      draft.photoPath,
     );
   }
 
@@ -101,7 +100,13 @@ export class OfferService {
   }
 
   public getOfferById(id: string) {
-    return this.getAllOffers().pipe(map((offers) => (offers ?? []).find((o) => o.id === id) ?? null));
+    return this.http.get<Offer>(`${this.ALL_OFFERS_URL}/${id}`).pipe(
+      catchError(() => of(null)),
+      switchMap((one) => {
+        if (one) return of(ResponseHandlerService.handleGetOfferResponse(one));
+        return this.getAllOffers().pipe(map((offers) => (offers ?? []).find((o) => o.id === id) ?? null));
+      }),
+    );
   }
 
   public uploadPhoto(offerId: string, file: File) {
@@ -129,14 +134,14 @@ export class Offer {
   'roomCapacity': number;
   'city': string;
   'country': string;
-  'photoPath': string;
+  'photoPath'?: string;
   'photoUrl'?: string | null;
   'externalPhotoUrl'?: string | null;
   'gallery'?: OfferPhoto[];
   'coverPhotoUrl'?: string | null;
 
   constructor(hotelName: string, description: string, price: number, roomCapacity: number, city: string,
-              country: string, photoPath: string) {
+              country: string, photoPath?: string) {
     this.hotelName = hotelName;
     this.description = description;
     this.price = price;

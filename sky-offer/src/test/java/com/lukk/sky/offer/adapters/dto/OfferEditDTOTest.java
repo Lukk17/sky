@@ -17,8 +17,8 @@ import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_HOTEL_NAME;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_PRICE;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_ROOM_CAPACITY;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.testPhotoObjectKey;
-import static com.lukk.sky.offer.assemblers.UserAssembler.SECOND_TEST_USER_EMAIL;
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.SECOND_TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 

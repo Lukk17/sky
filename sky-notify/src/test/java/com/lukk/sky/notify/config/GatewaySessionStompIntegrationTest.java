@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
-import static com.lukk.sky.notify.config.Constants.KAFKA_BOOKING_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.BOOKING_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Gateway session STOMP flow: full-stack integration tests")
@@ -61,7 +61,7 @@ class GatewaySessionStompIntegrationTest extends AbstractIntegrationTest {
     private String publishUntilReceived(String event) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS);
         while (true) {
-            kafkaTemplate.send(KAFKA_BOOKING_TOPIC, event).get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            kafkaTemplate.send(BOOKING_TOPIC, event).get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             long remaining = deadline - System.nanoTime();
             if (remaining <= 0) {
                 throw new AssertionError("no STOMP MESSAGE frame within " + TIMEOUT_SECONDS + "s");

@@ -6,7 +6,7 @@ import {Router} from '@angular/router';
     selector: 'app-offer-search',
     templateUrl: './offer-search.component.html',
     styleUrls: ['./offer-search.component.css'],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
 export class OfferSearchComponent implements OnInit {

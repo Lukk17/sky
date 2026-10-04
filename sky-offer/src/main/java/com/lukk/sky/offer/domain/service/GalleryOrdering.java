@@ -1,5 +1,7 @@
 package com.lukk.sky.offer.domain.service;
 
+import com.lukk.sky.offer.domain.exception.GalleryPhotoNotFoundException;
+import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.OfferPhoto;
 
 import java.util.ArrayList;
@@ -12,10 +14,13 @@ final class GalleryOrdering {
     }
 
     static List<OfferPhoto> moved(List<OfferPhoto> photos, UUID photoId, int newPosition) {
+        if (newPosition < 0 || newPosition >= photos.size()) {
+            throw new OfferException("Invalid position.");
+        }
         OfferPhoto target = photos.stream()
                 .filter(photo -> photo.getId().equals(photoId))
                 .findFirst()
-                .orElseThrow(() -> new com.lukk.sky.offer.domain.exception.OfferNotFoundException("Photo not found."));
+                .orElseThrow(() -> new GalleryPhotoNotFoundException("Photo not found."));
         List<OfferPhoto> ordered = new ArrayList<>(photos);
         ordered.remove(target);
         ordered.add(newPosition, target);
@@ -24,12 +29,8 @@ final class GalleryOrdering {
     }
 
     static void renumber(List<OfferPhoto> photos) {
-        List<OfferPhoto> ordered = new ArrayList<>(photos);
-        for (OfferPhoto photo : ordered) {
-            photo.setPosition(-(photo.getPosition() + 1));
-        }
-        for (int index = 0; index < ordered.size(); index++) {
-            ordered.get(index).setPosition(index);
+        for (int index = 0; index < photos.size(); index++) {
+            photos.get(index).setPosition(index);
         }
     }
 }

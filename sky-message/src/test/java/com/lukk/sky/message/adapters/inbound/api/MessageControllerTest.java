@@ -291,7 +291,7 @@ class MessageControllerTest {
                         .content(payload))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.detail").value("Message could not be accepted."));
+                .andExpect(jsonPath("$.detail").value("Invalid request."));
     }
 
     @Test

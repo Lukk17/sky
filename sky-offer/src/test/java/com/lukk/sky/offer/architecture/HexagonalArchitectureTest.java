@@ -43,7 +43,6 @@ class HexagonalArchitectureTest {
 
     private static final String[] DOMAIN_ALLOWED_PACKAGES = {
             "com.lukk.sky.offer.domain..",
-            "com.lukk.sky.offer.adapters.dto..",
             "com.lukk.sky.common..",
             "java..",
             "jakarta.persistence..",

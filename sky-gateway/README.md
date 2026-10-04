@@ -45,7 +45,9 @@ NOTIFY_URI=http://sky-notify:5554
 
 ### Running it
 
-No authentication, under the `local` profile. The gateway forwards everything and validates nothing, which is what you want while working on one service. The profile is not optional here: leave it off and the OIDC chain activates instead, and startup fails on the unresolved `KEYCLOAK_ISSUER_URI` placeholder.
+No authentication, under the `local` profile. The gateway forwards everything and validates nothing, which is what you want while working on one service. The profile is not optional here: leave it off and the OIDC chain activates instead, and startup fails on the unresolved `KEYCLOAK_ISSUER_URI` placeholder. Never run the `local` profile on a shared network: it permits every exchange with no authentication and is loopback-only development.
+
+The session responder returns the session token inside JSON; callers must keep a strict Content-Security-Policy with no `unsafe-inline` and no `unsafe-eval` so an injected script cannot read it.
 
 Unix shell:
 

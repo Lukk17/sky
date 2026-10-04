@@ -77,8 +77,10 @@ export class StompService implements OnDestroy {
         });
       });
     };
-    client.onStompError = (frame) => {
-      console.error(`STOMP error: ${frame.headers['message']}`);
+    client.onStompError = () => {
+      this.zone.run(() => {
+        this.notifications.next(null);
+      });
     };
     client.onWebSocketClose = () => {
       this.zone.run(() => undefined);
@@ -94,10 +96,6 @@ export class StompService implements OnDestroy {
     if (client?.active) {
       client.deactivate().then().catch(() => undefined);
     }
-  }
-
-  sendMessage(message: string): void {
-    this.client?.publish({destination: '/sky/notify', body: message});
   }
 
   getMessages(): Observable<NotifyEvent | null> {

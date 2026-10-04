@@ -41,7 +41,7 @@ import java.util.Map;
 import static com.lukk.sky.booking.assemblers.BookingAssembler.TEST_DATE;
 import static com.lukk.sky.booking.assemblers.BookingAssembler.TEST_DEFAULT_BOOKED_ID;
 import static com.lukk.sky.booking.assemblers.BookingAssembler.TEST_DEFAULT_OFFER_ID;
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_USER_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -102,7 +102,8 @@ class BookingControllerTest {
         List<BookingDTO> bookingsDTO = BookingAssembler.getPopulatedBookedDTOList();
         Pageable pageable = PageRequest.of(0, 20);
         when(bookingService.getBookedOffersForUser(eq(TEST_USER_EMAIL), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(bookingsDTO, pageable, bookingsDTO.size()));
+                .thenReturn(new PageImpl<>(bookingsDTO.stream().map(BookingAssembler::toBookingView).toList(),
+                        pageable, bookingsDTO.size()));
 
         // when / then
         mvc.perform(get("/user/bookings")
@@ -141,7 +142,7 @@ class BookingControllerTest {
         values.put("offerId", TEST_DEFAULT_OFFER_ID.toString());
         values.put("dateToBook", TEST_DATE.toString());
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE, TEST_USER_EMAIL))
-                .thenReturn(expected);
+                .thenReturn(BookingAssembler.toBookingView(expected));
         String jsonValues = objectMapper.writeValueAsString(values);
 
         // when / then
@@ -230,7 +231,7 @@ class BookingControllerTest {
     @DisplayName("bookOffer returns 503 with Retry-After 10 when sky-offer is unavailable")
     void bookOffer_whenOfferServiceIsUnavailable_thenReturn503WithRetryAfterAndProblemDetail() throws Exception {
         // given
-        String detail = "Offer service unavailable for offerId=" + TEST_DEFAULT_OFFER_ID;
+        String detail = "Service temporarily unavailable, please retry.";
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE, TEST_USER_EMAIL))
                 .thenThrow(new OfferServiceUnavailableException(detail));
 
@@ -250,7 +251,7 @@ class BookingControllerTest {
     @DisplayName("bookOffer returns 502 when sky-offer answers a status the booking flow cannot use")
     void bookOffer_whenOfferServiceAnswersUnexpectedStatus_thenReturn502() throws Exception {
         // given
-        String detail = "Could not resolve offer owner for offerId=" + TEST_DEFAULT_OFFER_ID;
+        String detail = "Upstream service failed.";
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE, TEST_USER_EMAIL))
                 .thenThrow(new OfferServiceBadResponseException(detail));
 
@@ -270,7 +271,7 @@ class BookingControllerTest {
     @DisplayName("bookOffer returns 404 when sky-offer holds no offer with that id")
     void bookOffer_whenOfferDoesNotExist_thenReturn404AndNoRetryAfter() throws Exception {
         // given
-        String detail = "Offer not found for offerId=" + TEST_DEFAULT_OFFER_ID;
+        String detail = "Resource not found.";
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE, TEST_USER_EMAIL))
                 .thenThrow(new OfferNotFoundException(detail));
 
@@ -300,14 +301,14 @@ class BookingControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(header().doesNotExist(HttpHeaders.RETRY_AFTER))
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.detail").value("You try to book offer with date in the past."));
+                .andExpect(jsonPath("$.detail").value("Invalid request."));
     }
 
     @Test
     @DisplayName("bookOffer returns 409 with no Retry-After when the offer already has a booking on that date")
     void bookOffer_whenTheDateIsAlreadyBooked_thenReturn409WithProblemDetail() throws Exception {
         // given
-        String detail = "Offer you try to book was already booked on that date.";
+        String detail = "Request conflicts with current state.";
         when(bookingService.bookOffer(TEST_DEFAULT_OFFER_ID, TEST_DATE, TEST_USER_EMAIL))
                 .thenThrow(new BookingDateAlreadyBookedException(detail));
 
@@ -342,7 +343,7 @@ class BookingControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail").value(
-                        "A concurrent write advanced the booking event sequence. Re-read the booking and retry the change against its current state."));
+                        "Request conflicts with current state."));
     }
 
     private String validBookingJson() {

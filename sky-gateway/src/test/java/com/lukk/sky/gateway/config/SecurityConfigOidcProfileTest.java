@@ -134,10 +134,17 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
-    void logout_whenBrowserNavigatesWithGet_thenRunsOidcLogoutInsteadOf404() {
+    void logout_whenGetRequest_thenDoesNotRunOidcLogout() {
         client.get().uri("/logout")
                 .exchange()
-                .expectStatus().is3xxRedirection();
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    void logout_whenPostRequestWithoutCsrfToken_thenRejectedBeforeOidcLogoutInsteadOf404() {
+        client.post().uri("/logout")
+                .exchange()
+                .expectStatus().isForbidden();
     }
 
     @Test

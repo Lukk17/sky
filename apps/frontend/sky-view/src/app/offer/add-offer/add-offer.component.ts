@@ -49,12 +49,16 @@ export class AddOfferComponent {
 
   onSubmit(offerForm: NgForm) {
     this.error = null;
+    if (offerForm.invalid) {
+      this.error = 'Please fill in all required fields.';
+      return;
+    }
     if (!this.isFileValid()) {
-      this.fileError = this.fileError ?? 'A valid photo file is required.';
+      this.fileError = this.fileError ?? 'A photo file is required (image, up to 5 MB).';
       return;
     }
     const v = offerForm.value as Record<string, string | number>;
-    const draft: OfferDraft = {hotelName: String(v['hotelName'] ?? ''), description: String(v['description'] ?? ''), price: Number(v['price'] ?? 0), roomCapacity: Number(v['roomCapacity'] ?? 0), city: String(v['city'] ?? ''), country: String(v['country'] ?? ''), photoPath: String(v['photoPath'] ?? '')};
+    const draft: OfferDraft = {hotelName: String(v['hotelName'] ?? ''), description: String(v['description'] ?? ''), price: Number(v['price'] ?? 0), roomCapacity: Number(v['roomCapacity'] ?? 0), city: String(v['city'] ?? ''), country: String(v['country'] ?? '')};
     this.offerService.addOffer(draft).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (offer) => {
         if (this.selectedFile && offer?.id) {

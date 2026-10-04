@@ -6,7 +6,7 @@ import {Router} from '@angular/router';
     selector: 'app-offers',
     templateUrl: './offers.component.html',
     styleUrls: ['./offers.component.css'],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
 export class OffersComponent {

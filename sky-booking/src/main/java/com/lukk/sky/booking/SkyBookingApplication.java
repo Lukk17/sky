@@ -1,7 +1,7 @@
 package com.lukk.sky.booking;
 
 import com.lukk.sky.booking.config.propertyBind.SkyConfigProperties;
-import com.lukk.sky.booking.config.propertyBind.SpringConfigProperties;
+import com.lukk.sky.common.config.SpringConfigProperties;
 import com.lukk.sky.common.config.LoggingLvlConfigProperties;
 import com.lukk.sky.common.config.ManagementConfigProperties;
 import com.lukk.sky.common.config.ServerConfigProperties;

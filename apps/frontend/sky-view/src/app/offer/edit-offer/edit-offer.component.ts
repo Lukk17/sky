@@ -43,7 +43,11 @@ export class EditOfferComponent implements OnInit {
 
   onSubmit(offerForm: NgForm) {
     const v = offerForm.value as Record<string, string | number>;
-    const draft: OfferDraft = {hotelName: String(v['hotelName'] ?? ''), description: String(v['description'] ?? ''), price: Number(v['price'] ?? 0), roomCapacity: Number(v['roomCapacity'] ?? 0), city: String(v['city'] ?? ''), country: String(v['country'] ?? ''), photoPath: String(v['photoPath'] ?? '')};
+    const draft: OfferDraft = {hotelName: String(v['hotelName'] ?? ''), description: String(v['description'] ?? ''), price: Number(v['price'] ?? 0), roomCapacity: Number(v['roomCapacity'] ?? 0), city: String(v['city'] ?? ''), country: String(v['country'] ?? '')};
+    if (!draft.hotelName.trim() || !draft.description.trim() || !draft.city.trim() || !draft.country.trim() || !(draft.price > 0) || !(draft.roomCapacity > 0)) {
+      this.error = 'Please fill in all required fields.';
+      return;
+    }
     this.error = null;
     this.offerService.editOffer(this.offerId, draft).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.router.navigate(['/myOffers']).then(),

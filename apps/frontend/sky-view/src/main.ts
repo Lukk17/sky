@@ -11,4 +11,4 @@ if (environment.production) {
 }
 
 platformBrowserDynamic().bootstrapModule(AppModule, { applicationProviders: [provideZoneChangeDetection(), providePrimeNG({theme: {preset: Aura, options: {darkModeSelector: '.sky-dark', cssLayer: false}}})], })
-  .catch(err => console.error(err));
+  .catch(() => undefined);

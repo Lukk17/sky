@@ -64,8 +64,10 @@ export class MessageComponent implements OnInit {
       }
     });
 
-    this.stompService.getMessages()?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.refresh();
+    this.stompService.getMessages()?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      if (event) {
+        this.refresh();
+      }
     });
 
     this.messageService.unread$?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

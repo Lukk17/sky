@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
-import static com.lukk.sky.offer.config.Constants.KAFKA_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.OFFER_TOPIC;
 
 @Configuration
 public class KafkaTopicConfig {
@@ -13,6 +13,6 @@ public class KafkaTopicConfig {
 
     @Bean
     public NewTopic topic1() {
-        return TopicBuilder.name(KAFKA_TOPIC).build();
+        return TopicBuilder.name(OFFER_TOPIC).build();
     }
 }

@@ -7,6 +7,7 @@ import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException;
+import com.lukk.sky.offer.domain.ports.inbound.OfferView;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.model.OfferPhoto;
@@ -40,9 +41,9 @@ import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_EXTERNAL_PHOTO_U
 import static com.lukk.sky.offer.assemblers.OfferAssembler.testPhotoObjectKey;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.getPopulatedOffers;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.getPopulatedOffersDTO;
-import static com.lukk.sky.offer.assemblers.UserAssembler.SECOND_TEST_USER_EMAIL;
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.SECOND_TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -105,10 +106,10 @@ class OfferServicePrimaryTest {
         List<OfferDTO> expected = OfferAssembler.getPopulatedOffersDTO();
 
         // when
-        Page<OfferDTO> actual = offerService.getAllOffers(pageable);
+        Page<OfferView> actual = offerService.getAllOffers(pageable);
 
         // then
-        assertEquals(expected, actual.getContent());
+        assertEquals(expected, actual.getContent().stream().map(OfferAssembler::toOfferDTO).toList());
         assertEquals(2, actual.getTotalElements());
     }
 
@@ -120,7 +121,7 @@ class OfferServicePrimaryTest {
         when(offerRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // when
-        Page<OfferDTO> actual = offerService.getAllOffers(pageable);
+        Page<OfferView> actual = offerService.getAllOffers(pageable);
 
         // then
         assertEquals(0, actual.getTotalElements());
@@ -137,10 +138,10 @@ class OfferServicePrimaryTest {
         doNothing().when(eventSourceService).saveEvent(any(), any());
 
         // when
-        OfferDTO actual = offerService.addOffer(expected);
+        OfferView actual = offerService.addOffer(OfferAssembler.toCreateCommand(expected));
 
         // then
-        assertEquals(expected, actual);
+        assertEquals(expected, OfferAssembler.toOfferDTO(actual));
     }
 
     @Test
@@ -154,7 +155,7 @@ class OfferServicePrimaryTest {
         doNothing().when(eventSourceService).saveEvent(any(), any());
 
         // when
-        offerService.addOffer(input);
+        offerService.addOffer(OfferAssembler.toCreateCommand(input));
 
         // then
         assertNull(savedCaptor.getValue().getId(),
@@ -215,10 +216,10 @@ class OfferServicePrimaryTest {
                 .thenReturn(new PageImpl<>(offers, pageable, offers.size()));
 
         // when
-        Page<OfferDTO> actual = offerService.getOwnedOffers(TEST_USER_EMAIL, pageable);
+        Page<OfferView> actual = offerService.getOwnedOffers(TEST_USER_EMAIL, pageable);
 
         // then
-        assertEquals(expected, actual.getContent());
+        assertEquals(expected, actual.getContent().stream().map(OfferAssembler::toOfferDTO).toList());
         assertEquals(2, actual.getTotalElements());
     }
 
@@ -231,7 +232,7 @@ class OfferServicePrimaryTest {
                 .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // when
-        Page<OfferDTO> actual = offerService.getOwnedOffers(TEST_USER_EMAIL, pageable);
+        Page<OfferView> actual = offerService.getOwnedOffers(TEST_USER_EMAIL, pageable);
 
         // then
         assertEquals(0, actual.getTotalElements());
@@ -248,7 +249,7 @@ class OfferServicePrimaryTest {
                 .thenReturn(new PageImpl<>(twoMatches, pageable, twoMatches.size()));
 
         // when
-        Page<OfferDTO> actual = offerService.searchOffers("testHotelName", pageable);
+        Page<OfferView> actual = offerService.searchOffers("testHotelName", pageable);
 
         // then
         assertEquals(2, actual.getTotalElements());
@@ -263,7 +264,7 @@ class OfferServicePrimaryTest {
                 .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // when
-        Page<OfferDTO> actual = offerService.searchOffers(TEST_OWNER_EMAIL, pageable);
+        Page<OfferView> actual = offerService.searchOffers(TEST_OWNER_EMAIL, pageable);
 
         // then
         assertEquals(0, actual.getTotalElements());
@@ -280,7 +281,7 @@ class OfferServicePrimaryTest {
                 .thenReturn(new PageImpl<>(oneResult, pageable, 2));
 
         // when
-        Page<OfferDTO> actual = offerService.searchOffers("testHotelName", pageable);
+        Page<OfferView> actual = offerService.searchOffers("testHotelName", pageable);
 
         // then
         assertEquals(1, actual.getContent().size());
@@ -300,10 +301,10 @@ class OfferServicePrimaryTest {
         doNothing().when(eventSourceService).saveEvent(eventCaptor.capture(), any());
 
         // when
-        OfferDTO actual = offerService.editOffer(input, TEST_OWNER_EMAIL);
+        OfferView actual = offerService.editOffer(OfferAssembler.toEditCommand(input), TEST_OWNER_EMAIL);
 
         // then
-        assertEquals(expected, actual);
+        assertEquals(expected, OfferAssembler.toOfferDTO(actual));
         verify(eventSourceService).saveEvent(any(Offer.class), eq(EventType.OFFER_UPDATED));
         assertEquals(offer.getId(), eventCaptor.getValue().getId());
         assertEquals(offer.getOwnerEmail(), eventCaptor.getValue().getOwnerEmail());
@@ -321,7 +322,7 @@ class OfferServicePrimaryTest {
 
         // when / then
         assertThrows(OfferNotFoundException.class, () -> {
-            offerService.editOffer(expected, TEST_OWNER_EMAIL);
+            offerService.editOffer(OfferAssembler.toEditCommand(expected), TEST_OWNER_EMAIL);
         });
     }
 
@@ -335,7 +336,7 @@ class OfferServicePrimaryTest {
 
         // when / then
         assertThrows(OfferAccessDeniedException.class,
-                () -> offerService.editOffer(input, SECOND_TEST_USER_EMAIL));
+                () -> offerService.editOffer(OfferAssembler.toEditCommand(input), SECOND_TEST_USER_EMAIL));
 
         verify(offerRepository, never()).save(any());
     }
@@ -353,7 +354,7 @@ class OfferServicePrimaryTest {
         doNothing().when(eventSourceService).saveEvent(any(), any());
 
         // when
-        offerService.editOffer(input, TEST_OWNER_EMAIL);
+        offerService.editOffer(OfferAssembler.toEditCommand(input), TEST_OWNER_EMAIL);
 
         // then
         assertEquals(TEST_OWNER_EMAIL, savedCaptor.getValue().getOwnerEmail(),
@@ -401,13 +402,13 @@ class OfferServicePrimaryTest {
         InputStream stream = new ByteArrayInputStream("bytes".getBytes());
 
         // when
-        OfferDTO actual = offerService.uploadPhoto(
+        OfferView actual = offerService.uploadPhoto(
                 TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL, stream, 5L, "image/jpeg", "hotel.jpg"
         );
 
         // then
         assertEquals(expectedKey, offer.getPhotoObjectKey());
-        assertEquals(expectedUrl, actual.getPhotoUrl());
+        assertEquals(expectedUrl, actual.photoUrl());
         verify(photoStorage).upload(eq(TEST_DEFAULT_OFFER_ID), any(InputStream.class), anyLong(), eq("image/jpeg"), eq("hotel.jpg"));
         verify(offerRepository).save(any(Offer.class));
     }
@@ -575,7 +576,7 @@ class OfferServicePrimaryTest {
         when(offerRepository.save(savedCaptor.capture())).thenReturn(offer);
 
         // when
-        offerService.editOffer(input, TEST_OWNER_EMAIL);
+        offerService.editOffer(OfferAssembler.toEditCommand(input), TEST_OWNER_EMAIL);
 
         // then
         assertEquals(storedKey, savedCaptor.getValue().getPhotoObjectKey(),
@@ -597,11 +598,11 @@ class OfferServicePrimaryTest {
         when(photoStorage.presignedUrl(storedKey)).thenReturn(presigned);
 
         // when
-        OfferDTO actual = offerService.editOffer(input, TEST_OWNER_EMAIL);
+        OfferView actual = offerService.editOffer(OfferAssembler.toEditCommand(input), TEST_OWNER_EMAIL);
 
         // then
-        assertEquals(presigned, actual.getPhotoUrl());
-        assertEquals(TEST_EXTERNAL_PHOTO_URL, actual.getExternalPhotoUrl());
+        assertEquals(presigned, actual.photoUrl());
+        assertEquals(TEST_EXTERNAL_PHOTO_URL, actual.externalPhotoUrl());
     }
 
     @Test
@@ -614,7 +615,7 @@ class OfferServicePrimaryTest {
         when(offerRepository.save(savedCaptor.capture())).thenReturn(offer);
 
         // when
-        offerService.addOffer(input);
+        offerService.addOffer(OfferAssembler.toCreateCommand(input));
 
         // then
         assertNull(savedCaptor.getValue().getPhotoObjectKey(),
@@ -632,10 +633,10 @@ class OfferServicePrimaryTest {
         when(offerRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(offer), pageable, 1));
 
         // when
-        Page<OfferDTO> actual = offerService.getAllOffers(pageable);
+        Page<OfferView> actual = offerService.getAllOffers(pageable);
 
         // then
-        assertEquals(TEST_EXTERNAL_PHOTO_URL, actual.getContent().getFirst().getPhotoUrl());
+        assertEquals(TEST_EXTERNAL_PHOTO_URL, actual.getContent().getFirst().photoUrl());
         verify(photoStorage, never()).presignedUrl(any());
     }
 
@@ -650,10 +651,10 @@ class OfferServicePrimaryTest {
         when(offerRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(offer), pageable, 1));
 
         // when
-        Page<OfferDTO> actual = offerService.getAllOffers(pageable);
+        Page<OfferView> actual = offerService.getAllOffers(pageable);
 
         // then
-        assertNull(actual.getContent().getFirst().getPhotoUrl());
+        assertNull(actual.getContent().getFirst().photoUrl());
         verify(photoStorage, never()).presignedUrl(any());
     }
 
@@ -781,7 +782,7 @@ class OfferServicePrimaryTest {
         when(offerRepository.save(any())).thenReturn(offer);
 
         // when
-        OfferDTO actual = offerService.addOffer(input);
+        OfferView actual = offerService.addOffer(OfferAssembler.toCreateCommand(input));
 
         // then
         InOrder order = inOrder(offerRepository, eventSourceService, offerNotificationService);
@@ -801,7 +802,7 @@ class OfferServicePrimaryTest {
                 .when(eventSourceService).saveEvent(any(), any());
 
         // when / then
-        assertThrows(IllegalStateException.class, () -> offerService.addOffer(input));
+        assertThrows(IllegalStateException.class, () -> offerService.addOffer(OfferAssembler.toCreateCommand(input)));
         verifyNoInteractions(offerNotificationService);
     }
 
@@ -815,7 +816,7 @@ class OfferServicePrimaryTest {
         when(offerRepository.save(any())).thenReturn(offer);
 
         // when
-        OfferDTO actual = offerService.editOffer(input, TEST_OWNER_EMAIL);
+        OfferView actual = offerService.editOffer(OfferAssembler.toEditCommand(input), TEST_OWNER_EMAIL);
 
         // then
         InOrder order = inOrder(eventSourceService, offerNotificationService);
@@ -833,7 +834,7 @@ class OfferServicePrimaryTest {
 
         // when / then
         assertThrows(OfferAccessDeniedException.class,
-                () -> offerService.editOffer(input, SECOND_TEST_USER_EMAIL));
+                () -> offerService.editOffer(OfferAssembler.toEditCommand(input), SECOND_TEST_USER_EMAIL));
         verifyNoInteractions(offerNotificationService);
     }
 

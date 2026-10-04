@@ -42,8 +42,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL_2;
+import static com.lukk.sky.common.test.TestUsers.TEST_USER_EMAIL;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -279,7 +279,7 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
         // then
         assertEquals(HttpStatus.BAD_REQUEST, actual.getStatusCode());
         assertEquals(0, bookingRepository.count());
-        assertTrue(requireNonNull(actual.getBody()).contains("You try to book offer with date in the past."),
+        assertTrue(requireNonNull(actual.getBody()).contains("Invalid request."),
                 "the rejected booking explains why the date was refused");
     }
 
@@ -301,7 +301,7 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
         // then
         assertEquals(HttpStatus.NOT_FOUND, actual.getStatusCode());
         assertTrue(requireNonNull(actual.getBody())
-                        .contains(String.format("No booking with ID: %s found.", unknownBookingId)),
+                        .contains("Resource not found."),
                 "the 404 body names the booking that could not be found");
     }
 

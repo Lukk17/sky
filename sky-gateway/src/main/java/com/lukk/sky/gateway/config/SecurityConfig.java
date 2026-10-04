@@ -42,13 +42,15 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(allowedOrigin));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-XSRF-TOKEN", "Accept"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
+    // Local profile is loopback-only development: never bind it on a shared
+    // network, it permits every exchange with no authentication.
     @Bean
     @Profile("local")
     public SecurityWebFilterChain permitAllSecurityWebFilterChain(ServerHttpSecurity http) {
@@ -88,12 +90,17 @@ public class SecurityConfig {
                         new RedirectServerAuthenticationSuccessHandler(validatedFrontendUrl(frontendUrl))))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .logout(logout -> logout
-                        .requiresLogout(new PathPatternParserServerWebExchangeMatcher("/logout"))
+                        .requiresLogout(new PathPatternParserServerWebExchangeMatcher("/logout", HttpMethod.POST))
                         .logoutSuccessHandler(oidcLogoutSuccessHandler(
                                 clientRegistrationRepository, validatedFrontendUrl(frontendUrl))))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(sessionCsrfTokenRepository())
                         .requireCsrfProtectionMatcher(exchange -> {
+                            // /logout is a full-browser form POST and must always carry
+                            // the session CSRF token, even with an Authorization header.
+                            if (exchange.getRequest().getPath().value().equals("/logout")) {
+                                return ServerWebExchangeMatcher.MatchResult.match(java.util.Collections.emptyMap());
+                            }
                             var headers = exchange.getRequest().getHeaders();
                             if (headers.getFirst(HttpHeaders.AUTHORIZATION) != null) {
                                 return ServerWebExchangeMatcher.MatchResult.notMatch();

@@ -43,8 +43,8 @@ import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_EXTERNAL_PHOTO_U
 import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_PRICE;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_ROOM_CAPACITY;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.getPopulatedOffer;
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL_2;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;

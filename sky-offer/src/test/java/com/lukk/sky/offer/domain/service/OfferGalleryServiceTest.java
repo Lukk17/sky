@@ -1,7 +1,7 @@
 package com.lukk.sky.offer.domain.service;
 
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.domain.exception.GalleryLimitExceededException;
+import com.lukk.sky.offer.domain.ports.inbound.OfferView;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.model.Offer;
@@ -78,7 +78,7 @@ class OfferGalleryServiceTest {
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
 
-        OfferDTO dto = offerService.uploadGalleryPhoto(offerId, OWNER,
+        OfferView dto = offerService.uploadGalleryPhoto(offerId, OWNER,
                 new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
 
         verify(offerPhotoRepository).saveAndFlush(any(OfferPhoto.class));
@@ -107,13 +107,13 @@ class OfferGalleryServiceTest {
         when(photoStorage.presignedUrl("k0")).thenReturn("u0");
         when(photoStorage.presignedUrl("k1")).thenReturn("u1");
 
-        OfferDTO dto = offerService.reorderGalleryPhoto(offerId, p1.getId(), 0, OWNER);
+        OfferView dto = offerService.reorderGalleryPhoto(offerId, p1.getId(), 0, OWNER);
 
-        assertEquals(p1.getId(), dto.getGallery().get(0).getId());
-        assertEquals("u1", dto.getCoverPhotoUrl());
+        assertEquals(p1.getId(), dto.gallery().get(0).id());
+        assertEquals("u1", dto.coverPhotoUrl());
         assertEquals(0, p1.getPosition());
         assertEquals(1, p0.getPosition());
-        verify(offerPhotoRepository).saveAllAndFlush(org.mockito.ArgumentMatchers.anyList());
+        verify(offerPhotoRepository, org.mockito.Mockito.times(2)).saveAllAndFlush(org.mockito.ArgumentMatchers.anyList());
         org.mockito.Mockito.verify(offerPhotoRepository, org.mockito.Mockito.never())
                 .saveAndFlush(org.mockito.ArgumentMatchers.any(OfferPhoto.class));
     }
@@ -148,12 +148,12 @@ class OfferGalleryServiceTest {
         when(photoStorage.presignedUrl(org.mockito.ArgumentMatchers.anyString()))
                 .thenAnswer(inv -> "u-" + inv.getArgument(0));
 
-        OfferDTO dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 2, OWNER);
+        OfferView dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 2, OWNER);
 
         assertEquals(2, p0.getPosition());
         assertEquals(0, p1.getPosition());
         assertEquals(1, p2.getPosition());
-        assertEquals(p1.getId(), dto.getGallery().get(0).getId());
+        assertEquals(p1.getId(), dto.gallery().get(0).id());
     }
 
     @Test
@@ -163,10 +163,10 @@ class OfferGalleryServiceTest {
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
         when(photoStorage.presignedUrl("k0")).thenReturn("u0");
 
-        OfferDTO dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 0, OWNER);
+        OfferView dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 0, OWNER);
 
         assertEquals(0, p0.getPosition());
-        assertEquals(p0.getId(), dto.getGallery().get(0).getId());
+        assertEquals(p0.getId(), dto.gallery().get(0).id());
     }
 
     @Test
@@ -178,12 +178,12 @@ class OfferGalleryServiceTest {
         when(photoStorage.presignedUrl("k0")).thenReturn("u0");
         when(photoStorage.presignedUrl("k1")).thenReturn("u1");
 
-        OfferDTO dto = offerService.setGalleryCover(offerId, p1.getId(), OWNER);
+        OfferView dto = offerService.setGalleryCover(offerId, p1.getId(), OWNER);
 
         assertEquals(0, p0.getPosition());
         assertEquals(1, p1.getPosition());
-        assertEquals(p0.getId(), dto.getGallery().get(0).getId());
-        assertEquals("u1", dto.getCoverPhotoUrl());
+        assertEquals(p0.getId(), dto.gallery().get(0).id());
+        assertEquals("u1", dto.coverPhotoUrl());
         verify(offerPhotoRepository).saveAllAndFlush(anyList());
     }
 
@@ -206,10 +206,10 @@ class OfferGalleryServiceTest {
         org.mockito.Mockito.doThrow(new com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException("down", new java.io.IOException("refused")))
                 .when(photoStorage).delete(offerId, "k0");
 
-        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+        OfferView dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
         verify(offerPhotoRepository).delete(p0);
-        assertTrue(dto.getGallery().isEmpty());
+        assertTrue(dto.gallery().isEmpty());
     }
 
     @Test
@@ -245,10 +245,10 @@ class OfferGalleryServiceTest {
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
 
-        OfferDTO dto = offerService.uploadGalleryPhoto(offerId, OWNER,
+        OfferView dto = offerService.uploadGalleryPhoto(offerId, OWNER,
                 new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
 
-        assertTrue(dto.getGallery().isEmpty() || dto.getCoverPhotoUrl() != null);
+        assertTrue(dto.gallery().isEmpty() || dto.coverPhotoUrl() != null);
     }
 
     @Test
@@ -258,11 +258,11 @@ class OfferGalleryServiceTest {
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
 
-        OfferDTO dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 0, OWNER);
+        OfferView dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 0, OWNER);
 
         org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
                 .presignedUrl(org.mockito.ArgumentMatchers.anyString());
-        assertEquals("https://cdn.example/x.png", dto.getGallery().get(0).getUrl());
+        assertEquals("https://cdn.example/x.png", dto.gallery().get(0).url());
     }
 
     @Test
@@ -275,7 +275,7 @@ class OfferGalleryServiceTest {
         when(photoStorage.presignedUrl("k1")).thenReturn("u1");
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
 
-        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+        OfferView dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
         verify(offerPhotoRepository).delete(p0);
     }
@@ -289,12 +289,12 @@ class OfferGalleryServiceTest {
         when(photoStorage.presignedUrl(org.mockito.ArgumentMatchers.anyString()))
                 .thenAnswer(inv -> "u-" + inv.getArgument(0));
 
-        OfferDTO dto = offerService.setGalleryCover(offerId, p1.getId(), OWNER);
+        OfferView dto = offerService.setGalleryCover(offerId, p1.getId(), OWNER);
 
         org.junit.jupiter.api.Assertions.assertTrue(p1.isMain());
         org.junit.jupiter.api.Assertions.assertFalse(p0.isMain());
-        org.junit.jupiter.api.Assertions.assertTrue(dto.getGallery().stream()
-                .filter(g -> g.getId().equals(p1.getId())).findFirst().orElseThrow().isMain());
+        org.junit.jupiter.api.Assertions.assertTrue(dto.gallery().stream()
+                .filter(g -> g.id().equals(p1.getId())).findFirst().orElseThrow().main());
     }
 
     @Test
@@ -316,11 +316,11 @@ class OfferGalleryServiceTest {
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
 
-        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+        OfferView dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
         verify(offerPhotoRepository).delete(p0);
         verify(photoStorage).delete(offerId, "k0");
-        assertTrue(dto.getGallery().isEmpty());
+        assertTrue(dto.gallery().isEmpty());
     }
 
     @Test
@@ -334,15 +334,15 @@ class OfferGalleryServiceTest {
                 .thenReturn(new ArrayList<>(List.of(cover, next)), new ArrayList<>(List.of(next)));
         when(photoStorage.presignedUrl(anyString())).thenAnswer(inv -> "u-" + inv.getArgument(0));
 
-        OfferDTO dto = offerService.deleteGalleryPhoto(offerId, cover.getId(), OWNER);
+        OfferView dto = offerService.deleteGalleryPhoto(offerId, cover.getId(), OWNER);
 
         verify(offerPhotoRepository).delete(cover);
-        verify(offerPhotoRepository).saveAllAndFlush(anyList());
+        verify(offerPhotoRepository, org.mockito.Mockito.times(2)).saveAllAndFlush(anyList());
         assertTrue(next.isMain());
         assertEquals(0, next.getPosition());
-        assertEquals(next.getId(), dto.getGallery().get(0).getId());
-        assertTrue(dto.getGallery().get(0).isMain());
-        assertEquals("u-k1", dto.getCoverPhotoUrl());
+        assertEquals(next.getId(), dto.gallery().get(0).id());
+        assertTrue(dto.gallery().get(0).main());
+        assertEquals("u-k1", dto.coverPhotoUrl());
     }
 
     @Test

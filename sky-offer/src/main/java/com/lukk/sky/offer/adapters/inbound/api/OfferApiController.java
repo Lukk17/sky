@@ -10,9 +10,14 @@ import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
 import com.lukk.sky.common.openapi.ApiUnsupportedMediaTypeResponse;
 import com.lukk.sky.offer.adapters.dto.OfferDTO;
 import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.offer.adapters.dto.PhotoDTO;
 import com.lukk.sky.offer.domain.exception.GalleryLimitExceededException;
 import com.lukk.sky.offer.domain.exception.OfferException;
+import com.lukk.sky.offer.domain.ports.inbound.CreateOfferCommand;
+import com.lukk.sky.offer.domain.ports.inbound.EditOfferCommand;
+import com.lukk.sky.offer.domain.ports.inbound.GalleryPhotoView;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
+import com.lukk.sky.offer.domain.ports.inbound.OfferView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -89,7 +95,23 @@ public class OfferApiController {
     @GetMapping("/offers")
     public ResponseEntity<Page<OfferDTO>> getAllOffers(
             @PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return ResponseEntity.ok(offerService.getAllOffers(pageable));
+        return ResponseEntity.ok(offerService.getAllOffers(pageable).map(OfferApiController::toDto));
+    }
+
+    @Operation(summary = "Get one offer by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Offer found",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OfferDTO.class))}),
+            @ApiResponse(responseCode = "404", description = "Offer not found",
+                    content = @Content)
+    })
+    @Tag(name = OFFERS_TAG, description = OFFERS_TAG_DESCRIPTION)
+    @SecurityRequirements
+    @ApiDependencyUnavailableResponse
+    @GetMapping("/offers/{offerId}")
+    public ResponseEntity<OfferDTO> getOfferById(@PathVariable UUID offerId) {
+        return ResponseEntity.ok(toDto(offerService.getOfferById(offerId)));
     }
 
     @Operation(summary = "Get owned offers (paginated)")
@@ -107,7 +129,7 @@ public class OfferApiController {
             @PageableDefault(size = 20, sort = "id") Pageable pageable) {
         String ownerEmail = SecurityUtils.currentUserEmail();
 
-        return ResponseEntity.ok(offerService.getOwnedOffers(ownerEmail, pageable));
+        return ResponseEntity.ok(offerService.getOwnedOffers(ownerEmail, pageable).map(OfferApiController::toDto));
     }
 
     @Operation(summary = "Create new offer")
@@ -127,7 +149,7 @@ public class OfferApiController {
         log.info("Adding new offer.");
 
         offer.setOwnerEmail(ownerEmail);
-        OfferDTO addedOffer = offerService.addOffer(offer);
+        OfferDTO addedOffer = toDto(offerService.addOffer(toCreateCommand(offer)));
 
         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(addedOffer);
     }
@@ -151,7 +173,7 @@ public class OfferApiController {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Editing offer with ID: {}", offer.getId());
 
-        OfferDTO edited = offerService.editOffer(offer, ownerEmail);
+        OfferDTO edited = toDto(offerService.editOffer(toEditCommand(offer), ownerEmail));
 
         return ResponseEntity.ok(edited);
     }
@@ -203,7 +225,7 @@ public class OfferApiController {
                     "Search term must not exceed " + SEARCH_TERM_MAX_LENGTH + " characters.");
         }
 
-        return ResponseEntity.ok(offerService.searchOffers(searched, pageable));
+        return ResponseEntity.ok(offerService.searchOffers(searched, pageable).map(OfferApiController::toDto));
     }
 
     @Operation(summary = "Get the owner email for an offer")
@@ -259,14 +281,14 @@ public class OfferApiController {
 
         InputStream inputStream = file.getInputStream();
 
-        OfferDTO updated = offerService.uploadPhoto(
+        OfferDTO updated = toDto(offerService.uploadPhoto(
                 offerId,
                 ownerEmail,
                 inputStream,
                 file.getSize(),
                 validatedContentType,
                 file.getOriginalFilename()
-        );
+        ));
 
         return ResponseEntity.ok(updated);
     }
@@ -323,8 +345,8 @@ public class OfferApiController {
         String validatedContentType = detectContentType(file);
         String ownerEmail = SecurityUtils.currentUserEmail();
         InputStream inputStream = file.getInputStream();
-        OfferDTO updated = offerService.uploadGalleryPhoto(offerId, ownerEmail, inputStream,
-                file.getSize(), validatedContentType, file.getOriginalFilename());
+        OfferDTO updated = toDto(offerService.uploadGalleryPhoto(offerId, ownerEmail, inputStream,
+                file.getSize(), validatedContentType, file.getOriginalFilename()));
         return ResponseEntity.ok(updated);
     }
 
@@ -343,7 +365,7 @@ public class OfferApiController {
     public ResponseEntity<OfferDTO> deleteGalleryPhoto(
             @PathVariable UUID offerId, @PathVariable UUID photoId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
-        return ResponseEntity.ok(offerService.deleteGalleryPhoto(offerId, photoId, ownerEmail));
+        return ResponseEntity.ok(toDto(offerService.deleteGalleryPhoto(offerId, photoId, ownerEmail)));
     }
 
     @Operation(summary = "Reorder a gallery photo (owner only)")
@@ -364,7 +386,7 @@ public class OfferApiController {
             @PathVariable UUID offerId, @PathVariable UUID photoId,
             @RequestParam("position") int position) {
         String ownerEmail = SecurityUtils.currentUserEmail();
-        return ResponseEntity.ok(offerService.reorderGalleryPhoto(offerId, photoId, position, ownerEmail));
+        return ResponseEntity.ok(toDto(offerService.reorderGalleryPhoto(offerId, photoId, position, ownerEmail)));
     }
 
     @Operation(summary = "Set a gallery photo as cover (owner only)")
@@ -382,7 +404,45 @@ public class OfferApiController {
     public ResponseEntity<OfferDTO> setGalleryCover(
             @PathVariable UUID offerId, @PathVariable UUID photoId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
-        return ResponseEntity.ok(offerService.setGalleryCover(offerId, photoId, ownerEmail));
+        return ResponseEntity.ok(toDto(offerService.setGalleryCover(offerId, photoId, ownerEmail)));
+    }
+
+    private static CreateOfferCommand toCreateCommand(OfferDTO offer) {
+        return new CreateOfferCommand(offer.getHotelName(), offer.getDescription(), offer.getComment(),
+                offer.getPrice(), offer.getOwnerEmail(), offer.getRoomCapacity(),
+                offer.getCity(), offer.getCountry(), offer.getExternalPhotoUrl());
+    }
+
+    private static EditOfferCommand toEditCommand(OfferEditDTO offer) {
+        return new EditOfferCommand(offer.getId(), offer.getHotelName(), offer.getCity(), offer.getCountry(),
+                offer.getDescription(), offer.getComment(), offer.getPrice(),
+                offer.getRoomCapacity(), offer.getExternalPhotoUrl());
+    }
+
+    private static OfferDTO toDto(OfferView view) {
+        List<PhotoDTO> gallery = view.gallery() == null ? List.of() : view.gallery().stream()
+                .map(OfferApiController::toPhotoDto)
+                .toList();
+        OfferDTO dto = OfferDTO.builder()
+                .id(view.id())
+                .hotelName(view.hotelName())
+                .description(view.description())
+                .comment(view.comment())
+                .price(view.price())
+                .ownerEmail(view.ownerEmail())
+                .roomCapacity(view.roomCapacity())
+                .city(view.city())
+                .country(view.country())
+                .externalPhotoUrl(view.externalPhotoUrl())
+                .photoUrl(view.photoUrl())
+                .gallery(new java.util.ArrayList<>(gallery))
+                .coverPhotoUrl(view.coverPhotoUrl())
+                .build();
+        return dto;
+    }
+
+    private static PhotoDTO toPhotoDto(GalleryPhotoView photo) {
+        return PhotoDTO.builder().id(photo.id()).position(photo.position()).url(photo.url()).main(photo.main()).build();
     }
 
     private static void rejectWhenTooLarge(MultipartFile file) {

@@ -77,6 +77,70 @@ paths:
       summary: Get all offers (paginated)
       tags:
       - Offers
+  /api/v1/offers/{offerId}:
+    get:
+      operationId: getOfferById
+      parameters:
+      - in: path
+        name: offerId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferDTO"
+          description: Offer found
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Offer not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Service Unavailable: a dependency this operation needs could\
+            \ not be used, so the operation did not complete. Covers a refused connection,\
+            \ a connect timeout, a read timeout, a 5xx after the retries are exhausted,\
+            \ a 429, and an open circuit breaker. The request itself was well formed,\
+            \ so retry it unchanged after the number of seconds in the Retry-After\
+            \ header, which is always 10. The detail is one of a fixed set of sentences\
+            \ and carries nothing from the dependency's own answer."
+      security: []
+      summary: Get one offer by id
+      tags:
+      - Offers
   /api/v1/offers/{offerId}/owner:
     get:
       operationId: getOfferOwner

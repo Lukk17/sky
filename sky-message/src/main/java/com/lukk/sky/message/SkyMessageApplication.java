@@ -3,7 +3,7 @@ package com.lukk.sky.message;
 import com.lukk.sky.common.config.LoggingLvlConfigProperties;
 import com.lukk.sky.common.config.ManagementConfigProperties;
 import com.lukk.sky.common.config.ServerConfigProperties;
-import com.lukk.sky.message.config.propertyBind.SpringConfigProperties;
+import com.lukk.sky.common.config.SpringConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;

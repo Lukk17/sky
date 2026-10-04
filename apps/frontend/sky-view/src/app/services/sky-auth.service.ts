@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {BehaviorSubject, Observable, take} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {CsrfTokenStore} from './csrf-token.store';
 
@@ -51,7 +51,7 @@ export class SkyAuthService {
   }
 
   refreshSession(): void {
-    this.http.get<SessionInfo>(this.sessionUrl).subscribe({
+    this.http.get<SessionInfo>(this.sessionUrl).pipe(take(1)).subscribe({
       next: (session) => {
         this.csrfTokenStore.setToken(session.csrfToken ?? null);
         this.endSessionUrl = session.logoutUrl ?? null;
@@ -76,20 +76,36 @@ export class SkyAuthService {
 
   logout(): void {
     this.currentUser.next(null);
-    // Full-browser GET through the edge /logout endpoint. rd carries the
-    // Keycloak end-session URL with the {id_token} placeholder; the edge
-    // substitutes the server-side ID token as id_token_hint so Keycloak ends
-    // the SSO session at once with no confirm page. An XHR POST followed by a
-    // manual redirect bypasses that substitution and lands on the confirm
-    // page (or leaves SSO alive). The compose gateway ignores rd and uses its
-    // own OIDC handler, which already appends the hint server side.
+    // Full-browser form POST through the edge /logout endpoint (POST-only
+    // with CSRF enforcement). rd carries the Keycloak end-session URL with
+    // the {id_token} placeholder; the edge substitutes the server-side ID
+    // token as id_token_hint so Keycloak ends the SSO session at once with
+    // no confirm page. The compose gateway ignores rd and uses its own OIDC
+    // handler, which already appends the hint server side.
+    const csrfToken = this.csrfTokenStore.getToken();
     this.csrfTokenStore.setToken(null);
     const endSession = this.endSessionUrl;
     this.endSessionUrl = null;
     const inner = endSession && endSession.length > 0
       ? (endSession.includes('id_token_hint=') ? endSession : `${endSession}&id_token_hint={id_token}`)
       : `${window.location.origin}/home`;
-    window.location.assign(`${this.logoutUrl}?rd=${encodeURIComponent(inner)}`);
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = this.logoutUrl;
+    const rdInput = document.createElement('input');
+    rdInput.type = 'hidden';
+    rdInput.name = 'rd';
+    rdInput.value = inner;
+    form.appendChild(rdInput);
+    if (csrfToken) {
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = '_csrf';
+      csrfInput.value = csrfToken;
+      form.appendChild(csrfInput);
+    }
+    document.body.appendChild(form);
+    form.submit();
   }
 
   consumePostLoginPath(): string | null {

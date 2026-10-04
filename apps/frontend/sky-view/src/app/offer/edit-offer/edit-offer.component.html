@@ -26,11 +26,11 @@
         <label for="country">Country</label>
       </p-floatlabel>
       <p-floatlabel variant="on">
-        <input pInputText [(ngModel)]="offer.photoPath" id="photoPath" name="photoPath" ngModel required type="text" class="w-full" />
-        <label for="photoPath">Photo Link</label>
+        <input pInputText [(ngModel)]="offer.coverPhotoUrl" id="photoUrl" name="photoUrl" ngModel type="text" class="w-full" />
+        <label for="photoUrl">Photo Link</label>
       </p-floatlabel>
-      @if (offer.photoPath) {
-        <img [src]="offer.photoPath" alt="Preview photo of offer" class="w-full aspect-video object-cover rounded-xl" />
+      @if (offer.coverPhotoUrl) {
+        <img [src]="offer.coverPhotoUrl" alt="Preview photo of offer" class="w-full aspect-video object-cover rounded-xl" />
       }
       <p-floatlabel variant="on">
         <input pInputText [(ngModel)]="offer.roomCapacity" id="roomCapacity" name="roomCapacity" ngModel required type="number" class="w-full" />

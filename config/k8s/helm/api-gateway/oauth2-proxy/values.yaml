@@ -20,7 +20,9 @@ args:
   passAccessToken: "true"
   passHostHeader: "true"
   passUserHeaders: "true"
-  passBasicAuth: "true"
+  # No backend in this repo consumes HTTP Basic auth; keep off so the edge
+  # never forwards a basic authorization header upstream.
+  passBasicAuth: "false"
 
 secrets:
   clientIdKey: "keycloak-client-id"
@@ -59,10 +61,11 @@ session:
   # SSO session dies too. Set per environment in values-<env>.yaml.
   logoutUrl: ""
 
-# NOTE: edgeOriginCheck below is recorded but NOT applied: the k3d/prod
-# ingress-nginx admission webhook rejects configuration-snippet/server-snippet
-# ("Snippet directives are disabled by the Ingress administrator"), so the edge
-# CSRF layer is oauth2-proxy cookie-CSRF alone until the controller policy changes.
+# TRACKED EXCEPTION 2026-10-04: edgeOriginCheck below is recorded but NOT
+# applied: the k3d/prod ingress-nginx admission webhook rejects
+# configuration-snippet/server-snippet ("Snippet directives are disabled by the
+# Ingress administrator"), so the edge CSRF layer is oauth2-proxy cookie-CSRF
+# alone until the controller policy changes. Revisit when snippet policy allows.
 edgeOriginCheck: |
   set $edge_csrf_fail "";
   if ($request_method ~ "^(POST|PUT|PATCH|DELETE)$") { set $edge_csrf_fail "${edge_csrf_fail}M"; }

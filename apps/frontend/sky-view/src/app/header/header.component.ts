@@ -44,17 +44,12 @@ export class HeaderComponent implements OnInit {
     this.skyAuth.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((email) => {
       this.userEmail = email;
       this.isAuth = email != null;
-      if (this.isAuth) {
-        this.refreshUnread();
-      } else {
+      if (!this.isAuth) {
         this.unread = [];
         this.dismissBanner();
       }
     });
     this.stompService.getMessages().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
-      if (this.isAuth) {
-        this.refreshUnread();
-      }
       if (event && this.isAuth) {
         this.showBanner(event.senderEmail ?? 'Sky', event.text ?? 'You have a new message');
       }
@@ -88,13 +83,6 @@ export class HeaderComponent implements OnInit {
   }
 
   bannerError: string | null = null;
-
-  private refreshUnread() {
-    this.messageService.getReceived().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (messages) => this.applyUnread(messages ?? []),
-      error: () => undefined,
-    });
-  }
 
   private applyUnread(messages: Message[]) {
     const previousIds = new Set(this.unread.map((m) => m.id));
@@ -135,7 +123,12 @@ export class HeaderComponent implements OnInit {
 
   search(term: string) {
     this.searchError = null;
-    this.offerService.searchOffer(term).subscribe({next: (offers: Offer[]) => {
+    const q = (term ?? '').trim();
+    if (!q) {
+      this.searchError = 'Type something to search.';
+      return;
+    }
+    this.offerService.searchOffer(q).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (offers: Offer[]) => {
       this.offerService.searched = offers;
       // mid navigating to "/home" required to reload "/offerSearch" items [workaround]
       this.router.navigate(['/home']).then(() => {

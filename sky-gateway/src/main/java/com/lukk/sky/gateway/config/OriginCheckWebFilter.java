@@ -1,5 +1,7 @@
 package com.lukk.sky.gateway.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -16,13 +18,16 @@ import java.util.Set;
 
 /**
  * Rejects cross origin state changing requests whose {@code Origin} or {@code Referer}
- * names a host other than the request host. Requests carrying neither header are let
- * through, so non browser callers without an origin concept keep working.
+ * names an origin (scheme plus host plus port) other than the request origin.
+ * Requests carrying neither header are let through, so non browser callers
+ * without an origin concept keep working.
  */
 @Component
 @Profile("!local")
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class OriginCheckWebFilter implements WebFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(OriginCheckWebFilter.class);
 
     private static final Set<HttpMethod> MUTATING =
             Set.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE);
@@ -35,31 +40,47 @@ public class OriginCheckWebFilter implements WebFilter {
 
         var hostHeader = exchange.getRequest().getHeaders().getHost();
         if (hostHeader == null) {
-            return reject(exchange);
+            return reject(exchange, "missing-host");
         }
-        String host = hostHeader.getHostString();
+        String expected = requestOrigin(exchange);
         String origin = exchange.getRequest().getHeaders().getOrigin();
 
-        if (origin != null && !host.equalsIgnoreCase(hostOf(origin))) {
-            return reject(exchange);
+        if (origin != null && !expected.equalsIgnoreCase(normalizeOrigin(origin))) {
+            return reject(exchange, "origin-mismatch");
         }
 
         String referer = exchange.getRequest().getHeaders().getFirst("Referer");
-        if (origin == null && referer != null && !host.equalsIgnoreCase(hostOf(referer))) {
-            return reject(exchange);
+        if (origin == null && referer != null && !expected.equalsIgnoreCase(normalizeOrigin(referer))) {
+            return reject(exchange, "referer-mismatch");
         }
 
         return chain.filter(exchange);
     }
 
-    private static Mono<Void> reject(ServerWebExchange exchange) {
+    private static Mono<Void> reject(ServerWebExchange exchange, String reason) {
+        log.warn("origin check rejected {} {} reason={}", exchange.getRequest().getMethod(),
+                exchange.getRequest().getPath().value(), reason);
         exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
         return exchange.getResponse().setComplete();
     }
 
-    private static String hostOf(String uri) {
+    private static String requestOrigin(ServerWebExchange exchange) {
+        var uri = exchange.getRequest().getURI();
+        String scheme = uri.getScheme() == null ? "http" : uri.getScheme().toLowerCase(java.util.Locale.ROOT);
+        var hostHeader = exchange.getRequest().getHeaders().getHost();
+        String host = hostHeader != null ? hostHeader.getHostString().toLowerCase(java.util.Locale.ROOT)
+                : (uri.getHost() == null ? "" : uri.getHost().toLowerCase(java.util.Locale.ROOT));
+        int port = hostHeader != null ? hostHeader.getPort() : uri.getPort();
+        return scheme + "://" + host + (port == -1 ? "" : ":" + port);
+    }
+
+    private static String normalizeOrigin(String uri) {
         try {
-            return URI.create(uri).getHost();
+            URI parsed = URI.create(uri);
+            String scheme = parsed.getScheme() == null ? "" : parsed.getScheme().toLowerCase(java.util.Locale.ROOT);
+            String host = parsed.getHost() == null ? "" : parsed.getHost().toLowerCase(java.util.Locale.ROOT);
+            int port = parsed.getPort();
+            return scheme + "://" + host + (port == -1 ? "" : ":" + port);
         } catch (IllegalArgumentException e) {
             return "";
         }

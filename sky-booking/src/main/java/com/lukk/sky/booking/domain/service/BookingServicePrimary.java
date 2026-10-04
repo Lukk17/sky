@@ -1,11 +1,11 @@
 package com.lukk.sky.booking.domain.service;
 
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.exception.BookingAccessDeniedException;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.exception.BookingNotFoundException;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
+import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import com.lukk.sky.booking.domain.ports.outbound.RestClient;
@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -33,18 +34,19 @@ public class BookingServicePrimary implements BookingService {
     private final BookingPersister bookingPersister;
     private final RestClient restClient;
     private final BookingNotificationService bookingNotificationService;
+    private final Clock clock;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BookingDTO> getBookedOffersForUser(String userEmail, Pageable pageable) {
+    public Page<BookingView> getBookedOffersForUser(String userEmail, Pageable pageable) {
         log.info("Pulling bookings for user: {} page={} size={}",
                 userEmail, pageable.getPageNumber(), pageable.getPageSize());
 
-        return bookingRepository.findAllByBookingUser(userEmail, pageable).map(BookingDTO::of);
+        return bookingRepository.findAllByBookingUser(userEmail, pageable).map(BookingServicePrimary::toView);
     }
 
     @Override
-    public BookingDTO bookOffer(UUID offerId, LocalDate dateToBook, String userEmail)
+    public BookingView bookOffer(UUID offerId, LocalDate dateToBook, String userEmail)
             throws BookingException {
         log.info("Booking offer with ID: {} by user: {}", offerId, userEmail);
 
@@ -60,10 +62,10 @@ public class BookingServicePrimary implements BookingService {
         log.info("Offer with ID: {} booked for date: {} by user: {}",
                 offerId, dateToBook.format(DATE_FORMAT), userEmail);
 
-        BookingDTO bookingDTO = BookingDTO.of(saved);
-        bookingNotificationService.publishCreated(bookingDTO, userEmail);
+        BookingView booking = toView(saved);
+        bookingNotificationService.publishCreated(booking, userEmail);
 
-        return bookingDTO;
+        return booking;
     }
 
     @Override
@@ -72,22 +74,20 @@ public class BookingServicePrimary implements BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(String.format("No booking with ID: %s found.", bookingId)));
 
+        String reason;
         if (booking.getBookingUser().equals(userEmail)) {
-            bookingRepository.delete(booking);
-            log.info("Booking removed by user");
-
-            bookingNotificationService.publishRemoved("Booking removed by user", userEmail);
-
+            reason = "Booking removed by user";
         } else if (booking.getOwnerEmail().equals(userEmail)) {
-            bookingRepository.delete(booking);
-            log.info("Booking removed by owner");
-
-            bookingNotificationService.publishRemoved("Booking removed by owner", userEmail);
-
+            reason = "Booking removed by owner";
         } else {
             throw new BookingAccessDeniedException(
                     "You neither booked this offer nor own it, so you cannot cancel this booking.");
         }
+
+        bookingRepository.delete(booking);
+        log.info("Booking removed: {}", bookingId);
+
+        bookingNotificationService.publishRemoved(reason, userEmail);
     }
 
     private List<Booking> getBookingsForOffer(UUID offerId) {
@@ -96,8 +96,8 @@ public class BookingServicePrimary implements BookingService {
         return bookingRepository.findAllByOfferId(offerId);
     }
 
-    private static void checkIfBookingDateIsInFuture(LocalDate dateToBook) throws BookingException {
-        LocalDate now = LocalDate.now();
+    private void checkIfBookingDateIsInFuture(LocalDate dateToBook) throws BookingException {
+        LocalDate now = LocalDate.now(clock);
         if (now.isAfter(dateToBook)) {
             throw new BookingException("You try to book offer with date in the past.");
         }
@@ -110,5 +110,10 @@ public class BookingServicePrimary implements BookingService {
                 .bookingUser(bookingUser)
                 .ownerEmail(ownerEmail)
                 .build();
+    }
+
+    private static BookingView toView(Booking booking) {
+        return new BookingView(booking.getId(), booking.getOfferId(),
+                booking.getBookedDate().toString(), booking.getBookingUser(), booking.getOwnerEmail());
     }
 }

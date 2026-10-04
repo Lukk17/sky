@@ -1,6 +1,7 @@
 import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Router} from '@angular/router';
+import {forkJoin} from 'rxjs';
 import {PersonalBooking, BookingService} from '../../services/booking.service';
 import {SkyAuthService} from '../../services/sky-auth.service';
 import {Offer, OfferService} from '../../services/offer.service';
@@ -28,29 +29,21 @@ export class UserDetailsComponent implements OnInit {
     this.skyAuthService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (email) => {
       this.user = email;
       if (email) {
-        this.offerService.getAllOffers().subscribe({
-          next: (all) => {
+        forkJoin({
+          all: this.offerService.getAllOffers(),
+          owned: this.offerService.getUserOffers(),
+          bookings: this.bookingService.getBookedOffers(),
+        }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: ({all, owned, bookings}) => {
             const list = all ?? [];
             const byId = new Map(list.map((o) => [o.id, o]));
             const wanted = email.trim().toLowerCase();
-            this.offerService.getUserOffers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-              next: (owned) => {
-                this.myOffers = (owned && owned.length > 0)
-                  ? owned
-                  : list.filter((o) => (o.ownerEmail ?? '').toLowerCase() === wanted);
-              },
-              error: () => {
-                this.myOffers = list.filter((o) => (o.ownerEmail ?? '').toLowerCase() === wanted);
-              },
-            });
-            this.bookingService.getBookedOffers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-              next: (bookings) => {
-                this.bookedOffers = (bookings ?? []).map(
-                  (x) => new PersonalBooking(byId.get(x.offerId)?.hotelName ?? x.offerId, x.id, x.offerId, x.bookedDate)
-                );
-              },
-              error: (e) => this.handleError(e),
-            });
+            this.myOffers = (owned && owned.length > 0)
+              ? owned
+              : list.filter((o) => (o.ownerEmail ?? '').toLowerCase() === wanted);
+            this.bookedOffers = (bookings ?? []).map(
+              (x) => new PersonalBooking(byId.get(x.offerId)?.hotelName ?? x.offerId, x.id, x.offerId, x.bookedDate)
+            );
           },
           error: (e) => this.handleError(e),
         });

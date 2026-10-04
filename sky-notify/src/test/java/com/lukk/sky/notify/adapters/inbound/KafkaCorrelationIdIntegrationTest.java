@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.OFFER_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -81,7 +81,7 @@ class KafkaCorrelationIdIntegrationTest extends AbstractIntegrationTest {
     private void send(String userInfo, String correlationId) {
         String message = objectMapper.writeValueAsString(
                 new KafkaPayloadModel("offer-data", LocalDateTime.now().toString(), userInfo));
-        ProducerRecord<String, String> record = new ProducerRecord<>(KAFKA_OFFER_TOPIC, message);
+        ProducerRecord<String, String> record = new ProducerRecord<>(OFFER_TOPIC, message);
 
         if (correlationId != null) {
             record.headers().add(CorrelationId.HEADER, correlationId.getBytes(StandardCharsets.UTF_8));

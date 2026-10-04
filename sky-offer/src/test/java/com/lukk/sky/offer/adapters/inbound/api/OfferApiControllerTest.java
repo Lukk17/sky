@@ -8,6 +8,7 @@ import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.exception.PhotoStorageBadResponseException;
 import com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException;
+import com.lukk.sky.offer.domain.ports.inbound.CreateOfferCommand;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,8 @@ import java.util.List;
 
 import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_DEFAULT_OFFER_ID;
 import static com.lukk.sky.offer.assemblers.OfferAssembler.TEST_HOTEL_NAME;
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -129,7 +130,7 @@ class OfferApiControllerTest {
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         Pageable pageable = PageRequest.of(0, 20);
         when(offerService.getAllOffers(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
+                .thenReturn(new PageImpl<>(OfferAssembler.toOfferViews(offersDTO), pageable, offersDTO.size()));
 
         // when / then
         mvc.perform(
@@ -148,7 +149,7 @@ class OfferApiControllerTest {
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         Pageable pageable = PageRequest.of(0, 20);
         when(offerService.getOwnedOffers(eq(TEST_USER_EMAIL), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
+                .thenReturn(new PageImpl<>(OfferAssembler.toOfferViews(offersDTO), pageable, offersDTO.size()));
 
         // when / then
         mvc.perform(
@@ -186,7 +187,7 @@ class OfferApiControllerTest {
     void addOffer_whenValidOffer_thenReturnCreatedOfferDto() throws Exception {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.addOffer(offerDTO)).thenReturn(offerDTO);
+        when(offerService.addOffer(any())).thenReturn(OfferAssembler.toOfferView(offerDTO));
         String expectedJson = objectMapper.writeValueAsString(offerDTO);
 
         // when
@@ -208,7 +209,7 @@ class OfferApiControllerTest {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
         offerDTO.setOwnerEmail("not-an-email");
-        when(offerService.addOffer(any())).thenReturn(offerDTO);
+        when(offerService.addOffer(any())).thenReturn(OfferAssembler.toOfferView(offerDTO));
         String payload = objectMapper.writeValueAsString(offerDTO);
 
         // when / then
@@ -242,7 +243,7 @@ class OfferApiControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail").value(
-                        "A concurrent write advanced the offer event sequence. Re-read the offer and retry the change against its current state."));
+                        "Request conflicts with current state."));
     }
 
     @Test
@@ -288,7 +289,7 @@ class OfferApiControllerTest {
         OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         offerEditDTO.setHotelName(null);
         when(offerService.editOffer(any(), eq(TEST_OWNER_EMAIL)))
-                .thenReturn(OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID));
+                .thenReturn(OfferAssembler.toOfferView(OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID)));
         String payload = objectMapper.writeValueAsString(offerEditDTO);
 
         // when / then
@@ -339,7 +340,8 @@ class OfferApiControllerTest {
         // given
         OfferEditDTO offerEditDTO = OfferAssembler.getPopulatedOfferEditDTO(TEST_DEFAULT_OFFER_ID);
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.editOffer(offerEditDTO, TEST_OWNER_EMAIL)).thenReturn(offerDTO);
+        when(offerService.editOffer(eq(OfferAssembler.toEditCommand(offerEditDTO)), eq(TEST_OWNER_EMAIL)))
+                .thenReturn(OfferAssembler.toOfferView(offerDTO));
         String requestJson = objectMapper.writeValueAsString(offerEditDTO);
         String expectedResponseJson = objectMapper.writeValueAsString(offerDTO);
 
@@ -402,7 +404,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("Can't remove non-existing offer!"));
+        assertTrue(result.getResponse().getContentAsString().contains("Resource not found."));
     }
 
     @Test
@@ -423,7 +425,7 @@ class OfferApiControllerTest {
         List<OfferDTO> offersDTO = OfferAssembler.getPopulatedOffersDTO();
         Pageable pageable = PageRequest.of(0, 20);
         when(offerService.searchOffers(eq(TEST_HOTEL_NAME), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(offersDTO, pageable, offersDTO.size()));
+                .thenReturn(new PageImpl<>(OfferAssembler.toOfferViews(offersDTO), pageable, offersDTO.size()));
 
         // when / then
         mvc.perform(
@@ -463,7 +465,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("100"));
+        assertTrue(result.getResponse().getContentAsString().contains("Invalid request."));
     }
 
     @Test
@@ -499,7 +501,7 @@ class OfferApiControllerTest {
     @DisplayName("getOfferOwner_whenOfferDoesNotExist_thenReturn404WithErrorMessage")
     void getOfferOwner_whenOfferDoesNotExist_thenReturn404WithErrorMessage() throws Exception {
         // given
-        String expectedErrorMessage = "Offer is not existing.";
+        String expectedErrorMessage = "Resource not found.";
         when(offerService.findOfferOwner(TEST_DEFAULT_OFFER_ID))
                 .thenThrow(new OfferNotFoundException(expectedErrorMessage));
 
@@ -547,7 +549,7 @@ class OfferApiControllerTest {
                 anyLong(),
                 eq("image/png"),
                 eq("hotel.png")
-        )).thenReturn(offerDTO);
+        )).thenReturn(OfferAssembler.toOfferView(offerDTO));
         MockMultipartFile file = new MockMultipartFile(
                 "file", "hotel.png", "image/png", VALID_PNG_BYTES
         );
@@ -576,7 +578,7 @@ class OfferApiControllerTest {
                 anyLong(),
                 eq("image/webp"),
                 eq("hotel.webp")
-        )).thenReturn(offerDTO);
+        )).thenReturn(OfferAssembler.toOfferView(offerDTO));
         MockMultipartFile file = new MockMultipartFile(
                 "file", "hotel.webp", "image/webp", VALID_WEBP_BYTES
         );
@@ -610,7 +612,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("Unsupported image format"));
+        assertTrue(result.getResponse().getContentAsString().contains("Invalid request."));
     }
 
     @Test
@@ -634,7 +636,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("5 MB"));
+        assertTrue(result.getResponse().getContentAsString().contains("Request payload too large."));
     }
 
     @Test
@@ -658,7 +660,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("5 MB"));
+        assertTrue(result.getResponse().getContentAsString().contains("Request payload too large."));
     }
 
     @Test
@@ -679,7 +681,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("empty"));
+        assertTrue(result.getResponse().getContentAsString().contains("Invalid request."));
     }
 
     @Test
@@ -700,7 +702,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("Unsupported image format"));
+        assertTrue(result.getResponse().getContentAsString().contains("Invalid request."));
     }
 
     @Test
@@ -722,7 +724,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("Unsupported image format"));
+        assertTrue(result.getResponse().getContentAsString().contains("Invalid request."));
     }
 
     @Test
@@ -743,7 +745,7 @@ class OfferApiControllerTest {
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("Unsupported image format"));
+        assertTrue(result.getResponse().getContentAsString().contains("Invalid request."));
         verifyNoInteractions(offerService);
     }
 
@@ -791,7 +793,7 @@ class OfferApiControllerTest {
 
         // then
         assertTrue(result.getResponse().getContentAsString()
-                .contains("You can only upload photos for your own offers."));
+                .contains("Access denied."));
     }
 
     @Test
@@ -824,7 +826,7 @@ class OfferApiControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(503))
                 .andExpect(jsonPath("$.title").value("Service Unavailable"))
-                .andExpect(jsonPath("$.detail").value("Photo upload failed. The object store is unavailable."));
+                .andExpect(jsonPath("$.detail").value("Service temporarily unavailable, please retry."));
     }
 
     @Test
@@ -857,7 +859,7 @@ class OfferApiControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(502))
                 .andExpect(jsonPath("$.title").value("Bad Gateway"))
-                .andExpect(jsonPath("$.detail").value("Photo upload failed. The object store refused the request."));
+                .andExpect(jsonPath("$.detail").value("Upstream service failed."));
     }
 
     @Test
@@ -875,7 +877,7 @@ class OfferApiControllerTest {
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, "10"))
                 .andExpect(jsonPath("$.status").value(503))
                 .andExpect(jsonPath("$.detail").value(
-                        "Photo address could not be signed. The object store is unavailable."));
+                        "Service temporarily unavailable, please retry."));
     }
 
     @Test
@@ -927,7 +929,8 @@ class OfferApiControllerTest {
     void addOffer_whenBodyCarriesTheRetiredPhotoPathField_thenItIsIgnored() throws Exception {
         // given
         OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.addOffer(any(OfferDTO.class))).thenReturn(offerDTO);
+        when(offerService.addOffer(any(CreateOfferCommand.class)))
+                .thenReturn(OfferAssembler.toOfferView(offerDTO));
         String requestJson = """
                 {
                   "hotelName": "testHotelName",
@@ -1013,7 +1016,7 @@ class OfferApiControllerTest {
         response.setCoverPhotoUrl("https://cdn.example/next.png");
         java.util.UUID photoId = java.util.UUID.randomUUID();
         when(offerService.deleteGalleryPhoto(eq(TEST_DEFAULT_OFFER_ID), eq(photoId), eq(TEST_USER_EMAIL)))
-                .thenReturn(response);
+                .thenReturn(OfferAssembler.toOfferView(response));
 
         // when / then
         mvc.perform(
@@ -1025,5 +1028,36 @@ class OfferApiControllerTest {
                 .andExpect(jsonPath("$.gallery[0].id").value(survivorId.toString()))
                 .andExpect(jsonPath("$.gallery[0].main").value(true))
                 .andExpect(jsonPath("$.coverPhotoUrl").value("https://cdn.example/next.png"));
+    }
+
+    @Test
+    @DisplayName("getOfferById_whenOfferExists_thenReturnItWithoutAuthentication")
+    void getOfferById_whenOfferExists_thenReturnIt() throws Exception {
+        // given
+        OfferDTO offerDTO = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
+        when(offerService.getOfferById(eq(TEST_DEFAULT_OFFER_ID)))
+                .thenReturn(OfferAssembler.toOfferView(offerDTO));
+
+        // when / then
+        mvc.perform(
+                        get("/offers/" + TEST_DEFAULT_OFFER_ID)
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(TEST_DEFAULT_OFFER_ID.toString()))
+                .andExpect(jsonPath("$.hotelName").value(offerDTO.getHotelName()));
+    }
+
+    @Test
+    @DisplayName("getOfferById_whenOfferDoesNotExist_thenReturn404")
+    void getOfferById_whenOfferDoesNotExist_thenReturn404() throws Exception {
+        // given
+        doThrow(new OfferNotFoundException("Offer with ID: " + TEST_DEFAULT_OFFER_ID + " not exist."))
+                .when(offerService).getOfferById(eq(TEST_DEFAULT_OFFER_ID));
+
+        // when / then
+        mvc.perform(
+                        get("/offers/" + TEST_DEFAULT_OFFER_ID)
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }

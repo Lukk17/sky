@@ -6,7 +6,7 @@ import {Offer, OfferService} from '../../services/offer.service';
     selector: 'app-my-offers',
     templateUrl: './offers-owned.component.html',
     styleUrls: ['./offers-owned.component.css'],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
 export class OffersOwnedComponent implements OnInit {

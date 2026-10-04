@@ -31,6 +31,10 @@ export class NewMessageComponent implements OnInit {
 
   onSubmit(message: NgForm) {
     this.error = null;
+    if (message.invalid) {
+      this.error = 'Please fill in all required fields.';
+      return;
+    }
     const v = message.value as Record<string, string>;
     this.messageService.sendMessage({text: String(v['text'] ?? ''), receiver: String(v['receiver'] ?? this.receiver ?? '')}).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.router.navigate(['/messages']).then(),

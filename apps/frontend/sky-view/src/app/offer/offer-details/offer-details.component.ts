@@ -1,6 +1,6 @@
-import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {maskDateInput, toIsoDate} from '../../utils/date-input.util';
+import {maskDateInput, toIsoDate, isPastDateIso} from '../../utils/date-input.util';
 import {CalendarEvent} from 'angular-calendar';
 import {Offer, OfferService} from '../../services/offer.service';
 import {SkyAuthService} from '../../services/sky-auth.service';
@@ -14,7 +14,7 @@ const BOOKED_COLOR = {primary: '#ef4444', secondary: '#7f1d1d'};
     selector: 'app-offer-details',
     templateUrl: './offer-details.component.html',
     styleUrls: ['./offer-details.component.css'],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
 export class OfferDetailsComponent implements OnInit {
@@ -82,7 +82,8 @@ export class OfferDetailsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(private offerService: OfferService, private auth: SkyAuthService, private bookingService: BookingService,
-              private location: Location, private router: Router, private route: ActivatedRoute) {
+              private location: Location, private router: Router, private route: ActivatedRoute,
+              private cdr: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
@@ -99,9 +100,11 @@ export class OfferDetailsComponent implements OnInit {
       if (this.isLoggedIn) {
         this.getBookings();
       }
+      this.cdr.markForCheck();
     },
       error: (e: { message?: string }) => {
         this.loadError = e?.message ?? 'Failed to load session.';
+        this.cdr.markForCheck();
       }});
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (params) => {
@@ -112,6 +115,7 @@ export class OfferDetailsComponent implements OnInit {
       },
       error: (e: { message?: string }) => {
         this.loadError = e?.message ?? 'Failed to read route.';
+        this.cdr.markForCheck();
       }});
   }
 
@@ -171,9 +175,11 @@ export class OfferDetailsComponent implements OnInit {
         color: BOOKED_COLOR,
         allDay: true,
       }));
+      this.cdr.markForCheck();
       },
       error: () => {
         this.loadError = 'Could not load bookings. Please try again.';
+        this.cdr.markForCheck();
       }});
   }
 
@@ -190,9 +196,11 @@ export class OfferDetailsComponent implements OnInit {
       } else if (!this.offer) {
         this.loadError = 'Offer not found';
       }
+      this.cdr.markForCheck();
       },
       error: () => {
         this.loadError = 'Could not load the offer. Please try again.';
+        this.cdr.markForCheck();
       }});
   }
 
@@ -205,9 +213,11 @@ export class OfferDetailsComponent implements OnInit {
       next: () => {
         this.dayDialogVisible = false;
         this.getBookings();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loadError = 'Could not cancel the booking. Please try again.';
+        this.cdr.markForCheck();
       }});
   }
 
@@ -230,12 +240,17 @@ export class OfferDetailsComponent implements OnInit {
       this.bookingError = 'Use format dd/mm/yyyy.';
       return;
     }
-    this.bookingService.addBooking(offer, iso).subscribe({
+    if (isPastDateIso(iso)) {
+      this.bookingError = 'The date cannot be in the past.';
+      return;
+    }
+    this.bookingService.addBooking(offer, iso).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.confirmedDateLabel = raw;
         this.bookingConfirmVisible = true;
         this.bookingDateText = '';
         this.getBookings();
+        this.cdr.markForCheck();
       },
       error: (err: { status?: number }) => {
         if (err?.status === 401) {
@@ -245,6 +260,7 @@ export class OfferDetailsComponent implements OnInit {
         } else {
           this.bookingError = 'Booking failed. Please try again.';
         }
+        this.cdr.markForCheck();
       },
     });
   }

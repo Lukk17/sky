@@ -69,13 +69,13 @@ class ExceptionMappingPrecedenceTest {
         return Stream.of(
                 Arguments.of("MessageNotFoundException",
                         new MessageNotFoundException("No message with that id."),
-                        404, "No message with that id."),
+                        404, "Resource not found."),
                 Arguments.of("MessageAccessDeniedException",
                         new MessageAccessDeniedException("Not your message."),
-                        403, "Not your message."),
+                        403, "Access denied."),
                 Arguments.of("MessageException",
                         new MessageException("Message text must not be blank."),
-                        400, "Message text must not be blank."));
+                        400, "Invalid request."));
     }
 
     @ParameterizedTest(name = "{0} still answers {2}")

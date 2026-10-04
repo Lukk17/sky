@@ -19,7 +19,7 @@ test('session login through the gateway', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
 
   await page.getByTestId('nav-home').click();
-  // Logout is a full-browser navigation through the edge /logout endpoint,
+  // Logout is a full-browser form POST through the edge /logout endpoint,
   // which clears the server-side session (tokens never touch the browser)
   // and redirects back to the app home. The browser never navigates to the
   // Keycloak end-session endpoint without an id_token_hint, so no logout

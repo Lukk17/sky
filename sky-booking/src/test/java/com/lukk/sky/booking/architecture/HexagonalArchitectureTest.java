@@ -20,12 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Enforces hexagonal layering for sky-booking. Rules tailored to the current
  * package layout. They pass today and act as a regression net.
- *
- * <p>Known tech-debt the rules deliberately tolerate (track in follow-up changes):
- * <ul>
- *   <li>{@code domain.service.*} imports {@code adapters.dto.BookingDTO}:
- *       DTOs should split into request/response (adapter) vs command/result (domain).</li>
- * </ul>
  */
 @DisplayName("Hexagonal architecture enforcement tests")
 class HexagonalArchitectureTest {
@@ -47,7 +41,6 @@ class HexagonalArchitectureTest {
 
     private static final String[] DOMAIN_ALLOWED_PACKAGES = {
             "com.lukk.sky.booking.domain..",
-            "com.lukk.sky.booking.adapters.dto..",
             "com.lukk.sky.common..",
             "java..",
             "jakarta.persistence..",

@@ -2,7 +2,7 @@
   <ng-template #start>
     <div class="flex items-center gap-1">
       <img src="assets/logo.png" alt="Sky logo" class="sky-brand-mark" data-testid="brand-logo" />
-      <a (click)="routeToHome()" class="sky-nav-link sky-brand" data-testid="brand-home">Sky</a>
+      <a routerLink="/" href="/" class="sky-nav-link sky-brand" data-testid="brand-home">Sky</a>
       <a routerLink="/home" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-home">Home</a>
       @if (isAuth) {
         <a routerLink="/myOffers" routerLinkActive="activated" class="sky-nav-link" data-testid="nav-my-offers">My Offers</a>
@@ -57,10 +57,10 @@
   </ng-template>
 </p-toolbar>
 @if (banner) {
-  <div class="notify-banner" data-testid="notify-banner" (click)="dismissBanner()" role="alert" aria-live="polite">
+  <button type="button" class="notify-banner" data-testid="notify-banner" (click)="dismissBanner()" (keydown.escape)="dismissBanner()" aria-label="Dismiss new message notification" aria-live="polite">
     <i class="pi pi-envelope"></i>
     <span><strong>{{banner.sender}}</strong> {{banner.text}}</span>
-  </div>
+  </button>
 }
 <div id="navbarSupportedContent" class="collapse lg:hidden" [class.show]="navOpen">
   <div class="flex flex-col gap-2 p-4">

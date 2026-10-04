@@ -1,6 +1,6 @@
 package com.lukk.sky.booking.adapters.outbound.notification;
 
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
+import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.common.kafka.KafkaNotificationPublisher;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
@@ -27,7 +27,7 @@ public class BookingNotificationServicePrimary implements BookingNotificationSer
     }
 
     @Override
-    public void publishCreated(BookingDTO booking, String userEmail) {
+    public void publishCreated(BookingView booking, String userEmail) {
         publish(objectMapper.writeValueAsString(booking), userEmail);
     }
 
