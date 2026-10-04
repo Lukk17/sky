@@ -25,6 +25,7 @@ export class OfferDetailsComponent implements OnInit {
   viewDate: Date = new Date();
   isOwner = false;
   isLoggedIn = false;
+  private currentEmail: string | null = null;
   selectedPhotoUrl: string | null = null;
   loadError: string | null = null;
   dayDialogVisible = false;
@@ -95,8 +96,9 @@ export class OfferDetailsComponent implements OnInit {
       }
     });
     this.auth.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: (email) => {
+      this.currentEmail = email;
       this.isLoggedIn = email != null;
-      this.isOwner = email != null && this.offer?.ownerEmail === email;
+      this.updateOwnership();
       if (this.isLoggedIn) {
         this.getBookings();
       }
@@ -169,6 +171,12 @@ export class OfferDetailsComponent implements OnInit {
     this.dayDialogVisible = true;
   }
 
+  private updateOwnership(): void {
+    const email = (this.currentEmail ?? '').trim().toLowerCase();
+    const owner = (this.offer?.ownerEmail ?? '').trim().toLowerCase();
+    this.isOwner = email.length > 0 && owner.length > 0 && email === owner;
+  }
+
   private dayKey(d: Date): string {
     return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   }
@@ -198,6 +206,7 @@ export class OfferDetailsComponent implements OnInit {
       if (found) {
         this.offer = found;
         this.loadError = null;
+        this.updateOwnership();
         if (this.isLoggedIn) {
           this.getBookings();
         }
