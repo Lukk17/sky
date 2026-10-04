@@ -3,7 +3,7 @@
   @if (isOwner) {
     <div class="glass-panel glass-card owner-bar">
       <p-button label="Edit offer" icon="pi pi-pencil" styleClass="glass-btn" (onClick)="editOffer(offer)" data-testid="offer-edit"></p-button>
-      <p-button label="Delete offer" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" (onClick)="deleteOffer(offer.id)" data-testid="offer-delete"></p-button>
+      <p-button label="Delete offer" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" (onClick)="askDelete()" data-testid="offer-delete"></p-button>
     </div>
   }
   <h3 class="offer-title-plain" data-testid="offer-title">{{offer.hotelName}}</h3>
@@ -65,6 +65,15 @@
     <div class="fifth empty-right" aria-hidden="true"></div>
   </div>
 </div>
+<p-dialog header="Delete this offer?" [(visible)]="deleteConfirmVisible" [modal]="true" [focusOnShow]="true" [focusTrap]="true" ariaLabel="Delete offer dialog" styleClass="glass-card glass-dialog rgb-border rgb-dialog" [style]="{width: '24rem'}">
+  <div data-testid="delete-confirm-dialog" class="confirm-body">
+    <p>Delete <strong>{{offer?.hotelName}}</strong>? This cannot be undone.</p>
+    <div class="confirm-row">
+      <p-button label="Cancel" icon="pi pi-times" styleClass="glass-btn" size="small" (onClick)="deleteConfirmVisible = false" data-testid="delete-cancel"></p-button>
+      <p-button label="Delete" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" size="small" (onClick)="offer && deleteOffer(offer.id)" data-testid="delete-confirm"></p-button>
+    </div>
+  </div>
+</p-dialog>
 <p-dialog header="Booking confirmed" [(visible)]="bookingConfirmVisible" [modal]="true" [focusOnShow]="true" [focusTrap]="true" ariaLabel="Booking confirmed dialog" styleClass="glass-card glass-dialog rgb-border rgb-dialog" [style]="{width: '24rem'}">
   <div data-testid="booking-confirm-dialog" class="confirm-body">
     <i class="pi pi-check-circle confirm-icon"></i>

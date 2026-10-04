@@ -131,11 +131,19 @@ export class OfferDetailsComponent implements OnInit {
     this.selectedPhotoUrl = photos[idx].url;
   }
 
+  deleteConfirmVisible = false;
+
   editOffer(offer: Offer) {
     this.router.navigate(['/edit-offer'], {queryParams: {offerId: offer.id}}).then();
   }
 
+  askDelete() {
+    this.deleteConfirmVisible = true;
+    this.cdr.markForCheck();
+  }
+
   deleteOffer(id: string) {
+    this.deleteConfirmVisible = false;
     this.offerService.deleteOffer(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.router.navigate(['/my-offers']).then(),
       error: () => {

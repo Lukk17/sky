@@ -19,6 +19,26 @@
         <span class="offer-price" data-testid="offer-price">${{offer.price}}</span>
         <p-button label="Book" styleClass="glass-btn-accent" size="small" (onClick)="goToDetails(offer); $event.stopPropagation()" data-testid="offer-book"></p-button>
       </div>
+      @if (showOwnerActions) {
+        <div class="owner-actions" (click)="$event.stopPropagation()" (keyup.enter)="$event.stopPropagation()">
+          <p-button label="Edit" icon="pi pi-pencil" styleClass="glass-btn" size="small" (onClick)="editOffer(offer); $event.stopPropagation()" data-testid="offer-edit"></p-button>
+          <p-button label="Delete" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" size="small" (onClick)="askDelete(offer); $event.stopPropagation()" data-testid="offer-delete"></p-button>
+        </div>
+      }
     </p-card>
   }
 </div>
+<p-dialog header="Delete this offer?" [(visible)]="deleteDialogVisible" (onHide)="pendingDelete = null" [modal]="true" [focusOnShow]="true" [focusTrap]="true" ariaLabel="Delete offer dialog" styleClass="glass-card glass-dialog rgb-border rgb-dialog" [style]="{width: '24rem'}">
+  @if (pendingDelete) {
+    <div data-testid="delete-confirm-dialog" class="confirm-body">
+      <p>Delete <strong>{{pendingDelete.hotelName}}</strong>? This cannot be undone.</p>
+      @if (deleteError) {
+        <p class="err" data-testid="delete-error">{{deleteError}}</p>
+      }
+      <div class="confirm-row">
+        <p-button label="Cancel" icon="pi pi-times" styleClass="glass-btn" size="small" (onClick)="cancelDelete()" data-testid="delete-cancel"></p-button>
+        <p-button label="Delete" icon="pi pi-trash" styleClass="glass-btn-danger delete-btn" size="small" (onClick)="confirmDelete()" data-testid="delete-confirm"></p-button>
+      </div>
+    </div>
+  }
+</p-dialog>

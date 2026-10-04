@@ -71,4 +71,5 @@
 .booking-cal-bare .cal-month-view .cal-day-cell.cal-has-events .cal-day-number { color: #fff; font-weight: 800; }
 .booking-cal-bare .cal-month-view .cal-events { margin: 0 2px 2px; }
 .booking-cal-bare .cal-month-view .cal-event { width: 6px; height: 6px; border-radius: 50%; background-color: #f87171; border: none; }
+.confirm-row { display: flex; gap: 0.5rem; justify-content: center; }
 .day-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
