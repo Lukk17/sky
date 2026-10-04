@@ -185,7 +185,7 @@ input, textarea, .p-inputtext {
 .cal-month-view .cal-day-cell.cal-out-month .cal-day-number { color: rgba(255,255,255,0.3); }
 .cal-month-view .cal-day-number { color: rgba(255,255,255,0.85); }
 .cal-month-view .cal-header .cal-cell { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.07); }
-.offer-galleria .p-galleria-content, .offer-galleria .p-galleria-thumbnail-container { background: rgba(18,18,24,0.72); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.10); }
+.offer-galleria, .offer-galleria .p-galleria, .offer-galleria .p-galleria-content, .offer-galleria .p-galleria-thumbnail-container { background: transparent; backdrop-filter: none; border: none; box-shadow: none; }
 
 .center {
   margin: auto;
