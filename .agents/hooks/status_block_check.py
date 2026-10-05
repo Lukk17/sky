@@ -24,7 +24,7 @@ SKILLS_RE = re.compile(r"^\s*Skills:")
 TASK_RE = re.compile(r"^\s*`{3}.*Tasks:\s*\d+\s*/\s*\d+.*`{3}\s*$")
 DONE_RE = re.compile(r"^\s*~~DONE:.*~~\s*$")
 NOW_RE = re.compile(r"^\s*`{3}.*NOW:.*`{3}\s*$")
-RUNNING_RE = re.compile(r"^\s*Running:")
+RUNNING_RE = re.compile(r"^\s*Running:\s*\S.*\(agent:\s*`[^`]+`\)\s*$")
 NEXT_RE = re.compile(r"^\s*Next:")
 THEN_RE = re.compile(r"^\s*Then:")
 STATE_RE = re.compile(r"^\s*`{3}.*State:\s*(WAITING FOR YOU|WORKING|DONE).*`{3}\s*$", re.IGNORECASE)
@@ -45,44 +45,82 @@ TASK_REASON = ("Task list violation in your last reply. The project task file ho
 
 
 def has_status_tail(text: str) -> bool:
+    lines = text.splitlines()
+    start = None
+
+    for index, line in enumerate(lines):
+        if SEPARATOR_RE.match(line):
+            start = index
+
+    if start is None:
+        return False
+
+    tail = lines[start:]
     stage = 0
 
-    for line in text.splitlines():
+    for line in tail:
+        if not line.strip():
+            return False
+
         if stage == 0:
             if SEPARATOR_RE.match(line):
                 stage = 1
+            else:
+                return False
         elif stage == 1:
             if SKILLS_RE.match(line):
                 stage = 2
+            else:
+                return False
         elif stage == 2:
             if TASK_RE.match(line):
                 stage = 3
+            else:
+                return False
         elif stage == 3:
             if DONE_RE.match(line):
                 stage = 4
+            else:
+                return False
         elif stage == 4:
             if DONE_RE.match(line):
                 stage = 5
+            else:
+                return False
         elif stage == 5:
             if NOW_RE.match(line):
                 stage = 6
+            else:
+                return False
         elif stage == 6:
             if RUNNING_RE.match(line):
                 stage = 7
+            elif NEXT_RE.match(line):
+                stage = 8
+            else:
+                return False
         elif stage == 7:
             if RUNNING_RE.match(line):
                 pass
             elif NEXT_RE.match(line):
                 stage = 8
+            else:
+                return False
         elif stage == 8:
             if THEN_RE.match(line):
                 stage = 9
+            else:
+                return False
         elif stage == 9:
             if STATE_RE.match(line):
                 stage = 10
+            else:
+                return False
         elif stage == 10:
             if WAITING_RE.match(line):
                 return True
+
+            return False
 
     return False
 
