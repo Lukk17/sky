@@ -91,7 +91,7 @@ export class EditOfferComponent implements OnInit {
       }});
   }
 
-  setCover(photoId: string): void {
+  setMain(photoId: string): void {
     if (!this.offer) return;
     this.galleryBusy = true;
     this.galleryError = null;
@@ -102,7 +102,7 @@ export class EditOfferComponent implements OnInit {
       },
       error: () => {
         this.galleryBusy = false;
-        this.galleryError = 'Could not set the cover photo. Please try again.';
+        this.galleryError = 'Could not set the main photo. Please try again.';
       }});
   }
 

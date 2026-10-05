@@ -1,5 +1,5 @@
 <div class="flex justify-center mt-10 px-4">
-  <p-card styleClass="w-full max-w-xl glass-card edit-offer-card">
+  <p-card styleClass="w-full max-w-2xl glass-card edit-offer-card">
     <ng-template #header>
       <h2 class="edit-offer-title" data-testid="edit-offer-title">Edit Offer</h2>
       <p class="edit-offer-subtitle">Keep your listing fresh</p>
@@ -40,7 +40,7 @@
                 }
                 <div class="thumb-actions">
                   @if (!photo.main) {
-                    <p-button label="Cover" icon="pi pi-star" styleClass="glass-btn-accent thumb-btn" (onClick)="setCover(photo.id)" [disabled]="galleryBusy" [attr.data-testid]="'edit-set-cover-' + photo.id"></p-button>
+                    <p-button label="Main" icon="pi pi-star" styleClass="glass-btn-accent thumb-btn" (onClick)="setMain(photo.id)" [disabled]="galleryBusy" [attr.data-testid]="'edit-set-main-' + photo.id"></p-button>
                   }
                   <p-button label="Remove" icon="pi pi-trash" styleClass="glass-btn-danger thumb-btn" (onClick)="removePhoto(photo.id)" [disabled]="galleryBusy" [attr.data-testid]="'edit-remove-' + photo.id"></p-button>
                 </div>
