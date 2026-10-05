@@ -2,9 +2,11 @@
 """Blocks a reply that ends without the Status tail.
 
 Runner (--format plain) only. Subagent reports are exempt: the caller owns
-status. A valid tail holds in order: a dash run line, a Skills line, an
-Owners line, a Status header line, then a State line holding WAITING FOR
-YOU, WORKING, or DONE. Blocking prints the reason on stderr and exits 2.
+status. A valid tail holds in order: dash rule line, Skills line, fenced
+Tasks line directly below Skills, two crossed DONE lines, fenced one-line
+NOW above Running lines, Running lines, Next line, Then line, fenced
+one-line State line, Waiting on line last. Blocking prints the reason on
+stderr and exits 2.
 """
 
 import json
@@ -19,19 +21,25 @@ CONTRACTS = frozenset({3})
 
 SEPARATOR_RE = re.compile(r"^\s*-{2,}\s*$")
 SKILLS_RE = re.compile(r"^\s*Skills:")
-OWNERS_RE = re.compile(r"^\s*Owners:")
-STATUS_RE = re.compile(r"^\s*Status\s*$")
-STATE_RE = re.compile(r"^\s*State:\s*(WAITING FOR YOU|WORKING|DONE)\s*$", re.IGNORECASE)
+TASK_RE = re.compile(r"^\s*`{3}.*Tasks:\s*\d+\s*/\s*\d+.*`{3}\s*$")
+DONE_RE = re.compile(r"^\s*~~DONE:.*~~\s*$")
+NOW_RE = re.compile(r"^\s*`{3}.*NOW:.*`{3}\s*$")
+RUNNING_RE = re.compile(r"^\s*Running:")
+NEXT_RE = re.compile(r"^\s*Next:")
+THEN_RE = re.compile(r"^\s*Then:")
+STATE_RE = re.compile(r"^\s*`{3}.*State:\s*(WAITING FOR YOU|WORKING|DONE).*`{3}\s*$", re.IGNORECASE)
+WAITING_RE = re.compile(r"^\s*Waiting on:")
 
 REASON = (
     "Status block violation in your last reply. End every reply with the "
-    "Status tail in order: a dash run line, a Skills line, an Owners line, "
-    "the Status header, plus a State line holding WAITING FOR YOU, WORKING, "
-    "or DONE. Fix what was flagged and anything else other hooks asked you "
-    "to fix, then end with the status block."
+    "Status tail in order: dash rule line, Skills line, fenced Tasks line "
+    "directly below Skills, two crossed DONE lines, fenced one-line NOW "
+    "above Running lines, Running lines, Next line, Then line, fenced "
+    "one-line State line, Waiting on line last. Fix what was flagged and "
+    "anything else other hooks asked you to fix, then end with the status block."
 )
 
-TASK_LINE_RE = re.compile(r"^\s*Tasks:\s*\d+\s*/\s*\d+")
+TASK_LINE_RE = re.compile(r"^\s*`{0,3}.*Tasks:\s*\d+\s*/\s*\d+")
 TASK_ITEM_RE = re.compile(r"^\s*-\s*\[(open|in progress|done|blocked)\]", re.IGNORECASE)
 TASK_REASON = ("Task list violation in your last reply. The project task file holds items, so add a Tasks: N/M completed line with the pending items and their priorities.")
 
@@ -47,13 +55,33 @@ def has_status_tail(text: str) -> bool:
             if SKILLS_RE.match(line):
                 stage = 2
         elif stage == 2:
-            if OWNERS_RE.match(line):
+            if TASK_RE.match(line):
                 stage = 3
         elif stage == 3:
-            if STATUS_RE.match(line):
+            if DONE_RE.match(line):
                 stage = 4
         elif stage == 4:
+            if DONE_RE.match(line):
+                stage = 5
+        elif stage == 5:
+            if NOW_RE.match(line):
+                stage = 6
+        elif stage == 6:
+            if RUNNING_RE.match(line):
+                stage = 7
+        elif stage == 7:
+            if RUNNING_RE.match(line):
+                pass
+            elif NEXT_RE.match(line):
+                stage = 8
+        elif stage == 8:
+            if THEN_RE.match(line):
+                stage = 9
+        elif stage == 9:
             if STATE_RE.match(line):
+                stage = 10
+        elif stage == 10:
+            if WAITING_RE.match(line):
                 return True
 
     return False
