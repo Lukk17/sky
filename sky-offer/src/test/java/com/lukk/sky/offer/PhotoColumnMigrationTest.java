@@ -40,7 +40,8 @@ class PhotoColumnMigrationTest {
 
     @BeforeAll
     static void migrateOverRowsWrittenBeforeTheSplit() throws SQLException {
-        postgres = new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE);
+        // Labelled for pruneSkyTestcontainers cleanup.
+        postgres = new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true");
         postgres.start();
 
         flyway("2").migrate();

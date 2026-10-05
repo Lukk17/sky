@@ -32,3 +32,29 @@ tasks.test {
     useJUnitPlatform()
     maxHeapSize = "1536m"
 }
+
+// Removes orphaned Testcontainers left behind on red builds or Ctrl+C.
+// Containers carry label sky-testcontainer=true, so only test containers match.
+val pruneSkyTestcontainers by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Prune orphaned sky Testcontainers by label."
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    if (isWindows) {
+        commandLine(
+            "powershell", "-NoProfile", "-NonInteractive", "-Command",
+            "\$ids = docker ps -aq --filter 'label=sky-testcontainer=true'; " +
+                "if (\$ids) { docker rm -f \$ids } else { exit 0 }"
+        )
+    } else {
+        commandLine(
+            "sh", "-c",
+            "ids=\$(docker ps -aq --filter 'label=sky-testcontainer=true'); " +
+                "if [ -n \"\$ids\" ]; then docker rm -f \$ids; fi; exit 0"
+        )
+    }
+    isIgnoreExitValue = true
+}
+
+tasks.named<Test>("test") {
+    finalizedBy(pruneSkyTestcontainers)
+}

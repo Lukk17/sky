@@ -24,11 +24,13 @@ public abstract class AbstractIntegrationTest {
 
     @ServiceConnection
     protected static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true");
 
     @ServiceConnection
     protected static final ConfluentKafkaContainer KAFKA =
-            new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
+            // Labelled for pruneSkyTestcontainers cleanup.
+            new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0")).withLabel("sky-testcontainer", "true");
 
     static {
         POSTGRES.start();

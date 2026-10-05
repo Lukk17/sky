@@ -31,7 +31,8 @@ class DemoSeedMigrationTest {
 
     @Container
     private static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true");
 
     @BeforeAll
     static void migrateWithDemoSeed() {

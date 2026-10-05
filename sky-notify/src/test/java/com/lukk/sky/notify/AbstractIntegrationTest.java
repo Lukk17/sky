@@ -32,7 +32,9 @@ public abstract class AbstractIntegrationTest {
     // field is started and stopped per test class, while the Spring context that binds to its address
     // is cached across classes, so the second class would talk to the address of a broker it no longer owns.
     protected static final ConfluentKafkaContainer KAFKA =
+            // Labelled for pruneSkyTestcontainers cleanup.
             new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"))
+                    .withLabel("sky-testcontainer", "true")
                     .withReuse(true);
 
     static {

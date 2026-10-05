@@ -17,7 +17,8 @@ public class TestcontainersConfiguration {
     private static final DockerImageName POSTGRES_IMAGE = DockerImageName.parse("postgres:17-alpine");
 
     static PostgreSQLContainer newPostgresContainer() {
-        return new PostgreSQLContainer(POSTGRES_IMAGE);
+        // Labelled for pruneSkyTestcontainers cleanup.
+        return new PostgreSQLContainer(POSTGRES_IMAGE).withLabel("sky-testcontainer", "true");
     }
 
     @Bean
