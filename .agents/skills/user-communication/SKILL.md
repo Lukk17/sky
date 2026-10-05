@@ -12,7 +12,7 @@ this conversation, has not read anything you read, has no file open, and is new 
 |---|---|
 | Wording a reply: newcomer explanations, length, and the banned machine-writing marks | [references/writing-style.md](references/writing-style.md) |
 | Asking the user something: the shape of a decision point, numbering, and a worked example | [references/question-points.md](references/question-points.md) |
-| Reporting a result and ending the reply with the status block | [references/status-block.md](references/status-block.md) |
+| Reporting a result and ending the reply with the status tail | [reply-rules.md](../../instructions/reply-rules.md) |
 
 ---
 
@@ -51,13 +51,11 @@ this conversation, has not read anything you read, has no file open, and is new 
 7. Keep a reply readable in one pass: paragraphs of at most three lines, three or more facts as a list of full
    sentences, code only where the problem needs it.
 8. Report each finished result once, when the work is done. While work runs, write at most three lines and the
-   status block.
-9. End every reply with the status block and nothing after it, copied from the template in
-    [references/status-block.md](references/status-block.md) exactly as shown: one dash rule above the word
-    Status, the Done group as crossed plain text with double tildes and no code block, one code block
-    per remaining group, in order crossed Done lines, Running, NOW, Next and Then, Waiting on, State last.
-   When several tasks run, list each name on the Running line, separated by commas, with live progress
-   like 3 of 10 todos done. The State line is always last and is exactly one of WAITING FOR YOU, WORKING, DONE.
+    status tail.
+9. End every reply with the status tail and nothing after it, per
+    [reply-rules.md](../../instructions/reply-rules.md), with the `---`, `Skills:`,
+    `Owners:`, `Status`, crossed `DONE`, `Running`, `NOW`, `Next`, `Then`, `State`,
+    and `Waiting on` lines in that order.
 10. State no cause you have not checked. Once the user says fix it, investigate first.
 11. Use no em dash, no en dash, no clause-joining semicolon, no italic, and no bold at all. The full
     list of machine-writing tells is in [references/writing-style.md](references/writing-style.md).
@@ -80,10 +78,6 @@ this conversation, has not read anything you read, has no file open, and is new 
 - [ ] Every decision point is question, problem, then recommendation with its minus
 - [ ] Numbers only on points that ask something, each numbered heading ends in a question
 - [ ] One continuous sequence, no renumbering, subpoints as 13.1
-- [ ] Every reply ends with the status block, one dash rule above the word Status, one code block per
-  remaining group plus crossed Done lines as plain text with double tildes and no code block, then
-  Running, NOW, Next and Then together, Waiting on, State last, State
-  exactly one of WAITING FOR YOU, WORKING, DONE
-- [ ] State line is the last line, nothing after it, Running omitted when nothing runs
+- [ ] Every reply ends with the status tail per reply-rules.md, nothing after it
 - [ ] Each result reported once, readable in one pass, paragraphs at most three lines
 - [ ] No em dash, en dash, clause-joining semicolon, or italic, and no bold at all
