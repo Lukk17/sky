@@ -353,7 +353,7 @@ public class OfferServicePrimary implements OfferService {
     }
 
     private OfferView toSummaryView(Offer offer) {
-        return assembleView(offer, this::galleryWithoutPresignedUrls);
+        return assembleView(offer, this::galleryWithPresignedUrls);
     }
 
     private OfferView assembleView(Offer offer, Function<Offer, List<GalleryPhotoView>> gallery) {
@@ -372,10 +372,6 @@ public class OfferServicePrimary implements OfferService {
 
     private List<GalleryPhotoView> galleryWithPresignedUrls(Offer offer) {
         return collectGallery(offer, photo -> galleryPhotoUrl(photo, true));
-    }
-
-    private List<GalleryPhotoView> galleryWithoutPresignedUrls(Offer offer) {
-        return collectGallery(offer, photo -> galleryPhotoUrl(photo, false));
     }
 
     private List<GalleryPhotoView> collectGallery(Offer offer, Function<OfferPhoto, String> urlOf) {

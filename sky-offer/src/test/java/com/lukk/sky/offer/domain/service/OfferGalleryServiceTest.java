@@ -346,6 +346,27 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    void setGalleryCover_whenChanged_thenListPayloadShowsNewCover() {
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
+                .objectKey("k0").main(true).build();
+        OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1)
+                .objectKey("k1").main(false).build();
+        List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
+        when(photoStorage.presignedUrl("k0")).thenReturn("u0");
+        when(photoStorage.presignedUrl("k1")).thenReturn("u1");
+        when(offerRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(offer)));
+
+        offerService.setGalleryCover(offerId, p1.getId(), OWNER);
+        org.springframework.data.domain.Page<OfferView> page = offerService.getAllOffers(
+                org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertEquals("u1", page.getContent().getFirst().coverPhotoUrl());
+        assertEquals("u1", page.getContent().getFirst().photoUrl());
+    }
+
+    @Test
     void setGalleryCover_whenConcurrentCoverWins_thenAnswers409() {
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .objectKey("k0").main(true).build();
