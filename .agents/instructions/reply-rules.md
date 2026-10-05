@@ -46,7 +46,7 @@ Headings start at level three.
 
 End every reply with the status tail and nothing after it.
 
-Enforced tail order, consecutive lines, no blank lines inside the tail.
+Enforced order, blank lines skipped never breaking the sequence: dash rule line, Skills line, inline ```Tasks: N/M completed``` single line, two crossed ~~DONE~~ lines, inline ```NOW: ...``` single line, Running lines each as `Running: <task> (agent: `<name>`)`, Next line, Then line, inline ```State: WORKING|WAITING FOR YOU|DONE``` single line, Waiting on line last. Running block omitted entirely when nothing runs. Empty line above the rule required so preceding text never renders as a heading. Exit 2 on mismatch.
 
 The tail holds these lines in this order:
 

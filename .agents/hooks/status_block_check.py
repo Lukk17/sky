@@ -56,11 +56,13 @@ def has_status_tail(text: str) -> bool:
         return False
 
     tail = lines[start:]
+    if start == 0 or lines[start - 1].strip():
+        return False
     stage = 0
 
     for line in tail:
         if not line.strip():
-            return False
+            continue
 
         if stage == 0:
             if SEPARATOR_RE.match(line):
