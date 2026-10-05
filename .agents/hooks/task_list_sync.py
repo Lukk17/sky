@@ -337,10 +337,107 @@ def _guard(payload: Dict[str, Any]) -> int:
     return 0
 
 
+def _slug(text: str) -> str:
+    """Stable id from a subject when the tool list carries no ids."""
+    out = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+    return out[:48] or "task"
+
+
+def _tool_status(status: str) -> str:
+    name = " ".join(status.split()).lower().replace("_", " ").replace("-", " ")
+
+    if name in ("in progress", "inprogress", "in-progress"):
+        return IN_PROGRESS
+
+    if name in ("completed", "complete", "done"):
+        return DONE
+
+    if name in ("blocked", "cancelled", "canceled"):
+        return BLOCKED
+
+    return OPEN
+
+
+def _sync_from_tool_todos(todos: Any) -> int:
+    """Bridge live tool todos into the tasks file and the widget snapshot."""
+    if not isinstance(todos, list) or not todos:
+        return 0
+
+    path = _task_list()
+    lines = _read_lines(path)
+    known: Dict[str, int] = {}
+
+    for index, line in enumerate(lines):
+        parsed = _parse(line)
+
+        if parsed is not None:
+            known[parsed[1]] = index
+            known[parsed[2]] = index
+
+    for item in todos:
+        if not isinstance(item, dict):
+            continue
+
+        subject = _field(item, "content") or _field(item, "subject")
+        raw_id = _field(item, "id") or _field(item, "task_id")
+
+        if not subject and not raw_id:
+            continue
+
+        task_id = raw_id or _slug(subject)
+        status = _tool_status(str(item.get("status", "")))
+        line = _entry(status, task_id, subject or task_id)
+        at = known.get(task_id, known.get(subject, -1))
+
+        if at is None or at < 0:
+            lines.append(line)
+            known[task_id] = len(lines) - 1
+        else:
+            lines[at] = line
+
+    try:
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    except Exception:
+        return 0
+
+    _sync_widget(lines)
+
+    return 0
+
+
+def _runner_mode(payload: Dict[str, Any]) -> int:
+    """Plain runner: live todos update all three, other calls mirror hand edits."""
+    try:
+        tool = str(payload.get("tool_name", ""))
+        tool_input = payload.get("tool_input")
+        todos = tool_input.get("todos") if isinstance(tool_input, dict) else None
+
+        if "todo" in tool.lower() and isinstance(todos, list) and todos:
+            return _sync_from_tool_todos(todos)
+
+        _sync_widget(_read_lines(_task_list()))
+    except Exception:
+        pass
+
+    return 0
+
+
 def main(argv: List[str]) -> int:
     try:
         event = _flag(argv, "--event").lower()
         fmt = _flag(argv, "--format").lower()
+
+        if fmt == "plain":
+            try:
+                payload = json.loads(_stdin_text() or "{}")
+            except Exception:
+                return 0
+
+            if not isinstance(payload, dict):
+                return 0
+
+            return _runner_mode(payload)
 
         if event not in EVENT_NAMES or fmt not in FORMATS:
             return 0
