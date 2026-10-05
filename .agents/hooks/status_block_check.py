@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Blocks a reply that ends without the Status tail.
+"""Footer shape gate for user-facing replies.
 
-Runner (--format plain) only. Subagent reports are exempt: the caller owns
-status. A valid tail holds in order: dash rule line, Skills line, fenced
-Tasks line directly below Skills, two crossed DONE lines, fenced one-line
-NOW above Running lines, Running lines, Next line, Then line, fenced
-one-line State line, Waiting on line last. Blocking prints the reason on
-stderr and exits 2.
+Footer shape is mandatory for user-facing replies in the exact order: dash
+rule line, Skills line, inline Tasks single line, two crossed DONE lines,
+inline NOW single line, Running lines with agent names in inline code, Next
+line, Then line, inline State single line, Waiting on line last, blank lines
+skipped never breaking the sequence. The hook never denies a tool or
+subagent call over it: tool and subagent events log the violation and exit 0.
+Exit 2 applies only on a user-reply event if the runner provides one.
 """
 
 import json
@@ -18,6 +19,17 @@ HOOK_ORDER = 35
 HOOK_TEXT_EVENT = False
 
 CONTRACTS = frozenset({3})
+
+REPLY_EVENTS = frozenset({
+    "assistant.reply.complete",
+    "experimental.text.complete",
+    "reply.complete",
+    "stop",
+})
+
+TOOL_EVENTS = frozenset({
+    "tool.execute.before",
+})
 
 SEPARATOR_RE = re.compile(r"^\s*-{2,}\s*$")
 SKILLS_RE = re.compile(r"^\s*Skills:")
@@ -77,6 +89,8 @@ def has_status_tail(text: str) -> bool:
         elif stage == 2:
             if TASK_RE.match(line):
                 stage = 3
+            elif DONE_RE.match(line):
+                stage = 4
             else:
                 return False
         elif stage == 3:
@@ -160,10 +174,27 @@ def _runner_mode() -> int:
         if not isinstance(payload, dict) or not _speaks_contract(payload):
             return 0
 
-        if payload.get("event") != "tool.execute.before":
+        if payload.get("is_subagent") is True:
+            text = payload.get("assistant_text")
+
+            if isinstance(text, str) and text.strip() and not has_status_tail(text):
+                sys.stderr.buffer.write(("Subagent footer note (not blocking): " + REASON).encode("utf-8"))
+                sys.stderr.buffer.flush()
+
             return 0
 
-        if payload.get("is_subagent") is True:
+        event = payload.get("event")
+
+        if event in TOOL_EVENTS:
+            text = payload.get("assistant_text")
+
+            if isinstance(text, str) and text.strip() and not has_status_tail(text):
+                sys.stderr.buffer.write(("Tool-event footer note (not blocking): " + REASON).encode("utf-8"))
+                sys.stderr.buffer.flush()
+
+            return 0
+
+        if event not in REPLY_EVENTS:
             return 0
 
         text = payload.get("assistant_text")
