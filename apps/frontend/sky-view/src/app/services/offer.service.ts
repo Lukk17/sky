@@ -114,6 +114,24 @@ export class OfferService {
     formData.append('file', file, file.name);
     return this.http.post<Offer>(`${this.ADD_OFFER_URL}/${offerId}/photo`, formData);
   }
+
+  public uploadGalleryPhoto(offerId: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<Offer>(`${this.ADD_OFFER_URL}/${offerId}/photos`, formData);
+  }
+
+  public deleteGalleryPhoto(offerId: string, photoId: string) {
+    return this.http.delete<Offer>(`${this.ADD_OFFER_URL}/${offerId}/photos/${photoId}`);
+  }
+
+  public setGalleryCover(offerId: string, photoId: string) {
+    return this.http.put<Offer>(`${this.ADD_OFFER_URL}/${offerId}/photos/${photoId}/cover`, {});
+  }
+
+  public reorderGalleryPhoto(offerId: string, photoId: string, position: number) {
+    return this.http.put<Offer>(`${this.ADD_OFFER_URL}/${offerId}/photos/${photoId}/position?position=${position}`, {});
+  }
 }
 
 export interface OfferPhoto {

@@ -25,13 +25,39 @@
         <input pInputText [(ngModel)]="offer.country" id="country" name="country" ngModel required type="text" class="w-full" />
         <label for="country">Country</label>
       </p-floatlabel>
-      <p-floatlabel variant="on">
-        <input pInputText [(ngModel)]="offer.coverPhotoUrl" id="photoUrl" name="photoUrl" ngModel type="text" class="w-full" />
-        <label for="photoUrl">Photo Link</label>
-      </p-floatlabel>
-      @if (offer.coverPhotoUrl) {
-        <img [src]="offer.coverPhotoUrl" alt="Preview photo of offer" class="w-full aspect-video object-cover rounded-xl" />
-      }
+      <section aria-label="Photo gallery" class="gallery-manager" data-testid="edit-gallery">
+        <h3 class="gallery-title">Photos</h3>
+        @if (galleryError) {
+          <small class="text-red-400" data-testid="edit-gallery-error">{{galleryError}}</small>
+        }
+        @if (gallery().length > 0) {
+          <div class="gallery-grid">
+            @for (photo of gallery(); track photo.id) {
+              <figure class="gallery-thumb">
+                <img [src]="photo.url" [alt]="'Photo of offer'" loading="lazy" />
+                @if (photo.main) {
+                  <figcaption class="main-badge" data-testid="edit-gallery-main">Main</figcaption>
+                }
+                <div class="thumb-actions">
+                  @if (!photo.main) {
+                    <p-button label="Cover" icon="pi pi-star" styleClass="glass-btn-accent thumb-btn" (onClick)="setCover(photo.id)" [disabled]="galleryBusy" [attr.data-testid]="'edit-set-cover-' + photo.id"></p-button>
+                  }
+                  <p-button label="Remove" icon="pi pi-trash" styleClass="glass-btn-danger thumb-btn" (onClick)="removePhoto(photo.id)" [disabled]="galleryBusy" [attr.data-testid]="'edit-remove-' + photo.id"></p-button>
+                </div>
+              </figure>
+            }
+          </div>
+        } @else {
+          <p class="muted" data-testid="edit-gallery-empty">No photos yet. Add the first one below.</p>
+        }
+        <label class="glass-file-btn" for="galleryFile"><i class="pi pi-upload"></i> Add photos</label>
+        <input id="galleryFile" name="galleryFile" type="file" accept="image/*" class="glass-file-input" (change)="onFileSelected($event)" data-testid="edit-gallery-file" />
+        @if (uploading) {
+          <small class="muted" data-testid="edit-gallery-uploading">Uploading photo</small>
+        } @else {
+          <small class="muted">Image file, up to 5 MB. Added straight to the gallery.</small>
+        }
+      </section>
       <p-floatlabel variant="on">
         <input pInputText [(ngModel)]="offer.roomCapacity" id="roomCapacity" name="roomCapacity" ngModel required type="number" class="w-full" />
         <label for="roomCapacity">Room capacity</label>

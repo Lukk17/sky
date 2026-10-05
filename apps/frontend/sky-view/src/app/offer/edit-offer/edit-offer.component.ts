@@ -1,9 +1,11 @@
 import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {NgForm} from '@angular/forms';
-import {Offer, OfferDraft} from '../../services/offer.service';
+import {Offer, OfferDraft, OfferPhoto} from '../../services/offer.service';
 import {OfferService} from '../../services/offer.service';
 import {ActivatedRoute, Router} from '@angular/router';
+
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 
 @Component({
     selector: 'app-edit-offer',
@@ -14,6 +16,9 @@ import {ActivatedRoute, Router} from '@angular/router';
 })
 export class EditOfferComponent implements OnInit {
   error: string | null = null;
+  galleryError: string | null = null;
+  galleryBusy = false;
+  uploading = false;
   offer: Offer | null = null;
   private offerId = '';
   private readonly destroyRef = inject(DestroyRef);
@@ -38,6 +43,66 @@ export class EditOfferComponent implements OnInit {
       },
       error: () => {
         this.error = 'Could not read the route. Please try again.';
+      }});
+  }
+
+  gallery(): OfferPhoto[] {
+    return [...(this.offer?.gallery ?? [])].sort((a, b) => a.position - b.position);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file || !this.offer) return;
+    this.galleryError = null;
+    if (!file.type.startsWith('image/')) {
+      this.galleryError = 'Only image files are allowed.';
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      this.galleryError = 'Photo must be smaller than 5 MB.';
+      return;
+    }
+    this.uploading = true;
+    this.offerService.uploadGalleryPhoto(this.offerId, file).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        this.uploading = false;
+        if (updated) this.offer = updated;
+      },
+      error: () => {
+        this.uploading = false;
+        this.galleryError = 'Could not upload the photo. Please try again.';
+      }});
+  }
+
+  removePhoto(photoId: string): void {
+    if (!this.offer) return;
+    this.galleryBusy = true;
+    this.galleryError = null;
+    this.offerService.deleteGalleryPhoto(this.offerId, photoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        this.galleryBusy = false;
+        if (updated) this.offer = updated;
+      },
+      error: () => {
+        this.galleryBusy = false;
+        this.galleryError = 'Could not remove the photo. Please try again.';
+      }});
+  }
+
+  setCover(photoId: string): void {
+    if (!this.offer) return;
+    this.galleryBusy = true;
+    this.galleryError = null;
+    this.offerService.setGalleryCover(this.offerId, photoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        this.galleryBusy = false;
+        if (updated) this.offer = updated;
+      },
+      error: () => {
+        this.galleryBusy = false;
+        this.galleryError = 'Could not set the cover photo. Please try again.';
       }});
   }
 
