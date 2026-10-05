@@ -55,6 +55,8 @@ HOOK_ORDER = 30
 
 TASK_LIST_NAME = "tasks.md"
 
+WIDGET_NAME = "tasks.widget.json"
+
 OPEN = "open"
 IN_PROGRESS = "in progress"
 DONE = "done"
@@ -66,6 +68,7 @@ FORMATS = ("claude", "codex", "copilot")
 
 EVENT_NAMES = {
     "taskcreated": "TaskCreated",
+    "taskupdated": "TaskUpdated",
     "taskcompleted": "TaskCompleted",
     "sessionstart": "SessionStart",
     "precompact": "PreCompact",
@@ -156,6 +159,48 @@ def _entry(status: str, task_id: str, subject: str) -> str:
     )
 
 
+def _widget_path() -> Path:
+    """Snapshot the tool task widget on mobile plus WebUI reads."""
+    cwd = Path.cwd().resolve()
+    anchored = Path(__file__).resolve().parents[2]
+    root = cwd if (cwd / ".agents" / "hooks").is_dir() else anchored
+
+    return root / ".agents" / WIDGET_NAME
+
+
+def _sync_widget(lines: List[str]) -> None:
+    """Mirror the tasks file into the widget snapshot from the same source.
+
+    The widget file, the tasks file, and the reply Tasks line then show the
+    same state after every change. Counts here feed the Tasks line.
+    """
+    items = []
+    done = 0
+    total = 0
+
+    for line in lines:
+        parsed = _parse(line)
+
+        if parsed is None:
+            continue
+
+        status, task_id, subject = parsed
+        total += 1
+
+        if status == DONE:
+            done += 1
+
+        items.append({"id": task_id, "status": status, "subject": subject})
+
+    try:
+        _widget_path().write_text(
+            json.dumps({"total": total, "done": done, "items": items}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except Exception:
+        return
+
+
 def _field(payload: Dict[str, Any], key: str) -> str:
     value = payload.get(key)
 
@@ -189,6 +234,40 @@ def _record(event: str, payload: Dict[str, Any]) -> int:
         lines.append(_entry(status, task_id, subject))
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _sync_widget(lines)
+
+    return 0
+
+
+def _record_updated(payload: Dict[str, Any]) -> int:
+    """Apply a TaskUpdated event, including in progress and blocked by hand."""
+    task_id = _field(payload, "task_id")
+
+    if not task_id or ID_DELIMITER in task_id:
+        return 0
+
+    subject = _field(payload, "task_subject")
+    status = _field(payload, "task_status").lower() or _field(payload, "status").lower()
+
+    if status not in (OPEN, IN_PROGRESS, DONE, BLOCKED):
+        return 0
+
+    path = _task_list()
+    lines = _read_lines(path)
+
+    for index, line in enumerate(lines):
+        parsed = _parse(line)
+
+        if parsed is None or parsed[1] != task_id:
+            continue
+
+        lines[index] = _entry(status, task_id, subject or parsed[2])
+        break
+    else:
+        lines.append(_entry(status, task_id, subject))
+
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _sync_widget(lines)
 
     return 0
 
@@ -212,7 +291,9 @@ def _emit_context(event: str, fmt: str, text: str) -> None:
 
 def _inject(event: str, fmt: str) -> int:
     """Put the stored list back into context, or stay silent when it is empty."""
-    body = "\n".join(line for line in _read_lines(_task_list()) if line.strip())
+    lines = _read_lines(_task_list())
+    _sync_widget(lines)
+    body = "\n".join(line for line in lines if line.strip())
 
     if not body:
         return 0
@@ -271,6 +352,9 @@ def main(argv: List[str]) -> int:
 
         if event in RECORDED_STATUS:
             return _record(event, payload)
+
+        if event == "taskupdated":
+            return _record_updated(payload)
 
         if event == "stop":
             return _guard(payload)
