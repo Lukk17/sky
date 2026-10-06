@@ -99,6 +99,7 @@ e2e/testing/runs/*.md
 !e2e/testing/runs/README.md
 
 /tasks.md
+.agents/tasks.widget.json
 
 ### Frontend / Node / Angular (merged from apps/frontend/.gitignore) ###
 
