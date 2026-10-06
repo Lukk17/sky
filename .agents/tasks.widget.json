@@ -1,0 +1,191 @@
+{
+  "total": 37,
+  "done": 36,
+  "items": [
+    {
+      "id": "fail-fast-on-unresolved-credentials",
+      "status": "done",
+      "subject": "Refuse to start when a required property still holds its own placeholder text, in `sky-booking`, `sky-offer` and `sky-message`, and replace the object store credential defaults in `sky-offer` so the new check catches them."
+    },
+    {
+      "id": "archunit-rules-for-claimed-guarantees",
+      "status": "done",
+      "subject": "Add ArchUnit rules for the three guarantees `openspec/specs/architecture/spec.md` credits to tests that do not enforce them, and settle whatever existing code the new rules fail on."
+    },
+    {
+      "id": "helm-chart-hygiene-and-cors-defaults",
+      "status": "done",
+      "subject": "Move the production hostname and the TLS secret name out of the service chart default values into the production overlay, collapse the documented `kubectl apply` paths onto the charts that already cover them, and set the cross origin allow list in the three production overlays."
+    },
+    {
+      "id": "rename-notify-outbound-service-package",
+      "status": "done",
+      "subject": "Rename `adapters.outbound.service` in `sky-notify` to a name that says it is the WebSocket transport, and move `WebSocketService` with it."
+    },
+    {
+      "id": "sharpen-sky-message-receiver-validation-note",
+      "status": "done",
+      "subject": "Rewrite the receiver validation paragraph in `sky-message/AGENTS.md` so a reader cannot take its description of the removed check as a description of current behaviour."
+    },
+    {
+      "id": "e2e-1-rebuild-service-images",
+      "status": "done",
+      "subject": "Rebuild the container image for every service from the current working tree, so nothing later in this sequence runs on a stale layer."
+    },
+    {
+      "id": "e2e-2-fresh-k3d-cluster-deploy",
+      "status": "done",
+      "subject": "Delete the k3d cluster, create it again from scratch, and install the whole stack onto it following `config/k8s/local_README.md` from the top."
+    },
+    {
+      "id": "e2e-3-collection-against-cluster",
+      "status": "done",
+      "subject": "Run the whole Bruno collection against the fresh cluster with `--env k8s` and require every request and every assertion to pass."
+    },
+    {
+      "id": "e2e-4-compose-stack-from-clean",
+      "status": "done",
+      "subject": "Only once the cluster run has passed, stop the k3d cluster and bring the Docker Compose stack up from clean."
+    },
+    {
+      "id": "e2e-5-collection-against-compose",
+      "status": "done",
+      "subject": "Run the whole Bruno collection against the compose stack with `--env local` and require every request and every assertion to pass."
+    },
+    {
+      "id": "narrow-notify-cors-origins",
+      "status": "done",
+      "subject": "Replace the hardcoded origin list in `sky-notify`'s `WebSocketConfig` with a bound property, so the deployed service stops accepting localhost origins."
+    },
+    {
+      "id": "correct-placeholder-render-scenario",
+      "status": "done",
+      "subject": "Rewrite the scenario in `openspec/specs/helm-charts/spec.md` that expects a no-overlay render to produce placeholder values."
+    },
+    {
+      "id": "coredns-record-survives-restart",
+      "status": "done",
+      "subject": "Move the in-cluster record for the identity provider host out of the `NodeHosts` key of the `coredns` ConfigMap and into a `coredns-custom` ConfigMap that k3d does not own."
+    },
+    {
+      "id": "generate-openapi-contracts",
+      "status": "done",
+      "subject": "Wire the springdoc Gradle plugin into `sky-booking`, `sky-offer` and `sky-message` so `docs/api/openapi/` is produced on every build from a forked run that needs no PostgreSQL, no Kafka, no Keycloak and no object store."
+    },
+    {
+      "id": "correct-generated-contract-content",
+      "status": "done",
+      "subject": "Declare `version = \"v1\"` in the three controllers so the generated paths read `/api/v1/`, restore every error status the hand-written contracts documented and the generated ones dropped, and stop the two anonymous sky-offer endpoints being marked as needing a token."
+    },
+    {
+      "id": "amend-specs-for-generated-contracts",
+      "status": "done",
+      "subject": "Amend `openspec/specs/api-versioning/spec.md`, which pins the annotation literal with no reason and claims the published documents were left working unchanged, and `openspec/specs/sky-common/spec.md`, which calls the contracts hand-written."
+    },
+    {
+      "id": "document-401-on-anonymous-endpoints",
+      "status": "done",
+      "subject": "Move the 401 from `ApiSecuredErrorResponses` into `ApiCommonErrorResponses` in `sky-common`, leaving the 403 behind, so every endpoint in all three services publishes the status it really answers."
+    },
+    {
+      "id": "remove-dead-inline-401",
+      "status": "done",
+      "subject": "Remove the inline 401 block on sky-offer's owner lookup, which springdoc no longer publishes because the class-level shared annotation wins for the same status, and check the other two controllers for the same leftover."
+    },
+    {
+      "id": "document-search-term-limits",
+      "status": "done",
+      "subject": "Move the blank and maximum-length rules for `POST /api/v1/search` into the operation description and delete the inline 400 entry that carries them today."
+    },
+    {
+      "id": "e2e-6-rebuild-service-images",
+      "status": "done",
+      "subject": "Rebuild all five container images from the current tree."
+    },
+    {
+      "id": "e2e-7-fresh-k3d-cluster-deploy",
+      "status": "done",
+      "subject": "Delete the k3d cluster, create it again, and install the whole stack following `config/k8s/local_README.md`."
+    },
+    {
+      "id": "e2e-8-collection-against-cluster",
+      "status": "done",
+      "subject": "Run the Bruno collection with `--env k8s` and require every request and every assertion to pass."
+    },
+    {
+      "id": "e2e-9-compose-stack-from-clean",
+      "status": "done",
+      "subject": "Stop the cluster, then bring the compose stack up from removed containers and removed volumes."
+    },
+    {
+      "id": "e2e-10-collection-against-compose",
+      "status": "done",
+      "subject": "Run the Bruno collection with `--env local` and require every request and every assertion to pass."
+    },
+    {
+      "id": "fix-generated-servers-block",
+      "status": "done",
+      "subject": "Each generated document carries one `servers` entry naming the port the forked documentation build binds, 7971, 7972 and 7973. Those exist only during a Gradle build, so a client generated from any of the three contracts has a base URL that is nowhere. Restore the three real entries each hand-written document carried, from configuration per service rather than from a literal in shared code."
+    },
+    {
+      "id": "edge-paths-become-api-v1",
+      "status": "done",
+      "subject": "Replace the service-naming edge prefixes `/offer/api`, `/booking/api` and `/msg/api` with the path the service actually serves, `/api/v1/...`, in the gateway routes, every ingress in every chart and overlay, the Bruno collection and the documents that state the old shape. The rewriting disappears: the edge matches the resource and forwards unchanged."
+    },
+    {
+      "id": "compose-publishes-only-the-gateway",
+      "status": "done",
+      "subject": "Stop docker compose publishing 5552, 5553, 5554 and 5555 to the host, so it matches the cluster, where only the ingress on 5777 is reachable."
+    },
+    {
+      "id": "restore-all-three-servers-in-contracts",
+      "status": "done",
+      "subject": "Once the edge path and the service path are the same string, put the gateway and production entries back in the generated contracts, which could not be expressed while a prefix was being swapped."
+    },
+    {
+      "id": "amend-specs-for-edge-paths",
+      "status": "done",
+      "subject": "Amend the api-versioning and helm-charts specifications for the new public addresses, through the OpenSpec change workflow."
+    },
+    {
+      "id": "e2e-11-verify-both-paths-again",
+      "status": "done",
+      "subject": "Rebuild all five images, fresh k3d cluster, collection with `--env k8s`, then compose from clean and collection with `--env local`, on the new paths."
+    },
+    {
+      "id": "per-service-base-urls-and-direct-environment",
+      "status": "done",
+      "subject": "Give each service its own base URL variable in the Bruno collection, so a request reads `{{offerUrl}}/api/v1/offers`, and add a `direct.yml` environment pointing them at 5552, 5555 and 5553 with a static token-shaped string instead of a Keycloak call."
+    },
+    {
+      "id": "route-swagger-through-the-gateway",
+      "status": "done",
+      "subject": "The gateway routes four API paths and none of them matches `/swagger-ui` or `/v3/api-docs`, and the service ports are no longer published, so no documentation UI can be opened under compose. The cluster still serves them through their own ingresses at `/offer/swagger-ui` and friends."
+    },
+    {
+      "id": "swagger-actually-works-behind-both-edges",
+      "status": "done",
+      "subject": "The six documentation ingresses set no `x-forwarded-prefix` annotation, so springdoc hands the browser a root-absolute config address the cluster serves at no prefix. Swagger UI then falls back to its demo document."
+    },
+    {
+      "id": "bridge-widget-to-live-tool-list-plus-verify-plus",
+      "status": "done",
+      "subject": "Bridge widget to live tool list plus verify plus commit"
+    },
+    {
+      "id": "fix-gate-to-log-only-on-tool-events-plus-commit",
+      "status": "done",
+      "subject": "Fix gate to log-only on tool events plus commit"
+    },
+    {
+      "id": "diff-setup-vs-upstream-plus-claude-revert-plus-c",
+      "status": "in progress",
+      "subject": "Diff setup vs upstream plus Claude revert plus commit"
+    },
+    {
+      "id": "implement-todo-updated-subscription-plus-mismatc",
+      "status": "done",
+      "subject": "Implement todo.updated subscription plus mismatch watchdog plus docs, no commit"
+    }
+  ]
+}

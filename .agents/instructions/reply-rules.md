@@ -155,4 +155,6 @@ The hook handles every task event it receives, listed below.
 
 A hand edit of the tasks file counts as a change and is mirrored to the widget snapshot on the next hook run.
 
+The main thread keeps the widget, the file and the reply Tasks line current. A mismatch blocks the next main thread tool call until synced. Subagents stay exempt and are never blocked over it.
+
 Every failure path allows: a broken sync must never break a session.
