@@ -1,0 +1,76 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: floci-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    component: floci
+spec:
+  replicas: 1
+  serviceName: floci-service
+  selector:
+    matchLabels:
+      component: floci
+  template:
+    metadata:
+      labels:
+        component: floci
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 0
+        fsGroup: 1001
+      volumes:
+        - name: floci-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volume.claimName }}
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: floci
+          image: {{ .Values.image.name }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: api
+              containerPort: {{ .Values.service.port }}
+          volumeMounts:
+            - name: floci-storage
+              mountPath: {{ .Values.storage.path }}
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: {{ .Values.health.path }}
+              port: {{ .Values.service.port }}
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.health.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.health.path }}
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: FLOCI_STORAGE_MODE
+              value: {{ .Values.storage.mode | quote }}
+            - name: FLOCI_STORAGE_PERSISTENT_PATH
+              value: {{ .Values.storage.path | quote }}
+            - name: FLOCI_SERVICES_UI_ENABLED
+              value: {{ .Values.ui.enabled | quote }}

@@ -1,0 +1,354 @@
+name: CI (build & test)
+
+# Runs when a PR is opened or reopened, on every commit pushed to an open PR
+# (synchronize), on demand, and as the release gate: release.yaml calls this
+# workflow so the composite build is the thing a release has to pass.
+#
+# ready_for_review is deliberately absent. A draft PR already raises opened and
+# synchronize, so by the time a draft is marked ready this workflow has already
+# tested its head commit, and ready_for_review would only re-run a SHA that is
+# already green at the cost of another full composite build. It becomes
+# necessary only if a draft filter (if: github.event.pull_request.draft ==
+# false) is ever added to the job below.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+  workflow_call:
+
+# One in-flight run per pull request, so a rapid series of pushes cancels the
+# superseded runs instead of queueing a composite build for each of them.
+#
+# The run_id fallback puts every non-pull_request trigger in a group of its own,
+# and cancellation is then switched off for those triggers outright. A manual
+# dispatch and the release gate both see an empty github.event.pull_request, so
+# neither shares a group with anything and neither can be cancelled: a release
+# waiting on its tests is never killed by someone pushing to a pull request.
+#
+# Do not key this on github.workflow. A called workflow reports the *caller's*
+# workflow name there, which is how a reusable workflow ends up sharing a group
+# with its caller and cancelling it.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Each module carries its own CHANGELOG.md, and the topmost "## [x.y.z]" entry
+  # in it is the version release.yaml publishes as that module's image tag. This
+  # job is what stops a module change from merging without a new entry, because
+  # a module whose code moved but whose changelog did not would be released under
+  # a version number that already describes different code.
+  #
+  # pull_request only, and that restriction is load-bearing rather than tidy.
+  # release.yaml calls this workflow, and inside a called workflow
+  # github.event_name reports the *caller's* event, which is workflow_dispatch.
+  # Allowing workflow_dispatch here would therefore run this gate on every
+  # release, comparing the release branch against itself, which fails on "version
+  # equals base" and blocks every release that is not preceded by a bump. The
+  # gate's job is to guard a merge, and a merge only ever arrives as a
+  # pull_request.
+  verify-changelog:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      # fetch-depth: 0 because this job needs the merge base with the target
+      # branch for the changed-file set, and `git show origin/<base>:<file>` for
+      # the previous version of each changelog. A shallow clone has neither.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Verify the changelog version of every module this pull request touches
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          MODULES="sky-common sky-booking sky-offer sky-message sky-notify sky-gateway"
+          SERVICES="sky-booking sky-offer sky-message sky-notify sky-gateway"
+
+          affected=""
+
+          mark() {
+            case " ${affected} " in
+              *" $1 "*) ;;
+              *) affected="${affected}${affected:+ }$1" ;;
+            esac
+          }
+
+          mark_every_module() {
+            for m in ${MODULES}; do mark "$m"; done
+          }
+
+          mark_every_service() {
+            for s in ${SERVICES}; do mark "$s"; done
+          }
+
+          changed_list="$(mktemp)"
+          trap 'rm -f "${changed_list}"' EXIT
+          git diff --name-only "origin/${BASE_REF}...HEAD" > "${changed_list}"
+
+          printf 'Changed files in this pull request:\n'
+          sed 's/^/  /' "${changed_list}"
+
+          # Read from a file rather than a pipe: a `while read` on the right hand
+          # side of a pipe runs in a subshell, and every mark made inside it is
+          # then discarded when that subshell exits.
+          #
+          # The module patterns are anchored at the start of the path on purpose.
+          # config/k8s/helm/service/sky-booking/values.yaml contains the string
+          # "sky-booking" but is not part of the module, and an unanchored match
+          # would demand a changelog bump for a chart edit.
+          while IFS= read -r path; do
+            [ -n "${path}" ] || continue
+            case "${path}" in
+              # sky-common is a library with no image of its own. It is compiled
+              # into all five service jars, so a change here changes all five
+              # published artefacts and every one of them needs a new version.
+              sky-common/*)
+                mark sky-common
+                mark_every_service
+                ;;
+              sky-booking/*) mark sky-booking ;;
+              sky-offer/*) mark sky-offer ;;
+              sky-message/*) mark sky-message ;;
+              sky-notify/*) mark sky-notify ;;
+              sky-gateway/*) mark sky-gateway ;;
+              # The convention plugins, the version catalogue, the wrapper and the
+              # root build files decide what every module compiles against, so a
+              # change to any of them changes every artefact. A dependency bump in
+              # gradle/libs.versions.toml is the common case and it is exactly the
+              # kind of change that must not ship under an unchanged version.
+              buildSrc/*|gradle/*|build.gradle.kts|settings.gradle.kts|gradlew|gradlew.bat)
+                mark_every_module
+                ;;
+              # Everything else (config/, docs/, e2e/, openspec/, .github/, the
+              # root README, the IDE inspection profiles) ships inside no image
+              # and deliberately demands no bump. A workflow edit in particular
+              # must not cost six changelog entries.
+            esac
+          done < "${changed_list}"
+
+          if [ -z "${affected}" ]; then
+            printf '\nNo module directory changed and no shared build input changed. Nothing to verify.\n'
+            exit 0
+          fi
+
+          printf '\nModules whose changelog must be bumped: %s\n' "${affected}"
+
+          # Reads the version off the FIRST level-2 heading and requires that
+          # heading to be well formed. Scanning the whole file for the first thing
+          # that happens to parse would skip a malformed top entry and report the
+          # older version underneath it, which then fails as "not bumped" and
+          # sends the author looking in the wrong place.
+          version_from_heading() {
+            local where="$1" heading
+            heading="$(grep -m1 -E '^##[[:space:]]' || true)"
+            if [ -z "${heading}" ]; then
+              printf 'ERROR: no "## [x.y.z]" entry found in %s.\n' "${where}" >&2
+              return 1
+            fi
+            if ! printf '%s' "${heading}" \
+                | grep -oP '^##\s*\[\K[0-9]+\.[0-9]+\.[0-9]+(?=\])' ; then
+              printf 'ERROR: the top entry in %s is not a MAJOR.MINOR.PATCH version. Found: %s\n' \
+                "${where}" "${heading}" >&2
+              return 1
+            fi
+          }
+
+          head_version() {
+            local file="$1"
+            if [ ! -f "${file}" ]; then
+              printf 'ERROR: %s does not exist at HEAD. Every module carries its own changelog.\n' "${file}" >&2
+              return 1
+            fi
+            version_from_heading "${file} at HEAD" < "${file}"
+          }
+
+          # A changelog absent on the base branch is a module whose first entry
+          # this pull request adds. That is allowed: the sentinel makes any real
+          # version greater, and the parse and content checks below still run.
+          base_version() {
+            local file="$1" content
+            if ! content="$(git show "origin/${BASE_REF}:${file}" 2>/dev/null)"; then
+              printf '0.0.0'
+              return 0
+            fi
+            printf '%s' "${content}" | version_from_heading "${file} on origin/${BASE_REF}"
+          }
+
+          # True when the top entry has at least one line that is neither blank
+          # nor a heading. A bare "### Added" with nothing under it is an empty
+          # bump and fails here.
+          top_entry_has_content() {
+            awk '
+              /^##[[:space:]]*\[[0-9]+\.[0-9]+\.[0-9]+\]/ {
+                if (seen) { exit }
+                seen = 1
+                next
+              }
+              seen && /^##[[:space:]]/ { exit }
+              seen && /^[[:space:]]*$/ { next }
+              seen && /^#/ { next }
+              seen { found = 1; exit }
+              END { exit (found ? 0 : 1) }
+            ' "$1"
+          }
+
+          check_module() {
+            local module="$1" changelog="$2" head_v base_v lower
+            head_v="$(head_version "${changelog}")" || return 1
+            base_v="$(base_version "${changelog}")" || return 1
+
+            if [ "${base_v}" = "0.0.0" ]; then
+              printf '\n--- %s ---\nHEAD:   %s\n%s: (not present, treated as a new module)\n' \
+                "${module}" "${head_v}" "${BASE_REF}"
+            else
+              printf '\n--- %s ---\nHEAD:   %s\n%s: %s\n' "${module}" "${head_v}" "${BASE_REF}" "${base_v}"
+            fi
+
+            if [ "${head_v}" = "${base_v}" ]; then
+              printf 'ERROR: %s changelog still reads %s, the same as %s. Add a new top entry before merging.\n' \
+                "${module}" "${head_v}" "${BASE_REF}" >&2
+              return 1
+            fi
+
+            lower="$(printf '%s\n%s\n' "${base_v}" "${head_v}" | sort -V | head -1)"
+            if [ "${lower}" != "${base_v}" ]; then
+              printf 'ERROR: %s HEAD version %s is not greater than %s %s.\n' \
+                "${module}" "${head_v}" "${BASE_REF}" "${base_v}" >&2
+              return 1
+            fi
+
+            if ! top_entry_has_content "${changelog}"; then
+              printf 'ERROR: %s changelog entry %s has nothing under it but headings. Describe the change before merging.\n' \
+                "${module}" "${head_v}" >&2
+              return 1
+            fi
+
+            if [ "${base_v}" = "0.0.0" ]; then
+              printf 'OK: %s %s (new module, first entry)\n' "${module}" "${head_v}"
+            else
+              printf 'OK: %s %s > %s\n' "${module}" "${head_v}" "${base_v}"
+            fi
+          }
+
+          # Every affected module is checked before the job exits, so one pull
+          # request reports every missing bump in one run instead of one per push.
+          failed=0
+          for module in ${affected}; do
+            check_module "${module}" "${module}/CHANGELOG.md" || failed=1
+          done
+
+          if [ "${failed}" -ne 0 ]; then
+            printf '\nOne or more modules need a changelog entry. The changelog is the version the release publishes.\n' >&2
+          fi
+          exit "${failed}"
+
+  build-and-test:
+    # The guard, rather than a bare needs, is what keeps the release path
+    # working. verify-changelog is skipped on workflow_dispatch and on the
+    # workflow_call from release.yaml, and a skipped dependency would otherwise
+    # skip this job too and hand release.yaml a green gate that never built
+    # anything. Only an actual failure blocks the build.
+    needs: verify-changelog
+    if: ${{ !cancelled() && needs.verify-changelog.result != 'failure' }}
+    runs-on: ubuntu-26.04
+    # This job gates release.yaml, so a Testcontainers start that never returns
+    # must not hold a release open for the 360-minute default. The composite
+    # build runs the whole suite against Testcontainers Postgres and Kafka with
+    # container reuse unavailable on a runner, and still finishes well inside
+    # this.
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build and test
+        run: ./gradlew build --console=plain
+
+  # The Bruno collection in docs/api/request, run against a stack this job builds from nothing.
+  # It is a separate job on purpose: a red e2e-collection reads as "the running system is wrong",
+  # where the same assertion buried in build-and-test would read as a unit test failure. The
+  # collection was only ever run by hand before this job existed, which is how a broken photo
+  # presigner, a dead notify route and a double-encoded email all survived for months.
+  #
+  # needs: build-and-test rather than running alongside it. The composite build is the cheaper and
+  # more legible signal, and there is no point spending image builds and a nine-container stack on
+  # a branch that does not compile. It also means this job gates a release, because release.yaml
+  # calls this workflow.
+  #
+  # It is meant to block a merge, not to report. The defects it exists to catch are exactly the
+  # ones every other gate here already missed, and the run is hermetic: its own PostgreSQL, its own
+  # Keycloak, its own broker, its own object store, no shared environment and no state carried
+  # between runs, so the usual reason to make an end-to-end job advisory does not apply. Blocking
+  # the merge button additionally needs a branch ruleset naming this job as a required check, which
+  # this repository does not have yet for any job.
+  e2e-collection:
+    needs: build-and-test
+    runs-on: ubuntu-26.04
+    # Five images built with Gradle inside Docker dominate this. One of them on a cold BuildKit
+    # cache measured 196 seconds on a sixteen core workstation, of which 143 were Gradle, and a
+    # hosted runner has four cores, so this is sized for the cold path rather than the warm one.
+    # The measurements are in config/local-dev/e2e-stack_README.md.
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The images the gate tests are the images the Dockerfiles produce, built from the same
+      # recipe release.yaml pushes. Building a thinner image around a prebuilt jar would be faster
+      # and would test an artefact nothing ever ships.
+      - name: Build the service images
+        run: |
+          set -euo pipefail
+          docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml build
+
+      # --wait fails the step when any container is unhealthy or exits, so a stack that never came
+      # up is reported here rather than as sixteen connection errors in the collection.
+      - name: Start the stack and wait for every health check
+        run: |
+          set -euo pipefail
+          docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml up -d --wait --wait-timeout 420
+
+      # The gate. bru runs every request and exits non-zero when any assertion failed, and the
+      # bruno service runs on the compose network, so the collection resolves the same hostnames
+      # the services do. Verified: a run with a wrong realm password exits 1 through compose.
+      - name: Run the Bruno collection
+        run: |
+          set -euo pipefail
+          docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml run --rm -T bruno
+
+      - name: Container state and logs
+        if: failure()
+        run: |
+          docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml ps --all
+          docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml logs --no-color --timestamps --tail 400
+
+      # Always, including on a cancelled run. A leaked stack holds ports, volumes and a network on
+      # a runner, and on a self-hosted runner that is somebody else's broken build an hour later.
+      - name: Tear the stack down
+        if: always()
+        run: |
+          docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml down -v --remove-orphans --timeout 20

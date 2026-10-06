@@ -1,59 +1,32 @@
-buildscript {
-    apply(from = File("../config/microservicesConfig.gradle.kts"))
-
-    val springBootVersion = "${project.extra["springBootVersion"]}"
-    System.setProperty("springBootVersion", springBootVersion)
-}
-
 plugins {
-    val springBootVersion = System.getProperty("springBootVersion")
-    id("org.springframework.boot") version springBootVersion  //"2.6.7"
+    id("sky.spring-service-conventions")
+    id("sky.web-conventions")
+    id("sky.openapi-conventions")
 }
 
-version = "1.0.1"
+version = "2.0.0"
 description = "sky-message"
-java.sourceCompatibility = JavaVersion.valueOf("${project.extra["javaVersion"]}")
 
-tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
-    this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
-}
-
-tasks.test {
-    useJUnitPlatform()
+skyOpenApi {
+    docsPort.set(7973)
 }
 
 dependencies {
-    val springBootVersion = "${project.extra["springBootVersion"]}"
+    implementation(project(":sky-common"))
 
-    implementation("org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-data-rest:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-validation:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
-    implementation("org.springframework.boot:spring-boot-devtools:${springBootVersion}")
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
 
-    implementation("mysql:mysql-connector-java:${project.extra["mysqlVersion"]}")
-    implementation("com.google.code.gson:gson:${project.extra["gsonVersion"]}")
-    //    Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${project.extra["openapiVersion"]}")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.extra["openapiVersion"]}")
+    runtimeOnly(libs.postgresql)
+    implementation(libs.spring.boot.starter.flyway)
+    runtimeOnly(libs.flyway.database.postgresql)
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test:${springBootVersion}"){
-        exclude("junit", "junit")
-    }
-    testImplementation("com.h2database:h2:${project.extra["h2Version"]}")
-    testImplementation("org.springframework.security:spring-security-test:${project.extra["springSecurityTestVersion"]}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${project.extra["jUnit5Version"]}")
+    implementation(libs.bundles.jaxb)
 
-    compileOnly("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    compileOnly("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
-
-    annotationProcessor("org.projectlombok:lombok:${project.extra["lombokVersion"]}")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
-
-    //  JAX-B dependencies for JDK 9+ (without hibernate/hikari error)
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:${project.extra["jakartaBindApiVersion"]}")
-    implementation("org.glassfish.jaxb:jaxb-runtime:${project.extra["jaxbRuntimeVersion"]}")
+    testImplementation(libs.spring.boot.webmvc.test)
+    testImplementation(libs.spring.boot.resttestclient)
+    testImplementation(libs.spring.boot.restclient)
+    testImplementation(libs.spring.boot.data.jpa.test)
+    testImplementation(libs.spring.boot.jdbc.test)
+    testImplementation(libs.testcontainers.postgresql)
 }
-
-

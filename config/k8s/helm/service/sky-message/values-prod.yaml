@@ -1,0 +1,48 @@
+# Production-environment overlay for sky-message.
+#
+# Apply on top of values.yaml:
+#   helm upgrade --install sky-message ./config/k8s/helm/service/sky-message -f ./config/k8s/helm/service/sky-message/values-prod.yaml
+
+deployment:
+  image:
+    pullPolicy: "IfNotPresent"
+
+oauth2:
+  issuerUri: "https://keycloak.luksarna.com/realms/sky"
+
+crossOrigin:
+  allowed: "https://sky.luksarna.com"
+
+ingress:
+  tls:
+    secretName: sky-tls-cert
+
+  service:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/api/v1/messages"
+            pathType: "Prefix"
+
+  swagger:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/msg/swagger-ui(/|[.]|$)(.*)"
+            pathType: "ImplementationSpecific"
+
+  swaggerResource:
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+    hosts:
+      - host: "skycloud.luksarna.com"
+        paths:
+          - path: "/msg/v3/api-docs(/|$)(.*)"
+            pathType: "ImplementationSpecific"

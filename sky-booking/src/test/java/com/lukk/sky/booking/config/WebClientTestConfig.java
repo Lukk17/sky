@@ -1,38 +1,51 @@
 package com.lukk.sky.booking.config;
 
-import jakarta.annotation.PreDestroy;
 import okhttp3.mockwebserver.MockWebServer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.test.context.DynamicPropertyRegistrar;
+import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
+import java.time.Duration;
 
+/**
+ * Starts an OkHttp {@link MockWebServer} on a free port and points the offer-service
+ * configuration at it, so the URL {@code RequestUriStrategyPrimary} builds resolves to the
+ * mock. The primary qualifier makes the {@link RestClient} override {@link RestClientConfig}.
+ */
 @TestConfiguration
 public class WebClientTestConfig {
 
-    @Value("${sky.offerServiceHostPort}")
-    int hostPort;
-
-    @Bean
+    @Bean(destroyMethod = "shutdown")
     public MockWebServer mockWebServer() {
         MockWebServer server = new MockWebServer();
         try {
-            server.start(hostPort);  // Starts MockWebServer on port 8080
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to start MockWebServer", e);
+            server.start(0);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to start MockWebServer", ex);
         }
+
         return server;
     }
 
-    @PreDestroy
-    public void tearDown() throws IOException {
-        mockWebServer().shutdown();
+    @Bean
+    public DynamicPropertyRegistrar offerServicePortRegistrar(MockWebServer mockWebServer) {
+        return registry -> registry.add("sky.offerServiceHostPort", mockWebServer::getPort);
     }
 
     @Bean
-    public WebClient testWebClient(MockWebServer mockWebServer) {
-        return WebClient.builder().baseUrl(mockWebServer.url("/").toString()).build();
+    @Primary
+    public RestClient testRestClient(MockWebServer mockWebServer) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(2));
+        factory.setReadTimeout(Duration.ofSeconds(3));
+
+        return RestClient.builder()
+                .baseUrl(mockWebServer.url("/").toString())
+                .requestFactory(factory)
+                .build();
     }
 }

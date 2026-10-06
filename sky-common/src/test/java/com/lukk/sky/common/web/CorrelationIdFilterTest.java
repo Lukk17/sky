@@ -1,0 +1,132 @@
+package com.lukk.sky.common.web;
+
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockFilterChain;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DisplayName("CorrelationIdFilter")
+class CorrelationIdFilterTest {
+
+    private final CorrelationIdFilter filter = new CorrelationIdFilter();
+
+    @AfterEach
+    void clearMdc() {
+        CorrelationId.clear();
+    }
+
+    @Test
+    @DisplayName("generates a UUID correlation ID when the request carries no X-Correlation-Id header")
+    void generatesCorrelationId_whenHeaderAbsent() throws ServletException, IOException {
+        // given
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        // when
+        filter.doFilter(request, response, chain);
+
+        // then
+        String responseHeader = response.getHeader(CorrelationId.HEADER);
+        assertThat(responseHeader)
+                .as("response must carry X-Correlation-Id")
+                .isNotNull()
+                .matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    }
+
+    @Test
+    @DisplayName("generates a UUID correlation ID when the incoming X-Correlation-Id header is blank")
+    void generatesCorrelationId_whenHeaderBlank() throws ServletException, IOException {
+        // given
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(CorrelationId.HEADER, "   ");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        // when
+        filter.doFilter(request, response, chain);
+
+        // then
+        assertThat(response.getHeader(CorrelationId.HEADER))
+                .as("a blank incoming header must be replaced by a generated ID")
+                .isNotNull()
+                .matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    }
+
+    @Test
+    @DisplayName("reuses an existing X-Correlation-Id header when one is present on the request")
+    void reusesCorrelationId_whenHeaderPresent() throws ServletException, IOException {
+        // given
+        String incoming = "test-correlation-id-42";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(CorrelationId.HEADER, incoming);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        // when
+        filter.doFilter(request, response, chain);
+
+        // then
+        assertThat(response.getHeader(CorrelationId.HEADER))
+                .as("response must echo the incoming correlation ID unchanged")
+                .isEqualTo(incoming);
+    }
+
+    @Test
+    @DisplayName("populates MDC with the correlation ID during filter execution")
+    void populatesMdc_duringFilterExecution() throws ServletException, IOException {
+        // given
+        String incoming = "mdc-check-id";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(CorrelationId.HEADER, incoming);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        String[] capturedMdc = new String[1];
+        Filter mdcCapture = new Filter() {
+            @Override
+            public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
+                    throws IOException, ServletException {
+                capturedMdc[0] = CorrelationId.current().orElse(null);
+            }
+        };
+        MockFilterChain chain = new MockFilterChain(new jakarta.servlet.http.HttpServlet() {
+        }, mdcCapture);
+
+        // when
+        filter.doFilter(request, response, chain);
+
+        // then
+        assertThat(capturedMdc[0])
+                .as("MDC must hold the correlation ID while the filter chain executes")
+                .isEqualTo(incoming);
+    }
+
+    @Test
+    @DisplayName("clears the MDC entry after the request completes")
+    void clearsMdc_afterRequestCompletes() throws ServletException, IOException {
+        // given
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(CorrelationId.HEADER, "cleanup-test-id");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        // when
+        filter.doFilter(request, response, chain);
+
+        // then
+        assertThat(CorrelationId.current())
+                .as("MDC must be cleared after the filter chain completes")
+                .isEmpty();
+    }
+}

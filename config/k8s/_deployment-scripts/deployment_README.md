@@ -1,408 +1,331 @@
-# DEPLOYMENT
+# Cluster deployment
 
-App deployed in Kubernetes on GCP:
+How the sky platform gets from a local checkout onto a Kubernetes cluster on GCP, at [https://skycloud.luksarna.com](https://skycloud.luksarna.com).
 
-https://skycloud.luksarna.com/
+This document owns the deployment path: images, cluster creation, sealed secrets, the deployment scripts, logs, and teardown. What each chart contains and which values it reads is in [config/k8s/helm/helm_README.md](../helm/helm_README.md). Operating a cluster that is already running is in [config/k8s/k8s_README.md](../k8s_README.md).
 
-----------------------
+Run every command from the repository root.
 
-## Table of content
+---
 
-- [Docker build and publish](#1-docker-build-and-publish)
-- [App deployment](#2-app-deployment)
-- [GCP](#3-gcp)
-- [Auth service](#4-auth-service)
-- [Sealed secrets](#5-sealed-secrets)
-- [Logs](#6-logs)
-- [Changing application address](#7-changing-application-address)
-- [Clearing](#8-clearing)
-- [Troubleshooter](#9-troubleshooter)
+### Deployment scripts
 
-----------------------
+Six scripts, three operations, in a Linux shell flavour and a Windows batch flavour. They are the intended way to deploy, because they run the charts in dependency order and wait for each dependency before continuing.
 
-## 1. Docker build and publish
+| Script | What it does |
+|---|---|
+| [helm/linux/helm-app-deploy.sh](helm/linux/helm-app-deploy.sh) | First install. Creates the `sealed-secrets` namespace and TLS key, installs the Sealed Secrets controller, applies the three sealed secrets, then installs keycloak, oauth2-proxy, the database PVC, PostgreSQL, floci, Kafka, and the four service charts. Waits for the Keycloak PostgreSQL, Keycloak, the app PostgreSQL, and floci before moving on. |
+| [helm/win/helm-app-deploy.bat](helm/win/helm-app-deploy.bat) | The same first install, as a Windows batch file. |
+| [helm/linux/helm-app-upgrade.sh](helm/linux/helm-app-upgrade.sh) | `helm upgrade` for every release already installed. Skips the namespace, the TLS key, and the sealed secrets, since those are install-time steps. |
+| [helm/win/helm-app-upgrade.bat](helm/win/helm-app-upgrade.bat) | The same upgrade, as a Windows batch file. |
+| [helm/linux/helm-app-remove.sh](helm/linux/helm-app-remove.sh) | `helm uninstall` for every release, deletes the three sealed secrets, the `sealed-secrets` namespace, and the Kafka PVC. |
+| [helm/win/helm-app-remove.bat](helm/win/helm-app-remove.bat) | The same removal, as a Windows batch file. |
 
-### Build:
+There is no PowerShell script. The `.bat` files are plain `cmd.exe` batch and run from PowerShell as well.
+
+Every script reads one variable, `ENV`, which defaults to `prod`. It selects the `values-<env>.yaml` overlay for the charts that ship one: keycloak, oauth2-proxy, kafka, and the four services. The kafka overlays are intentionally empty of overrides, see [config/k8s/helm/helm_README.md](../helm/helm_README.md); they exist so the `-f values-<env>.yaml` argument resolves uniformly for every chart.
+
+Unix shell:
+
+```bash
+./config/k8s/_deployment-scripts/helm/linux/helm-app-deploy.sh
 ```
-docker build . -f sky-booking/docker/Dockerfile -t sky-booking:latest --no-cache
-docker build . -f sky-offer/docker/Dockerfile -t sky-offer:latest --no-cache
-docker build . -f sky-notify/docker/Dockerfile -t sky-notify:latest --no-cache
-docker build . -f sky-message/docker/Dockerfile -t sky-message:latest --no-cache
 
-```  
+Windows:
 
-### Push into repository:
+```bat
+.\config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
+```
+
+Two things they do not do:
+
+- They do not install an ingress controller. Do that first, see step 2 below.
+- They always install the Sealed Secrets controller and apply the sealed secrets, including under `ENV=local`. They do not generate the `sky-secrets` SealedSecret, which is not committed, so work through step 3 below first. Both deploy scripts check that the file is there before they touch the cluster and stop with a message naming the section that produces it, so a skipped step costs you one line of output rather than a half-installed controller. A local k3d cluster has no key material for any of this, so follow [config/k8s/local_README.md](../local_README.md) instead of running these scripts against it.
+
+One thing to know before running the deploy script: it installs the Kafka chart with its default values, and that chart pins an image tag Docker Hub no longer serves. See the Kafka section of [config/k8s/helm/helm_README.md](../helm/helm_README.md) for the overlay to pass by hand.
+
+---
+
+### 1. Build and publish the images
+
+The release pipeline at [.github/workflows/release.yaml](../../../.github/workflows/release.yaml) does this for you. It is manually triggered and takes the version as an input. It validates that version first, then runs the composite build from [.github/workflows/ci.yaml](../../../.github/workflows/ci.yaml) as a reusable workflow on the same commit, so a failing test stops the release before anything reaches Docker Hub. Only then does it build all five images and push each as `lukk17/<service>:v<version>`, read every tag back from the registry, and pause at the approval gate, a GitHub environment protection rule on the `release` environment that only pauses once that environment carries a required reviewer. After the gate it pins the four service charts to the released version, commits that pin, cuts the GitHub release at that commit, and moves `lukk17/<service>:latest` onto the released version as its last step, with `docker buildx imagetools create` copying the manifest inside the registry instead of building a second time. `:latest` therefore never advances past the gate: rejecting a release leaves it on the previous version. Dispatch it from a branch, never from a tag, because the pin has to commit somewhere. `sky-gateway` is built and pushed with the rest even though no chart deploys it, so the image is available for a Compose stack on any host, and the pin step skips it for the same reason.
+
+To build and push by hand instead, run each build from the repository root because the Dockerfile copies `settings.gradle.kts`, `buildSrc`, and `sky-common` alongside the service. Apply both tags from the one build, the release version and `latest`, which is the pair the pipeline publishes. A published version tag carries a leading `v`, which is what the existing `v1.0.0` and `v1.0.1` images on Docker Hub use, and the next release is `v2.0.0`:
+
 ```shell
-docker tag sky-booking:latest lukk17/sky-booking:latest
+docker build . -f sky-booking/docker/Dockerfile -t lukk17/sky-booking:v2.0.0 -t lukk17/sky-booking:latest
+```
+
+```shell
+docker build . -f sky-offer/docker/Dockerfile -t lukk17/sky-offer:v2.0.0 -t lukk17/sky-offer:latest
+```
+
+```shell
+docker build . -f sky-message/docker/Dockerfile -t lukk17/sky-message:v2.0.0 -t lukk17/sky-message:latest
+```
+
+```shell
+docker build . -f sky-notify/docker/Dockerfile -t lukk17/sky-notify:v2.0.0 -t lukk17/sky-notify:latest
+```
+
+```shell
+docker build . -f sky-gateway/docker/Dockerfile -t lukk17/sky-gateway:v2.0.0 -t lukk17/sky-gateway:latest
+```
+
+Push the version tag first, check the deployment on it, and only then move `latest`. The pipeline holds that order deliberately, because `:latest` advances only after the approval gate and a rejected release has to leave it on the previous version. Repeat both pushes for `sky-offer`, `sky-message`, `sky-notify`, and `sky-gateway`:
+
+```shell
+docker push lukk17/sky-booking:v2.0.0
+```
+
+```shell
 docker push lukk17/sky-booking:latest
-
-docker tag sky-offer:latest lukk17/sky-offer:latest
-docker push lukk17/sky-offer:latest
-
-docker tag sky-notify:latest lukk17/sky-notify:latest
-docker push lukk17/sky-notify:latest
-
-docker tag sky-message:latest lukk17/sky-message:latest
-docker push lukk17/sky-message:latest
 ```
 
-----------------------
+The service charts pin an explicit image tag in `deployment.image.tag`, so a chart install pulls that tag rather than `latest`. Bump it by hand only when you built by hand, and carry the same leading `v` the published tag has, because a pin without it names a tag that was never pushed. The deployment template wraps both `deployment.image.repository` and `deployment.image.tag` in Helm's `required`, so a missing or empty value fails the render and names the value, the file, the line and the column, rather than falling back to something the cluster cannot pull. A release through the pipeline moves that pin itself: it rewrites `deployment.image.tag` and the `Chart.yaml` `appVersion` in the four service charts to the released version, commits that, and tags the release at the commit holding the pin. So `helm upgrade` from a checkout of a release tag deploys the image that release built, with no chart editing in between.
 
-## 2. App deployment
+---
 
-### Certificate
-For creating sealed secret from certificate see [this](#sealed-secret-from-certificate).
+### 2. Create the GCP cluster
 
-In ingress with generated sealed secret with ssl certificate, tls part can be added under spec:
-```shell
-  tls:
-    - hosts:
-        - skycloud.luksarna.com
-      secretName: dev-ssl-cert
-```
+1. Install the [gcloud CLI](https://cloud.google.com/sdk/gcloud) and the GKE auth plugin:
 
-
-### Sealed secret
-
-To install `kubeseal` on a system see [this](#install-sealed-secret-on-a-system).  
-To deploy standard Kubernetes base64 encoded secrets, see [this](#kubernetes-basic-base64-encode-secrets-apply).
-
-To create new keys for sealed secret controller, see [this](#create-private-and-public-keys-for-sealed-secrets)
-
-1. Create namespace
-    ```shell
-    kubectl create namespace sealed-secrets
-    ```
-2. Create a TLS secret from public.crt and private.key  
-   These keys are not stored in repo — should be stored in protected location like password manager.  
-   See [this](../_deployment-scripts/deployment_README.md#create-private-and-public-keys-for-sealed-secrets)
-   for creating new keys.
-
-    ```shell
-   kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-public.crt --key=./config/k8s/secret/sealed-private.key -n sealed-secrets
-   ```
-3. Deploy sealed secrets controller  
-   See [this](#deploy-sealed-secrets-controller) for different or online version.
-   This one has namespace "sealed-secrets" changed in .yaml file.  
-   And is using previously generated TLS secret.
-   
-      ```shell
-      kubectl apply -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
-      ``` 
-   
-   To create new sealed secrets, see [this](#create-new-sealed-secrets).
-
-4. Deploy sealed secrets (should be already in repo)
-   ```shell
-   kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
-   kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
-   kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
-   ```
-
-----------------------
-
-### Deploy services
-
-```shell
-kubectl apply -f config/k8s/vanilla/api-gateway/ingress/ingress.yaml
-kubectl apply -f config/k8s/vanilla/api-gateway/oauth2-proxy/
-
-kubectl apply -f config/k8s/vanilla/kafka/
-
-kubectl apply -f config/k8s/vanilla/db/mysql/
-kubectl wait --namespace default --for=condition=ready --timeout=120s pod -l component=mysql
-
-kubectl apply -f config/k8s/vanilla/service/sky-offer/
-kubectl apply -f config/k8s/vanilla/service/sky-booking/
-kubectl apply -f config/k8s/vanilla/service/sky-notify/
-kubectl apply -f config/k8s/vanilla/service/sky-message/
-```
-
-Simpler, you can run all scripts in a folder (in terminal being in parent folder):
-```shell
-kubectl apply -f config/k8s/api-gateway --recursive
-kubectl apply -f config/k8s/db --recursive
-kubectl wait --namespace default --for=condition=ready --timeout=120s deployment/mysql-deployment
-kubectl apply -f config/k8s/kafka --recursive
-kubectl apply -f config/k8s/service --recursive
-```
-
-----------------------
-
-### Use 
-
-Seal the Secret:
-```shell
-kubeseal --format=yaml --cert=sealed-public.crt < <kubernetes-secret-file>.yaml > <sealed-secret-file>.yaml
-```
-Apply the Sealed Secret:
-```shell
-kubectl apply -f <sealed-secret-file>.yaml
-```
-
-----------------------
-
-## 3. GCP
-
-1. Install gcloud CLI  
-https://cloud.google.com/sdk/gcloud?authuser=1  
-and plugin:
     ```shell
     sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin
     ```
 
-2. login into gcloud account
-   ```shell
-   gcloud auth login
-   ```
-   
-3. Set project
+2. Log in:
+
+    ```shell
+    gcloud auth login
+    ```
+
+3. Select the project:
+
     ```shell
     gcloud config set project sky-app-17
     ```
 
-4. Create cluster (if not existing)
+4. Create the cluster, if it does not exist:
+
     ```shell
     gcloud container clusters create-auto sky-cluster --location=europe-central2
     ```
 
-5. Get authentication credentials for the cluster - required to interact with cluster
-   After this it will be visible in lens
-   ```shell
-   gcloud container clusters get-credentials sky-cluster --location=europe-central2
-   ```
+5. Fetch credentials, which is what makes `kubectl` and Lens able to talk to it:
 
-6. Install nginx ingress
-   ```shell
-   helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-   helm repo update
-   helm install ingress-nginx ingress-nginx/ingress-nginx  
-   ```
+    ```shell
+    gcloud container clusters get-credentials sky-cluster --location=europe-central2
+    ```
 
-----------------------
+6. Install nginx-ingress:
 
-## 4. Auth service
-1. Creating project in auth0 for authentication  
-   https://manage.auth0.com/dashboard
-<br>  
-   redirect_uri have to be in "Allowed callback URLs" in application settings - in form of:  
-   `https://<auth0 app name>.<region>.auth0.com/login/callback`, example:
-   ```
-   https://lukk17.eu.auth0.com/login/callback
-   ```
-   test user (once registered is saved in auth0 provider):  
-   email: `lukk@test.com`  
-   pass: `Test1234!`  
-<br>
-2. Create GCP oauth credential under "APIs & Services"
-   https://console.cloud.google.com/apis/credentials  
-<br>
-3. Changing clientId, clientSecret and domain in oauth2 deployment config  
-   https://kubernetes.github.io/ingress-nginx/examples/auth/oauth-external-auth/
+    ```shell
+    helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
+    ```
 
-Adding GitHub login:  
-https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app
+Sealed Secrets needs to create service accounts, which requires the Kubernetes Engine Admin role on the account doing the deploy. Grant it in the Google Cloud Console under IAM and Admin, IAM, Grant access: enter the account email, pick Kubernetes Engine, then Kubernetes Engine Admin, and save.
 
-Adding Google login:
-https://developers.google.com/identity/sign-in/web/sign-in
+---
 
+### 3. Sealed secrets
 
-----------------------
+Sealed Secrets lets the encrypted form of a Kubernetes Secret live in the repository. The controller in the cluster holds the private key and decrypts it into a real Secret at apply time. [config/.gitignore](../../.gitignore) excludes four files, and they are the only deployment files it excludes: the two plaintext Secrets `secret/secrets.yaml` and `secret/docker-cred.yaml`, the sealing private key `secret/sealed-private.key`, and the generated `secret/sealed/sealed-secrets.yaml`.
 
-## 5. Sealed secrets
+The first three are plaintext or key material, so excluding them needs no argument. The fourth runs against the tool and is worth one honest sentence: a SealedSecret is encrypted to one controller's public key, it is safe to commit by design, and committing it is the normal workflow. This repository does not, because this deploy is a script run by hand from a maintainer's own machine rather than a pipeline reading the repository, so the file only has to exist at the moment it is applied. Committing it is what produced the last one, sealed against a 2023 controller and carrying credentials from two migrations ago, still looking deployable years after it had stopped being so. Generate it, apply it, and leave it out of the history.
 
-### Install sealed secret on a system
+#### Install kubeseal
 
-#### Linux
+Linux:
+
 ```shell
-wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.16.0/kubeseal-linux-amd64 -O kubeseal
+wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.22.0/kubeseal-linux-amd64 -O kubeseal
+```
+
+```shell
 sudo install -m 755 kubeseal /usr/local/bin/kubeseal
 ```
 
-#### Windows
-1. Download `kubeseal-0.22.0-windows-amd64.tar.gz` from https://github.com/bitnami-labs/sealed-secrets/releases/tag/v0.22.0
-   (or newer version)
-2. Extract it and put in install folder, example: `D:\Development\SDK\kubeseal`
-3. Add to path folder `D:\Development\SDK\kubeseal\` where `kubeseal.exe` is located.
+Windows: download `kubeseal-0.22.0-windows-amd64.tar.gz` or newer from the [sealed-secrets releases page](https://github.com/bitnami-labs/sealed-secrets/releases), extract it, and put the directory holding `kubeseal.exe` on your `PATH`.
 
-----------------------
+#### Create the key pair
 
-### Deploy sealed secrets controller
+Run on Linux or WSL. Keep both files out of the repository and store them in a password manager or a secrets vault.
 
-By default, it tries to use `kube-system` namespace which can't be used on GKE.
-You need to change namespace in yaml file and add creating of new namespace:
-```yaml
----
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: sealed-secrets
-```
-
-#### Local version (copied online version v0.22.0):
 ```shell
-kubectl apply -f config/k8s/secret/sealed-secrets-controller.yaml
+openssl req -x509 -days 3650 -nodes -newkey rsa:4096 -keyout sealed-private.key -out sealed-public.crt -subj "/CN=sealed-secret/O=sealed-secret"
 ```
 
-#### Online version
+Run it without `sudo`. Running it as root leaves the private key owned by root with no read permission for your account, and the `kubectl create secret tls` below then fails to open it.
+
+#### Deploy the controller
+
+The controller comes from the vendored chart at [config/k8s/helm/api-gateway/sealed-secrets-controller/](../helm/api-gateway/sealed-secrets-controller/), which is what the deploy script installs. The chart parameter reference is in [config/k8s/helm/helm_README.md](../helm/helm_README.md). Create the namespace first, because GKE does not allow the upstream default of `kube-system`:
+
 ```shell
-kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.22.0/controller.yaml
+kubectl create namespace sealed-secrets
 ```
 
-----------------------
-
-### Create private and public keys for sealed secrets
-
-On Linux or WSL:
 ```shell
-sudo openssl req -x509 -days 3650 -nodes -newkey rsa:4096 -keyout "sealed-private.key" -out "sealed-public.crt" -subj "/CN=sealed-secret/O=sealed-secret"
+kubectl create secret tls sealed-secrets-key --cert=./config/k8s/secret/sealed-public.crt --key=./config/k8s/secret/sealed-private.key -n sealed-secrets
 ```
 
-Created private.key has permissions blocker added which prevent from copying it, to change that:
 ```shell
-sudo chmod 777 ./sealed-private.key
+helm install sealed-secrets-controller ./config/k8s/helm/api-gateway/sealed-secrets-controller/ -n sealed-secrets --set generatePrivateKey=false --set fullnameOverride=sealed-secrets-controller
 ```
 
-----------------------
+#### Create the sealed secrets
 
-### Create new sealed secrets
+This is a prerequisite of every production deploy, not a step you take only when a credential changes. No SealedSecret for `sky-secrets` is committed: the repository ships sealed forms of the registry credential and the development TLS certificate and nothing else. Until this section has been worked through, the deploy script stops before it touches the cluster and points back here. The file is gitignored, so it stays untracked once you generate it, which is deliberate and is explained at the top of this section.
 
-1. Create secret.yaml (do not ad to git - should be in .gitignore)
-   Keep it only locally as it has base64 encoded password, easy to decode.
+1. Write the plain Secret to `config/k8s/secret/secrets.yaml`, which is gitignored and has never been committed. The key inventory, and what reads each key, is in [config/k8s/helm/helm_README.md](../helm/helm_README.md).
 
-   secret.yaml should look like:
-   ```yaml
-   ---
-   apiVersion: v1
-   kind: Secret
-   metadata:
-   #  needs to be lowercase !
-     name: sky-secrets
-     namespace: default
-   type: Opaque
-   data:
-     mysql-root-user: <root-user>
-     mysql-root-pass: <root-pass>
-     mysql-username: <username>
-     mysql-password: <password>
-     spring-security-user: <security-user>
-     spring-security-pass: <security-pass>
-     auth0-client-id: <client-id>
-     auth0-client-secret: <client-secret>
-     auth0-client-cookie-secret: <cookie-secret>
-   ```
+    ```yaml
+    ---
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: sky-secrets
+      namespace: default
+    type: Opaque
+    stringData:
+      postgres-user: "<postgres-user>"
+      postgres-password: "<postgres-password>"
+      s3-access-key: "<s3-access-key>"
+      s3-secret-key: "<s3-secret-key>"
+      keycloak-admin: "<keycloak-admin>"
+      keycloak-admin-password: "<keycloak-admin-password>"
+      keycloak-db-user: "<keycloak-db-user>"
+      keycloak-db-password: "<keycloak-db-password>"
+      keycloak-client-id: "sky-backend"
+      keycloak-client-secret: "<client-secret>"
+      keycloak-client-cookie-secret: "<32-byte-random-base64>"
+    ```
 
-2. Create docker.cred.yml  (do not ad to git - should be in .gitignore)
-   Keep it only locally as it has base64 encoded password, easy to decode.
+2. Write the registry credential to `config/k8s/secret/docker-cred.yaml`, also gitignored:
 
-   docker-cred.yaml should look like:
-   ```yaml
-   apiVersion: v1
-   kind: Secret
-   metadata:
+    ```yaml
+    ---
+    apiVersion: v1
+    kind: Secret
+    metadata:
       name: docker-cred
-   type: kubernetes.io/dockerconfigjson
-   stringData:
+    type: kubernetes.io/dockerconfigjson
+    stringData:
       docker-server: "<your-registry-server>"
       docker-username: "<your-name>"
       docker-password: "<your-password>"
-   ```
-3. Create sealed secrets form normal ones:  
-   Linux:
-   ```shell
-   kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/secrets.yaml > config/k8s/secret/sealed/sealed-secrets.yaml
-   ```
-   ```shell
-   kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/docker-cred.yaml > config/k8s/secret/sealed/sealed-docker-cred.yaml
-   ```
-   Windows:
-   ```powershell
-   Get-Content config/k8s/secret/secret.yaml | kubeseal --format=yaml --cert=config/k8s/secret/public.crt > config/k8s/secret/sealed/sealed-secret.yaml
-   ```
-   ```shell
-   Get-Content config/k8s/secret/docker-cred.yaml | kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt > config/k8s/secret/sealed/sealed-docker-cred.yaml
-   ```
-4. Deploy sealed secrets:
-   ```shell
-   kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
-   kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
-   ```
+    ```
 
-----------------------
+3. Seal both against the certificate the target cluster's controller is using right now.
 
-### Sealed secret from certificate
+    Sealing needs the public certificate of the sealed-secrets controller in that cluster, and [config/k8s/secret/sealed-public.crt](../secret/sealed-public.crt) is the copy generated in July 2023. A controller keeps its older private keys, so anything sealed against that certificate still decrypts for as long as the controller is the same installation it has always been. If it was ever reinstalled, its keys are new, the old private key is gone, and a Secret sealed against the committed copy will never decrypt, with nothing to see until a pod fails to start. So omit `--cert` and let `kubeseal` pull the certificate from the controller itself. `--cert` overrides `--controller-namespace` and `--controller-name`, so passing all three silently uses the file and never contacts the cluster.
 
-For generating self-signed cert (development) see [this](#self-signed-certificate-for-development).
+    Unix shell:
 
-1. Create Kubernetes Secret from the SSL Certificates
-   ```shell
-   kubectl create secret tls dev-ssl-cert --cert=config/k8s/secret/ssl/dev-ssl-cert.crt --key=config/k8s/secret/ssl/dev-ssl-cert.key --dry-run=client -o yaml > config/k8s/secret/ssl/dev-ssl-cert.yaml
-   ```
-2. Create sealed secret from ssl cert:  
-   Linux
-   ```shell
-   kubeseal --format=yaml --cert=config/k8s/secret/sealed-public.crt < config/k8s/secret/ssl/dev-ssl-cert.yaml > config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
-   ```  
-   Windows
-   ```powershell
-   Get-Content .\config\k8s\secret\ssl\dev-ssl-cert.yaml | kubeseal --format=yaml --cert=.\config\k8s\secret\sealed-public.crt | Set-Content .\config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
-   ```
-3. Deploy sealed secrets:
-   ```shell
-   kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml 
-   ```
+    ```shell
+    kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller < config/k8s/secret/secrets.yaml > config/k8s/secret/sealed/sealed-secrets.yaml
+    ```
 
-----------------------
+    ```shell
+    kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller < config/k8s/secret/docker-cred.yaml > config/k8s/secret/sealed/sealed-docker-cred.yaml
+    ```
 
-### Self-signed Certificate (for development)
-1. Generate a Private Key:
-   ```shell
-   openssl genrsa -out config/k8s/secret/ssl/dev-ssl-cert.key 2048
-   ```
-2. Generate a Certificate Signing Request (CSR):
-   ```shell
-   openssl req -new -key config/k8s/secret/ssl/dev-ssl-cert.key -out config/k8s/secret/ssl/dev-ssl-cert.csr
-   ```
-   The most important field is the "Common Name",
-   which should match the domain name you're securing (e.g., skycloud.luksarna.com).  
-   If you're creating a self-signed certificate for local development, you can use localhost as the Common Name.
-   Example:
-   ```shell
-   Country Name (2 letter code) [AU]:PL
-   State or Province Name (full name) [Some-State]:WAW
-   Locality Name (eg, city) []:<nothing>
-   Organization Name (eg, company) [Internet Widgits Pty Ltd]:Lukk
-   Organizational Unit Name (eg, section) []:<nothing>
-   Common Name (e.g. server FQDN or YOUR name) []:skycloud.luksarna.com
-   Email Address []: <nothing>
-   
-   Please enter the following 'extra' attributes
-   to be sent with your certificate request
-   A challenge password []:<nothing>
-   An optional company name []:<nothing>
-   ```
-   `<nothing>` mean I did not put anything there (just enter)
-3. Generate the Self-Signed Certificate:
-   ```shell
-   openssl x509 -req -days 3655 -in config/k8s/secret/ssl/dev-ssl-cert.csr -signkey config/k8s/secret/ssl/dev-ssl-cert.key -out config/k8s/secret/ssl/dev-ssl-cert.crt
-   ```
+    PowerShell, where `<` is not a redirection operator:
 
-----------------------
+    ```powershell
+    Get-Content config\k8s\secret\secrets.yaml | kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller | Set-Content config\k8s\secret\sealed\sealed-secrets.yaml
+    ```
 
-### Kubernetes basic base64 encode secrets apply
-```shell
-kubectl apply -f config/k8s/secrets.yaml
-```
-```shell
-kubectl apply -f config/k8s/docker-cred.yaml
-```
-----------------------
+    ```powershell
+    Get-Content config\k8s\secret\docker-cred.yaml | kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller | Set-Content config\k8s\secret\sealed\sealed-docker-cred.yaml
+    ```
 
-## 6. Logs
-https://console.cloud.google.com/logs
+    Sealing offline against the committed certificate still works, by adding `--cert` back. Only do that for a controller you know has not been reinstalled since that certificate was made.
 
-parameters:
-```shell
+4. Apply the sealed forms. `sealed-docker-cred.yaml` is committed, `sealed-secrets.yaml` is the one you just generated and is not:
+
+    ```shell
+    kubectl apply -f config/k8s/secret/sealed/sealed-secrets.yaml
+    ```
+
+    ```shell
+    kubectl apply -f config/k8s/secret/sealed/sealed-docker-cred.yaml
+    ```
+
+#### Seal the TLS certificate
+
+The development certificate and key at [config/k8s/secret/ssl/](../secret/ssl/) are committed, together with a ready-made Secret manifest and its sealed form. Regenerate the sealed form only if you replace the certificate.
+
+1. Turn the certificate and key into a Secret manifest:
+
+    ```shell
+    kubectl create secret tls dev-ssl-cert --cert=config/k8s/secret/ssl/dev-ssl-cert.crt --key=config/k8s/secret/ssl/dev-ssl-cert.key --dry-run=client -o yaml > config/k8s/secret/ssl/dev-ssl-cert.yaml
+    ```
+
+2. Seal it against the live controller, for the reason given in step 3 of the previous section. Unix shell:
+
+    ```shell
+    kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller < config/k8s/secret/ssl/dev-ssl-cert.yaml > config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
+    ```
+
+    PowerShell:
+
+    ```powershell
+    Get-Content config\k8s\secret\ssl\dev-ssl-cert.yaml | kubeseal --format=yaml --controller-namespace=sealed-secrets --controller-name=sealed-secrets-controller | Set-Content config\k8s\secret\sealed\sealed-dev-ssl-cert.yaml
+    ```
+
+3. Apply it:
+
+    ```shell
+    kubectl apply -f config/k8s/secret/sealed/sealed-dev-ssl-cert.yaml
+    ```
+
+The `tls` block that consumes it is templated by each chart from `ingress.tls.secretName`, which the production overlays point at `sky-tls-cert` and the local overlays at `dev-ssl-cert`. No chart default names either one: the value is empty behind `required`, so a chart rendered with no overlay fails and names it rather than picking an environment's certificate for you.
+
+#### Generate a self-signed certificate
+
+1. Private key:
+
+    ```shell
+    openssl genrsa -out config/k8s/secret/ssl/dev-ssl-cert.key 2048
+    ```
+
+2. Certificate signing request. Every host the certificate has to serve goes in `subjectAltName`, and the Common Name goes in `-subj` so the command does not stop to prompt. A certificate with no subject alternative name is rejected outright by every current browser and by Go clients, which includes nginx-ingress and oauth2-proxy, so the name list is the part to get right. `CN` is ignored for hostname matching and only the alternative names are read. The list below is the committed development certificate, covering every host a local Ingress serves. Securing a different host means changing both the `CN` and the `subjectAltName` list, not just the `CN`:
+
+    ```shell
+    openssl req -new -key config/k8s/secret/ssl/dev-ssl-cert.key -out config/k8s/secret/ssl/dev-ssl-cert.csr -subj "/C=PL/ST=WAW/O=Lukk/CN=localhost" -addext "subjectAltName=DNS:localhost,DNS:keycloak.127.0.0.1.nip.io,IP:127.0.0.1,IP:::1"
+    ```
+
+    In Git Bash on Windows, prefix that command with `MSYS_NO_PATHCONV=1`, or MSYS rewrites the leading slash of `-subj` into a Windows path and openssl fails with `subject name is expected to be in the format /type0=value0/...` against something like `C:/Program Files/Git/C=PL/ST=WAW/...`.
+
+3. Self-sign it. `-copy_extensions copyall` is not optional: `openssl x509 -req -signkey` discards the extensions the request asked for unless it is given, so without it this step silently produces a certificate with no subject alternative name even though step 2 put one in the request. That is how the previous certificate ended up unusable:
+
+    ```shell
+    openssl x509 -req -days 3655 -copy_extensions copyall -in config/k8s/secret/ssl/dev-ssl-cert.csr -signkey config/k8s/secret/ssl/dev-ssl-cert.key -out config/k8s/secret/ssl/dev-ssl-cert.crt
+    ```
+
+4. Confirm the name list survived, because the failure above is silent:
+
+    ```shell
+    openssl x509 -in config/k8s/secret/ssl/dev-ssl-cert.crt -noout -subject -dates -ext subjectAltName
+    ```
+
+---
+
+### 4. Deploy the stack
+
+Run the deploy script from the top of this document. It covers everything from the Sealed Secrets controller to the four service charts.
+
+To install one chart at a time instead, follow the numbered sequence in [config/k8s/helm/helm_README.md](../helm/helm_README.md).
+
+---
+
+### 5. Logs
+
+Cluster logs land in [Google Cloud Logging](https://console.cloud.google.com/logs). The query that narrows them to this cluster:
+
+```text
 resource.type="k8s_container"
 resource.labels.project_id="sky-app-17"
 resource.labels.location="europe-central2"
@@ -411,92 +334,56 @@ resource.labels.namespace_name="default"
 severity>=DEFAULT
 ```
 
-----------------------
+For a single pod, `kubectl logs` is faster. See [config/k8s/k8s_README.md](../k8s_README.md).
 
-## 7. Changing application address
+---
 
-When changing app web address (host) for example from  
-`https://sky.luksarna.com`  
-to  
-`https://skycloud.luksarna.com`  
-1. In-app config you need to change:
-   * Every Ingress `spec.rules.host`
-   * Every Ingress `nginx.ingress.kubernetes.io/auth-url` and `nginx.ingress.kubernetes.io/auth-signin`
-   * `redirect-url` in `oauth2-proxy-deployment.yaml`  
-     <br>
-2. Update oAuth2 providers:  
-   <br>
-   * Auth0: https://manage.auth0.com/dashboard
-     under Application -> Application -> sky (app name) 
-     put new address in field `Allowed Callback URLs`.
-     Addresses are separated by comma `,` and can be inserted in new line  
-   <br>
-   * Google: https://console.cloud.google.com/apis/credentials
-     just add new address to selected oauth client `Authorized JavaScript origins` field.  
-     <br>
-   * GitHub: https://github.com/settings/developers
-     need to create new oauth app with new address as `Homepage URL`  
-   <br>
-3. Update Postman envs
-----------------------
+### Changing the application address
 
-## 8. Clearing
+When moving the platform from one hostname to another:
 
-### Clearing docker images
+1. Update the chart values and the oauth2-proxy redirect URL. The exact keys are listed in [config/k8s/helm/helm_README.md](../helm/helm_README.md).
+2. Add the new callback URL to the `sky-backend` client in Keycloak, both in [config/k8s/helm/infra/keycloak/files/sky-realm.json](../helm/infra/keycloak/files/sky-realm.json) and in the running realm through the admin console.
+3. Issue a certificate for the new hostname and re-seal it.
+4. Update the Bruno `prod` environment at [docs/api/request/environments/prod.yml](../../../docs/api/request/environments/prod.yml).
 
-Show this project images:
-```shell
-docker images -a |  grep "sky"
-```
-```powershel
-docker images -a | Where-Object { $_ -match "sky" }
-```
-Delete this project images:
-```shell
-docker images -a | grep "sky" | awk '{print $3}' | xargs docker rmi -f
-```
+---
 
-```powershell
-docker images -a | Where-Object { $_ -match "sky" } | ForEach-Object { ($_ -split '\s+', 5)[2] } | ForEach-Object { docker rmi -f $_ }
-```
+### Tear down
 
-### Clearing kubernetes pods
+The remove script listed at the top of this document is the whole teardown. To do it by hand, follow the uninstall section of [config/k8s/helm/helm_README.md](../helm/helm_README.md), then remove what lives outside Helm:
 
-```shell
-kubectl delete -f config/k8s/secret/secrets.yaml
-kubectl delete -f config/k8s/secret/sealed/sealed-docker-cred.yaml
-kubectl delete -f config/k8s/secret/sealed/sealed-secrets.yaml
-kubectl delete -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
-kubectl delete --from-file=./api-gateway/ingress/auth
-kubectl delete -f config/k8s/api-gateway/ingress/ingress.yaml
-kubectl delete -f config/k8s/api-gateway/oauth2-proxy/
-
-kubectl delete -f config/k8s/db/mysql/
-kubectl delete -f config/k8s/kafka/
-
-kubectl delete -f config/k8s/service/sky-offer/
-kubectl delete -f config/k8s/service/sky-booking/
-kubectl delete -f config/k8s/service/sky-notify/
-kubectl delete -f config/k8s/service/sky-message/
-```
-
-Simpler, you can run all scripts in a folder (in terminal being in parent folder):
 ```shell
 kubectl delete -f config/k8s/secret/sealed --recursive
-kubectl delete -f config/k8s/secret/sealed-secrets-controller.yaml -n sealed-secrets
-kubectl delete -f config/k8s/api-gateway --recursive
-kubectl delete -f config/k8s/db --recursive
-kubectl delete -f config/k8s/kafka --recursive
-kubectl delete -f config/k8s/service --recursive
 ```
 
----------------
-## 9. Troubleshooter
+The controller itself is a Helm release, so it goes the same way as the others:
 
-### Fetching public cert from sealed secret
+```shell
+helm uninstall sealed-secrets-controller -n sealed-secrets
+```
 
-It should not be required as you should use openssl generated `public.crt` to generate passwords in sealed secrets.  
-But if you need to fetch, then use this:
+---
+
+### Troubleshooting
+
+Fetching the controller's public certificate. Step 3 above seals against the live controller directly, which is the habit to keep. To hold a copy for an offline seal with `--cert`, pull it like this, and pull it again after any controller reinstall, because a stale copy produces a SealedSecret that never decrypts:
+
 ```shell
 kubeseal --fetch-cert --controller-name=sealed-secrets-controller --controller-namespace=sealed-secrets > config/k8s/secret/sky-sealed-secrets.pem
 ```
+
+Pods stuck in `CreateContainerConfigError` after a controller reinstall. A reinstalled controller generates a new key unless `generatePrivateKey=false` and the TLS secret are both in place, and every SealedSecret then has to be re-encrypted against the new key.
+
+---
+
+### Docs map
+
+| Document | What it covers |
+|---|---|
+| [README.md](../../../README.md) | Platform overview, modules, build, ports |
+| [config/k8s/helm/helm_README.md](../helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
+| [config/k8s/k8s_README.md](../k8s_README.md) | Operating a running cluster with kubectl |
+| [config/k8s/local_README.md](../local_README.md) | Local Kubernetes cluster on k3d: create, deploy the charts, verify, tear down |
+| [config/local-dev/local_README.md](../../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |
+| [config/keycloak/SETUP.md](../../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |

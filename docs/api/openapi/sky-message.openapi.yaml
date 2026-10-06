@@ -1,0 +1,405 @@
+openapi: 3.1.0
+info:
+  description: Sky platform REST API secured with Keycloak JWT bearer tokens.
+  title: sky-message
+  version: v1
+servers:
+- description: "Local, through the gateway, one origin for the whole stack"
+  url: http://localhost:5777
+- description: "Production, through the ingress, behind oauth2-proxy"
+  url: https://skycloud.luksarna.com
+- description: "Local, straight at the service, bypassing the gateway"
+  url: http://localhost:5553
+security:
+- bearerAuth: []
+tags:
+- description: "Messaging: send, retrieve, and delete user-to-user messages."
+  name: Messages
+paths:
+  /api/v1/messages:
+    post:
+      operationId: sendMessage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageDTO"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageDTO"
+          description: Message sent
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Unsupported Media Type: the request body was not sent in the\
+            \ media type this operation consumes."
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Send message
+      tags:
+      - Messages
+  /api/v1/messages/received:
+    get:
+      operationId: getReceivedMessages
+      parameters:
+      - in: query
+        name: pageable
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: Messages pulled
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Get received messages (paginated)
+      tags:
+      - Messages
+  /api/v1/messages/sent:
+    get:
+      operationId: getSentMessages
+      parameters:
+      - in: query
+        name: pageable
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: Messages pulled
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Get sent messages (paginated)
+      tags:
+      - Messages
+  /api/v1/messages/{messageId}:
+    delete:
+      operationId: deleteMessage
+      parameters:
+      - in: path
+        name: messageId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: Message deleted
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Bad Request: invalid input or a rejected domain rule"
+        "401":
+          description: "Unauthorized: an operation that requires a token answers this\
+            \ when the token is missing or invalid, and an operation that requires\
+            \ none answers it only when a token arrived and failed to verify. The\
+            \ body is empty. Spring Security answers with the status and a WWW-Authenticate\
+            \ header only."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge, carrying error and error_description\
+                \ when the token was present but invalid."
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Forbidden: the caller is authenticated but not allowed. A\
+            \ missing realm role is answered by Spring Security with an empty body\
+            \ and a WWW-Authenticate header. A domain authorization failure carries\
+            \ a problem detail."
+          headers:
+            WWW-Authenticate:
+              description: "Bearer challenge with error=\"insufficient_scope\", present\
+                \ only when the realm role check denied the call."
+              schema:
+                type: string
+              style: simple
+        "404":
+          description: Message not found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Internal Server Error: unexpected failure. The body is a problem\
+            \ detail like every other error on this API. Its detail is a fixed sentence\
+            \ carrying no exception type, no message and no class name, so treat a\
+            \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
+            \ it."
+      summary: Delete message
+      tags:
+      - Messages
+components:
+  schemas:
+    MessageDTO:
+      type: object
+      properties:
+        createdTime:
+          type: string
+        id:
+          type: string
+          format: uuid
+        read:
+          type: boolean
+        receiverEmail:
+          type: string
+          format: email
+          maxLength: 255
+          minLength: 0
+        senderEmail:
+          type: string
+        text:
+          type: string
+          maxLength: 65000
+          minLength: 0
+      required:
+      - receiverEmail
+      - text
+    Page:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
+    ProblemDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: Paste a Keycloak access token obtained via the Authorization Code
+        flow.
+      scheme: bearer
+      type: http

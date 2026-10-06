@@ -1,34 +1,72 @@
 package com.lukk.sky.booking.domain.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.Hibernate;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "booking_event")
+@ToString(of = {"id", "bookingId", "sequenceNumber", "eventType"})
+@Table(
+        name = "booking_event",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_booking_event_booking_seq",
+                columnNames = {"booking_id", "sequence_number"}
+        )
+)
 public class Event {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    private Long bookingId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false)
+    private UUID bookingId;
 
     private int sequenceNumber;
 
     @Enumerated(EnumType.STRING)
     private EventType eventType;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String payload;
 
-    private LocalDateTime timestamp;
+    private Instant timestamp;
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) {
+            return false;
+        }
+
+        return id != null && id.equals(((Event) other).getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Hibernate.getClass(this).hashCode();
+    }
 }

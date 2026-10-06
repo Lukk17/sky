@@ -5,6 +5,7 @@ metadata:
   labels:
     k8s-app: oauth2-proxy
   name: oauth2-proxy
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -22,9 +23,9 @@ spec:
             - --upstream={{ .Values.args.upstream }}
             - --http-address={{ .Values.args.httpAddress }}
             - --cookie-secure={{ .Values.args.cookieSecure }}
-            - --oidc-issuer-url={{ .Values.args.oidcIssuerUrl }}
+            - --oidc-issuer-url={{ required "args.oidcIssuerUrl must be set by a values-<env>.yaml overlay" .Values.args.oidcIssuerUrl }}
             - --insecure-oidc-allow-unverified-email={{ .Values.args.insecureOidcAllowUnverifiedEmail }}
-            - --redirect-url={{ .Values.args.redirectUrl }}
+            - --redirect-url={{ required "args.redirectUrl must be set by a values-<env>.yaml overlay" .Values.args.redirectUrl }}
             - --scope={{ .Values.args.scope }}
             - --set-xauthrequest={{ .Values.args.setXauthrequest }}
             - --pass-authorization-header={{ .Values.args.passAuthorizationHeader }}
@@ -39,18 +40,18 @@ spec:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  key: auth0-client-id
-                  name: sky-secrets
+                  key: {{ .Values.secrets.clientIdKey }}
+                  name: {{ .Values.secrets.secretName }}
             - name: OAUTH2_PROXY_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  key: auth0-client-secret
-                  name: sky-secrets
+                  key: {{ .Values.secrets.clientSecretKey }}
+                  name: {{ .Values.secrets.secretName }}
             - name: OAUTH2_PROXY_COOKIE_SECRET
               valueFrom:
                 secretKeyRef:
-                  key: auth0-client-cookie-secret
-                  name: sky-secrets
+                  key: {{ .Values.secrets.cookieSecretKey }}
+                  name: {{ .Values.secrets.secretName }}
 
           image: {{ .Values.image.name }}
           imagePullPolicy: {{ .Values.image.imagePullPolicy }}

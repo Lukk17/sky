@@ -1,0 +1,4 @@
+# Local-environment overlay for kafka.
+# values.yaml already renders the single-node KRaft broker both environments run,
+# so this overlay adds nothing. It exists so `ENV=local` resolves the same
+# -f values-<env>.yaml path as every other chart the deployment scripts install.

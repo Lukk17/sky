@@ -1,0 +1,25 @@
+image:
+  name: "postgres:16-alpine"
+  imagePullPolicy: "IfNotPresent"
+
+service:
+  port: 5432
+
+volume:
+  claimName: "database-persistent-volume-claim"
+
+data:
+  dbName: "sky"
+
+secret:
+  name: "sky-secrets"
+  userKey: "postgres-user"
+  passwordKey: "postgres-password"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

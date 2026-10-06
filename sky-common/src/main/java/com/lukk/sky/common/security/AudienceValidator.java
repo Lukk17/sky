@@ -1,0 +1,41 @@
+package com.lukk.sky.common.security;
+
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.util.CollectionUtils;
+
+import java.util.List;
+
+public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
+
+    private static final String AUDIENCE_CLAIM = "aud";
+    private static final OAuth2Error MISSING_AUD_ERROR = new OAuth2Error(
+            "invalid_token",
+            "JWT is missing required audience claim",
+            null);
+    private static final OAuth2Error WRONG_AUD_ERROR = new OAuth2Error(
+            "invalid_token",
+            "JWT audience claim does not contain the expected audience",
+            null);
+
+    private final String expectedAudience;
+
+    public AudienceValidator(String expectedAudience) {
+        this.expectedAudience = expectedAudience;
+    }
+
+    @Override
+    public OAuth2TokenValidatorResult validate(Jwt jwt) {
+        List<String> audiences = jwt.getClaimAsStringList(AUDIENCE_CLAIM);
+        if (CollectionUtils.isEmpty(audiences)) {
+            return OAuth2TokenValidatorResult.failure(MISSING_AUD_ERROR);
+        }
+        if (!audiences.contains(expectedAudience)) {
+            return OAuth2TokenValidatorResult.failure(WRONG_AUD_ERROR);
+        }
+
+        return OAuth2TokenValidatorResult.success();
+    }
+}

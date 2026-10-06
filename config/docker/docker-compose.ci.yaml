@@ -1,0 +1,328 @@
+name: sky-e2e
+
+# Self-contained end-to-end stack: PostgreSQL, Keycloak, Kafka, the object store, the four
+# services and the gateway, from public images only, with nothing borrowed from the host or
+# from another project. config/docker/docker-compose.yaml stays the developer stack and treats
+# PostgreSQL, Keycloak and the object store as external. This file exists because a CI runner
+# has none of them.
+#
+# Every infrastructure image carries its exact version and its digest. The digest is the pin,
+# the tag is there so a reader can see what it is without resolving anything.
+#
+# Always pass -p sky-e2e. config/docker/.env sets COMPOSE_PROJECT_NAME=sky and an environment
+# variable beats the name: field above, so without -p this file adopts the developer stack's
+# project name and compose reconciles its containers.
+#
+#   docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml up -d --build --wait
+#   docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml run --rm bruno
+#   docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml down -v
+#
+# The issuer is one string everywhere: http://keycloak:8080/realms/sky. Keycloak stamps it from
+# KC_HOSTNAME, the services validate against it, and the collection mints from it, all over the
+# compose network, so no certificate, no hosts file entry and no host port is involved in the
+# token path. The collection runs in the bruno service on the same network for the same reason:
+# the presigned photo URL sky-offer signs against http://floci:4566 has to resolve identically
+# wherever it is fetched from.
+#
+# Published ports are loopback-only and exist for debugging. Nothing in the run path uses them,
+# and 5552 to 5555 and 5777 are deliberately left alone so this stack can never collide with the
+# developer stack or with a local k3d cluster.
+#
+# Full runbook: config/local-dev/e2e-stack_README.md
+
+services:
+
+  postgres:
+    image: postgres:16.11-alpine@sha256:4327b9fd295502f326f44153a1045a7170ddbfffed1c3829798328556cfd09e2
+    networks:
+      - sky-e2e-network
+    ports:
+      - "127.0.0.1:15432:5432"
+    environment:
+      POSTGRES_DB: sky
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local
+    configs:
+      - source: keycloak-database
+        target: /docker-entrypoint-initdb.d/10-keycloak-database.sql
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sky"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.7@sha256:45ae20191531eb608ddb0b775d012b40d3e4f942697f3214694887dd7c108d13
+    networks:
+      - sky-e2e-network
+    ports:
+      - "127.0.0.1:18080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: local
+      KC_HOSTNAME: http://keycloak:8080
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    command: ["start-dev", "--import-realm"]
+    volumes:
+      - ../k8s/helm/infra/keycloak/files:/opt/keycloak/data/import:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  floci:
+    image: floci/floci:2.0.1@sha256:4e451c39c7bb88e3cd4f87e8fc0c25d5b47695a51185d521e2241fa00486e8eb
+    networks:
+      - sky-e2e-network
+    ports:
+      - "127.0.0.1:19070:4566"
+    environment:
+      FLOCI_STORAGE_MODE: persistent
+      FLOCI_STORAGE_PERSISTENT_PATH: /app/data
+      FLOCI_SERVICES_UI_ENABLED: "false"
+    volumes:
+      - floci_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4566/_floci/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0@sha256:24cdd3a7fa89d2bed150560ebea81ff1943badfa61e51d66bb541a6b0d7fb047
+    networks:
+      - sky-e2e-network
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  sky-booking:
+    build:
+      dockerfile: sky-booking/docker/Dockerfile
+      context: ../../
+    image: sky-booking:e2e
+    networks:
+      - sky-e2e-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sky
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      OFFER_SERVICE_HOSTNAME: http://sky-offer
+      OFFER_SERVICE_HOST_PORT: "5552"
+      OAUTH2_ISSUER_URI: http://keycloak:8080/realms/sky
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5555/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  sky-offer:
+    build:
+      dockerfile: sky-offer/docker/Dockerfile
+      context: ../../
+    image: sky-offer:e2e
+    networks:
+      - sky-e2e-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sky
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      OAUTH2_ISSUER_URI: http://keycloak:8080/realms/sky
+      S3_ENDPOINT: http://floci:4566
+      S3_ACCESS_KEY: root
+      S3_SECRET_KEY: localdev
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5552/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  sky-message:
+    build:
+      dockerfile: sky-message/docker/Dockerfile
+      context: ../../
+    image: sky-message:e2e
+    networks:
+      - sky-e2e-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sky
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local
+      OAUTH2_ISSUER_URI: http://keycloak:8080/realms/sky
+      SPRING_PROFILES_ACTIVE: default
+      SHOW_SQL_QUERIES: "false"
+      SPRING_DEBUG: INFO
+      HIBERNATE_DEBUG: WARN
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5553/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  sky-notify:
+    build:
+      dockerfile: sky-notify/docker/Dockerfile
+      context: ../../
+    image: sky-notify:e2e
+    networks:
+      - sky-e2e-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      KAFKA_ADDRESS: kafka
+      KAFKA_PORT: "9092"
+      OAUTH2_ISSUER_URI: http://keycloak:8080/realms/sky
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_DEBUG: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5554/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  sky-gateway:
+    build:
+      dockerfile: sky-gateway/docker/Dockerfile
+      context: ../../
+    image: sky-gateway:e2e
+    networks:
+      - sky-e2e-network
+    ports:
+      - "127.0.0.1:15777:5777"
+    depends_on:
+      sky-booking:
+        condition: service_healthy
+      sky-offer:
+        condition: service_healthy
+      sky-message:
+        condition: service_healthy
+      sky-notify:
+        condition: service_healthy
+    environment:
+      BOOKING_URI: http://sky-booking:5555
+      OFFER_URI: http://sky-offer:5552
+      MESSAGE_URI: http://sky-message:5553
+      NOTIFY_URI: http://sky-notify:5554
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DEBUG: INFO
+      GATEWAY_DEBUG: INFO
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5777/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # The Bruno collection, run from inside the network so every hostname it resolves is the one
+  # the services resolve. Started only on demand, by `run` or by `--profile collection up`, so a
+  # plain `up` brings the stack up and stops there. The exit code of `run` is the gate: bru exits
+  # non-zero when any assertion fails.
+  bruno:
+    image: node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+    profiles:
+      - collection
+    networks:
+      - sky-e2e-network
+    depends_on:
+      sky-gateway:
+        condition: service_healthy
+    volumes:
+      - ../../:/workspace:ro
+    working_dir: /workspace/docs/api/request
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - npm install --global --no-fund --no-audit --loglevel=error @usebruno/cli@4.1.0 && bru run -r --env ci
+
+configs:
+  # Keycloak gets its own database on the same server, created here before it first connects.
+  # Separate database rather than a schema in `sky`: Keycloak owns hundreds of tables and its own
+  # Liquibase history, the three services own `public` through Flyway, and neither should be able
+  # to see the other's migration state. Keycloak creates its schema itself on first boot, so this
+  # file only has to make the database and the role exist.
+  keycloak-database:
+    content: |
+      CREATE USER keycloak WITH PASSWORD 'local';
+      CREATE DATABASE keycloak OWNER keycloak;
+      GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
+
+volumes:
+  postgres_data:
+  kafka_data:
+  floci_data:
+
+networks:
+  sky-e2e-network:
+    name: sky-e2e-network

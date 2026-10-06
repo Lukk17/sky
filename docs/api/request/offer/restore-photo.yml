@@ -1,0 +1,39 @@
+info:
+  name: Restore Offer Photo
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{offerUrl}}/api/v1/owner/offers/{{offerId}}/photo"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - ../../../e2e/fixtures/offer-photo.png
+        contentType: image/png
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("storedPhotoUrl", "");
+        if (res.status === 200 && res.body && res.body.photoUrl) {
+          bru.setVar("storedPhotoUrl", res.body.photoUrl);
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.photoUrl
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.photoPath
+      operator: isUndefined

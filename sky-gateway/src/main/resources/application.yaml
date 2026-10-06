@@ -1,0 +1,203 @@
+sky-gateway:
+  booking-uri: ${BOOKING_URI:http://localhost:5555}
+  offer-uri: ${OFFER_URI:http://localhost:5552}
+  message-uri: ${MESSAGE_URI:http://localhost:5553}
+  notify-uri: ${NOTIFY_URI:http://localhost:5554}
+
+server:
+  port: ${GATEWAY_PORT:5777}
+
+spring:
+  application:
+    name: sky-gateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          trusted-proxies: '127\.0\.0\.1|localhost|::1|0:0:0:0:0:0:0:1|10\..*|172\.(1[6-9]|2[0-9]|3[01])\..*|192\.168\..*'
+          routes:
+            - id: booking-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/api/v1/bookings/**,/api/v1/user/bookings/**
+
+            - id: offer-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/api/v1/offers/**,/api/v1/search,/api/v1/owner/offers/**
+
+            - id: message-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/api/v1/messages/**
+
+            - id: notify-route
+              uri: ${sky-gateway.notify-uri}
+              predicates:
+                - Path=/notifyWebsocket/**
+
+            - id: booking-swagger-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/swagger-ui/**,/booking/swagger-ui.html
+              filters:
+                - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: booking-api-docs-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/v3/api-docs/**
+              filters:
+                - RewritePath=/booking/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+            - id: offer-swagger-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/swagger-ui/**,/offer/swagger-ui.html
+              filters:
+                - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: offer-api-docs-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/v3/api-docs/**
+              filters:
+                - RewritePath=/offer/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+            - id: message-swagger-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/swagger-ui/**,/msg/swagger-ui.html
+              filters:
+                - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: message-api-docs-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/v3/api-docs/**
+              filters:
+                - RewritePath=/msg/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus"
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: ${GATEWAY_DEBUG:INFO}
+        web: ${SPRING_DEBUG:INFO}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "!local"
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI}
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${KEYCLOAK_CLIENT_ID}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            scope: openid,email,profile
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: booking-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/api/v1/bookings/**,/api/v1/user/bookings/**
+              filters:
+                - TokenRelay=
+
+            - id: offer-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/api/v1/offers/**,/api/v1/search,/api/v1/owner/offers/**
+              filters:
+                - TokenRelay=
+
+            - id: message-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/api/v1/messages/**
+              filters:
+                - TokenRelay=
+
+            - id: notify-route
+              uri: ${sky-gateway.notify-uri}
+              predicates:
+                - Path=/notifyWebsocket/**
+              filters:
+                - TokenRelay=
+
+            - id: booking-swagger-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/swagger-ui/**,/booking/swagger-ui.html
+              filters:
+                - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: booking-api-docs-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/v3/api-docs/**
+              filters:
+                - RewritePath=/booking/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=
+
+            - id: offer-swagger-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/swagger-ui/**,/offer/swagger-ui.html
+              filters:
+                - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: offer-api-docs-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/v3/api-docs/**
+              filters:
+                - RewritePath=/offer/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=
+
+            - id: message-swagger-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/swagger-ui/**,/msg/swagger-ui.html
+              filters:
+                - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: message-api-docs-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/v3/api-docs/**
+              filters:
+                - RewritePath=/msg/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=

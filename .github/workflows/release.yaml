@@ -1,0 +1,507 @@
+name: Release (manual)
+
+# Manual-only release. Provide the version (e.g. 1.0.3, no leading "v"): the v
+# belongs to the tags this workflow writes, never to the value you dispatch.
+# Published image tags carry it (lukk17/<service>:v1.0.3, matching v1.0.0 and
+# v1.0.1 already in the registry) and so does the git tag. Chart.yaml appVersion
+# does not: that field is a semantic version, not an image reference.
+#
+# Four jobs, in this order:
+#   validate        cheap checks on the dispatch, so a typo fails in seconds
+#   test            the composite build, by calling ci.yaml (the release gate)
+#   build-and-push  builds the images and pushes lukk17/<service>:v<version>
+#   github-release  behind the "release" approval gate: pins the chart image
+#                   tags, cuts the GitHub release, then moves :latest
+#
+# Nothing reaches the registry until the test gate is green, and :latest does
+# not move until the release is actually published.
+#
+# Dispatch from a branch, never from a tag: github-release commits the chart pin
+# and needs a branch to fast-forward.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, without the leading v (e.g. 1.0.3)'
+        required: true
+        type: string
+
+# Deny by default. The repository-wide default is "write", so a job added later
+# without its own permissions block would silently inherit write on everything.
+permissions: {}
+
+env:
+  # Single source of truth for what this release covers. The chart-pinning step
+  # in github-release walks the same list.
+  SERVICES: "sky-booking sky-offer sky-message sky-notify sky-gateway"
+  CHARTS_ROOT: "config/k8s/helm/service"
+
+jobs:
+  # Checkout-free and a few seconds long, so a bad version or a dispatch from a
+  # tag is reported before the test gate spends ten minutes on it. Everything
+  # downstream (the image tags, the chart image tags, the chart appVersion, the
+  # git tag) derives from the one value this job publishes.
+  validate:
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+    steps:
+      # workflow_dispatch enforces that the input is present, not that it is
+      # non-empty.
+      - name: Validate the dispatch
+        id: validate
+        env:
+          VERSION: ${{ inputs.version }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          version="${VERSION:-}"
+
+          if [[ -z "$version" ]]; then
+            echo "::error::No version supplied. Dispatch with a version such as 1.0.3."
+            exit 1
+          fi
+
+          if [[ "$version" == v* ]]; then
+            echo "::error::Version must not carry a leading v (got '${version}'). Dispatch 1.0.3, not v1.0.3."
+            exit 1
+          fi
+
+          # Anchored, so the value cannot contain a quote, a slash, an ampersand,
+          # a shell metacharacter or a newline. Every later use of it is then
+          # literal by construction.
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Version '${version}' is not MAJOR.MINOR.PATCH with an optional -prerelease suffix."
+            exit 1
+          fi
+
+          if [[ "$REF_TYPE" != "branch" ]]; then
+            echo "::error::Dispatched from ${REF_TYPE} '${REF_NAME}'. Release from a branch: the chart pin in github-release has to commit somewhere."
+            exit 1
+          fi
+
+          echo "Releasing ${version} from branch ${REF_NAME}."
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      # Fail before building anything if this version is already released.
+      - name: Fail if version already released
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.validate.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists on GitHub. Choose a new version."
+            exit 1
+          fi
+          echo "Version $tag is not yet released; proceeding."
+
+  # The release gate. Every Dockerfile builds its jar with `gradle bootJar -x
+  # test`, so without this job a release could ship a commit that no test run
+  # ever saw.
+  #
+  # Calling ci.yaml instead of copying its build keeps one definition of the
+  # composite build. A local "./" reference runs the ci.yaml from this same
+  # commit, so the gate tests exactly the tree the images are built from, and a
+  # change to the build recipe cannot drift between the two files.
+  #
+  # Not skippable: it takes no input, carries no if:, and build-and-push needs
+  # it, so a red build stops the release before a single image is pushed.
+  #
+  # Needs validate so a typo'd version costs fifteen seconds rather than a full
+  # runner slot.
+  test:
+    needs: validate
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yaml
+
+  build-and-push:
+    needs: [validate, test]
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Only the v-prefixed version tag is pushed here. :latest is moved in
+      # github-release, after the approval gate, so rejecting a release cannot
+      # leave :latest pointing at a version that was never published.
+      - name: Build and push service images
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          image_tag="v${VERSION}"
+          read -r -a services <<< "$SERVICES"
+          for svc in "${services[@]}"; do
+            image="lukk17/${svc}"
+            docker build -f "${svc}/docker/Dockerfile" -t "${image}:${image_tag}" .
+            docker push "${image}:${image_tag}"
+          done
+
+      # Read every tag back from the registry rather than trusting the push. The
+      # charts pin this exact string, so a tag that is not there is a release
+      # that deploys an image nobody can pull, and the cluster only finds out at
+      # rollout time.
+      - name: Verify every pushed tag resolves in the registry
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          image_tag="v${VERSION}"
+          read -r -a services <<< "$SERVICES"
+          for svc in "${services[@]}"; do
+            image="lukk17/${svc}:${image_tag}"
+            if ! digest="$(docker buildx imagetools inspect --raw "$image" | sha256sum | cut -d' ' -f1)"; then
+              echo "::error::${image} is not in the registry after the push. The charts pin exactly this tag."
+              exit 1
+            fi
+            echo "${image} -> sha256:${digest}"
+          done
+
+  github-release:
+    needs: [validate, build-and-push]
+    runs-on: ubuntu-26.04
+    # Manual approval gate: configure the "release" Environment with a required
+    # reviewer in repo Settings > Environments. The run pauses here until approved.
+    environment: release
+    # contents: write covers both the chart-pin push and the release creation,
+    # and nothing else is needed. The push authenticates with the GITHUB_TOKEN
+    # that actions/checkout persists into the local git config, so leave
+    # persist-credentials at its default. The Docker Hub re-tag at the end of
+    # this job needs registry credentials rather than a token permission, so it
+    # brings its own login step and this block stays as it is.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Re-check version not released (race guard)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists on GitHub."
+            exit 1
+          fi
+
+      # The charts pin an explicit image tag, so the cluster keeps running the
+      # previous image until that pin moves. Move it here, in the commit the
+      # release then tags, so a helm upgrade from a fresh checkout of the tag
+      # deploys the images this run just pushed.
+      #
+      # No loop guard is needed, for two reasons, and the second one is now the
+      # load-bearing one. release.yaml is workflow_dispatch-only, so this push
+      # cannot start a release. ci.yaml, however, now triggers on pull_request
+      # synchronize, which a push to a branch with an open pull request does
+      # raise, so the trigger list alone no longer rules a CI run out. What rules
+      # it out is that GitHub creates no workflow run for an event raised by the
+      # default GITHUB_TOKEN, which is what authenticates this push. Move this
+      # push onto a PAT or a GitHub App token and that suppression disappears,
+      # so re-read this comment if you do.
+      - name: Pin chart image tags to the released version
+        id: chart-pin
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
+          DISPATCH_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          # Validated in the validate job, which is the only producer of this
+          # value. Re-asserted here because an empty or malformed version would
+          # rewrite production image tags into something unpullable.
+          if [[ ! "${VERSION:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Refusing to rewrite charts: version '${VERSION:-<empty>}' is missing or malformed."
+            exit 1
+          fi
+
+          # Derived from the validated version, so the published tag can only ever
+          # be the v form of a value that passed the guard above.
+          image_tag="v${VERSION}"
+
+          read -r -a services <<< "$SERVICES"
+          pinned=()
+          edited=()
+
+          for svc in "${services[@]}"; do
+            chart_dir="${CHARTS_ROOT}/${svc}"
+            if [[ ! -d "$chart_dir" ]]; then
+              echo "::notice::${svc} has an image but no chart under ${CHARTS_ROOT}; nothing to pin for it."
+              continue
+            fi
+
+            values="${chart_dir}/values.yaml"
+            chart="${chart_dir}/Chart.yaml"
+            for f in "$values" "$chart"; do
+              if [[ ! -f "$f" ]]; then
+                echo "::error::${f} is missing; cannot pin ${svc}."
+                exit 1
+              fi
+            done
+
+            # Scoped to deployment -> image -> tag. A bare "tag:" line also
+            # appears in values-local.yaml (the e2e tag) and in
+            # templates/deployment.yaml, so a line-anchored match on "tag:"
+            # alone is not safe to reuse. The image tag reaches awk through -v,
+            # so it is inserted literally: nothing in it can be read as a pattern
+            # or as a replacement escape.
+            tmp="$(mktemp)"
+            if ! awk -v tag="$image_tag" '
+                  /^[^[:space:]#]/ {
+                    in_deployment = ($0 ~ /^deployment:[[:space:]]*$/)
+                    in_image = 0
+                  }
+                  in_deployment && /^  [^[:space:]#]/ {
+                    in_image = ($0 ~ /^  image:[[:space:]]*$/)
+                  }
+                  in_deployment && in_image && /^    tag:/ {
+                    print "    tag: \"" tag "\""
+                    hits++
+                    next
+                  }
+                  { print }
+                  END {
+                    if (hits != 1) {
+                      print "matched " hits+0 " deployment.image.tag lines" > "/dev/stderr"
+                      exit 1
+                    }
+                  }
+                ' "$values" > "$tmp"; then
+              rm -f "$tmp"
+              echo "::error::${values}: expected exactly one deployment.image.tag line to rewrite."
+              exit 1
+            fi
+            mv "$tmp" "$values"
+
+            # appVersion is the version of the application the chart deploys,
+            # which is the same fact as the image tag, so it moves in the same
+            # step. It stays bare where the image tag takes a leading v, because
+            # appVersion is a semantic version and semantic versioning has no v in
+            # it, while the image tag is a registry reference that has to match
+            # what was pushed. The chart's own "version" field versions the chart
+            # rather than the app, and is deliberately left alone.
+            tmp="$(mktemp)"
+            if ! awk -v ver="$VERSION" '
+                  /^appVersion:/ {
+                    print "appVersion: \"" ver "\""
+                    hits++
+                    next
+                  }
+                  { print }
+                  END {
+                    if (hits != 1) {
+                      print "matched " hits+0 " appVersion lines" > "/dev/stderr"
+                      exit 1
+                    }
+                  }
+                ' "$chart" > "$tmp"; then
+              rm -f "$tmp"
+              echo "::error::${chart}: expected exactly one appVersion line to rewrite."
+              exit 1
+            fi
+            mv "$tmp" "$chart"
+
+            # Verify what was written rather than trusting the edit. -F -x is a
+            # literal whole-line match.
+            if ! grep -Fqx "    tag: \"${image_tag}\"" "$values"; then
+              echo "::error::${values} has no 'tag: \"${image_tag}\"' line after the rewrite."
+              exit 1
+            fi
+            if ! grep -Fqx "appVersion: \"${VERSION}\"" "$chart"; then
+              echo "::error::${chart} has no 'appVersion: \"${VERSION}\"' line after the rewrite."
+              exit 1
+            fi
+
+            pinned+=("$svc")
+            edited+=("$values" "$chart")
+          done
+
+          if [[ ${#pinned[@]} -eq 0 ]]; then
+            echo "::error::No service chart found under ${CHARTS_ROOT}; nothing was pinned. Has the chart layout moved?"
+            exit 1
+          fi
+          echo "Pinned ${VERSION} in: ${pinned[*]}"
+
+          stray="$(git diff --name-only | grep -v "^${CHARTS_ROOT}/" || true)"
+          if [[ -n "$stray" ]]; then
+            echo "::error::The chart pin touched paths it does not own: ${stray}"
+            exit 1
+          fi
+          git --no-pager diff --stat -- "${edited[@]}"
+
+          git add -- "${edited[@]}"
+          if git diff --cached --quiet; then
+            echo "Charts already pin ${VERSION}; no commit needed."
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # The approval gate above can hold this job for hours, so confirm the
+          # branch still points where this run was dispatched from. Rebasing onto
+          # a moved tip would tag code these images were never built from, and
+          # force-pushing would discard someone else's work, so neither is an
+          # option: fail, and let the operator re-dispatch.
+          remote_head="$(git ls-remote origin "refs/heads/${BRANCH}" | cut -f1)"
+          if [[ -z "$remote_head" ]]; then
+            echo "::error::origin has no branch ${BRANCH}. Nothing was committed and no release was created."
+            exit 1
+          fi
+          if [[ "$remote_head" != "$DISPATCH_SHA" ]]; then
+            echo "::error::${BRANCH} moved from ${DISPATCH_SHA} to ${remote_head} while this release waited for approval. Nothing was committed and no release was created. Re-dispatch from the new tip."
+            exit 1
+          fi
+
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit --file - <<COMMIT_MSG
+          ops(k8s): set service chart image tags to ${image_tag}
+
+          Pin deployment.image.tag and Chart.yaml appVersion in the service charts
+          to the version whose images this release just pushed, so a helm upgrade
+          from this commit deploys the released image instead of the previous one.
+          The image tag is ${image_tag} and appVersion is ${VERSION}: the leading v
+          belongs to the registry reference, not to the semantic version.
+
+          Dispatched by @${ACTOR} from the release workflow, run ${RUN_URL}
+          COMMIT_MSG
+
+          git push origin "HEAD:refs/heads/${BRANCH}"
+
+          sha="$(git rev-parse HEAD)"
+          echo "Chart pin committed as ${sha} on ${BRANCH}."
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ steps.chart-pin.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          # Tag the chart-pin commit rather than the dispatched SHA: the tag has
+          # to contain the image tags that match what is in the registry.
+          if [[ ! "${TARGET_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::No commit SHA from the chart pin; refusing to tag."
+            exit 1
+          fi
+
+          tag="v${VERSION}"
+          gh release create "$tag" \
+            --repo "$REPO" \
+            --title "$tag" \
+            --generate-notes \
+            --target "$TARGET_SHA"
+
+      # Registry credentials only, and only at the end of the job: the steps
+      # above need a GitHub token, not a Docker Hub one, so the login sits as
+      # close to the one step that uses it as the job allows.
+      - name: Log in to Docker Hub
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # :latest means "the version currently released", so it moves last, after
+      # the chart pin is pushed and the release exists. Moving it in
+      # build-and-push put it ahead of the approval gate, which is how rejecting
+      # a release still left :latest on a version that was never published.
+      #
+      # imagetools create copies the manifest inside the registry: no pull, no
+      # rebuild, and :latest ends up on the same digest that was approved rather
+      # than on a second build of the same source.
+      - name: Point :latest at the released version
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # Re-asserted for the same reason the chart pin re-asserts it: this
+          # value decides which manifest a public :latest tag resolves to.
+          if [[ ! "${VERSION:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Refusing to move :latest: version '${VERSION:-<empty>}' is missing or malformed."
+            exit 1
+          fi
+
+          image_tag="v${VERSION}"
+
+          read -r -a services <<< "$SERVICES"
+          failed=()
+
+          for svc in "${services[@]}"; do
+            image="lukk17/${svc}"
+            moved=""
+
+            # Retried because this runs after the release is published: a
+            # transient registry error must not be the only attempt.
+            for attempt in 1 2 3; do
+              if docker buildx imagetools create --tag "${image}:latest" "${image}:${image_tag}"; then
+                moved="yes"
+                break
+              fi
+              echo "::warning::${image}: imagetools create attempt ${attempt} of 3 failed."
+              if [[ "$attempt" -lt 3 ]]; then
+                sleep "$(( attempt * 10 ))"
+              fi
+            done
+
+            if [[ -z "$moved" ]]; then
+              failed+=("$svc")
+              continue
+            fi
+
+            # Read both tags back rather than trusting the command. The sha256 of
+            # the raw manifest bytes is the digest the tag resolves to, so equal
+            # sums prove :latest points at the released manifest itself.
+            if ! released="$(docker buildx imagetools inspect --raw "${image}:${image_tag}" | sha256sum | cut -d' ' -f1)"; then
+              echo "::error::${image}: cannot read :${image_tag} back from the registry."
+              failed+=("$svc")
+              continue
+            fi
+            if ! current="$(docker buildx imagetools inspect --raw "${image}:latest" | sha256sum | cut -d' ' -f1)"; then
+              echo "::error::${image}: cannot read :latest back from the registry."
+              failed+=("$svc")
+              continue
+            fi
+            if [[ "$released" != "$current" ]]; then
+              echo "::error::${image}: :latest resolves to sha256:${current} but :${image_tag} resolves to sha256:${released}."
+              failed+=("$svc")
+              continue
+            fi
+
+            echo "${image}:latest -> sha256:${current} (the same manifest as :${image_tag})"
+          done
+
+          # The release is already published at this point and nothing is rolled
+          # back, so this failure is reported rather than hidden and rather than
+          # allowed to abandon a release that is otherwise complete. Every
+          # service that did move has moved; the ones listed here have not.
+          if [[ ${#failed[@]} -gt 0 ]]; then
+            echo "::error::Release v${VERSION} is published and the charts are pinned, but :latest still points at the previous version for: ${failed[*]}. Re-point each one with: docker buildx imagetools create --tag lukk17/SERVICE:latest lukk17/SERVICE:${image_tag}"
+            exit 1
+          fi
+
+          echo "Every :latest tag now points at ${image_tag}."
