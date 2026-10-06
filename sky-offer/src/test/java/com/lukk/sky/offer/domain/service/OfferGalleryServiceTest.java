@@ -184,7 +184,7 @@ class OfferGalleryServiceTest {
         assertEquals(1, p1.getPosition());
         assertEquals(p0.getId(), dto.gallery().get(0).id());
         assertEquals("u1", dto.coverPhotoUrl());
-        verify(offerPhotoRepository).saveAllAndFlush(anyList());
+        verify(offerPhotoRepository, org.mockito.Mockito.times(2)).saveAllAndFlush(anyList());
     }
 
     @Test

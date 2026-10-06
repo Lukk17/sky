@@ -287,10 +287,15 @@ public class OfferServicePrimary implements OfferService {
                 .filter(photo -> photo.getId().equals(photoId))
                 .findFirst()
                 .orElseThrow(() -> new GalleryPhotoNotFoundException("Photo not found."));
-        for (OfferPhoto photo : photos) {
-            photo.setMain(photo.getId().equals(target.getId()));
+        if (target.isMain() && photos.stream().filter(OfferPhoto::isMain).count() == 1) {
+            return toDetailedView(offer);
         }
         try {
+            for (OfferPhoto photo : photos) {
+                photo.setMain(false);
+            }
+            offerPhotoRepository.saveAllAndFlush(photos);
+            target.setMain(true);
             offerPhotoRepository.saveAllAndFlush(photos);
         } catch (DataIntegrityViolationException ex) {
             throw new GalleryCoverConflictException("Gallery cover was changed concurrently.", ex);
