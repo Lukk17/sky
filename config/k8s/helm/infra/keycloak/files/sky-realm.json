@@ -30,6 +30,7 @@
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
+      "secret": "dev-only-change-in-prod",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,
@@ -83,6 +84,9 @@
       "email": "owner@sky.dev",
       "firstName": "Demo",
       "lastName": "Owner",
+      "credentials": [
+        { "type": "password", "value": "owner", "temporary": false }
+      ],
       "realmRoles": ["admin", "user"]
     },
     {
@@ -92,6 +96,9 @@
       "email": "user@sky.dev",
       "firstName": "Demo",
       "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "user", "temporary": false }
+      ],
       "realmRoles": ["user"]
     },
     {
@@ -101,6 +108,9 @@
       "email": "lukk@sky.dev",
       "firstName": "Lukk",
       "lastName": "Sarna",
+      "credentials": [
+        { "type": "password", "value": "test1234", "temporary": false }
+      ],
       "realmRoles": ["admin", "user"]
     }
   ]
