@@ -20,6 +20,22 @@ async function adminToken() {
   return r.data.access_token;
 }
 
+async function ensureClientSecret(at) {
+  const found = await req("GET", `${KEYCLOAK_BASE}/admin/realms/${REALM}/clients?clientId=${encodeURIComponent(CLIENT_ID)}`, { token: at });
+  if (!ok(found.status) || !Array.isArray(found.data) || found.data.length === 0) {
+    return fail(`lookup client ${CLIENT_ID}: ${found.status}`);
+  }
+  const id = found.data[0]?.id;
+  if (!id) return fail(`client id missing for ${CLIENT_ID}`);
+  const rep = await req("GET", `${KEYCLOAK_BASE}/admin/realms/${REALM}/clients/${id}`, { token: at });
+  if (!ok(rep.status)) return fail(`read client ${CLIENT_ID}: ${rep.status}`);
+  const r = await req("PUT", `${KEYCLOAK_BASE}/admin/realms/${REALM}/clients/${id}`, {
+    token: at, json: { ...rep.data, secret: CLIENT_SECRET },
+  });
+  if (!ok(r.status)) return fail(`client secret for ${CLIENT_ID}: ${r.status}`);
+  console.log(`SET client secret: ${CLIENT_ID}`);
+}
+
 async function ensureUser(at, u) {
   const found = await req("GET", `${KEYCLOAK_BASE}/admin/realms/${REALM}/users?username=${encodeURIComponent(u.username)}`, { token: at });
   if (!ok(found.status)) return fail(`lookup user ${u.username}: ${found.status}`);
@@ -86,6 +102,7 @@ async function main() {
 
   const at = await adminToken().catch((e) => { fail(e.message); return null; });
   if (!at) throw new Error("no admin token");
+  await ensureClientSecret(at).catch((e) => fail(e.message));
   for (const u of users) await ensureUser(at, u);
 
   const tokens = {};

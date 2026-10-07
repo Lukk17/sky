@@ -1,12 +1,12 @@
 import {HttpInterceptorFn} from '@angular/common/http';
 import {inject} from '@angular/core';
-import {environment} from '../../environments/environment';
+import {AppConfigService} from './app-config.service';
 import {CsrfTokenStore} from './csrf-token.store';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 export const sessionCookieInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith(environment.apiBaseUrl)) {
+  if (!req.url.startsWith(inject(AppConfigService).get().apiBaseUrl)) {
     return next(req);
   }
 

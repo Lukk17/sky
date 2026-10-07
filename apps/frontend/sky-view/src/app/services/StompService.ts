@@ -1,12 +1,12 @@
 import {Injectable, NgZone, OnDestroy} from '@angular/core';
 import {Client, IMessage} from '@stomp/stompjs';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
-import {environment} from '../../environments/environment';
+import {AppConfigService} from './app-config.service';
 import {SkyAuthService} from './sky-auth.service';
 
-function buildSocketUrl(): string {
-  const origin = `${environment.apiBaseUrl}`;
-  const path = `${environment.notifySocketPath}`;
+function buildSocketUrl(config: AppConfigService): string {
+  const origin = `${config.get().apiBaseUrl}`;
+  const path = `${config.get().notifySocketPath}`;
   if (origin.startsWith('https')) {
     return 'wss' + origin.substring(5) + path;
   }
@@ -43,7 +43,7 @@ export class StompService implements OnDestroy {
   private connectedEmail: string | null = null;
   private notifications: BehaviorSubject<NotifyEvent | null> = new BehaviorSubject<NotifyEvent | null>(null);
 
-  constructor(private skyAuth: SkyAuthService, private zone: NgZone) {
+  constructor(private skyAuth: SkyAuthService, private zone: NgZone, private config: AppConfigService) {
     this.authSub = this.skyAuth.currentUser$.subscribe((email) => {
       if (email) {
         this.ensureConnected(email);
@@ -65,7 +65,7 @@ export class StompService implements OnDestroy {
     this.disconnect();
     this.connectedEmail = email;
     const client = new Client({
-      webSocketFactory: () => new WebSocket(buildSocketUrl()),
+      webSocketFactory: () => new WebSocket(buildSocketUrl(this.config)),
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,

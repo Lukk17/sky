@@ -32,6 +32,14 @@ public class OriginCheckWebFilter implements WebFilter {
     private static final Set<HttpMethod> MUTATING =
             Set.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE);
 
+    private final String frontendOrigin;
+
+    public OriginCheckWebFilter(
+            @org.springframework.beans.factory.annotation.Value("${sky-gateway.frontend-url:http://localhost:4200}")
+            String frontendUrl) {
+        this.frontendOrigin = SecurityConfig.validatedFrontendUrl(frontendUrl).toLowerCase(java.util.Locale.ROOT);
+    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         if (!MUTATING.contains(exchange.getRequest().getMethod())) {
@@ -45,16 +53,21 @@ public class OriginCheckWebFilter implements WebFilter {
         String expected = requestOrigin(exchange);
         String origin = exchange.getRequest().getHeaders().getOrigin();
 
-        if (origin != null && !expected.equalsIgnoreCase(normalizeOrigin(origin))) {
+        if (origin != null && !allowed(origin, expected)) {
             return reject(exchange, "origin-mismatch");
         }
 
         String referer = exchange.getRequest().getHeaders().getFirst("Referer");
-        if (origin == null && referer != null && !expected.equalsIgnoreCase(normalizeOrigin(referer))) {
+        if (origin == null && referer != null && !allowed(referer, expected)) {
             return reject(exchange, "referer-mismatch");
         }
 
         return chain.filter(exchange);
+    }
+
+    private boolean allowed(String candidate, String requestOrigin) {
+        String normalized = normalizeOrigin(candidate);
+        return requestOrigin.equalsIgnoreCase(normalized) || frontendOrigin.equalsIgnoreCase(normalized);
     }
 
     private static Mono<Void> reject(ServerWebExchange exchange, String reason) {

@@ -1,5 +1,6 @@
 import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {APP_INITIALIZER, NgModule} from '@angular/core';
+import {AppConfigService} from './services/app-config.service';
 
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
@@ -72,6 +73,6 @@ import {sessionCookieInterceptor} from './services/session-cookie.interceptor';
         PopoverModule,
         TextareaModule,
         ToolbarModule,
-    ], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi(), withInterceptors([sessionCookieInterceptor]))] })
+    ], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi(), withInterceptors([sessionCookieInterceptor])), AppConfigService, {provide: APP_INITIALIZER, multi: true, deps: [AppConfigService], useFactory: (config: AppConfigService) => () => config.load()}] })
 export class AppModule {
 }

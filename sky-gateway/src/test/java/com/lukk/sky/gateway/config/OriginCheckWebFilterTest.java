@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class OriginCheckWebFilterTest {
 
-    private final OriginCheckWebFilter filter = new OriginCheckWebFilter();
+    private final OriginCheckWebFilter filter = new OriginCheckWebFilter("http://localhost:4200");
 
     private static MockServerWebExchange exchange(HttpMethod method, String origin, String referer) {
         var builder = MockServerHttpRequest.method(method, "http://gateway:5777/api/v1/offers")
@@ -56,6 +56,20 @@ class OriginCheckWebFilterTest {
     void post_withMatchingOrigin_thenChainCalled() {
         // given
         var exchange = exchange(HttpMethod.POST, "http://gateway:5777", null);
+        var called = new AtomicBoolean(false);
+
+        // when
+        filter.filter(exchange, recordingChain(called)).block();
+
+        // then
+        assertThat(called).isTrue();
+    }
+
+    @Test
+    @DisplayName("post_withFrontendOrigin_thenChainCalled")
+    void post_withFrontendOrigin_thenChainCalled() {
+        // given
+        var exchange = exchange(HttpMethod.POST, "http://localhost:4200", null);
         var called = new AtomicBoolean(false);
 
         // when

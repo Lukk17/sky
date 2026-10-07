@@ -12,7 +12,7 @@ export interface OfferDraft {
   country: string;
 }
 
-import {environment} from '../../environments/environment';
+import {AppConfigService} from './app-config.service';
 import {ResponseHandlerService} from './responseHandler.service';
 
 
@@ -22,15 +22,23 @@ import {ResponseHandlerService} from './responseHandler.service';
 export class OfferService {
 
   searched: Offer[] = [];
-  private BASE_ADDRESS = `${environment.apiBaseUrl}`;
-  private ALL_OFFERS_URL = this.BASE_ADDRESS + `${environment.allOfferPath}`;
-  private OWNED_OFFERS_URL = this.BASE_ADDRESS + `${environment.ownedOffersPath}`;
-  private ADD_OFFER_URL = this.BASE_ADDRESS + `${environment.addOfferPath}`;
-  private EDIT_OFFER_URL = this.BASE_ADDRESS + `${environment.editOfferPath}`;
-  private DELETE_OFFER_URL = this.BASE_ADDRESS + `${environment.deleteOfferPath}`;
-  private SEARCH_OFFER_URL = this.BASE_ADDRESS + `${environment.searchOfferPath}`;
+  private BASE_ADDRESS: string;
+  private ALL_OFFERS_URL: string;
+  private OWNED_OFFERS_URL: string;
+  private ADD_OFFER_URL: string;
+  private EDIT_OFFER_URL: string;
+  private DELETE_OFFER_URL: string;
+  private SEARCH_OFFER_URL: string;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, config: AppConfigService) {
+    const cfg = config.get();
+    this.BASE_ADDRESS = `${cfg.apiBaseUrl}`;
+    this.ALL_OFFERS_URL = this.BASE_ADDRESS + `${cfg.allOfferPath}`;
+    this.OWNED_OFFERS_URL = this.BASE_ADDRESS + `${cfg.ownedOffersPath}`;
+    this.ADD_OFFER_URL = this.BASE_ADDRESS + `${cfg.addOfferPath}`;
+    this.EDIT_OFFER_URL = this.BASE_ADDRESS + `${cfg.editOfferPath}`;
+    this.DELETE_OFFER_URL = this.BASE_ADDRESS + `${cfg.deleteOfferPath}`;
+    this.SEARCH_OFFER_URL = this.BASE_ADDRESS + `${cfg.searchOfferPath}`;
   }
 
   private static buildOffer(draft: OfferDraft) {

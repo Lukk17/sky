@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {catchError, map} from 'rxjs/operators';
 import {ResponseHandlerService} from './responseHandler.service';
 import {HttpClient} from '@angular/common/http';
-import {environment} from '../../environments/environment';
+import {AppConfigService} from './app-config.service';
 import {Offer} from './offer.service';
 
 
@@ -11,12 +11,17 @@ import {Offer} from './offer.service';
 })
 export class BookingService {
 
-  private BASE_ADDRESS = `${environment.apiBaseUrl}`;
-  private BOOKINGS = this.BASE_ADDRESS + `${environment.bookings}`;
-  private ADD_BOOKING = this.BASE_ADDRESS + `${environment.addBooking}`;
-  private DELETE_BOOKING = this.BASE_ADDRESS + `${environment.deleteBooking}`;
+  private BASE_ADDRESS: string;
+  private BOOKINGS: string;
+  private ADD_BOOKING: string;
+  private DELETE_BOOKING: string;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, config: AppConfigService) {
+    const cfg = config.get();
+    this.BASE_ADDRESS = `${cfg.apiBaseUrl}`;
+    this.BOOKINGS = this.BASE_ADDRESS + `${cfg.bookings}`;
+    this.ADD_BOOKING = this.BASE_ADDRESS + `${cfg.addBooking}`;
+    this.DELETE_BOOKING = this.BASE_ADDRESS + `${cfg.deleteBooking}`;
   }
 
   private static buildBookingPayload(offer: Offer, dateToBook: string) {

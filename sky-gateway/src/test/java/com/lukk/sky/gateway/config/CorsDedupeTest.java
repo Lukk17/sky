@@ -60,6 +60,20 @@ class CorsDedupeTest {
         assertThat(values).containsExactly("http://localhost:4200");
     }
 
+    @Test
+    @DisplayName("proxiedGet_whenUpstreamAlsoSendsAllowCredentials_thenSingleAllowCredentialsValue")
+    void proxiedGet_whenUpstreamAlsoSendsAllowCredentials_thenSingleAllowCredentialsValue() {
+        // when / then
+        var result = client.get().uri("/api/v1/offers")
+                .header(HttpHeaders.ORIGIN, "http://localhost:4200")
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult(Void.class);
+        List<String> values =
+                result.getResponseHeaders().get(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS);
+        assertThat(values).containsExactly("true");
+    }
+
     private static HttpServer startUpstream() {
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -69,6 +83,8 @@ class CorsDedupeTest {
                 if (origin != null) {
                     exchange.getResponseHeaders().add(
                             HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                    exchange.getResponseHeaders().add(
+                            HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
                 }
                 exchange.getResponseHeaders().add("Content-Type", "text/plain");
                 exchange.sendResponseHeaders(200, body.length);

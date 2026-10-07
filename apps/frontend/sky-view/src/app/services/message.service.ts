@@ -3,7 +3,7 @@ import {HttpClient} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
 import {shareReplay, switchMap, timer} from 'rxjs';
 import {ResponseHandlerService} from './responseHandler.service';
-import {environment} from '../../environments/environment';
+import {AppConfigService} from './app-config.service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,14 +24,20 @@ export class MessageReadStore {
   providedIn: 'root'
 })
 export class MessageService {
-  private BASE_ADDRESS = `${environment.apiBaseUrl}`;
+  private BASE_ADDRESS: string;
 
-  private RECEIVED_MESSAGES_URL = this.BASE_ADDRESS + `${environment.receivedMessages}`;
-  private SENT_MESSAGES_URL = this.BASE_ADDRESS + `${environment.sentMessages}`;
-  private SEND_MESSAGE_URL = this.BASE_ADDRESS + `${environment.sendMessage}`;
-  private DELETE_MESSAGE_URL = this.BASE_ADDRESS + `${environment.deleteMessage}`;
+  private RECEIVED_MESSAGES_URL: string;
+  private SENT_MESSAGES_URL: string;
+  private SEND_MESSAGE_URL: string;
+  private DELETE_MESSAGE_URL: string;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, config: AppConfigService) {
+    const cfg = config.get();
+    this.BASE_ADDRESS = `${cfg.apiBaseUrl}`;
+    this.RECEIVED_MESSAGES_URL = this.BASE_ADDRESS + `${cfg.receivedMessages}`;
+    this.SENT_MESSAGES_URL = this.BASE_ADDRESS + `${cfg.sentMessages}`;
+    this.SEND_MESSAGE_URL = this.BASE_ADDRESS + `${cfg.sendMessage}`;
+    this.DELETE_MESSAGE_URL = this.BASE_ADDRESS + `${cfg.deleteMessage}`;
   }
 
   private static buildMessage(draft: MessageDraft) {

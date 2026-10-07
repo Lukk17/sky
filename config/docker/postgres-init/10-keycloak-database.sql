@@ -1,0 +1,3 @@
+CREATE USER keycloak WITH PASSWORD 'local';
+CREATE DATABASE keycloak OWNER keycloak;
+GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;

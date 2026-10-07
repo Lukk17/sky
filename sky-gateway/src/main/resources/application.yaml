@@ -31,6 +31,7 @@ spring:
                 - Path=/api/v1/bookings/**,/api/v1/user/bookings/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
 
             - id: offer-route
               uri: ${sky-gateway.offer-uri}
@@ -38,6 +39,7 @@ spring:
                 - Path=/api/v1/offers/**,/api/v1/search,/api/v1/owner/offers/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
 
             - id: message-route
               uri: ${sky-gateway.message-uri}
@@ -45,6 +47,7 @@ spring:
                 - Path=/api/v1/messages/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
 
             - id: notify-route
               uri: ${sky-gateway.notify-uri}
@@ -52,6 +55,7 @@ spring:
                 - Path=/notifyWebsocket/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
 
             - id: booking-swagger-route
               uri: ${sky-gateway.booking-uri}
@@ -162,6 +166,7 @@ spring:
                 - Path=/api/v1/bookings/**,/api/v1/user/bookings/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
                 - TokenRelay=
 
             - id: offer-route
@@ -170,6 +175,7 @@ spring:
                 - Path=/api/v1/offers/**,/api/v1/search,/api/v1/owner/offers/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
                 - TokenRelay=
 
             - id: message-route
@@ -178,6 +184,7 @@ spring:
                 - Path=/api/v1/messages/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
                 - TokenRelay=
 
             - id: notify-route
@@ -186,6 +193,7 @@ spring:
                 - Path=/notifyWebsocket/**
               filters:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
                 - TokenRelay=
 
             - id: booking-swagger-route

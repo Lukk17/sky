@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {BehaviorSubject, Observable, take} from 'rxjs';
-import {environment} from '../../environments/environment';
+import {AppConfigService} from './app-config.service';
 import {CsrfTokenStore} from './csrf-token.store';
 
 export interface SessionInfo {
@@ -35,9 +35,9 @@ export function isSafePostLoginPath(candidate: string | null | undefined): boole
 
 @Injectable({providedIn: 'root'})
 export class SkyAuthService {
-  private sessionUrl = `${environment.apiBaseUrl}/api/session`;
-  private loginUrl = `${environment.apiBaseUrl}/oauth2/authorization/keycloak`;
-  private logoutUrl = `${environment.apiBaseUrl}/logout`;
+  private sessionUrl: string;
+  private loginUrl: string;
+  private logoutUrl: string;
 
   private currentUser = new BehaviorSubject<string | null>(null);
   private endSessionUrl: string | null = null;
@@ -45,8 +45,13 @@ export class SkyAuthService {
 
   constructor(
     private http: HttpClient,
-    private csrfTokenStore: CsrfTokenStore
+    private csrfTokenStore: CsrfTokenStore,
+    config: AppConfigService
   ) {
+    const base = `${config.get().apiBaseUrl}`;
+    this.sessionUrl = `${base}/api/session`;
+    this.loginUrl = `${base}/oauth2/authorization/keycloak`;
+    this.logoutUrl = `${base}/logout`;
     this.refreshSession();
   }
 

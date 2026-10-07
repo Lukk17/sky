@@ -135,9 +135,9 @@ The full procedure, with PowerShell and Unix variants for `openssl` and `keytool
 
 ### Option A, run everything in Docker Compose
 
-[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts Kafka, the four services, and the gateway. PostgreSQL, Keycloak, and the object store are not in the file, they must already be running from steps 1 to 3. The compose services reach all three on `host.docker.internal`, so they work against a host install or a separate compose project either way.
+[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts the whole app with one command: PostgreSQL, Keycloak (realm `sky` imported, issuer `https://keycloak.test:9443`), the floci object store, Kafka, the four services, the gateway, the containerized frontend, and a one-shot seed job that loads the demo dataset from [seed/](../../seed/). Nothing must be running beforehand except the single manual step below. The images bake the local development certificate authority into their own `cacerts`, and the compose file mounts no truststore and sets no `JAVA_TOOL_OPTIONS` override. It used to mount one, and that was wrong: `-Djavax.net.ssl.trustStore` replaces the JVM trust store instead of adding to it, so the containers trusted Keycloak and no public authority.
 
-There is no pre-step. The images bake the local development certificate authority into their own `cacerts`, and the compose file mounts no truststore and sets no `JAVA_TOOL_OPTIONS` override, so `up --build` is the whole flow. It used to mount one, and that was wrong: `-Djavax.net.ssl.trustStore` replaces the JVM trust store instead of adding to it, so the containers trusted Keycloak and no public authority.
+The single manual step: `keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows), because the browser and the edge use the issuer name `https://keycloak.test:9443` exactly. Keycloak serves that name with the leaf certificate from the neighbouring `InstallationHelper` checkout (`../InstallationHelper/local-dev/auth/certificates/localhost/`), mounted read-only into the container; override with `KEYCLOAK_CERT_FILE` and `KEYCLOAK_KEY_FILE` if your checkout lives elsewhere. Every container that dials a host-mapped name carries a `host-gateway` extra host (`keycloak.test` and `host.docker.internal`, plus `s3.localhost` where presigned URLs are involved), so the same file works on Docker Desktop and on Linux.
 
 Start the stack:
 
@@ -157,7 +157,9 @@ Stop it:
 docker compose -f config/docker/docker-compose.yaml down
 ```
 
-The gateway answers at `http://localhost:5777` with the same path prefixes the cluster ingress uses, and it is the only sky port published to the host. Ports 5552 to 5555 stay open inside the compose network, where the gateway and the services reach each other by service name, and no service port is dialable from the host. That matches the k3d cluster, which is created with `--port "5777:80@loadbalancer"` and publishes nothing else, so a path that works here works there. To call one service directly, run it with Gradle (option B below), which binds its port on the host.
+The frontend answers at `http://localhost:4200` and reads its API URLs from container environment at start: the nginx entrypoint renders `API_BASE_URL` into `/assets/config/app-config.json` on each start and Angular loads it via `APP_INITIALIZER` before boot, so the same image works against compose and k3d backends with only env changes. The gateway answers at `http://localhost:5777` with the same path prefixes the cluster ingress uses. Service ports 5552 to 5555 stay open inside the compose network only, where the gateway and the services reach each other by service name. That matches the k3d cluster, which is created with `--port "5777:80@loadbalancer"` and publishes nothing else, so a path that works here works there. To call one service directly, run it with Gradle (option B below), which binds its port on the host. Compose and k3d share host port 5777, so run only one stack at a time.
+
+Give the containers a few minutes after start: Keycloak imports the realm on first boot, the services wait on its health check, and readiness probes have a 60 second start period.
 
 Give the containers a minute after start: readiness probes have a 60 second start period, and calls before that return errors.
 
