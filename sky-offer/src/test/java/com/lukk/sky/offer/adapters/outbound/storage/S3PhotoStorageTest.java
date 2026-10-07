@@ -374,9 +374,6 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("presignedUrl_whenKeyIsNull_thenReturnsNull")
     void presignedUrl_whenKeyIsNull_thenReturnsNull() {
-        // given
-        // when
-        // then
         // when
         String url = photoStorage.presignedUrl(null);
 
@@ -388,9 +385,6 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("presignedUrl_whenKeyIsBlank_thenReturnsNull")
     void presignedUrl_whenKeyIsBlank_thenReturnsNull() {
-        // given
-        // when
-        // then
         // when
         String url = photoStorage.presignedUrl("   ");
 
@@ -434,9 +428,6 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("delete_whenKeyBelongsToAnotherOffer_thenDoesNotCallS3")
     void delete_whenKeyBelongsToAnotherOffer_thenDoesNotCallS3() {
-        // given
-        // when
-        // then
         // when
         photoStorage.delete(OFFER_ID, "offers/" + OTHER_OFFER_ID + "/victim.png");
 
@@ -447,9 +438,6 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("delete_whenKeyWasNotStoredByThisService_thenDoesNotCallS3")
     void delete_whenKeyWasNotStoredByThisService_thenDoesNotCallS3() {
-        // given
-        // when
-        // then
         // when
         photoStorage.delete(OFFER_ID, "https://images.example.com/photo.jpeg");
 
@@ -460,9 +448,6 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("delete_whenKeyIsNull_thenDoesNotCallS3")
     void delete_whenKeyIsNull_thenDoesNotCallS3() {
-        // given
-        // when
-        // then
         // when
         photoStorage.delete(OFFER_ID, null);
 
@@ -473,9 +458,6 @@ class S3PhotoStorageTest {
     @Test
     @DisplayName("delete_whenKeyIsBlank_thenDoesNotCallS3")
     void delete_whenKeyIsBlank_thenDoesNotCallS3() {
-        // given
-        // when
-        // then
         // when
         photoStorage.delete(OFFER_ID, "   ");
 

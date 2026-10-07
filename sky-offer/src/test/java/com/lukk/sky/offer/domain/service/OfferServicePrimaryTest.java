@@ -16,6 +16,7 @@ import com.lukk.sky.offer.domain.ports.outbound.OfferPhotoRepository;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
 import com.lukk.sky.offer.domain.ports.outbound.OfferSearch;
 import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,7 +60,6 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @DisplayName("OfferServicePrimary: unit tests for the core offer service business logic")
@@ -91,7 +91,7 @@ class OfferServicePrimaryTest {
     @InjectMocks
     OfferServicePrimary offerService;
 
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     void stubEmptyGallery() {
         org.mockito.Mockito.lenient()
                 .when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(

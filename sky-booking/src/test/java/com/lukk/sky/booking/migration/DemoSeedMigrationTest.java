@@ -46,9 +46,6 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("the demo seed inserts two bookings and one event for each of them")
     void migrate_whenDemoLocationIsIncluded_thenBookingsAndEventsAreSeeded() {
-        // given
-        // when
-        // then
         assertThat(count("SELECT count(*) FROM booking")).isEqualTo(2);
         assertThat(count("SELECT count(*) FROM booking_event")).isEqualTo(2);
     }
@@ -56,9 +53,6 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("every seeded event joins to a booking the same file inserted")
     void migrate_whenDemoLocationIsIncluded_thenEveryEventJoinsToASeededBooking() {
-        // given
-        // when
-        // then
         long joined = count("""
                 SELECT count(*) FROM booking_event event
                 JOIN booking seeded ON seeded.id = event.booking_id
@@ -71,9 +65,6 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("the seed payload carries the offer id of the booking it belongs to")
     void migrate_whenDemoLocationIsIncluded_thenEventPayloadMatchesItsBooking() {
-        // given
-        // when
-        // then
         long matching = count("""
                 SELECT count(*) FROM booking_event event
                 JOIN booking seeded ON seeded.id = event.booking_id
@@ -87,9 +78,6 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("re-running the seed inserts nothing because every insert is idempotent")
     void demoSeed_whenExecutedASecondTime_thenRowCountsAreUnchanged() {
-        // given
-        // when
-        // then
         execute(readDemoSeed());
 
         assertThat(count("SELECT count(*) FROM booking")).isEqualTo(2);

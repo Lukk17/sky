@@ -49,9 +49,6 @@ class CorsDedupeTest {
     @Test
     @DisplayName("proxiedGet_whenUpstreamAlsoSendsAllowOrigin_thenSingleAllowOriginValue")
     void proxiedGet_whenUpstreamAlsoSendsAllowOrigin_thenSingleAllowOriginValue() {
-        // given
-        // when
-        // then
         var result = client.get().uri("/api/v1/offers")
                 .header(HttpHeaders.ORIGIN, "http://localhost:4200")
                 .exchange()

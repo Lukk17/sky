@@ -56,9 +56,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("prometheus_whenNoCredentialsSupplied_thenRedirectsToLoginInsteadOfExposingMetrics")
     void prometheus_whenNoCredentialsSupplied_thenRedirectsToLoginInsteadOfExposingMetrics() {
-        // given
-        // when
-        // then
         client.get().uri("/actuator/prometheus")
                 .exchange()
                 .expectStatus().isFound()
@@ -70,9 +67,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("health_whenNoCredentialsSupplied_thenReturnsOk")
     void health_whenNoCredentialsSupplied_thenReturnsOk() {
-        // given
-        // when
-        // then
         client.get().uri("/actuator/health")
                 .exchange()
                 .expectStatus().isOk();
@@ -81,9 +75,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("livenessProbe_whenNoCredentialsSupplied_thenReturnsOk")
     void livenessProbe_whenNoCredentialsSupplied_thenReturnsOk() {
-        // given
-        // when
-        // then
         client.get().uri("/actuator/health/liveness")
                 .exchange()
                 .expectStatus().isOk();
@@ -92,9 +83,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("readinessProbe_whenNoCredentialsSupplied_thenReturnsOk")
     void readinessProbe_whenNoCredentialsSupplied_thenReturnsOk() {
-        // given
-        // when
-        // then
         client.get().uri("/actuator/health/readiness")
                 .exchange()
                 .expectStatus().isOk();
@@ -103,9 +91,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("info_whenNoCredentialsSupplied_thenReturnsOk")
     void info_whenNoCredentialsSupplied_thenReturnsOk() {
-        // given
-        // when
-        // then
         client.get().uri("/actuator/info")
                 .exchange()
                 .expectStatus().isOk();
@@ -114,9 +99,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("session_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect")
     void session_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect() {
-        // given
-        // when
-        // then
         client.get().uri("/api/session")
                 .exchange()
                 .expectStatus().isUnauthorized()
@@ -126,9 +108,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("anonymousSearch_whenNoCredentialsSupplied_thenPassesSecurityToRouting")
     void anonymousSearch_whenNoCredentialsSupplied_thenPassesSecurityToRouting() {
-        // given
-        // when
-        // then
         client.post().uri("/api/v1/search")
                 .exchange()
                 .expectStatus().is5xxServerError();
@@ -137,9 +116,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("proxiedRoute_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect")
     void proxiedRoute_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect() {
-        // given
-        // when
-        // then
         client.get().uri("/api/v1/bookings")
                 .exchange()
                 .expectStatus().isUnauthorized()
@@ -169,9 +145,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("logout_whenGetRequest_thenDoesNotRunOidcLogout")
     void logout_whenGetRequest_thenDoesNotRunOidcLogout() {
-        // given
-        // when
-        // then
         client.get().uri("/logout")
                 .exchange()
                 .expectStatus().isForbidden();
@@ -180,9 +153,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("logout_whenPostRequestWithoutCsrfToken_thenRejectedBeforeOidcLogoutInsteadOf404")
     void logout_whenPostRequestWithoutCsrfToken_thenRejectedBeforeOidcLogoutInsteadOf404() {
-        // given
-        // when
-        // then
         client.post().uri("/logout")
                 .exchange()
                 .expectStatus().isForbidden();
@@ -191,9 +161,6 @@ class SecurityConfigOidcProfileTest {
     @Test
     @DisplayName("routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas")
     void routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas() {
-        // given
-        // when
-        // then
         List<String> routeIds = routeLocator.getRoutes()
                 .map(Route::getId)
                 .collectList()

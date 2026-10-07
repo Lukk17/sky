@@ -31,9 +31,6 @@ class CorsSingleValueTest {
     @Test
     @DisplayName("preflight_whenOriginSupplied_thenSingleAllowOriginValue")
     void preflight_whenOriginSupplied_thenSingleAllowOriginValue() {
-        // given
-        // when
-        // then
         var result = client.options().uri("/api/v1/offers")
                 .header(HttpHeaders.ORIGIN, "http://localhost:4200")
                 .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
@@ -49,9 +46,6 @@ class CorsSingleValueTest {
     @Test
     @DisplayName("simpleGet_whenOriginSupplied_thenSingleAllowOriginValue")
     void simpleGet_whenOriginSupplied_thenSingleAllowOriginValue() {
-        // given
-        // when
-        // then
         var result = client.get().uri("/actuator/health")
                 .header(HttpHeaders.ORIGIN, "http://localhost:4200")
                 .exchange()

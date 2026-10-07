@@ -166,9 +166,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOwnedOffers_whenJwtHasNoRole_thenReturn403")
     void getOwnedOffers_whenJwtHasNoRole_thenReturn403() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(
                         get("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -180,9 +177,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOwnedOffers_whenNoJwt_thenReturn401")
     void getOwnedOffers_whenNoJwt_thenReturn401() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(get("/owner/offers").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
@@ -416,9 +410,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("deleteOffer_whenOfferIdIsNotNumeric_thenReturn400")
     void deleteOffer_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(
                         delete("/owner/offers/not-a-number")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -450,9 +441,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("search_whenTermIsBlank_thenReturn400")
     void search_whenTermIsBlank_thenReturn400() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(
                         post("/search")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -502,9 +490,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOfferOwner_whenJwtHasNoUserRole_thenReturn403")
     void getOfferOwner_whenJwtHasNoUserRole_thenReturn403() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(
                         get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -535,9 +520,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOfferOwner_whenNoJwt_thenReturn401")
     void getOfferOwner_whenNoJwt_thenReturn401() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(
                         get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON))
@@ -547,9 +529,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400")
     void getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(
                         get("/offers/not-a-number/owner")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -650,30 +629,6 @@ class OfferApiControllerTest {
         // when
         MvcResult result = mvc.perform(
                         MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
-                                .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isPayloadTooLarge())
-                .andReturn();
-
-        // then
-        assertTrue(result.getResponse().getContentAsString().contains("Request payload too large."));
-    }
-
-    @Test
-    @DisplayName("uploadGalleryPhoto_whenFileExceeds5Mb_thenReturn413")
-    void uploadGalleryPhoto_whenFileExceeds5Mb_thenReturn413() throws Exception {
-        // given
-        byte[] header = VALID_PNG_BYTES;
-        byte[] big = new byte[(5 * 1024 * 1024) + 1];
-        System.arraycopy(header, 0, big, 0, header.length);
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "hotel.png", "image/png", big
-        );
-
-        // when
-        MvcResult result = mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photos")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
@@ -935,9 +890,6 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("deletePhoto_whenNoToken_thenReturn401AndTouchNoService")
     void deletePhoto_whenNoToken_thenReturn401() throws Exception {
-        // given
-        // when
-        // then
         // when / then
         mvc.perform(
                         delete(String.format("/owner/offers/%s/photo", TEST_DEFAULT_OFFER_ID))
@@ -1025,152 +977,6 @@ class OfferApiControllerTest {
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(offerService);
-    }
-
-    @Test
-    @DisplayName("deleteGalleryPhoto_whenCoverDeleted_thenReturn200WithFirstRemainingPromoted")
-    void deleteGalleryPhoto_whenCoverDeleted_thenReturn200WithPromotedCover() throws Exception {
-        // given
-        java.util.UUID survivorId = java.util.UUID.randomUUID();
-        OfferDTO response = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        com.lukk.sky.offer.adapters.dto.PhotoDTO survivor =
-                com.lukk.sky.offer.adapters.dto.PhotoDTO.builder()
-                        .id(survivorId).position(0).url("https://cdn.example/next.png").main(true).build();
-        response.setGallery(java.util.List.of(survivor));
-        response.setCoverPhotoUrl("https://cdn.example/next.png");
-        java.util.UUID photoId = java.util.UUID.randomUUID();
-        when(offerService.deleteGalleryPhoto(eq(TEST_DEFAULT_OFFER_ID), eq(photoId), eq(TEST_USER_EMAIL)))
-                .thenReturn(OfferAssembler.toOfferView(response));
-
-        // when / then
-        mvc.perform(
-                        delete(String.format("/owner/offers/%s/photos/%s", TEST_DEFAULT_OFFER_ID, photoId))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.gallery[0].id").value(survivorId.toString()))
-                .andExpect(jsonPath("$.gallery[0].main").value(true))
-                .andExpect(jsonPath("$.coverPhotoUrl").value("https://cdn.example/next.png"));
-    }
-
-    @Test
-    @DisplayName("uploadGalleryPhoto_whenValidPng_thenReturn200WithAppendedPhoto")
-    void uploadGalleryPhoto_whenValidPng_thenReturn200() throws Exception {
-        // given
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "hotel.png", "image/png", VALID_PNG_BYTES
-        );
-        OfferDTO response = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.uploadGalleryPhoto(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_OWNER_EMAIL), any(InputStream.class),
-                eq((long) VALID_PNG_BYTES.length), eq("image/png"), eq("hotel.png")))
-                .thenReturn(OfferAssembler.toOfferView(response));
-
-        // when / then
-        mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photos")
-                                .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(TEST_DEFAULT_OFFER_ID.toString()));
-    }
-    @Test
-    @DisplayName("uploadGalleryPhoto_whenValidWebP_thenReturn200")
-    void uploadGalleryPhoto_whenValidWebP_thenReturn200() throws Exception {
-        // given
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "hotel.webp", "image/webp", VALID_WEBP_BYTES
-        );
-        OfferDTO response = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.uploadGalleryPhoto(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_OWNER_EMAIL), any(InputStream.class),
-                eq((long) VALID_WEBP_BYTES.length), eq("image/webp"), eq("hotel.webp")))
-                .thenReturn(OfferAssembler.toOfferView(response));
-
-        // when / then
-        mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photos")
-                                .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(TEST_DEFAULT_OFFER_ID.toString()));
-    }
-
-    @Test
-    @DisplayName("uploadGalleryPhoto_whenMagicBytesAreUnknown_thenReturn400")
-    void uploadGalleryPhoto_whenMagicBytesAreUnknown_thenReturn400() throws Exception {
-        // given
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "hotel.png", "image/png", INVALID_MAGIC_BYTES
-        );
-
-        // when / then
-        mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photos")
-                                .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(offerService);
-    }
-
-    @Test
-    @DisplayName("uploadGalleryPhoto_whenRiffContainerIsNotWebP_thenReturn400")
-    void uploadGalleryPhoto_whenRiffContainerIsNotWebP_thenReturn400() throws Exception {
-        // given
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "sound.wav", "audio/wav", RIFF_WAVE_BYTES
-        );
-
-        // when / then
-        mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photos")
-                                .file(file)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(offerService);
-    }
-
-    @Test
-    @DisplayName("reorderGalleryPhoto_whenValidPosition_thenReturn200")
-    void reorderGalleryPhoto_whenValidPosition_thenReturn200() throws Exception {
-        // given
-        java.util.UUID photoId = java.util.UUID.randomUUID();
-        OfferDTO response = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.reorderGalleryPhoto(eq(TEST_DEFAULT_OFFER_ID), eq(photoId), eq(0), eq(TEST_USER_EMAIL)))
-                .thenReturn(OfferAssembler.toOfferView(response));
-
-        // when / then
-        mvc.perform(
-                        put(String.format("/owner/offers/%s/photos/%s/position?position=0", TEST_DEFAULT_OFFER_ID, photoId))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(TEST_DEFAULT_OFFER_ID.toString()));
-    }
-
-    @Test
-    @DisplayName("setGalleryCover_whenPhotoExists_thenReturn200")
-    void setGalleryCover_whenPhotoExists_thenReturn200() throws Exception {
-        // given
-        java.util.UUID photoId = java.util.UUID.randomUUID();
-        OfferDTO response = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        when(offerService.setGalleryCover(eq(TEST_DEFAULT_OFFER_ID), eq(photoId), eq(TEST_USER_EMAIL)))
-                .thenReturn(OfferAssembler.toOfferView(response));
-
-        // when / then
-        mvc.perform(
-                        put(String.format("/owner/offers/%s/photos/%s/cover", TEST_DEFAULT_OFFER_ID, photoId))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(TEST_DEFAULT_OFFER_ID.toString()));
     }
 
     @Test

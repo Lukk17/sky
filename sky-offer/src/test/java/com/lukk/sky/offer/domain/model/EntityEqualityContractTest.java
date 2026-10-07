@@ -20,18 +20,12 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("Two unsaved offers are never equal, because neither has been given an identity yet")
     void equals_whenBothOffersAreUnsaved_thenTheyAreNotEqual() {
-        // given
-        // when
-        // then
         assertNotEquals(unsavedOffer(), unsavedOffer());
     }
 
     @Test
     @DisplayName("Two offers with the same id are equal even when their business fields differ")
     void equals_whenIdsMatch_thenOffersAreEqualRegardlessOfOtherFields() {
-        // given
-        // when
-        // then
         UUID id = UUID.randomUUID();
         Offer offer = unsavedOffer();
         offer.setId(id);
@@ -45,9 +39,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("Two offers with different ids are not equal even when every business field matches")
     void equals_whenIdsDiffer_thenOffersAreNotEqual() {
-        // given
-        // when
-        // then
         Offer offer = unsavedOffer();
         offer.setId(UUID.randomUUID());
         Offer otherOffer = unsavedOffer();
@@ -59,9 +50,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("A saved offer is never equal to null, so a missing row never matches a real one")
     void equals_whenOfferIsComparedWithNull_thenTheyAreNotEqual() {
-        // given
-        // when
-        // then
         Offer offer = unsavedOffer();
         offer.setId(UUID.randomUUID());
 
@@ -71,9 +59,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("An offer and an event that share one id are still not equal, because identity includes the entity type")
     void equals_whenAnOfferAndAnEventShareAnId_thenNeitherIsEqualToTheOther() {
-        // given
-        // when
-        // then
         UUID sharedId = UUID.randomUUID();
         Offer offer = unsavedOffer();
         offer.setId(sharedId);
@@ -87,9 +72,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("An offer stays findable in a HashSet after persistence assigns its id")
     void hashCode_whenIdIsAssignedAfterTheOfferJoinedASet_thenTheOfferIsStillFound() {
-        // given
-        // when
-        // then
         Offer offer = unsavedOffer();
         Set<Offer> offers = new HashSet<>();
         offers.add(offer);
@@ -102,18 +84,12 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("Two unsaved events are never equal, because neither has been given an identity yet")
     void equals_whenBothEventsAreUnsaved_thenTheyAreNotEqual() {
-        // given
-        // when
-        // then
         assertNotEquals(unsavedEvent(), unsavedEvent());
     }
 
     @Test
     @DisplayName("An unsaved event is found in a list that holds it, while an identical twin in the same list is not it")
     void equals_whenAnUnsavedEventIsLookedUpInAList_thenOnlyThatInstanceMatches() {
-        // given
-        // when
-        // then
         Event event = unsavedEvent();
         Event twin = unsavedEvent();
         List<Event> events = List.of(twin, event);
@@ -125,9 +101,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("Two events with the same id are equal even when their payloads differ")
     void equals_whenEventIdsMatch_thenEventsAreEqualRegardlessOfOtherFields() {
-        // given
-        // when
-        // then
         UUID id = UUID.randomUUID();
         Event event = unsavedEvent();
         event.setId(id);
@@ -141,9 +114,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("Two events with different ids are not equal even when every business field matches")
     void equals_whenEventIdsDiffer_thenEventsAreNotEqual() {
-        // given
-        // when
-        // then
         Event event = unsavedEvent();
         Event otherEvent = unsavedEvent();
         otherEvent.setOfferId(event.getOfferId());
@@ -157,9 +127,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("A saved event is never equal to null, so a missing row never matches a real one")
     void equals_whenEventIsComparedWithNull_thenTheyAreNotEqual() {
-        // given
-        // when
-        // then
         Event event = unsavedEvent();
         event.setId(UUID.randomUUID());
 
@@ -169,9 +136,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("An event stays findable in a HashSet after persistence assigns its id")
     void hashCode_whenIdIsAssignedAfterTheEventJoinedASet_thenTheEventIsStillFound() {
-        // given
-        // when
-        // then
         Event event = unsavedEvent();
         Set<Event> events = new HashSet<>();
         events.add(event);
@@ -184,9 +148,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("A photo is equal to itself, never equal to null, and never equal to another entity type")
     void equals_whenPhotoComparedWithItselfNullAndOtherType_thenContractHolds() {
-        // given
-        // when
-        // then
         OfferPhoto photo = OfferPhoto.builder().id(UUID.randomUUID()).position(0).objectKey("k").build();
 
         assertEquals(photo, photo);
@@ -197,9 +158,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("Two photos share identity only through a non-null matching id")
     void equals_whenPhotoIdsMatchDifferOrAreMissing_thenContractHolds() {
-        // given
-        // when
-        // then
         UUID id = UUID.randomUUID();
         OfferPhoto photo = OfferPhoto.builder().id(id).position(0).objectKey("k").build();
         OfferPhoto same = OfferPhoto.builder().id(id).position(3).objectKey("other").build();
@@ -213,9 +171,6 @@ class EntityEqualityContractTest {
     @Test
     @DisplayName("A photo hash never moves when its position changes")
     void hashCode_whenPhotoPositionChanges_thenPhotoIsStillFound() {
-        // given
-        // when
-        // then
         OfferPhoto photo = OfferPhoto.builder().id(UUID.randomUUID()).position(0).objectKey("k").build();
         Set<OfferPhoto> photos = new HashSet<>();
         photos.add(photo);

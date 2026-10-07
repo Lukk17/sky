@@ -32,17 +32,11 @@ class GalleryReorderIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("reorderGalleryPhoto_whenRunTwice_thenNoUniqueViolation")
     void reorderGalleryPhoto_whenRunTwice_thenNoUniqueViolation() {
-        // given
-        // when
-        // then
         Offer unsaved = OfferAssembler.getPopulatedOffer(UUID.randomUUID());
         unsaved.setId(null);
         Offer offer = offerRepository.saveAndFlush(unsaved);
         UUID offerId = offer.getId();
         for (int i = 0; i < 3; i++) {
-        // given
-        // when
-        // then
             Offer ref = offerRepository.getReferenceById(offerId);
             offerPhotoRepository.saveAndFlush(OfferPhoto.builder().offer(ref).position(i)
                     .objectKey("offers/" + offerId + "/k" + i + ".png").main(i == 0).build());

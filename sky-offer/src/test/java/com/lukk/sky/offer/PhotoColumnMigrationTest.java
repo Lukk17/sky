@@ -57,9 +57,6 @@ class PhotoColumnMigrationTest {
     @Test
     @DisplayName("A key inside the offer's own prefix is adopted as the server-owned object key")
     void migration_whenPhotoPathIsAKeyInTheOffersOwnPrefix_thenItBecomesThePhotoObjectKey() throws SQLException {
-        // given
-        // when
-        // then
         assertEquals(ADOPTABLE_KEY, photoObjectKeyOf(ADOPTABLE_KEY_OFFER));
         assertNull(externalPhotoUrlOf(ADOPTABLE_KEY_OFFER));
     }
@@ -67,9 +64,6 @@ class PhotoColumnMigrationTest {
     @Test
     @DisplayName("An arbitrary string a client typed is dropped rather than carried into either column")
     void migration_whenPhotoPathIsAnArbitraryString_thenBothPhotoColumnsEndUpNull() throws SQLException {
-        // given
-        // when
-        // then
         assertNull(photoObjectKeyOf(ARBITRARY_STRING_OFFER));
         assertNull(externalPhotoUrlOf(ARBITRARY_STRING_OFFER));
     }
@@ -77,9 +71,6 @@ class PhotoColumnMigrationTest {
     @Test
     @DisplayName("An absolute URL survives as the external photo address")
     void migration_whenPhotoPathIsAnAbsoluteUrl_thenItSurvivesAsTheExternalAddress() throws SQLException {
-        // given
-        // when
-        // then
         assertNull(photoObjectKeyOf(EXTERNAL_URL_OFFER));
         assertEquals(EXTERNAL_URL, externalPhotoUrlOf(EXTERNAL_URL_OFFER));
     }
@@ -87,9 +78,6 @@ class PhotoColumnMigrationTest {
     @Test
     @DisplayName("A key under another offer's prefix is never adopted, because the storage guard would refuse it")
     void migration_whenPhotoPathIsAnotherOffersKey_thenItIsNotAdopted() throws SQLException {
-        // given
-        // when
-        // then
         assertNull(photoObjectKeyOf(FOREIGN_KEY_OFFER));
         assertNull(externalPhotoUrlOf(FOREIGN_KEY_OFFER));
     }
@@ -97,9 +85,6 @@ class PhotoColumnMigrationTest {
     @Test
     @DisplayName("A key from before the per-offer prefix is never adopted, because the storage guard would refuse it")
     void migration_whenPhotoPathIsAKeyWithoutTheOfferSegment_thenItIsNotAdopted() throws SQLException {
-        // given
-        // when
-        // then
         assertNull(photoObjectKeyOf(LEGACY_KEY_OFFER));
         assertNull(externalPhotoUrlOf(LEGACY_KEY_OFFER));
     }
@@ -107,9 +92,6 @@ class PhotoColumnMigrationTest {
     @Test
     @DisplayName("The photo_path column is gone, so nothing can read or write it again")
     void migration_whenApplied_thenThePhotoPathColumnNoLongerExists() throws SQLException {
-        // given
-        // when
-        // then
         try (Connection connection = connect();
              Statement statement = connection.createStatement();
              ResultSet columns = statement.executeQuery(

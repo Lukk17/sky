@@ -21,11 +21,14 @@ class OfferDtoMapperTest {
     @Test
     @DisplayName("toDto_whenGalleryIsNull_thenReturnsEmptyGallery")
     void toDto_whenGalleryIsNull_thenReturnsEmptyGallery() {
+        // given
         OfferView view = new OfferView(ID, "H", "D", "C", BigDecimal.TEN,
                 "owner@sky.dev", 2L, "City", "Country", null, null, null, null);
 
+        // when
         OfferDTO dto = OfferDtoMapper.toDto(view);
 
+        // then
         assertEquals(ID, dto.getId());
         assertTrue(dto.getGallery().isEmpty());
     }
@@ -33,14 +36,17 @@ class OfferDtoMapperTest {
     @Test
     @DisplayName("toDto_whenGalleryHasPhotos_thenMapsPositionsUrlsAndMainFlags")
     void toDto_whenGalleryHasPhotos_thenMapsPositionsUrlsAndMainFlags() {
+        // given
         UUID photoId = UUID.randomUUID();
         OfferView view = new OfferView(ID, "H", "D", "C", BigDecimal.TEN,
                 "owner@sky.dev", 2L, "City", "Country", null, "https://cdn.example/cover.png",
                 List.of(new GalleryPhotoView(photoId, 0, "https://cdn.example/cover.png", true)),
                 "https://cdn.example/cover.png");
 
+        // when
         OfferDTO dto = OfferDtoMapper.toDto(view);
 
+        // then
         assertEquals(1, dto.getGallery().size());
         assertEquals(photoId, dto.getGallery().get(0).getId());
         assertEquals(0, dto.getGallery().get(0).getPosition());

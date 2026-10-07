@@ -121,9 +121,6 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("outageMapping_keepsItsRetryAfterHeader")
     void outageMapping_keepsItsRetryAfterHeader() throws Exception {
-        // given
-        // when
-        // then
         doThrow(new OfferServiceUnavailableException("sky-offer is unreachable."))
                 .when(bookingService).removeBooking(eq(BOOKING_ID), any());
 
@@ -135,9 +132,6 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody")
     void unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody() throws Exception {
-        // given
-        // when
-        // then
         doThrow(new IllegalStateException("offerOwner was null"))
                 .when(bookingService).removeBooking(eq(BOOKING_ID), any());
 
@@ -156,9 +150,6 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage")
     void unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage() throws Exception {
-        // given
-        // when
-        // then
         doThrow(new IllegalStateException("offerOwner was null"))
                 .when(bookingService).removeBooking(eq(BOOKING_ID), any());
 

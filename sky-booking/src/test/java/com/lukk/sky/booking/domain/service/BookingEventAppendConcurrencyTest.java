@@ -205,9 +205,6 @@ class BookingEventAppendConcurrencyTest {
         @Bean
         @ServiceConnection
         PostgreSQLContainer unsharedPostgresContainer() {
-        // given
-        // when
-        // then
             // Labelled for pruneSkyTestcontainers cleanup.
             return new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true").withReuse(false);
         }

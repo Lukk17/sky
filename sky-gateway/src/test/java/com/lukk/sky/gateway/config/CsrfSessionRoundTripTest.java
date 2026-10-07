@@ -34,9 +34,6 @@ class CsrfSessionRoundTripTest {
     @Test
     @DisplayName("tokenIssuedOnGet_thenValidatesOnPost")
     void tokenIssuedOnGet_thenValidatesOnPost() {
-        // given
-        // when
-        // then
         var session = new MockWebSession();
         var get = MockServerWebExchange.builder(MockServerHttpRequest.get("/api/session").build())
                 .session(session)

@@ -58,9 +58,6 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("addOffer declares 201 and no 200, because it never returns 200")
     void addOffer_declaresOnly201() {
-        // given
-        // when
-        // then
         JsonNode responses = responsesOf("addOffer");
 
         assertThat(responses.has("201")).isTrue();
@@ -72,9 +69,6 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("deleteOffer declares 204 and no 200, because it never returns 200")
     void deleteOffer_declaresOnly204() {
-        // given
-        // when
-        // then
         JsonNode responses = responsesOf("deleteOffer");
 
         assertThat(responses.has("204")).isTrue();
@@ -86,9 +80,6 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("a 401 is declared without a body, because Spring Security answers with headers only")
     void unauthorized_isDeclaredWithoutContent() {
-        // given
-        // when
-        // then
         JsonNode unauthorized = responsesOf("addOffer").get("401");
 
         assertThat(unauthorized).isNotNull();
@@ -100,9 +91,6 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("a 400 is declared as application/problem+json, which is what the handlers produce")
     void badRequest_isDeclaredAsProblemJson() {
-        // given
-        // when
-        // then
         JsonNode badRequest = responsesOf("addOffer").get("400");
 
         assertThat(badRequest.get("content").has("application/problem+json")).isTrue();
@@ -111,9 +99,6 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("every secured offer operation declares 403, because the role check can deny it")
     void securedOperations_declare403() {
-        // given
-        // when
-        // then
         assertThat(responsesOf("addOffer").has("403")).isTrue();
         assertThat(responsesOf("edit").has("403")).isTrue();
         assertThat(responsesOf("deleteOffer").has("403")).isTrue();
@@ -125,9 +110,6 @@ class OfferApiDocumentTest {
     @DisplayName("the public browse and search operations declare 401 but not 403, because an "
             + "unverifiable token reaches them too while no realm role is ever checked")
     void publicOperations_declare401ButNot403() {
-        // given
-        // when
-        // then
         JsonNode browse = responsesOf("getAllOffers");
         JsonNode search = responsesOf("search");
 
@@ -140,9 +122,6 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("the public browse and search operations stay anonymous, declaring an empty security list")
     void publicOperations_declareEmptySecurity() {
-        // given
-        // when
-        // then
         assertThat(operationOf("getAllOffers").get("security")).isEmpty();
         assertThat(operationOf("search").get("security")).isEmpty();
     }
@@ -150,17 +129,8 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("every operation declares a 401 carrying the bearer challenge header")
     void everyOperation_declares401WithChallengeHeader() {
-        // given
-        // when
-        // then
         for (JsonNode pathItem : document.get("paths")) {
-        // given
-        // when
-        // then
             for (JsonNode operation : pathItem) {
-        // given
-        // when
-        // then
                 String operationId = operation.path("operationId").asString();
                 JsonNode unauthorized = operation.get("responses").get("401");
 
@@ -178,9 +148,6 @@ class OfferApiDocumentTest {
     @DisplayName("search states the blank and length rules in its operation description, which is the only "
             + "place a caller can read them")
     void search_describesWhatMakesATermInvalid() {
-        // given
-        // when
-        // then
         String description = operationOf("search").path("description").asString();
 
         assertThat(description)
@@ -193,9 +160,6 @@ class OfferApiDocumentTest {
     @DisplayName("the 400 on search keeps the shared description, because a class-level entry for a status "
             + "wins over a method-level one")
     void searchBadRequest_keepsTheSharedDescription() {
-        // given
-        // when
-        // then
         JsonNode badRequest = responsesOf("search").get("400");
 
         assertThat(badRequest.path("description").asString())
@@ -205,9 +169,6 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("getOfferOwner declares 401 and 403, because it needs a token with a user realm role")
     void getOfferOwner_declares401And403() {
-        // given
-        // when
-        // then
         JsonNode responses = responsesOf("getOfferOwner");
 
         assertThat(responses.has("401")).as("owner lookup declares %s", responses.propertyNames()).isTrue();
@@ -218,9 +179,6 @@ class OfferApiDocumentTest {
     @DisplayName("the published servers name every address that serves these paths, gateway first, "
             + "and never the port the documentation build binds")
     void servers_nameEveryAddressThesePathsAreServedOn() {
-        // given
-        // when
-        // then
         JsonNode servers = document.get("servers");
 
         assertThat(servers).isNotNull();

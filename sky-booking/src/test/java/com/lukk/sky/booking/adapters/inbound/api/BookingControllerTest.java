@@ -118,9 +118,6 @@ class BookingControllerTest {
     @Test
     @DisplayName("getBookings returns 403 Forbidden when the JWT carries no user role")
     void getBookings_whenJwtHasNoRole_thenReturn403() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(get("/user/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(jwtWithoutRole()))
@@ -130,9 +127,6 @@ class BookingControllerTest {
     @Test
     @DisplayName("getBookings returns 401 Unauthorized when no JWT is supplied")
     void getBookings_whenNoJwt_thenReturn401() throws Exception {
-        // given
-        // when
-        // then
         mvc.perform(get("/user/bookings")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
@@ -183,9 +177,6 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 200 OK when the booking exists and a valid JWT is present")
     void deleteBooking_whenBookingExistsAndJwtIsPresent_thenReturnOk() throws Exception {
-        // given
-        // when
-        // then
         // when / then
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -230,9 +221,6 @@ class BookingControllerTest {
     @Test
     @DisplayName("deleteBooking returns 401 Unauthorized when no JWT is supplied")
     void deleteBooking_whenNoJwt_thenReturn401() throws Exception {
-        // given
-        // when
-        // then
         // when / then
         mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
                         .contentType(MediaType.APPLICATION_JSON))

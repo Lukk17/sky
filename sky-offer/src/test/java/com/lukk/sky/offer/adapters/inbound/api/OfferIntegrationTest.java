@@ -408,9 +408,6 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/offers with an unknown sort property returns 400 naming it, not a 500")
     void getAllOffers_whenSortPropertyIsUnknown_thenReturn400() {
-        // given
-        // when
-        // then
         // when
         ResponseEntity<String> actual = restTemplate.exchange(
                 "/api/v1/offers?sort=hotelNamee",

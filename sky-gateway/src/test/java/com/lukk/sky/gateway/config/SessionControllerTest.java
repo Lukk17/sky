@@ -46,9 +46,6 @@ class SessionControllerTest {
     @Test
     @DisplayName("session_withOidcUser_thenReturnsEmailAndCsrfToken")
     void session_withOidcUser_thenReturnsEmailAndCsrfToken() {
-        // given
-        // when
-        // then
         var user = new DefaultOidcUser(List.of(), idToken("user@sky.dev"));
 
         assertThat(controller
@@ -62,9 +59,6 @@ class SessionControllerTest {
     @Test
     @DisplayName("session_withPlainPrincipal_thenReturnsName")
     void session_withPlainPrincipal_thenReturnsName() {
-        // given
-        // when
-        // then
         assertThat(controller
                 .session(Mono.just(authentication("plain-user")), MockServerWebExchange.from(
                         org.springframework.mock.http.server.reactive.MockServerHttpRequest.get("/api/session")))
@@ -76,9 +70,6 @@ class SessionControllerTest {
     @Test
     @DisplayName("session_withNoPrincipal_thenUnauthorized")
     void session_withNoPrincipal_thenUnauthorized() {
-        // given
-        // when
-        // then
         assertThatThrownBy(() -> controller
                 .session(Mono.empty(), MockServerWebExchange.from(
                         org.springframework.mock.http.server.reactive.MockServerHttpRequest.get("/api/session")))
