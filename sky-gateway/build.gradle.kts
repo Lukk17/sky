@@ -38,6 +38,8 @@ dependencies {
     // a service-side concern.
     implementation(libs.spring.boot.starter.oauth2.resource.server)
 
+    // springdoc annotations for SessionController docs only, kept off the WebFlux runtime.
+    compileOnly(libs.springdoc.openapi.starter.webmvc.ui)
     // Lombok for config properties
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

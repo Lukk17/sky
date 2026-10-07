@@ -4,14 +4,15 @@ import com.lukk.sky.offer.domain.exception.GalleryPhotoNotFoundException;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.model.OfferPhoto;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class GalleryOrdering {
-
-    private GalleryOrdering() {
-    }
 
     static List<OfferPhoto> moved(List<OfferPhoto> photos, UUID photoId, int newPosition) {
         if (newPosition < 0 || newPosition >= photos.size()) {

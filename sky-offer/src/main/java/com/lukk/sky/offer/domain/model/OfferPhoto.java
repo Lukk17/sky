@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.Hibernate;
 
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class OfferPhoto {
     private Offer offer;
 
     @Column(nullable = false)
+    @Setter
     private int position;
 
     @Column(name = "object_key", length = 512)
@@ -45,30 +47,18 @@ public class OfferPhoto {
 
     @Column(name = "main", nullable = false)
     @Builder.Default
+    @Setter
     private boolean main = false;
-
-    public void setPosition(int position) {
-        this.position = position;
-    }
-
-    public void setMain(boolean main) {
-        this.main = main;
-    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null) {
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) {
             return false;
         }
-        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
-            return false;
-        }
-
         OfferPhoto other = (OfferPhoto) o;
-
         return id != null && id.equals(other.getId());
     }
 

@@ -71,7 +71,7 @@ public class OriginCheckWebFilter implements WebFilter {
         String host = hostHeader != null ? hostHeader.getHostString().toLowerCase(java.util.Locale.ROOT)
                 : (uri.getHost() == null ? "" : uri.getHost().toLowerCase(java.util.Locale.ROOT));
         int port = hostHeader != null ? hostHeader.getPort() : uri.getPort();
-        return scheme + "://" + host + (port == -1 ? "" : ":" + port);
+        return normalize(scheme, host, port);
     }
 
     private static String normalizeOrigin(String uri) {
@@ -79,10 +79,13 @@ public class OriginCheckWebFilter implements WebFilter {
             URI parsed = URI.create(uri);
             String scheme = parsed.getScheme() == null ? "" : parsed.getScheme().toLowerCase(java.util.Locale.ROOT);
             String host = parsed.getHost() == null ? "" : parsed.getHost().toLowerCase(java.util.Locale.ROOT);
-            int port = parsed.getPort();
-            return scheme + "://" + host + (port == -1 ? "" : ":" + port);
+            return normalize(scheme, host, parsed.getPort());
         } catch (IllegalArgumentException e) {
             return "";
         }
+    }
+
+    private static String normalize(String scheme, String host, int port) {
+        return scheme + "://" + host + (port == -1 ? "" : ":" + port);
     }
 }

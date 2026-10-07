@@ -1,5 +1,8 @@
 package com.lukk.sky.gateway.config;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -35,6 +38,11 @@ public class SessionController {
     @Value("${sky-gateway.allowed-frontend-urls:http://localhost:4200}")
     private List<String> allowedFrontendUrls;
 
+    @Operation(summary = "Get gateway session owner")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Session owner"),
+            @ApiResponse(responseCode = "401", description = "No session")
+    })
     @GetMapping("/api/session")
     public Mono<Map<String, String>> session(Mono<Authentication> authentication, ServerWebExchange exchange) {
         Mono<CsrfToken> csrfToken = exchange.getAttribute(CsrfToken.class.getName());
