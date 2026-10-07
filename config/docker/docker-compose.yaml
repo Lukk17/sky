@@ -315,7 +315,7 @@ services:
       KEYCLOAK_AUTH_URI: ${KEYCLOAK_AUTH_URI:-http://localhost:5777/auth/realms/sky/protocol/openid-connect/auth}
       KEYCLOAK_TOKEN_URI: ${KEYCLOAK_TOKEN_URI:-http://keycloak:8080/auth/realms/sky/protocol/openid-connect/token}
       KEYCLOAK_USER_INFO_URI: ${KEYCLOAK_USER_INFO_URI:-http://keycloak:8080/auth/realms/sky/protocol/openid-connect/userinfo}
-      KEYCLOAK_END_SESSION_URI: ${KEYCLOAK_END_SESSION_URI:-http://keycloak:8080/auth/realms/sky/protocol/openid-connect/logout}
+      KEYCLOAK_END_SESSION_URI: ${KEYCLOAK_END_SESSION_URI:-http://localhost:5777/auth/realms/sky/protocol/openid-connect/logout}
       KEYCLOAK_URI: http://keycloak:8080
       S3_URI: http://floci:4566
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-sky-backend}
