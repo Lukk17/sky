@@ -2,6 +2,7 @@ package com.lukk.sky.gateway.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -35,7 +36,7 @@ public class OriginCheckWebFilter implements WebFilter {
     private final String frontendOrigin;
 
     public OriginCheckWebFilter(
-            @org.springframework.beans.factory.annotation.Value("${sky-gateway.frontend-url:http://localhost:4200}")
+            @Value("${sky-gateway.frontend-url:http://localhost:4200}")
             String frontendUrl) {
         this.frontendOrigin = SecurityConfig.validatedFrontendUrl(frontendUrl).toLowerCase(java.util.Locale.ROOT);
     }
