@@ -1,5 +1,6 @@
 package com.lukk.sky.gateway.config;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,11 @@ class OriginCheckWebFilterTest {
     }
 
     @Test
+    @DisplayName("post_withForeignOrigin_thenForbiddenAndChainSkipped")
     void post_withForeignOrigin_thenForbiddenAndChainSkipped() {
+        // given
+        // when
+        // then
         var exchange = exchange(HttpMethod.POST, "https://evil.test", null);
         var called = new AtomicBoolean(false);
 
@@ -47,7 +52,11 @@ class OriginCheckWebFilterTest {
     }
 
     @Test
+    @DisplayName("post_withMatchingOrigin_thenChainCalled")
     void post_withMatchingOrigin_thenChainCalled() {
+        // given
+        // when
+        // then
         var exchange = exchange(HttpMethod.POST, "http://gateway:5777", null);
         var called = new AtomicBoolean(false);
 
@@ -57,7 +66,11 @@ class OriginCheckWebFilterTest {
     }
 
     @Test
+    @DisplayName("post_withForeignRefererAndNoOrigin_thenForbidden")
     void post_withForeignRefererAndNoOrigin_thenForbidden() {
+        // given
+        // when
+        // then
         var exchange = exchange(HttpMethod.POST, null, "https://evil.test/page");
         var called = new AtomicBoolean(false);
 
@@ -68,7 +81,11 @@ class OriginCheckWebFilterTest {
     }
 
     @Test
+    @DisplayName("post_withNoOriginOrReferer_thenChainCalled")
     void post_withNoOriginOrReferer_thenChainCalled() {
+        // given
+        // when
+        // then
         var exchange = exchange(HttpMethod.POST, null, null);
         var called = new AtomicBoolean(false);
 
@@ -78,7 +95,11 @@ class OriginCheckWebFilterTest {
     }
 
     @Test
+    @DisplayName("get_withForeignOrigin_thenChainCalled")
     void get_withForeignOrigin_thenChainCalled() {
+        // given
+        // when
+        // then
         var exchange = exchange(HttpMethod.GET, "https://evil.test", null);
         var called = new AtomicBoolean(false);
 

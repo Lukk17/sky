@@ -13,6 +13,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("notFound_answers404WithTheSharedDetail")
     void notFound_answers404WithTheSharedDetail() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.notFound(new IllegalStateException("gone"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(404);
@@ -22,6 +25,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("forbidden_answers403WithTheSharedDetail")
     void forbidden_answers403WithTheSharedDetail() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.forbidden(new IllegalStateException("denied"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(403);
@@ -31,6 +37,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("badRequest_answers400WithTheSharedDetail")
     void badRequest_answers400WithTheSharedDetail() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.badRequest(new IllegalStateException("bad"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(400);
@@ -40,6 +49,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("badGateway_answers502WithTheSharedDetail")
     void badGateway_answers502WithTheSharedDetail() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.badGateway(new IllegalStateException("upstream"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(502);
@@ -49,6 +61,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("payloadTooLarge_answers413WithTheSharedDetail")
     void payloadTooLarge_answers413WithTheSharedDetail() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.payloadTooLarge(new IllegalStateException("big"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(413);
@@ -58,6 +73,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("unavailableWithRetry_answers503WithRetryAfterTen")
     void unavailableWithRetry_answers503WithRetryAfterTen() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.unavailableWithRetry(new IllegalStateException("down"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(503);
@@ -69,6 +87,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("conflict_answers409WithTheSharedDetail")
     void conflict_answers409WithTheSharedDetail() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.conflict(new IllegalStateException("race"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(409);
@@ -78,6 +99,9 @@ class ProblemDetailFactoryTest {
     @Test
     @DisplayName("conflictWithDetail_answers409WithTheSharedDetail")
     void conflictWithDetail_answers409WithTheSharedDetail() {
+        // given
+        // when
+        // then
         ErrorResponse response = ProblemDetailFactory.conflictWithDetail(
                 new IllegalStateException("race"), "a caller-supplied sentence");
 

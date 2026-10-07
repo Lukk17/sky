@@ -313,100 +313,6 @@ public class OfferApiController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Upload a photo to the offer gallery (owner only)",
-            description = "Appends a photo at the end of the gallery, which holds at most 10 photos. "
-                    + "A concurrent cover change is answered with 409.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Photo appended to gallery",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "404", description = "Offer not found",
-                    content = @Content),
-            @ApiResponse(responseCode = "413",
-                    description = "Content Too Large: gallery holds at most 10 photos.",
-                    content = @Content(mediaType = "application/problem+json",
-                            schema = @Schema(implementation = ProblemDetail.class)))
-    })
-    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
-    @ApiSecuredErrorResponses
-    @ApiConflictResponse
-    @ApiUnsupportedMediaTypeResponse
-    @ApiDependencyBadGatewayResponse
-    @ApiDependencyUnavailableResponse
-    @IsUser
-    @PostMapping(value = "/owner/offers/{offerId}/photos", consumes = "multipart/form-data")
-    public ResponseEntity<OfferDTO> uploadGalleryPhoto(
-            @PathVariable UUID offerId,
-            @RequestParam("file") MultipartFile file) throws IOException {
-        if (file.isEmpty()) {
-            throw new OfferException("Uploaded file must not be empty.");
-        }
-        rejectWhenTooLarge(file);
-        String validatedContentType = detectContentType(file);
-        String ownerEmail = SecurityUtils.currentUserEmail();
-        InputStream inputStream = file.getInputStream();
-        OfferDTO updated = toDto(offerService.uploadGalleryPhoto(offerId, ownerEmail, inputStream,
-                file.getSize(), validatedContentType, file.getOriginalFilename()));
-        return ResponseEntity.ok(updated);
-    }
-
-    @Operation(summary = "Delete a gallery photo (owner only)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Photo removed",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "404", description = "Offer or photo not found",
-                    content = @Content)
-    })
-    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
-    @ApiSecuredErrorResponses
-    @IsUser
-    @DeleteMapping("/owner/offers/{offerId}/photos/{photoId}")
-    public ResponseEntity<OfferDTO> deleteGalleryPhoto(
-            @PathVariable UUID offerId, @PathVariable UUID photoId) {
-        String ownerEmail = SecurityUtils.currentUserEmail();
-        return ResponseEntity.ok(toDto(offerService.deleteGalleryPhoto(offerId, photoId, ownerEmail)));
-    }
-
-    @Operation(summary = "Reorder a gallery photo (owner only)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Gallery reordered",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "400", description = "Invalid position",
-                    content = @Content),
-            @ApiResponse(responseCode = "404", description = "Offer or photo not found",
-                    content = @Content)
-    })
-    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
-    @ApiSecuredErrorResponses
-    @IsUser
-    @PutMapping("/owner/offers/{offerId}/photos/{photoId}/position")
-    public ResponseEntity<OfferDTO> reorderGalleryPhoto(
-            @PathVariable UUID offerId, @PathVariable UUID photoId,
-            @RequestParam("position") int position) {
-        String ownerEmail = SecurityUtils.currentUserEmail();
-        return ResponseEntity.ok(toDto(offerService.reorderGalleryPhoto(offerId, photoId, position, ownerEmail)));
-    }
-
-    @Operation(summary = "Set a gallery photo as cover (owner only)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cover updated",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = OfferDTO.class))}),
-            @ApiResponse(responseCode = "404", description = "Offer or photo not found",
-                    content = @Content)
-    })
-    @Tag(name = OWNER_OFFERS_TAG, description = OWNER_OFFERS_TAG_DESCRIPTION)
-    @ApiSecuredErrorResponses
-    @IsUser
-    @PutMapping("/owner/offers/{offerId}/photos/{photoId}/cover")
-    public ResponseEntity<OfferDTO> setGalleryCover(
-            @PathVariable UUID offerId, @PathVariable UUID photoId) {
-        String ownerEmail = SecurityUtils.currentUserEmail();
-        return ResponseEntity.ok(toDto(offerService.setGalleryCover(offerId, photoId, ownerEmail)));
-    }
-
     private static CreateOfferCommand toCreateCommand(OfferDTO offer) {
         return new CreateOfferCommand(offer.getHotelName(), offer.getDescription(), offer.getComment(),
                 offer.getPrice(), offer.getOwnerEmail(), offer.getRoomCapacity(),
@@ -419,30 +325,8 @@ public class OfferApiController {
                 offer.getRoomCapacity(), offer.getExternalPhotoUrl());
     }
 
-    private static OfferDTO toDto(OfferView view) {
-        List<PhotoDTO> gallery = view.gallery() == null ? List.of() : view.gallery().stream()
-                .map(OfferApiController::toPhotoDto)
-                .toList();
-        OfferDTO dto = OfferDTO.builder()
-                .id(view.id())
-                .hotelName(view.hotelName())
-                .description(view.description())
-                .comment(view.comment())
-                .price(view.price())
-                .ownerEmail(view.ownerEmail())
-                .roomCapacity(view.roomCapacity())
-                .city(view.city())
-                .country(view.country())
-                .externalPhotoUrl(view.externalPhotoUrl())
-                .photoUrl(view.photoUrl())
-                .gallery(new java.util.ArrayList<>(gallery))
-                .coverPhotoUrl(view.coverPhotoUrl())
-                .build();
-        return dto;
-    }
-
-    private static PhotoDTO toPhotoDto(GalleryPhotoView photo) {
-        return PhotoDTO.builder().id(photo.id()).position(photo.position()).url(photo.url()).main(photo.main()).build();
+    private static OfferDTO toDto(com.lukk.sky.offer.domain.ports.inbound.OfferView view) {
+        return OfferDtoMapper.toDto(view);
     }
 
     private static void rejectWhenTooLarge(MultipartFile file) {

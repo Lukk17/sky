@@ -41,6 +41,9 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("seeds three demo messages exchanged between the demo owner and the demo user")
     void demoSeed_whenFlywayRunsWithTheDemoLocation_thenThreeMessagesArePersisted() {
+        // given
+        // when
+        // then
         // when
         List<Message> messages = messageRepository.findAll();
 
@@ -53,6 +56,9 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("addresses two seeded messages to the demo owner and one to the demo user")
     void demoSeed_whenFlywayRunsWithTheDemoLocation_thenMessagesAreAddressedToTheDemoAccounts() {
+        // given
+        // when
+        // then
         // when
         List<Message> messages = messageRepository.findAll();
 
@@ -65,6 +71,9 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("gives every seeded message a distinct identifier, so a re-run cannot duplicate a row")
     void demoSeed_whenFlywayRunsWithTheDemoLocation_thenEveryMessageHasADistinctId() {
+        // given
+        // when
+        // then
         // when
         List<Message> messages = messageRepository.findAll();
 

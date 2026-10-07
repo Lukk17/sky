@@ -20,6 +20,9 @@ class GatewayUserWebFilterTest {
     @Test
     @DisplayName("strips client-set header and sets session principal name")
     void filter_whenNotifyPathWithSession_thenStripsAndSets() {
+        // given
+        // when
+        // then
         var request = MockServerHttpRequest.get("/notifyWebsocket")
                 .header(GatewayUserWebFilter.GATEWAY_USER_HEADER, "attacker@evil.test")
                 .build();
@@ -42,6 +45,9 @@ class GatewayUserWebFilterTest {
     @Test
     @DisplayName("leaves non-notify paths untouched including client header")
     void filter_whenOtherPath_thenUntouched() {
+        // given
+        // when
+        // then
         var request = MockServerHttpRequest.get("/api/v1/offers")
                 .header(GatewayUserWebFilter.GATEWAY_USER_HEADER, "attacker@evil.test")
                 .build();

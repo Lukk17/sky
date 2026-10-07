@@ -6,10 +6,8 @@ import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.model.OfferPhoto;
-import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import com.lukk.sky.offer.domain.ports.outbound.OfferPhotoRepository;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
-import com.lukk.sky.offer.domain.ports.outbound.OfferSearch;
 import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,19 +44,10 @@ class OfferGalleryServiceTest {
     OfferPhotoRepository offerPhotoRepository;
 
     @Mock
-    OfferSearch offerSearch;
-
-    @Mock
-    EventSourceService eventSourceService;
-
-    @Mock
     PhotoStorage photoStorage;
 
-    @Mock
-    OfferNotificationService offerNotificationService;
-
     @InjectMocks
-    OfferServicePrimary offerService;
+    OfferGalleryService offerService;
 
     private Offer offer;
     private UUID offerId;
@@ -74,7 +63,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("uploadGalleryPhoto_whenBelowCap_thenAppendsAtEnd")
     void uploadGalleryPhoto_whenBelowCap_thenAppendsAtEnd() {
+        // given
+        // when
+        // then
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
 
@@ -86,9 +79,16 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("uploadGalleryPhoto_whenAtCap_thenThrows413")
     void uploadGalleryPhoto_whenAtCap_thenThrows413() {
+        // given
+        // when
+        // then
         List<OfferPhoto> full = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
+        // given
+        // when
+        // then
             full.add(OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(i)
                     .objectKey("k" + i).build());
         }
@@ -99,7 +99,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("reorderGalleryPhoto_whenMovingLastToFirst_thenCoverSwaps")
     void reorderGalleryPhoto_whenMovingLastToFirst_thenCoverSwaps() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
@@ -119,7 +123,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("reorderGalleryPhoto_whenPhotoUnknown_thenGalleryUnchanged")
     void reorderGalleryPhoto_whenPhotoUnknown_thenGalleryUnchanged() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
                 .thenReturn(new ArrayList<>(List.of(p0)));
@@ -129,7 +137,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("reorderGalleryPhoto_whenPositionOutOfRange_thenRejected")
     void reorderGalleryPhoto_whenPositionOutOfRange_thenRejected() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
                 .thenReturn(new ArrayList<>(List.of(p0)));
@@ -139,7 +151,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("reorderGalleryPhoto_whenMovingFirstToLast_thenShiftsForward")
     void reorderGalleryPhoto_whenMovingFirstToLast_thenShiftsForward() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
         OfferPhoto p2 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(2).objectKey("k2").build();
@@ -157,7 +173,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("reorderGalleryPhoto_whenPositionUnchanged_thenKeepsOrder")
     void reorderGalleryPhoto_whenPositionUnchanged_thenKeepsOrder() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
@@ -170,7 +190,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("setGalleryCover_whenCalled_thenSetsMainFlagWithoutReordering")
     void setGalleryCover_whenCalled_thenSetsMainFlagWithoutReordering() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
@@ -188,7 +212,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("deleteGalleryPhoto_whenPhotoBelongsToAnotherOffer_thenNotFound")
     void deleteGalleryPhoto_whenPhotoBelongsToAnotherOffer_thenNotFound() {
+        // given
+        // when
+        // then
         Offer other = Offer.builder().id(UUID.randomUUID()).hotelName("H").city("C").country("K")
                 .price(new java.math.BigDecimal("100")).ownerEmail(OWNER).roomCapacity(2L).build();
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(other).position(0).objectKey("k0").build();
@@ -199,7 +227,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("deleteGalleryPhoto_whenStoreDeleteFails_thenStillReturns")
     void deleteGalleryPhoto_whenStoreDeleteFails_thenStillReturns() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
@@ -213,7 +245,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("deleteGalleryPhoto_whenKeyIsBlank_thenSkipsStoreDelete")
     void deleteGalleryPhoto_whenKeyIsBlank_thenSkipsStoreDelete() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .externalUrl("https://cdn.example/x.png").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
@@ -227,7 +263,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("deleteGalleryPhoto_whenRenumberFindsGap_thenClosesIt")
     void deleteGalleryPhoto_whenRenumberFindsGap_thenClosesIt() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         OfferPhoto survivor = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(5).objectKey("k5").build();
@@ -240,7 +280,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("galleryOf_whenEmptyAndExternalUrlSet_thenFallsBackToExternal")
     void galleryOf_whenEmptyAndExternalUrlSet_thenFallsBackToExternal() {
+        // given
+        // when
+        // then
         offer.setExternalPhotoUrl("https://cdn.example/cover.png");
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
@@ -252,7 +296,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("galleryOf_whenPhotoHasExternalUrl_thenUsesIt")
     void galleryOf_whenPhotoHasExternalUrl_thenUsesIt() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .externalUrl("https://cdn.example/x.png").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0));
@@ -266,7 +314,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("coverPhotoUrl_whenMainFlagSet_thenPrefersMainOverPosition")
     void coverPhotoUrl_whenMainFlagSet_thenPrefersMainOverPosition() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").main(false).build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").main(true).build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
@@ -281,7 +333,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("setGalleryCover_whenCalled_thenSetsMainFlag")
     void setGalleryCover_whenCalled_thenSetsMainFlag() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").main(true).build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").main(false).build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
@@ -298,7 +354,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("uploadGalleryPhoto_whenFirstPhoto_thenMarkedMain")
     void uploadGalleryPhoto_whenFirstPhoto_thenMarkedMain() {
+        // given
+        // when
+        // then
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
         org.mockito.ArgumentCaptor<OfferPhoto> captor = org.mockito.ArgumentCaptor.forClass(OfferPhoto.class);
@@ -311,7 +371,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("deleteGalleryPhoto_whenPhotoExists_thenRemovesRowAndObject")
     void deleteGalleryPhoto_whenPhotoExists_thenRemovesRowAndObject() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
@@ -324,7 +388,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("deleteGalleryPhoto_whenCoverDeleted_thenFirstRemainingIsPromoted")
     void deleteGalleryPhoto_whenCoverDeleted_thenFirstRemainingIsPromoted() {
+        // given
+        // when
+        // then
         OfferPhoto cover = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .objectKey("k0").main(true).build();
         OfferPhoto next = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1)
@@ -346,7 +414,11 @@ class OfferGalleryServiceTest {
     }
 
     @Test
+    @DisplayName("setGalleryCover_whenChanged_thenListPayloadShowsNewCover")
     void setGalleryCover_whenChanged_thenListPayloadShowsNewCover() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .objectKey("k0").main(true).build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1)
@@ -355,19 +427,20 @@ class OfferGalleryServiceTest {
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
         when(photoStorage.presignedUrl("k0")).thenReturn("u0");
         when(photoStorage.presignedUrl("k1")).thenReturn("u1");
-        when(offerRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(offer)));
 
         offerService.setGalleryCover(offerId, p1.getId(), OWNER);
-        org.springframework.data.domain.Page<OfferView> page = offerService.getAllOffers(
-                org.springframework.data.domain.PageRequest.of(0, 10));
+        OfferView dto = offerService.summaryView(offer);
 
-        assertEquals("u1", page.getContent().getFirst().coverPhotoUrl());
-        assertEquals("u1", page.getContent().getFirst().photoUrl());
+        assertEquals("u1", dto.coverPhotoUrl());
+        assertEquals("u1", dto.photoUrl());
     }
 
     @Test
+    @DisplayName("setGalleryCover_whenConcurrentCoverWins_thenAnswers409")
     void setGalleryCover_whenConcurrentCoverWins_thenAnswers409() {
+        // given
+        // when
+        // then
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .objectKey("k0").main(true).build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1)
@@ -379,5 +452,56 @@ class OfferGalleryServiceTest {
 
         assertThrows(com.lukk.sky.offer.domain.exception.GalleryCoverConflictException.class,
                 () -> offerService.setGalleryCover(offerId, p1.getId(), OWNER));
+    }
+
+    @Test
+    @DisplayName("setGalleryCover_whenTargetAlreadySoleMain_thenReturnsWithoutRewriting")
+    void setGalleryCover_whenTargetAlreadySoleMain_thenReturnsWithoutRewriting() {
+        // given
+        // when
+        // then
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").main(true).build();
+        OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").main(false).build();
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
+                .thenReturn(new ArrayList<>(List.of(p0, p1)));
+        when(photoStorage.presignedUrl("k0")).thenReturn("u0");
+        when(photoStorage.presignedUrl("k1")).thenReturn("u1");
+
+        OfferView dto = offerService.setGalleryCover(offerId, p0.getId(), OWNER);
+
+        org.mockito.Mockito.verify(offerPhotoRepository, org.mockito.Mockito.never())
+                .saveAllAndFlush(org.mockito.ArgumentMatchers.anyList());
+        assertEquals("u0", dto.coverPhotoUrl());
+    }
+
+    @Test
+    @DisplayName("uploadGalleryPhoto_whenCallerIsNotOwner_thenThrowsAccessDenied")
+    void uploadGalleryPhoto_whenCallerIsNotOwner_thenThrowsAccessDenied() {
+        // given
+        // when
+        // then
+        assertThrows(com.lukk.sky.offer.domain.exception.OfferAccessDeniedException.class,
+                () -> offerService.uploadGalleryPhoto(offerId, "stranger@sky.dev",
+                        new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png"));
+        org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
+                .upload(any(), any(), anyLong(), any(), any());
+    }
+
+    @Test
+    @DisplayName("deleteGalleryPhoto_whenKeyIsNull_thenSkipsStoreDelete")
+    void deleteGalleryPhoto_whenKeyIsNull_thenSkipsStoreDelete() {
+        // given
+        // when
+        // then
+        OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).build();
+        when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
+        when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
+                .thenReturn(new ArrayList<>(List.of(p0)));
+
+        offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
+
+        verify(offerPhotoRepository).delete(p0);
+        org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
+                .delete(any(), any());
     }
 }

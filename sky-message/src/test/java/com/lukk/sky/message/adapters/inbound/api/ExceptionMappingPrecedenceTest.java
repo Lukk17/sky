@@ -99,6 +99,9 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("noMappingCarriesRetryAfter_becauseThisServiceHasNoDependencyToWaitFor")
     void noMappingCarriesRetryAfter_becauseThisServiceHasNoDependencyToWaitFor() throws Exception {
+        // given
+        // when
+        // then
         doThrow(new MessageNotFoundException("No message with that id."))
                 .when(messageService).remove(eq(MESSAGE_ID), any());
 
@@ -110,6 +113,9 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody")
     void unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody() throws Exception {
+        // given
+        // when
+        // then
         doThrow(new IllegalStateException("senderEmail was null"))
                 .when(messageService).remove(eq(MESSAGE_ID), any());
 
@@ -128,6 +134,9 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage")
     void unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage() throws Exception {
+        // given
+        // when
+        // then
         doThrow(new IllegalStateException("senderEmail was null"))
                 .when(messageService).remove(eq(MESSAGE_ID), any());
 

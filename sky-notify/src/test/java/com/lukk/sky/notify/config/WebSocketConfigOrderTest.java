@@ -12,6 +12,9 @@ class WebSocketConfigOrderTest {
     @Test
     @DisplayName("runs first so the auth interceptor registers before Spring Security authorization")
     void getOrder_whenInspected_runsAtHighestPrecedence() {
+        // given
+        // when
+        // then
         assertThat(java.util.Arrays.asList(WebSocketConfig.class.getInterfaces())).contains(Ordered.class);
         WebSocketConfig config = new WebSocketConfig(
                 new WebSocketAuthChannelInterceptor(new NoOpJwtDecoder()),
@@ -23,6 +26,9 @@ class WebSocketConfigOrderTest {
     @Test
     @DisplayName("replaces the STOMP CSRF check with a pass-through: auth is JWT or gateway session, not cookies")
     void csrfChannelInterceptor_whenConnectArrives_thenPassesThrough() {
+        // given
+        // when
+        // then
         WebSocketConfig config = new WebSocketConfig(
                 new WebSocketAuthChannelInterceptor(new NoOpJwtDecoder()),
                 new GatewayUserHandshakeInterceptor(),

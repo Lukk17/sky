@@ -85,6 +85,9 @@ class OfferServicePrimaryTest {
     @Mock
     OfferPhotoRepository offerPhotoRepository;
 
+    @Mock
+    OfferGalleryService galleryService;
+
     @InjectMocks
     OfferServicePrimary offerService;
 
@@ -92,6 +95,10 @@ class OfferServicePrimaryTest {
     void stubEmptyGallery() {
         org.mockito.Mockito.lenient()
                 .when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(
+                        org.mockito.ArgumentMatchers.any()))
+                .thenReturn(List.of());
+        org.mockito.Mockito.lenient()
+                .when(galleryService.deleteGalleryForOffer(
                         org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of());
     }
@@ -286,6 +293,33 @@ class OfferServicePrimaryTest {
         // then
         assertEquals(1, actual.getContent().size());
         assertEquals(2, actual.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("getAllOffers_whenGalleryHasStoredPhotos_thenReturnsPresignedGalleryUrls")
+    void getAllOffers_whenGalleryHasStoredPhotos_thenReturnsPresignedGalleryUrls() {
+        // given
+        Offer offer = OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID);
+        offer.setPhotoObjectKey(null);
+        offer.setExternalPhotoUrl(null);
+        OfferPhoto main = OfferPhoto.builder().id(java.util.UUID.randomUUID()).offer(offer).position(0)
+                .objectKey("k-main").main(true).build();
+        OfferPhoto second = OfferPhoto.builder().id(java.util.UUID.randomUUID()).offer(offer).position(1)
+                .objectKey("k-second").main(false).build();
+        Pageable pageable = PageRequest.of(0, 20);
+        when(offerRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(offer), pageable, 1));
+        doReturn(new java.util.ArrayList<>(List.of(main, second))).when(offerPhotoRepository)
+                .findAllByOfferIdOrderByPositionAsc(TEST_DEFAULT_OFFER_ID);
+        when(photoStorage.presignedUrl("k-main")).thenReturn("u-main");
+        when(photoStorage.presignedUrl("k-second")).thenReturn("u-second");
+
+        // when
+        Page<OfferView> actual = offerService.getAllOffers(pageable);
+
+        // then
+        assertEquals("u-main", actual.getContent().getFirst().coverPhotoUrl());
+        assertEquals("u-main", actual.getContent().getFirst().photoUrl());
+        assertEquals("u-second", actual.getContent().getFirst().gallery().get(1).url());
     }
 
     @Test
@@ -511,16 +545,15 @@ class OfferServicePrimaryTest {
         OfferPhoto photo = OfferPhoto.builder().offer(offer).position(0)
                 .objectKey("offers/" + TEST_DEFAULT_OFFER_ID + "/g1.jpg").build();
         doReturn(Optional.of(offer)).when(offerRepository).findById(TEST_DEFAULT_OFFER_ID);
-        doReturn(List.of(photo)).when(offerPhotoRepository)
-                .findAllByOfferIdOrderByPositionAsc(TEST_DEFAULT_OFFER_ID);
+        doReturn(List.of(photo)).when(galleryService).deleteGalleryForOffer(TEST_DEFAULT_OFFER_ID);
         doNothing().when(eventSourceService).saveEvent(any(), any());
 
         // when
         offerService.deleteOffer(TEST_DEFAULT_OFFER_ID, TEST_OWNER_EMAIL);
 
         // then
-        InOrder order = org.mockito.Mockito.inOrder(offerPhotoRepository, offerRepository);
-        order.verify(offerPhotoRepository).deleteAll(List.of(photo));
+        InOrder order = org.mockito.Mockito.inOrder(galleryService, offerRepository);
+        order.verify(galleryService).deleteGalleryForOffer(TEST_DEFAULT_OFFER_ID);
         order.verify(offerRepository).delete(offer);
         verify(photoStorage).delete(TEST_DEFAULT_OFFER_ID, "offers/" + TEST_DEFAULT_OFFER_ID + "/g1.jpg");
     }

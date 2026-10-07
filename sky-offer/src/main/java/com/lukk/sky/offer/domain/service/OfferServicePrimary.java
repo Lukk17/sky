@@ -1,8 +1,5 @@
 package com.lukk.sky.offer.domain.service;
 
-import com.lukk.sky.offer.domain.exception.GalleryCoverConflictException;
-import com.lukk.sky.offer.domain.exception.GalleryLimitExceededException;
-import com.lukk.sky.offer.domain.exception.GalleryPhotoNotFoundException;
 import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
@@ -23,7 +20,6 @@ import com.lukk.sky.offer.domain.ports.outbound.PhotoStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,6 +45,7 @@ public class OfferServicePrimary implements OfferService {
     private final EventSourceService eventSourceService;
     private final PhotoStorage photoStorage;
     private final OfferNotificationService offerNotificationService;
+    private final OfferGalleryService galleryService;
 
     @Override
     @Transactional(readOnly = true)
@@ -89,11 +86,7 @@ public class OfferServicePrimary implements OfferService {
                 .orElseThrow(() -> new OfferNotFoundException("Can't remove non-existing offer!"));
 
         if (offerToDelete.getOwnerEmail().equals(userEmail)) {
-            List<OfferPhoto> gallery =
-                    offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerID);
-            if (!gallery.isEmpty()) {
-                offerPhotoRepository.deleteAll(gallery);
-            }
+            List<OfferPhoto> gallery = galleryService.deleteGalleryForOffer(offerID);
             offerRepository.delete(offerToDelete);
 
             log.info("Deleted offer with ID: {}", offerToDelete.getId());
@@ -203,104 +196,26 @@ public class OfferServicePrimary implements OfferService {
         removeStoredPhoto(offerId, key);
     }
 
-    private static final int GALLERY_CAP = 10;
-
     @Override
     public OfferView uploadGalleryPhoto(UUID offerId, String ownerEmail, InputStream content, long contentLength,
                                         String validatedContentType, String filename) {
-        Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only upload photos for your own offers.");
-        List<OfferPhoto> photos = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
-        if (photos.size() >= GALLERY_CAP) {
-            throw new GalleryLimitExceededException("Gallery holds at most " + GALLERY_CAP + " photos.");
-        }
-        String key = photoStorage.upload(offerId, content, contentLength, validatedContentType, filename);
-        OfferPhoto photo = OfferPhoto.builder().offer(offer).position(photos.size())
-                .objectKey(key).main(photos.isEmpty()).build();
-        try {
-            offerPhotoRepository.saveAndFlush(photo);
-        } catch (DataIntegrityViolationException ex) {
-            throw new GalleryCoverConflictException("Gallery cover was changed concurrently.", ex);
-        }
-        log.info("Gallery photo uploaded for offer ID: {} key={}", offerId, key);
-        return toDetailedView(offer);
+        return galleryService.uploadGalleryPhoto(offerId, ownerEmail, content, contentLength,
+                validatedContentType, filename);
     }
 
     @Override
     public OfferView deleteGalleryPhoto(UUID offerId, UUID photoId, String ownerEmail) {
-        Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only delete photos of your own offers.");
-        OfferPhoto photo = offerPhotoRepository.findById(photoId)
-                .orElseThrow(() -> new GalleryPhotoNotFoundException("Photo not found."));
-        if (!photo.getOffer().getId().equals(offerId)) {
-            throw new GalleryPhotoNotFoundException("Photo not found.");
-        }
-        boolean wasMain = photo.isMain();
-        List<OfferPhoto> remaining = new ArrayList<>(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId));
-        remaining.removeIf(candidate -> candidate.getId().equals(photoId));
-        offerPhotoRepository.delete(photo);
-        offerPhotoRepository.flush();
-        shiftToTemporaryPositions(remaining);
-        offerPhotoRepository.saveAllAndFlush(remaining);
-        GalleryOrdering.renumber(remaining);
-        if (wasMain && !remaining.isEmpty()) {
-            remaining.get(0).setMain(true);
-        }
-        try {
-            offerPhotoRepository.saveAllAndFlush(remaining);
-        } catch (DataIntegrityViolationException ex) {
-            throw new GalleryCoverConflictException("Gallery cover was changed concurrently.", ex);
-        }
-        removeStoredPhoto(offerId, photo.getObjectKey());
-        return toDetailedView(offer);
+        return galleryService.deleteGalleryPhoto(offerId, photoId, ownerEmail);
     }
 
     @Override
     public OfferView reorderGalleryPhoto(UUID offerId, UUID photoId, int newPosition, String ownerEmail) {
-        Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only reorder photos of your own offers.");
-        List<OfferPhoto> photos = new ArrayList<>(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId));
-        List<OfferPhoto> ordered = GalleryOrdering.moved(photos, photoId, newPosition);
-        for (OfferPhoto photo : ordered) {
-            photo.setMain(false);
-        }
-        shiftToTemporaryPositions(ordered);
-        offerPhotoRepository.saveAllAndFlush(ordered);
-        for (int index = 0; index < ordered.size(); index++) {
-            ordered.get(index).setPosition(index);
-            ordered.get(index).setMain(index == 0);
-        }
-        offerPhotoRepository.saveAllAndFlush(ordered);
-        return toDetailedView(offer);
-    }
-
-    private void shiftToTemporaryPositions(List<OfferPhoto> photos) {
-        int tempOffset = photos.stream().mapToInt(OfferPhoto::getPosition).max().orElse(-1)
-                + photos.size() + 1;
-        for (OfferPhoto photo : photos) {
-            photo.setPosition(photo.getPosition() + tempOffset);
-        }
+        return galleryService.reorderGalleryPhoto(offerId, photoId, newPosition, ownerEmail);
     }
 
     @Override
     public OfferView setGalleryCover(UUID offerId, UUID photoId, String ownerEmail) {
-        Offer offer = requireOwnedOffer(offerId, ownerEmail, "You can only reorder photos of your own offers.");
-        List<OfferPhoto> photos = new ArrayList<>(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId));
-        OfferPhoto target = photos.stream()
-                .filter(photo -> photo.getId().equals(photoId))
-                .findFirst()
-                .orElseThrow(() -> new GalleryPhotoNotFoundException("Photo not found."));
-        if (target.isMain() && photos.stream().filter(OfferPhoto::isMain).count() == 1) {
-            return toDetailedView(offer);
-        }
-        try {
-            for (OfferPhoto photo : photos) {
-                photo.setMain(false);
-            }
-            offerPhotoRepository.saveAllAndFlush(photos);
-            target.setMain(true);
-            offerPhotoRepository.saveAllAndFlush(photos);
-        } catch (DataIntegrityViolationException ex) {
-            throw new GalleryCoverConflictException("Gallery cover was changed concurrently.", ex);
-        }
-        return toDetailedView(offer);
+        return galleryService.setGalleryCover(offerId, photoId, ownerEmail);
     }
 
     private Offer requireOwnedOffer(UUID offerId, String ownerEmail, String accessDeniedMessage) {

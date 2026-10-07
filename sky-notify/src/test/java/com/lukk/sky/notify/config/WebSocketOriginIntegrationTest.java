@@ -58,6 +58,9 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("the endpoints answer on the origins the bound property names, not on a list compiled into the code")
     void allowedOrigins_whenInspected_thenComeFromTheBoundProperty() {
+        // given
+        // when
+        // then
         // then
         assertThat(boundAllowedOrigins).isEqualTo(CONFIGURED_ORIGINS);
         assertThat(List.of(boundAllowedOrigins.split(",")))
@@ -68,6 +71,9 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     @MethodSource("configuredOrigins")
     @DisplayName("the raw WebSocket handshake is upgraded when the browser origin is allowed")
     void rawHandshake_whenOriginIsAllowed_thenConnectionIsOpen(String origin) throws Exception {
+        // given
+        // when
+        // then
         // when
         WebSocket socket = openRawWebSocket(origin);
 
@@ -82,6 +88,9 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     @ValueSource(strings = {FOREIGN_ORIGIN, UNCONFIGURED_ORIGIN})
     @DisplayName("the raw WebSocket handshake is refused with 403 when the browser origin is not on the configured list")
     void rawHandshake_whenOriginIsNotAllowed_thenForbidden(String origin) {
+        // given
+        // when
+        // then
         // when
         Throwable failure = catchThrowable(() -> openRawWebSocket(origin));
 
@@ -98,6 +107,9 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     @MethodSource("configuredOrigins")
     @DisplayName("the SockJS fallback answers its info request when the browser origin is allowed")
     void sockJsInfo_whenOriginIsAllowed_thenPermitted(String origin) throws Exception {
+        // given
+        // when
+        // then
         // when
         HttpResponse<String> response = getSockJsInfo(origin);
 
@@ -110,6 +122,9 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     @ValueSource(strings = {FOREIGN_ORIGIN, UNCONFIGURED_ORIGIN})
     @DisplayName("the SockJS fallback refuses its info request with 403 when the browser origin is not on the configured list")
     void sockJsInfo_whenOriginIsNotAllowed_thenForbidden(String origin) throws Exception {
+        // given
+        // when
+        // then
         // when
         HttpResponse<String> response = getSockJsInfo(origin);
 

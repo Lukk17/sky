@@ -1,5 +1,6 @@
 package com.lukk.sky.gateway.config;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -31,7 +32,11 @@ class CsrfSessionRoundTripTest {
     }
 
     @Test
+    @DisplayName("tokenIssuedOnGet_thenValidatesOnPost")
     void tokenIssuedOnGet_thenValidatesOnPost() {
+        // given
+        // when
+        // then
         var session = new MockWebSession();
         var get = MockServerWebExchange.builder(MockServerHttpRequest.get("/api/session").build())
                 .session(session)

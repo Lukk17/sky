@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,7 +47,11 @@ class CorsDedupeTest {
     }
 
     @Test
+    @DisplayName("proxiedGet_whenUpstreamAlsoSendsAllowOrigin_thenSingleAllowOriginValue")
     void proxiedGet_whenUpstreamAlsoSendsAllowOrigin_thenSingleAllowOriginValue() {
+        // given
+        // when
+        // then
         var result = client.get().uri("/api/v1/offers")
                 .header(HttpHeaders.ORIGIN, "http://localhost:4200")
                 .exchange()

@@ -31,12 +31,19 @@ class GalleryCoverIntegrationTest extends AbstractIntegrationTest {
     private OfferPhotoRepository offerPhotoRepository;
 
     @Test
+    @DisplayName("setGalleryCover_whenToggledBackAndForth_thenSingleMainEachTime")
     void setGalleryCover_whenToggledBackAndForth_thenSingleMainEachTime() {
+        // given
+        // when
+        // then
         Offer unsaved = OfferAssembler.getPopulatedOffer(UUID.randomUUID());
         unsaved.setId(null);
         Offer offer = offerRepository.saveAndFlush(unsaved);
         UUID offerId = offer.getId();
         for (int i = 0; i < 2; i++) {
+        // given
+        // when
+        // then
             Offer ref = offerRepository.getReferenceById(offerId);
             offerPhotoRepository.saveAndFlush(OfferPhoto.builder().offer(ref).position(i)
                     .objectKey("offers/" + offerId + "/k" + i + ".png").main(i == 0).build());

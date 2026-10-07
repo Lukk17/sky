@@ -83,6 +83,9 @@ class WebSocketAuthChannelInterceptorTest {
     @Test
     @DisplayName("accepts CONNECT without bearer when gateway session user is present")
     void preSend_whenGatewayUserPresentAndNoBearer_thenAccepts() {
+        // given
+        // when
+        // then
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         accessor.setLeaveMutable(true);
         accessor.setSessionAttributes(new java.util.HashMap<>(java.util.Map.of(
@@ -113,16 +116,25 @@ class WebSocketAuthChannelInterceptorTest {
     @Test
     @DisplayName("runs before Spring Security authorization so CONNECT carries a principal when authorized")
     void getOrder_whenInspected_runsAtHighestPrecedence() {
+        // given
+        // when
+        // then
         assertThat(interceptor.getOrder()).isEqualTo(org.springframework.core.Ordered.HIGHEST_PRECEDENCE);
     }
 
     @Test
     @DisplayName("the config package is null-marked so framework overrides keep their non-null contract")
     void configPackage_whenInspected_thenIsNullMarked() {
+        // given
+        // when
+        // then
         assertThat(WebSocketAuthChannelInterceptor.class.getPackage().getAnnotation(NullMarked.class)).isNotNull();
     }
 
     private StompHeaderAccessor connectAccessor(String authorizationHeader) {
+        // given
+        // when
+        // then
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         accessor.setLeaveMutable(true);
         if (authorizationHeader != null) {

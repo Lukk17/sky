@@ -76,6 +76,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Entities (domain.model) do not import any adapter type")
     void domainModel_whenCheckedForDependencies_thenDoesNotImportAdapterClasses() {
+        // given
+        // when
+        // then
         noClasses()
                 .that().resideInAPackage("..domain.model..")
                 .should().dependOnClassesThat().resideInAPackage("..adapters..")
@@ -85,6 +88,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Adapters do not import domain service implementations, only the ports")
     void adapters_whenCheckedForDependencies_thenDoNotImportDomainServiceImplementations() {
+        // given
+        // when
+        // then
         noClasses()
                 .that().resideInAPackage("..adapters..")
                 .should().dependOnClassesThat().resideInAPackage("..domain.service..")
@@ -94,6 +100,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("An inbound adapter never reaches a repository: a controller goes through a driving port")
     void inboundAdapters_whenCheckedForRepositories_thenDependOnNone() {
+        // given
+        // when
+        // then
         noClasses()
                 .that().resideInAPackage("..adapters.inbound..")
                 .should().dependOnClassesThat(areRepositories())
@@ -105,6 +114,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("An inbound adapter never reaches a driven port: a controller publishes no event of its own")
     void inboundAdapters_whenCheckedForOutboundPorts_thenDependOnNone() {
+        // given
+        // when
+        // then
         noClasses()
                 .that().resideInAPackage("..adapters.inbound..")
                 .should().dependOnClassesThat().resideInAPackage("..domain.ports.outbound..")
@@ -116,6 +128,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Nothing imports another service: only sky-common is shared")
     void allClasses_whenCheckedForSiblingModules_thenImportNoOtherServiceModule() {
+        // given
+        // when
+        // then
         noClasses()
                 .should().dependOnClassesThat(areOtherServiceModules())
                 .because("sky-common is the only module a service may share code through, and a second"
@@ -126,6 +141,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Domain depends only on the packages the architecture specification sanctions")
     void domainClasses_whenCheckedForDependencies_thenDependOnlyOnSanctionedPackages() {
+        // given
+        // when
+        // then
         classes()
                 .that().resideInAPackage("..domain..")
                 .and().areNotAnnotatedWith(REST_CONTROLLER_ADVICE)
@@ -138,6 +156,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("The exception advice reaches Spring web, and nothing else the domain may not reach")
     void restControllerAdvice_whenCheckedForDependencies_thenReachesOnlyTheDomainAllowListPlusSpringWeb() {
+        // given
+        // when
+        // then
         classes()
                 .that().areAnnotatedWith(REST_CONTROLLER_ADVICE)
                 .should().onlyDependOnClassesThat(areSanctionedDomainDependencies()
@@ -150,6 +171,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Domain calls no outbound HTTP client directly")
     void domainClasses_whenCheckedForHttpClients_thenHaveNoOutboundClientImports() {
+        // given
+        // when
+        // then
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAPackage("org.springframework.web.client..")
@@ -159,6 +183,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("sky-offer is a blocking MVC service: nothing depends on Reactor or WebFlux")
     void allClasses_whenCheckedForReactiveTypes_thenHaveNoReactorOrWebFluxImports() {
+        // given
+        // when
+        // then
         noClasses()
                 .that().resideInAPackage("com.lukk.sky.offer..")
                 .should().dependOnClassesThat().resideInAnyPackage(
@@ -170,6 +197,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Controllers live under adapters.inbound.api")
     void restControllers_whenPackageChecked_thenResideInAdaptersInboundApiPackage() {
+        // given
+        // when
+        // then
         classes()
                 .that().areAnnotatedWith("org.springframework.web.bind.annotation.RestController")
                 .or().areAnnotatedWith("org.springframework.stereotype.Controller")
@@ -180,6 +210,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("JPA entities live under domain.model")
     void jpaEntities_whenPackageChecked_thenResideInDomainModelPackage() {
+        // given
+        // when
+        // then
         classes()
                 .that().areAnnotatedWith("jakarta.persistence.Entity")
                 .should().resideInAPackage("..domain.model..")
@@ -189,6 +222,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Repository interfaces live under domain.ports.outbound")
     void repositories_whenPackageChecked_thenResideInDomainPortsOutboundPackage() {
+        // given
+        // when
+        // then
         classes()
                 .that().areAssignableTo("org.springframework.data.jpa.repository.JpaRepository")
                 .or().haveSimpleNameEndingWith("Repository")
@@ -200,6 +236,9 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("No main source writes a query by hand: no @Query, no native query, no EntityManager")
     void mainSources_whenCheckedForHandWrittenQueries_thenNoneUsesQueryAnnotationNativeQueryOrEntityManager() {
+        // given
+        // when
+        // then
         noClasses()
                 .should().dependOnClassesThat(areHandWrittenQueryApi())
                 .because("every query must be a Spring Data Specification passed to JpaSpecificationExecutor"

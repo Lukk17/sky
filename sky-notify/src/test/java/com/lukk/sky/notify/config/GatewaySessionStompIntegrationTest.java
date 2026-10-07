@@ -41,6 +41,9 @@ class GatewaySessionStompIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("CONNECT without bearer is accepted on the gateway session and a Kafka event reaches the user queue")
     void gatewaySession_whenConnectWithoutBearer_thenConnectedAndEventReceived() throws Exception {
+        // given
+        // when
+        // then
         StompClient client = connect();
         clientHolder = client;
         try {
