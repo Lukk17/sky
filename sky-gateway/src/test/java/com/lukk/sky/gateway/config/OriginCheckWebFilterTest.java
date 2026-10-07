@@ -18,7 +18,12 @@ class OriginCheckWebFilterTest {
     private final OriginCheckWebFilter filter = new OriginCheckWebFilter("http://localhost:4200");
 
     private static MockServerWebExchange exchange(HttpMethod method, String origin, String referer) {
-        var builder = MockServerHttpRequest.method(method, "http://gateway:5777/api/v1/offers")
+        return exchangeAt(method, "http://gateway:5777/api/v1/offers", origin, referer);
+    }
+
+    private static MockServerWebExchange exchangeAt(
+            HttpMethod method, String url, String origin, String referer) {
+        var builder = MockServerHttpRequest.method(method, url)
                 .header("Host", "gateway:5777");
         if (origin != null) {
             builder.header("Origin", origin);
@@ -113,6 +118,25 @@ class OriginCheckWebFilterTest {
     void get_withForeignOrigin_thenChainCalled() {
         // given
         var exchange = exchange(HttpMethod.GET, "https://evil.test", null);
+        var called = new AtomicBoolean(false);
+
+        // when
+        filter.filter(exchange, recordingChain(called)).block();
+
+        // then
+        assertThat(called).isTrue();
+    }
+
+    @Test
+    @DisplayName("post_withOpaqueOriginToProxiedPath_thenChainCalled")
+    void post_withOpaqueOriginToProxiedPath_thenChainCalled() {
+        // given: privacy-hardened browsers send an opaque origin on the Keycloak
+        // login post, which never matches any real origin.
+        var exchange = exchangeAt(
+                HttpMethod.POST,
+                "http://gateway:5777/auth/realms/sky/login-actions/authenticate",
+                "null",
+                null);
         var called = new AtomicBoolean(false);
 
         // when

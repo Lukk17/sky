@@ -3,6 +3,8 @@ sky-gateway:
   offer-uri: ${OFFER_URI:http://localhost:5552}
   message-uri: ${MESSAGE_URI:http://localhost:5553}
   notify-uri: ${NOTIFY_URI:http://localhost:5554}
+  keycloak-uri: ${KEYCLOAK_URI:http://localhost:8080}
+  s3-uri: ${S3_URI:http://localhost:4566}
 
 server:
   port: ${GATEWAY_PORT:5777}
@@ -54,6 +56,23 @@ spring:
               predicates:
                 - Path=/notifyWebsocket/**
               filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: keycloak-route
+              uri: ${sky-gateway.keycloak-uri}
+              predicates:
+                - Path=/auth/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: s3-route
+              uri: ${sky-gateway.s3-uri}
+              predicates:
+                - Path=/s3/**
+              filters:
+                - RewritePath=/s3(?<remaining>/?.*), $\{remaining}
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
                 - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
 
@@ -143,18 +162,12 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI}
-      client:
-        provider:
-          keycloak:
-            issuer-uri: ${KEYCLOAK_ISSUER_URI}
-        registration:
-          keycloak:
-            provider: keycloak
-            client-id: ${KEYCLOAK_CLIENT_ID}
-            client-secret: ${KEYCLOAK_CLIENT_SECRET}
-            scope: openid,email,profile
-            authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI}/protocol/openid-connect/certs}
+      # No client.provider block here on purpose: the OIDC client registration is
+      # built statically by KeycloakClientRegistrationConfig, because discovery
+      # against issuer-uri cannot run at startup (the public issuer answers through
+      # this gateway's own /auth route, which is not listening yet) and would
+      # reject a document fetched in-network whose issuer names the public URL.
   cloud:
     gateway:
       server:
@@ -195,6 +208,23 @@ spring:
                 - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
                 - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
                 - TokenRelay=
+
+            - id: keycloak-route
+              uri: ${sky-gateway.keycloak-uri}
+              predicates:
+                - Path=/auth/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: s3-route
+              uri: ${sky-gateway.s3-uri}
+              predicates:
+                - Path=/s3/**
+              filters:
+                - RewritePath=/s3(?<remaining>/?.*), $\{remaining}
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
 
             - id: booking-swagger-route
               uri: ${sky-gateway.booking-uri}

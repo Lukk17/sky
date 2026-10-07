@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Local seed script. Zero dependencies, Node 18+.
 // Requires compose or k3d running first (Keycloak plus the edge reachable).
-// Env: KEYCLOAK_BASE (default https://keycloak.test:9443), EDGE_BASE (default http://localhost:5777),
+// Env: KEYCLOAK_BASE (default http://localhost:5777/auth, via the gateway), EDGE_BASE (default http://localhost:5777),
 //   TLS_INSECURE=1 to skip TLS verification (self-signed Keycloak cert),
 //   KEYCLOAK_ADMIN_USER / KEYCLOAK_ADMIN_PASSWORD (default admin/admin),
 //   KEYCLOAK_CLIENT_ID / KEYCLOAK_CLIENT_SECRET (default sky-backend/dev-only-change-in-prod).

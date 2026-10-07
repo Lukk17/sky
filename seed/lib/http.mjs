@@ -3,7 +3,7 @@ import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const HERE = dirname(fileURLToPath(import.meta.url));
-export const KEYCLOAK_BASE = (process.env.KEYCLOAK_BASE || "https://keycloak.test:9443").replace(/\/$/, "");
+export const KEYCLOAK_BASE = (process.env.KEYCLOAK_BASE || "http://localhost:5777/auth").replace(/\/$/, "");
 export const EDGE = (process.env.EDGE_BASE || "http://localhost:5777").replace(/\/$/, "");
 export const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "sky-backend";
 export const CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || "dev-only-change-in-prod";

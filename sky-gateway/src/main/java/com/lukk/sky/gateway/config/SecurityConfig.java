@@ -45,6 +45,20 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-XSRF-TOKEN", "Accept"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // Keycloak and the object store answer from behind /auth and /s3 with their own
+        // origin decisions, so the gateway must not gate them: privacy-hardened browsers
+        // send an opaque (null) origin on the Keycloak login post, which never matches
+        // the frontend origin and would otherwise die here with 403 before routing.
+        // The most specific pattern wins, so the restrictive frontend config below
+        // keeps guarding every API route.
+        CorsConfiguration proxied = new CorsConfiguration();
+        proxied.setAllowedOriginPatterns(List.of("*"));
+        proxied.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        proxied.setAllowedHeaders(List.of("*"));
+        proxied.setAllowCredentials(true);
+        proxied.setMaxAge(3600L);
+        source.registerCorsConfiguration("/auth/**", proxied);
+        source.registerCorsConfiguration("/s3/**", proxied);
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
@@ -74,6 +88,8 @@ public class SecurityConfig {
                         .pathMatchers(SecurityPaths.probes().toArray(String[]::new)).permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/offers", "/api/v1/offers/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/search").permitAll()
+                        .pathMatchers("/auth/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/s3/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .exceptionHandling(exceptions -> {
@@ -96,6 +112,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(sessionCsrfTokenRepository())
                         .requireCsrfProtectionMatcher(exchange -> {
+                            String path = exchange.getRequest().getPath().value();
+                            // Keycloak and the object store sit behind /auth and /s3 with
+                            // their own request forgery protection (OIDC state/nonce,
+                            // presigned capability URLs): the gateway session token must
+                            // not gate their browser form posts and photo fetches.
+                            if (path.startsWith("/auth/") || path.startsWith("/s3/")) {
+                                return ServerWebExchangeMatcher.MatchResult.notMatch();
+                            }
                             // /logout is a full-browser form POST and must always carry
                             // the session CSRF token, even with an Authorization header.
                             if (exchange.getRequest().getPath().value().equals("/logout")) {

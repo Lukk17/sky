@@ -170,6 +170,40 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
+    @DisplayName("keycloakPath_whenPostRequestWithoutCsrfToken_thenPassesSecurityToRoutingInsteadOf403")
+    void keycloakPath_whenPostRequestWithoutCsrfToken_thenPassesSecurityToRoutingInsteadOf403() {
+        // when / then: upstream is a dead port under test, so reaching the route
+        // answers 5xx; a 403 would mean the gateway session CSRF gate fired,
+        // which must never gate Keycloak browser form posts.
+        client.post().uri("/auth/realms/sky/login-actions/authenticate")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @DisplayName("keycloakPath_whenPostRequestWithOpaqueOrigin_thenPassesCorsToRoutingInsteadOf403")
+    void keycloakPath_whenPostRequestWithOpaqueOrigin_thenPassesCorsToRoutingInsteadOf403() {
+        // when / then: privacy-hardened browsers send Origin null on the Keycloak
+        // login post; the gateway must echo it rather than answer 403, and the dead
+        // upstream answers 5xx to prove the request was routed.
+        client.post().uri("/auth/realms/sky/login-actions/authenticate")
+                .header("Origin", "null")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @DisplayName("storePath_whenPostRequestWithoutCsrfToken_thenNotRejectedByCsrfGate")
+    void storePath_whenPostRequestWithoutCsrfToken_thenNotRejectedByCsrfGate() {
+        // when / then: POST /s3 needs a session, so an anonymous call redirects to
+        // login; a 403 would mean the gateway session CSRF gate fired, which must
+        // never gate store fetches (presigned capability URLs carry their own auth).
+        client.post().uri("/s3/sky-offers/offers/probe")
+                .exchange()
+                .expectStatus().is3xxRedirection();
+    }
+
+    @Test
     @DisplayName("routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas")
     void routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas() {
         // given
@@ -185,6 +219,8 @@ class SecurityConfigOidcProfileTest {
                 "offer-swagger-route",
                 "offer-api-docs-route",
                 "message-swagger-route",
-                "message-api-docs-route");
+                "message-api-docs-route",
+                "keycloak-route",
+                "s3-route");
     }
 }

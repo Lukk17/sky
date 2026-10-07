@@ -1,18 +1,21 @@
-# Local Docker Compose / Gradle stack, reached through sky-gateway on host port 5777.
-# Tokens come from the host Keycloak at https://keycloak.test:9443 (self-signed cert,
-# so pass --insecure to the CLI). For a Kubernetes cluster use the k8s environment instead:
-# a token from the wrong issuer is accepted by Keycloak and rejected by the services.
+# Local Docker Compose stack, reached through sky-gateway on host port 5777.
+# Only the gateway (5777) and the frontend (4200) publish host ports: postgres,
+# kafka, keycloak and floci are reachable only over the compose network.
+# Keycloak answers through the gateway at http://localhost:5777/auth, and that
+# same address is the token issuer every service validates against
+# (OAUTH2_ISSUER_URI=http://localhost:5777/auth/realms/sky), so a token minted
+# anywhere else is rejected. Plain HTTP throughout, so no --insecure flag.
 #
 # offer/upload-photo.yml fetches the presigned photoUrl back and asserts the canary marker in the
-# stored bytes, so the object store has to answer on the host at http://s3.localhost:9070, the same
-# hostname sky-offer signs the URL against (S3_ENDPOINT in config/docker/docker-compose.yaml).
+# stored bytes, so the object store has to answer on the host: sky-offer signs the URL against
+# S3_PRESIGN_ENDPOINT=http://localhost:5777/s3 and the gateway strips /s3 to floci.
 #
 # bookingUrl, offerUrl and messageUrl all hold the one gateway address. Nothing is rewritten at the
 # edge, so the three only ever differ in the direct environment, where each names its own service port.
 # mintToken is true here, so auth/get-token.yml runs and fills bearerToken.
 #
 # Run with:
-#   bru run -r --env local --insecure
+#   bru run -r --env local
 # The --env flag takes the file name, local, while the name below is what the Bruno app shows.
 name: sky-local
 variables:
@@ -25,7 +28,7 @@ variables:
   - name: mintToken
     value: "true"
   - name: keycloakUrl
-    value: https://keycloak.test:9443
+    value: http://localhost:5777/auth
   - name: keycloakClientId
     value: sky-backend
   - name: keycloakClientSecret

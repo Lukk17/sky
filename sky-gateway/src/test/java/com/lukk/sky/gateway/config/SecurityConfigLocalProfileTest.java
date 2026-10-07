@@ -53,7 +53,9 @@ class SecurityConfigLocalProfileTest {
             "/api/v1/owner/offers",
             "/api/v1/bookings",
             "/api/v1/user/bookings",
-            "/api/v1/messages"
+            "/api/v1/messages",
+            "/auth/realms/sky/.well-known/openid-configuration",
+            "/s3/sky-offers/offers/canary"
     })
     void publishedApiPath_whenNoCredentialsSupplied_thenReachesItsRouteInsteadOfBeingRejected(String path) {
         // when / then

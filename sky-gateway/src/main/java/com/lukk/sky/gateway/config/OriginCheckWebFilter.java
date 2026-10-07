@@ -43,6 +43,14 @@ public class OriginCheckWebFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        String path = exchange.getRequest().getPath().value();
+        // Keycloak and the object store answer from behind /auth and /s3 with their
+        // own forgery protection (OIDC state and nonce, presigned capability URLs),
+        // so the gateway session origin check must not gate their browser posts:
+        // privacy-hardened browsers legitimately send an opaque (null) origin there.
+        if (path.startsWith("/auth/") || path.startsWith("/s3/")) {
+            return chain.filter(exchange);
+        }
         if (!MUTATING.contains(exchange.getRequest().getMethod())) {
             return chain.filter(exchange);
         }

@@ -14,13 +14,14 @@ Development-only, non-secret, intentionally committed values. Real environments 
 
 | Service | Address | Credentials |
 |---|---|---|
-| Keycloak | https://keycloak.test:9443 | admin / admin for the console, realm `sky` |
-| Keycloak realm users | https://keycloak.test:9443/realms/sky | lukk / test1234, owner / owner, user / user |
+| Gateway | http://localhost:5777 | single edge for API, Keycloak (`/auth`) and store (`/s3`) |
+| Frontend | http://localhost:4200 | demo UI |
+| Keycloak | http://localhost:5777/auth (via gateway) | admin / admin for the console, realm `sky` |
+| Keycloak realm users | http://localhost:5777/auth/realms/sky | lukk / test1234, owner / owner, user / user |
 | Keycloak client | `sky-backend` | secret `dev-only-change-in-prod` |
-| PostgreSQL | localhost:5432 | database `sky`, user postgres, password local |
-| Object store S3 API | http://localhost:9070 | root / localdev |
-| Object store console | http://localhost:9071 | root / localdev |
-| Kafka | localhost:9092 | no authentication |
+| PostgreSQL | compose network only, no host port | database `sky`, user postgres, password local |
+| Object store S3 API | http://localhost:5777/s3 (via gateway) | root / localdev |
+| Kafka | compose network only, no host port | no authentication |
 
 The object-store password is `localdev` rather than `local` because MinIO refuses to start with a root password shorter than eight characters, and MinIO is still one of the two implementations this page offers:
 
@@ -135,9 +136,7 @@ The full procedure, with PowerShell and Unix variants for `openssl` and `keytool
 
 ### Option A, run everything in Docker Compose
 
-[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts the whole app with one command: PostgreSQL, Keycloak (realm `sky` imported, issuer `https://keycloak.test:9443`), the floci object store, Kafka, the four services, the gateway, the containerized frontend, and a one-shot seed job that loads the demo dataset from [seed/](../../seed/). Nothing must be running beforehand except the single manual step below. The images bake the local development certificate authority into their own `cacerts`, and the compose file mounts no truststore and sets no `JAVA_TOOL_OPTIONS` override. It used to mount one, and that was wrong: `-Djavax.net.ssl.trustStore` replaces the JVM trust store instead of adding to it, so the containers trusted Keycloak and no public authority.
-
-The single manual step: `keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows), because the browser and the edge use the issuer name `https://keycloak.test:9443` exactly. Keycloak serves that name with the leaf certificate from the neighbouring `InstallationHelper` checkout (`../InstallationHelper/local-dev/auth/certificates/localhost/`), mounted read-only into the container; override with `KEYCLOAK_CERT_FILE` and `KEYCLOAK_KEY_FILE` if your checkout lives elsewhere. Every container that dials a host-mapped name carries a `host-gateway` extra host (`keycloak.test` and `host.docker.internal`, plus `s3.localhost` where presigned URLs are involved), so the same file works on Docker Desktop and on Linux.
+[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts the whole app with one command: PostgreSQL, Keycloak (realm `sky` imported, issuer `http://localhost:5777/auth/realms/sky`), the floci object store, Kafka, the four services, the gateway, the containerized frontend, and a one-shot seed job that loads the demo dataset from [seed/](../../seed/). Only the gateway (`5777`) and the frontend (`4200`) publish host ports; postgres, kafka, keycloak and floci are reachable only over the compose network, so this stack no longer collides with another local-dev compose stack holding those ports. Keycloak answers through the gateway at `http://localhost:5777/auth` and the object store at `http://localhost:5777/s3`, both plain HTTP, so there is no certificate to trust and no hosts file entry to add.
 
 Start the stack:
 
@@ -242,7 +241,7 @@ A service logs `PKIX path validation failed`. The Keycloak certificate is not tr
 
 A service starts but every authenticated call returns 401. The token came from a different issuer than the one the service validates against. Compare the `iss` claim in the token with the service's `OAUTH2_ISSUER_URI`. This is the usual symptom of pointing a host-run service at the cluster Keycloak, or the reverse.
 
-Photo upload fails while everything else works. The status says which half to look at. A 503 with `Retry-After: 10` means the store never answered, so check that the container from step 3 is up and listening on port 9070. A 502 means the store answered and refused, so check `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_BUCKET` against what the store actually holds. Either way `sky-offer` logs a warning and boots anyway when the bucket check fails at startup, so the failure only shows up on the photo endpoints.
+Photo upload fails while everything else works. The status says which half to look at. A 503 with `Retry-After: 10` means the store never answered, so check that the floci container is up (`docker compose -f config/docker/docker-compose.yaml ps floci`) and that `http://localhost:5777/s3/sky-offers` answers through the gateway. A 502 means the store answered and refused, so check `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_BUCKET` against what the store actually holds. Either way `sky-offer` logs a warning and boots anyway when the bucket check fails at startup, so the failure only shows up on the photo endpoints.
 
 ---
 
