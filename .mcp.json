@@ -44,15 +44,24 @@
         "${REDIS_URL:-redis://localhost:6379/0}"
       ]
     },
-    "n8n": {
+    "sonarqube": {
       "type": "stdio",
-      "command": "npx",
+      "command": "docker",
       "args": [
-        "n8n-mcp"
+        "run",
+        "--init",
+        "--pull=always",
+        "-i",
+        "--rm",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_URL",
+        "mcp/sonarqube"
       ],
       "env": {
-        "N8N_API_URL": "${N8N_API_URL:-http://localhost:5678}",
-        "N8N_API_KEY": "${N8N_API_KEY:-}"
+        "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN:-}",
+        "SONARQUBE_URL": "${SONARQUBE_URL:-http://localhost:9000}"
       }
     }
   }
