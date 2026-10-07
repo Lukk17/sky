@@ -53,6 +53,7 @@ class RestExceptionHandlerAutoConfigurationTest {
     @Test
     @DisplayName("registersBothHandlers_whenSpringDataIsOnTheClasspath")
     void registersBothHandlers_whenSpringDataIsOnTheClasspath() {
+        // when / then
         runner.run(context -> assertThat(context)
                 .hasSingleBean(SkyRestExceptionHandler.class)
                 .hasSingleBean(SpringDataExceptionHandler.class));
@@ -61,12 +62,14 @@ class RestExceptionHandlerAutoConfigurationTest {
     @Test
     @DisplayName("registersTheLastResortResolver_whenTheApplicationIsAServletWebApplication")
     void registersTheLastResortResolver_whenTheApplicationIsAServletWebApplication() {
+        // when / then
         runner.run(context -> assertThat(context).hasSingleBean(UnhandledExceptionResolver.class));
     }
 
     @Test
     @DisplayName("registersNothing_whenTheApplicationIsNotAWebApplication")
     void registersNothing_whenTheApplicationIsNotAWebApplication() {
+        // when / then
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(RestExceptionHandlerAutoConfiguration.class))
                 .run(context -> assertThat(context)
@@ -78,6 +81,7 @@ class RestExceptionHandlerAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_whenTheApplicationIsReactiveRatherThanServlet")
     void registersNothing_whenTheApplicationIsReactiveRatherThanServlet() {
+        // when / then
         new ReactiveWebApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(RestExceptionHandlerAutoConfiguration.class))
                 .run(context -> assertThat(context)
@@ -89,6 +93,7 @@ class RestExceptionHandlerAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_whenSpringWebMvcIsAbsentFromTheClasspath")
     void registersNothing_whenSpringWebMvcIsAbsentFromTheClasspath() {
+        // when / then
         runner.withClassLoader(new FilteredClassLoader(ResponseEntityExceptionHandler.class))
                 .run(context -> assertThat(context)
                         .as("the whole auto-configuration is gated on a type only spring-webmvc carries")
@@ -99,6 +104,7 @@ class RestExceptionHandlerAutoConfigurationTest {
     @Test
     @DisplayName("registersOnlyTheFrameworkHandler_whenSpringDataIsFilteredOffTheClasspath")
     void registersOnlyTheFrameworkHandler_whenSpringDataIsFilteredOffTheClasspath() {
+        // when / then
         runner.withClassLoader(new FilteredClassLoader(PropertyReferenceException.class))
                 .run(context -> assertThat(context)
                         .hasSingleBean(SkyRestExceptionHandler.class)
@@ -109,6 +115,7 @@ class RestExceptionHandlerAutoConfigurationTest {
     @Test
     @DisplayName("registersOnlyTheFrameworkHandler_whenTheDaoExceptionHierarchyIsFilteredOffTheClasspath")
     void registersOnlyTheFrameworkHandler_whenTheDaoExceptionHierarchyIsFilteredOffTheClasspath() {
+        // when / then
         runner.withClassLoader(new FilteredClassLoader(DataAccessException.class))
                 .run(context -> assertThat(context)
                         .hasSingleBean(SkyRestExceptionHandler.class)
@@ -119,13 +126,16 @@ class RestExceptionHandlerAutoConfigurationTest {
     @Test
     @DisplayName("logsNoIntrospectionFailure_whenSpringDataCannotBeResolved")
     void logsNoIntrospectionFailure_whenSpringDataCannotBeResolved() throws ClassNotFoundException {
+        // given
         Class<?> withoutSpringData = new SpringDataHiddenClassLoader()
                 .redefine(RestExceptionHandlerAutoConfiguration.class);
 
+        // when
         List<Method> beanMethods = Arrays.stream(withoutSpringData.getDeclaredMethods())
                 .filter(method -> MergedAnnotations.from(method).isPresent(Bean.class))
                 .toList();
 
+        // then
         assertThat(beanMethods)
                 .as("the scan has to read bean annotations, or the log assertion below proves nothing")
                 .isNotEmpty();

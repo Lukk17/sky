@@ -19,6 +19,7 @@ class S3CredentialsStartupTest {
     @Test
     @DisplayName("run_whenBothCredentialsAreSupplied_startsTheContext")
     void run_whenBothCredentialsAreSupplied_startsTheContext() {
+        // when / then
         runner.withPropertyValues("S3_ACCESS_KEY=sky", "S3_SECRET_KEY=s3cret")
                 .run(context -> assertThat(context)
                         .hasNotFailed()
@@ -28,6 +29,7 @@ class S3CredentialsStartupTest {
     @Test
     @DisplayName("run_whenTheSecretKeyIsAbsent_failsStartupNamingTheVariableAndTheProperty")
     void run_whenTheSecretKeyIsAbsent_failsStartupNamingTheVariableAndTheProperty() {
+        // when / then
         runner.withPropertyValues("S3_ACCESS_KEY=sky")
                 .run(context -> assertThat(context)
                         .hasFailed()
@@ -41,6 +43,7 @@ class S3CredentialsStartupTest {
     @Test
     @DisplayName("run_whenNeitherCredentialIsSupplied_namesBothVariables")
     void run_whenNeitherCredentialIsSupplied_namesBothVariables() {
+        // when / then
         runner.run(context -> assertThat(context)
                 .hasFailed()
                 .getFailure()
@@ -53,6 +56,7 @@ class S3CredentialsStartupTest {
     @Test
     @DisplayName("run_whenTheLocalProfileIsActiveAndNoVariablesAreSet_startsWithoutObjecting")
     void run_whenTheLocalProfileIsActiveAndNoVariablesAreSet_startsWithoutObjecting() {
+        // when / then
         runner.withPropertyValues("spring.profiles.active=local")
                 .run(context -> assertThat(context).hasNotFailed());
     }

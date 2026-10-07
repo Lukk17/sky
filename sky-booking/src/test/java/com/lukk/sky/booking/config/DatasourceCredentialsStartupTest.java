@@ -23,6 +23,7 @@ class DatasourceCredentialsStartupTest {
     @Test
     @DisplayName("run_whenBothCredentialsAreSupplied_startsTheContext")
     void run_whenBothCredentialsAreSupplied_startsTheContext() {
+        // when / then
         runner.withPropertyValues("POSTGRES_USER=sky", "POSTGRES_PASSWORD=s3cret")
                 .run(context -> assertThat(context).hasNotFailed());
     }
@@ -30,6 +31,7 @@ class DatasourceCredentialsStartupTest {
     @Test
     @DisplayName("run_whenPostgresPasswordIsAbsent_failsStartupNamingTheVariableAndTheProperty")
     void run_whenPostgresPasswordIsAbsent_failsStartupNamingTheVariableAndTheProperty() {
+        // when / then
         runner.withPropertyValues("POSTGRES_USER=sky")
                 .run(context -> assertThat(context)
                         .hasFailed()
@@ -43,6 +45,7 @@ class DatasourceCredentialsStartupTest {
     @Test
     @DisplayName("run_whenNeitherCredentialIsSupplied_namesBothVariables")
     void run_whenNeitherCredentialIsSupplied_namesBothVariables() {
+        // when / then
         runner.run(context -> assertThat(context)
                 .hasFailed()
                 .getFailure()
@@ -55,6 +58,7 @@ class DatasourceCredentialsStartupTest {
     @Test
     @DisplayName("run_whenTheLocalProfileIsActiveAndNoVariablesAreSet_startsWithoutObjecting")
     void run_whenTheLocalProfileIsActiveAndNoVariablesAreSet_startsWithoutObjecting() {
+        // when / then
         runner.withPropertyValues("spring.profiles.active=local")
                 .run(context -> assertThat(context).hasNotFailed());
     }

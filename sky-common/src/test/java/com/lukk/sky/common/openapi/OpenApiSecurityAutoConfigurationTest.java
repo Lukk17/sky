@@ -111,6 +111,7 @@ class OpenApiSecurityAutoConfigurationTest {
     @Test
     @DisplayName("servers_whenBoundFromProperties_thenReachTheDocument")
     void servers_whenBoundFromProperties_thenReachTheDocument() {
+        // when / then
         runner.withPropertyValues(
                         "springdoc.servers[0].url=http://localhost:5552",
                         "springdoc.servers[0].description=Local, straight at the service, bypassing the gateway")

@@ -19,6 +19,7 @@ class StartupLogConfigConditionTest {
     @Test
     @DisplayName("run_whenSpringWebIsOnTheClasspath_registersTheStartupLog")
     void run_whenSpringWebIsOnTheClasspath_registersTheStartupLog() {
+        // when / then
         runner.run(context -> assertThat(context)
                 .hasNotFailed()
                 .hasSingleBean(StartupLogConfig.class));
@@ -27,6 +28,7 @@ class StartupLogConfigConditionTest {
     @Test
     @DisplayName("run_whenRestClientIsNotOnTheClasspath_doesNotRegisterTheStartupLog")
     void run_whenRestClientIsNotOnTheClasspath_doesNotRegisterTheStartupLog() {
+        // when / then
         runner.withClassLoader(new FilteredClassLoader(RestClient.class))
                 .run(context -> assertThat(context)
                         .hasNotFailed()
@@ -36,6 +38,7 @@ class StartupLogConfigConditionTest {
     @Test
     @DisplayName("run_whenTheRequestFactoryIsNotOnTheClasspath_doesNotRegisterTheStartupLog")
     void run_whenTheRequestFactoryIsNotOnTheClasspath_doesNotRegisterTheStartupLog() {
+        // when / then
         runner.withClassLoader(new FilteredClassLoader(SimpleClientHttpRequestFactory.class))
                 .run(context -> assertThat(context)
                         .hasNotFailed()

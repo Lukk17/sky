@@ -34,11 +34,13 @@ class CsrfSessionRoundTripTest {
     @Test
     @DisplayName("tokenIssuedOnGet_thenValidatesOnPost")
     void tokenIssuedOnGet_thenValidatesOnPost() {
+        // given
         var session = new MockWebSession();
         var get = MockServerWebExchange.builder(MockServerHttpRequest.get("/api/session").build())
                 .session(session)
                 .build();
 
+        // when / then
         AtomicReference<String> exposed = new AtomicReference<>();
         filter.filter(get, chain -> {
             Mono<CsrfToken> attribute = get.getAttribute(CsrfToken.class.getName());

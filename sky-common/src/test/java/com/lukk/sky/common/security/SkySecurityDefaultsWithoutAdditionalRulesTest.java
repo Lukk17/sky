@@ -36,18 +36,21 @@ class SkySecurityDefaultsWithoutAdditionalRulesTest {
     @Test
     @DisplayName("healthProbeIsOpen_withoutAToken")
     void healthProbeIsOpen_withoutAToken() throws Exception {
+        // when / then
         mvc.perform(get("/actuator/health/readiness")).andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("apiDocsAreClosed_whenTheServicePassedProbesOnly")
     void apiDocsAreClosed_whenTheServicePassedProbesOnly() throws Exception {
+        // when / then
         mvc.perform(get("/v3/api-docs/public")).andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("businessEndpointIsClosed_withoutAToken")
     void businessEndpointIsClosed_withoutAToken() throws Exception {
+        // when / then
         mvc.perform(get("/api/v1/offers/42")).andExpect(status().isUnauthorized());
     }
 

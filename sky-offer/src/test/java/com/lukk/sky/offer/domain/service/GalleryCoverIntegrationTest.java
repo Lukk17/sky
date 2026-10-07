@@ -33,6 +33,7 @@ class GalleryCoverIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("setGalleryCover_whenToggledBackAndForth_thenSingleMainEachTime")
     void setGalleryCover_whenToggledBackAndForth_thenSingleMainEachTime() {
+        // given
         Offer unsaved = OfferAssembler.getPopulatedOffer(UUID.randomUUID());
         unsaved.setId(null);
         Offer offer = offerRepository.saveAndFlush(unsaved);
@@ -46,6 +47,7 @@ class GalleryCoverIntegrationTest extends AbstractIntegrationTest {
         UUID firstId = initial.get(0).getId();
         UUID secondId = initial.get(1).getId();
 
+        // when / then
         offerService.setGalleryCover(offerId, secondId, TEST_OWNER_EMAIL);
         List<OfferPhoto> afterFirst = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
         assertEquals(1, afterFirst.stream().filter(OfferPhoto::isMain).count());

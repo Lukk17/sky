@@ -29,6 +29,7 @@ class SecurityConfigLocalProfileTest {
 
     @Test
     void prometheus_whenNoCredentialsSupplied_thenReturnsMetrics() {
+        // when / then
         client.get().uri("/actuator/prometheus")
                 .exchange()
                 .expectStatus().isOk()
@@ -38,6 +39,7 @@ class SecurityConfigLocalProfileTest {
 
     @Test
     void health_whenNoCredentialsSupplied_thenReturnsOk() {
+        // when / then
         client.get().uri("/actuator/health")
                 .exchange()
                 .expectStatus().isOk();
@@ -54,6 +56,7 @@ class SecurityConfigLocalProfileTest {
             "/api/v1/messages"
     })
     void publishedApiPath_whenNoCredentialsSupplied_thenReachesItsRouteInsteadOfBeingRejected(String path) {
+        // when / then
         client.get().uri(path)
                 .exchange()
                 .expectStatus().is5xxServerError();
@@ -72,6 +75,7 @@ class SecurityConfigLocalProfileTest {
             "/msg/v3/api-docs"
     })
     void publishedDocumentationPath_whenNoCredentialsSupplied_thenReachesItsRouteInsteadOfBeingRejected(String path) {
+        // when / then
         client.get().uri(path)
                 .exchange()
                 .expectStatus().is5xxServerError();
@@ -89,6 +93,7 @@ class SecurityConfigLocalProfileTest {
             "/offer/v3/api-docs/public"
     })
     void swaggerUiAssetOrConfigPath_whenRequested_thenReachesItsRouteInsteadOfBeingRejected(String path) {
+        // when / then
         client.get().uri(path)
                 .exchange()
                 .expectStatus().is5xxServerError();
@@ -104,6 +109,7 @@ class SecurityConfigLocalProfileTest {
             "/msg/api/v1/messages"
     })
     void retiredServicePrefix_whenRequested_thenMatchesNoRoute(String path) {
+        // when / then
         client.get().uri(path)
                 .exchange()
                 .expectStatus().isNotFound();
@@ -112,6 +118,7 @@ class SecurityConfigLocalProfileTest {
     @ParameterizedTest
     @ValueSource(strings = {"/swagger-ui/index.html", "/v3/api-docs", "/v3/api-docs/swagger-config"})
     void documentationPathWithoutAServicePrefix_whenRequested_thenMatchesNoRoute(String path) {
+        // when / then
         client.get().uri(path)
                 .exchange()
                 .expectStatus().isNotFound();
@@ -119,6 +126,7 @@ class SecurityConfigLocalProfileTest {
 
     @Test
     void notifyWebsocketHandshake_whenSockJsInfoRequested_thenMatchesTheNotifyRoute() {
+        // when / then
         client.get().uri("/notifyWebsocket/info")
                 .exchange()
                 .expectStatus().is5xxServerError();
@@ -126,6 +134,7 @@ class SecurityConfigLocalProfileTest {
 
     @Test
     void notifyPrefix_whenRequested_thenMatchesNoRoute() {
+        // when / then
         client.get().uri("/notify/anything")
                 .exchange()
                 .expectStatus().isNotFound();

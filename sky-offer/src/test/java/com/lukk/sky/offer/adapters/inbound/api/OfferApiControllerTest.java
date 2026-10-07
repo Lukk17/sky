@@ -166,6 +166,7 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOwnedOffers_whenJwtHasNoRole_thenReturn403")
     void getOwnedOffers_whenJwtHasNoRole_thenReturn403() throws Exception {
+        // when / then
         mvc.perform(
                         get("/owner/offers")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -177,6 +178,7 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOwnedOffers_whenNoJwt_thenReturn401")
     void getOwnedOffers_whenNoJwt_thenReturn401() throws Exception {
+        // when / then
         mvc.perform(get("/owner/offers").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
@@ -410,6 +412,7 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("deleteOffer_whenOfferIdIsNotNumeric_thenReturn400")
     void deleteOffer_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
+        // when / then
         mvc.perform(
                         delete("/owner/offers/not-a-number")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -441,6 +444,7 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("search_whenTermIsBlank_thenReturn400")
     void search_whenTermIsBlank_thenReturn400() throws Exception {
+        // when / then
         mvc.perform(
                         post("/search")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -490,6 +494,7 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOfferOwner_whenJwtHasNoUserRole_thenReturn403")
     void getOfferOwner_whenJwtHasNoUserRole_thenReturn403() throws Exception {
+        // when / then
         mvc.perform(
                         get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -520,6 +525,7 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOfferOwner_whenNoJwt_thenReturn401")
     void getOfferOwner_whenNoJwt_thenReturn401() throws Exception {
+        // when / then
         mvc.perform(
                         get(String.format("/offers/%s/owner", TEST_DEFAULT_OFFER_ID))
                                 .contentType(MediaType.APPLICATION_JSON))
@@ -529,6 +535,7 @@ class OfferApiControllerTest {
     @Test
     @DisplayName("getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400")
     void getOfferOwner_whenOfferIdIsNotNumeric_thenReturn400() throws Exception {
+        // when / then
         mvc.perform(
                         get("/offers/not-a-number/owner")
                                 .contentType(MediaType.APPLICATION_JSON)

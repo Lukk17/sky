@@ -125,6 +125,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("outageMapping_keepsItsRetryAfterHeader")
     void outageMapping_keepsItsRetryAfterHeader() throws Exception {
+        // when / then
         doThrow(new PhotoStorageUnavailableException("store down", new IOException("refused")))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
@@ -136,6 +137,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("oversizedUpload_staysWithTheSharedHandlerAnd413_ratherThanTheLastResort500")
     void oversizedUpload_staysWithTheSharedHandlerAnd413_ratherThanTheLastResort500() throws Exception {
+        // when / then
         doThrow(new MaxUploadSizeExceededException(FIVE_MEGABYTES))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
@@ -148,6 +150,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("validationFailure_staysWithTheSharedHandlerAndKeepsItsFieldErrors")
     void validationFailure_staysWithTheSharedHandlerAndKeepsItsFieldErrors() throws Exception {
+        // when / then
         mvc.perform(MockMvcRequestBuilders.post("/" + apiPrefix + "/owner/offers")
                         .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -161,6 +164,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody")
     void unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody() throws Exception {
+        // when / then
         doThrow(new NullPointerException("photoObjectKey was null"))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
@@ -179,15 +183,18 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage")
     void unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage() throws Exception {
+        // given
         doThrow(new NullPointerException("photoObjectKey was null"))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
+        // when
         String body = mvc.perform(delete("/owner/offers/" + OFFER_ID).with(ownerJwt()))
                 .andExpect(status().isInternalServerError())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
+        // then
         assertThat(body)
                 .as("an unanticipated failure is where an internal message is most likely to leak")
                 .doesNotContain("NullPointerException")

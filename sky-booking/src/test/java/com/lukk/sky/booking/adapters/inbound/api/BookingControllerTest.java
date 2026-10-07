@@ -118,6 +118,7 @@ class BookingControllerTest {
     @Test
     @DisplayName("getBookings returns 403 Forbidden when the JWT carries no user role")
     void getBookings_whenJwtHasNoRole_thenReturn403() throws Exception {
+        // when / then
         mvc.perform(get("/user/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(jwtWithoutRole()))
@@ -127,6 +128,7 @@ class BookingControllerTest {
     @Test
     @DisplayName("getBookings returns 401 Unauthorized when no JWT is supplied")
     void getBookings_whenNoJwt_thenReturn401() throws Exception {
+        // when / then
         mvc.perform(get("/user/bookings")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())

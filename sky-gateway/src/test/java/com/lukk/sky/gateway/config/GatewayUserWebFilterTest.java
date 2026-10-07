@@ -20,6 +20,7 @@ class GatewayUserWebFilterTest {
     @Test
     @DisplayName("strips client-set header and sets session principal name")
     void filter_whenNotifyPathWithSession_thenStripsAndSets() {
+        // given
         var request = MockServerHttpRequest.get("/notifyWebsocket")
                 .header(GatewayUserWebFilter.GATEWAY_USER_HEADER, "attacker@evil.test")
                 .build();
@@ -32,16 +33,19 @@ class GatewayUserWebFilterTest {
             return Mono.empty();
         };
 
+        // when
         filter.filter(exchange, chain)
                 .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(ctx)))
                 .block();
 
+        // then
         assertThat(seen[0]).isEqualTo("user@test.com");
     }
 
     @Test
     @DisplayName("leaves non-notify paths untouched including client header")
     void filter_whenOtherPath_thenUntouched() {
+        // given
         var request = MockServerHttpRequest.get("/api/v1/offers")
                 .header(GatewayUserWebFilter.GATEWAY_USER_HEADER, "attacker@evil.test")
                 .build();
@@ -52,8 +56,10 @@ class GatewayUserWebFilterTest {
             return Mono.empty();
         };
 
+        // when
         filter.filter(exchange, chain).block();
 
+        // then
         assertThat(seen[0]).isEqualTo("attacker@evil.test");
     }
 }

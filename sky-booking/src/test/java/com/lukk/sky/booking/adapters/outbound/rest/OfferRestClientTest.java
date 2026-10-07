@@ -45,24 +45,28 @@ class OfferRestClientTest {
     @Test
     @DisplayName("requestOfferOwner reports an unavailable offer service, not a bad request, once the retries are exhausted")
     void requestOfferOwner_whenOfferServiceKeepsAnswering5xx_thenThrowsOfferServiceUnavailable() {
+        // when / then
         assertUnavailable(new ResourceAccessException("Offer service 5xx for offerId=" + OFFER_ID));
     }
 
     @Test
     @DisplayName("requestOfferOwner reports an unavailable offer service when the connection is refused")
     void requestOfferOwner_whenConnectionIsRefused_thenThrowsOfferServiceUnavailable() {
+        // when / then
         assertUnavailable(new ResourceAccessException("I/O error", new ConnectException("Connection refused")));
     }
 
     @Test
     @DisplayName("requestOfferOwner reports an unavailable offer service when the connection attempt times out")
     void requestOfferOwner_whenConnectTimesOut_thenThrowsOfferServiceUnavailable() {
+        // when / then
         assertUnavailable(new ResourceAccessException("I/O error", new SocketTimeoutException("connect timed out")));
     }
 
     @Test
     @DisplayName("requestOfferOwner reports an unavailable offer service when the read times out")
     void requestOfferOwner_whenReadTimesOut_thenThrowsOfferServiceUnavailable() {
+        // when / then
         assertUnavailable(new ResourceAccessException("I/O error", new SocketTimeoutException("Read timed out")));
     }
 

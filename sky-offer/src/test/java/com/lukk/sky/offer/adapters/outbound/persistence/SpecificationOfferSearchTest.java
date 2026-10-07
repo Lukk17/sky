@@ -61,10 +61,12 @@ class SpecificationOfferSearchTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("searchByTerm returns exactly the rows the previous JPQL query returned, for every probe term")
     void searchByTerm_whenComparedWithTheReplacedJpqlQuery_thenReturnsIdenticalRows() {
+        // given
         List<String> probeTerms = List.of(
                 "grand", "GRAND", "GrAnD", "warsaw", "pol", "POLAND", "beach", "zakopane",
                 "germany", "inn", "o", "%", "_", "no-such-term", "");
 
+        // when / then
         for (String term : probeTerms) {
             List<UUID> expected = legacySearch(term);
             List<UUID> actual = idsOf(offerSearch.searchByTerm(term, FIRST_PAGE));
@@ -76,6 +78,7 @@ class SpecificationOfferSearchTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("searchByTerm matches the hotel name, the city and the country regardless of case")
     void searchByTerm_whenTermMatchesSearchableAttribute_thenReturnMatchingOffersCaseInsensitively() {
+        // when / then
         assertEquals(1, offerSearch.searchByTerm("gRaNd hotel", FIRST_PAGE).getTotalElements());
         assertEquals(1, offerSearch.searchByTerm("ZAKOPANE", FIRST_PAGE).getTotalElements());
         assertEquals(3, offerSearch.searchByTerm("poland", FIRST_PAGE).getTotalElements());
@@ -84,8 +87,10 @@ class SpecificationOfferSearchTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("searchByTerm ignores attributes outside the searchable set, such as the description")
     void searchByTerm_whenTermOnlyMatchesDescription_thenReturnOnlySearchableAttributeMatches() {
+        // when
         Page<Offer> found = offerSearch.searchByTerm("grand", FIRST_PAGE);
 
+        // then
         assertEquals(1, found.getTotalElements());
         assertEquals("Grand Hotel", found.getContent().get(0).getHotelName());
     }
@@ -93,8 +98,10 @@ class SpecificationOfferSearchTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("searchByTerm returns an empty page for a null term, as the replaced JPQL query did")
     void searchByTerm_whenTermIsNull_thenReturnEmptyPage() {
+        // when
         Page<Offer> found = offerSearch.searchByTerm(null, FIRST_PAGE);
 
+        // then
         assertTrue(found.isEmpty());
         assertEquals(0, found.getTotalElements());
     }
@@ -102,8 +109,10 @@ class SpecificationOfferSearchTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("searchByTerm honours the requested page size and reports the full match count")
     void searchByTerm_whenMoreMatchesThanPageSize_thenReturnRequestedPageAndTotalCount() {
+        // when
         Page<Offer> firstPage = offerSearch.searchByTerm("poland", PageRequest.of(0, 2, Sort.by("id")));
 
+        // then
         assertEquals(2, firstPage.getContent().size());
         assertEquals(3, firstPage.getTotalElements());
         assertEquals(2, firstPage.getTotalPages());

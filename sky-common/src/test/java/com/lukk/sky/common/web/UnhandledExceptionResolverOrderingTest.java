@@ -48,6 +48,7 @@ class UnhandledExceptionResolverOrderingTest {
     @Test
     @DisplayName("mappedException_isAnsweredByTheUnorderedServiceAdvice_notByTheResolver")
     void mappedException_isAnsweredByTheUnorderedServiceAdvice_notByTheResolver() throws Exception {
+        // when / then
         mvc.perform(get("/mapped"))
                 .andExpect(status().isConflict())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
@@ -58,6 +59,7 @@ class UnhandledExceptionResolverOrderingTest {
     @Test
     @DisplayName("frameworkException_isAnsweredByTheSharedHandler_notByTheResolver")
     void frameworkException_isAnsweredByTheSharedHandler_notByTheResolver() throws Exception {
+        // when / then
         mvc.perform(get("/mapped").accept(MediaType.APPLICATION_ATOM_XML))
                 .andExpect(status().isNotAcceptable())
                 .andExpect(jsonPath("$.status").value(406))
@@ -67,6 +69,7 @@ class UnhandledExceptionResolverOrderingTest {
     @Test
     @DisplayName("unmappedException_fallsThroughToTheResolver_asAProblemDetail")
     void unmappedException_fallsThroughToTheResolver_asAProblemDetail() throws Exception {
+        // when / then
         mvc.perform(get("/unmapped"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
@@ -79,8 +82,10 @@ class UnhandledExceptionResolverOrderingTest {
     @Test
     @DisplayName("resolverSortsBehindEveryAdvice_becauseAnAdviceDefaultsToLowestPrecedence")
     void resolverSortsBehindEveryAdvice_becauseAnAdviceDefaultsToLowestPrecedence() {
+        // when
         UnhandledExceptionResolver resolver = context.getBean(UnhandledExceptionResolver.class);
 
+        // then
         assertThat(resolver.getOrder())
                 .as("the composite holding every advice is registered at order 0")
                 .isEqualTo(Ordered.LOWEST_PRECEDENCE);

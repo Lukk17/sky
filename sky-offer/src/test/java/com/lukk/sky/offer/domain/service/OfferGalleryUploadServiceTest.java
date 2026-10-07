@@ -65,12 +65,15 @@ class OfferGalleryUploadServiceTest {
     @Test
     @DisplayName("uploadGalleryPhoto_whenBelowCap_thenAppendsAtEnd")
     void uploadGalleryPhoto_whenBelowCap_thenAppendsAtEnd() {
+        // given
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
 
+        // when
         OfferView dto = offerService.uploadGalleryPhoto(offerId, OWNER,
                 new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
 
+        // then
         verify(offerPhotoRepository).saveAndFlush(any(OfferPhoto.class));
         verify(photoStorage).upload(any(), any(), anyLong(), any(), any());
     }
@@ -78,6 +81,7 @@ class OfferGalleryUploadServiceTest {
     @Test
     @DisplayName("uploadGalleryPhoto_whenAtCap_thenThrows413")
     void uploadGalleryPhoto_whenAtCap_thenThrows413() {
+        // given
         List<OfferPhoto> full = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             full.add(OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(i)
@@ -85,6 +89,7 @@ class OfferGalleryUploadServiceTest {
         }
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(full);
 
+        // when / then
         assertThrows(GalleryLimitExceededException.class, () -> offerService.uploadGalleryPhoto(
                 offerId, OWNER, new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "x.png"));
     }
@@ -92,13 +97,16 @@ class OfferGalleryUploadServiceTest {
     @Test
     @DisplayName("uploadGalleryPhoto_whenFirstPhoto_thenMarkedMain")
     void uploadGalleryPhoto_whenFirstPhoto_thenMarkedMain() {
+        // given
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         when(photoStorage.upload(any(), any(), anyLong(), any(), any())).thenReturn("offers/" + offerId + "/k-a.png");
         org.mockito.ArgumentCaptor<OfferPhoto> captor = org.mockito.ArgumentCaptor.forClass(OfferPhoto.class);
 
+        // when
         offerService.uploadGalleryPhoto(offerId, OWNER,
                 new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png");
 
+        // then
         verify(offerPhotoRepository).saveAndFlush(captor.capture());
         org.junit.jupiter.api.Assertions.assertTrue(captor.getValue().isMain());
     }
@@ -106,6 +114,7 @@ class OfferGalleryUploadServiceTest {
     @Test
     @DisplayName("uploadGalleryPhoto_whenCallerIsNotOwner_thenThrowsAccessDenied")
     void uploadGalleryPhoto_whenCallerIsNotOwner_thenThrowsAccessDenied() {
+        // when / then
         assertThrows(com.lukk.sky.offer.domain.exception.OfferAccessDeniedException.class,
                 () -> offerService.uploadGalleryPhoto(offerId, "stranger@sky.dev",
                         new ByteArrayInputStream(new byte[]{1}), 1L, "image/png", "a.png"));

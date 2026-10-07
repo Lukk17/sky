@@ -41,7 +41,7 @@ class DltKafkaProducerDeliveryGuaranteeTest extends AbstractIntegrationTest {
         // given
         Map<String, Object> resolved = dltProducerFactory.getConfigurationProperties();
 
-        // then
+        // when / then
         assertSoftly(softly -> {
             softly.assertThat(stringValueOf(resolved, ProducerConfig.ACKS_CONFIG))
                     .as(ProducerConfig.ACKS_CONFIG)
@@ -71,7 +71,7 @@ class DltKafkaProducerDeliveryGuaranteeTest extends AbstractIntegrationTest {
         // given
         Map<String, Object> resolved = dltProducerFactory.getConfigurationProperties();
 
-        // then
+        // when / then
         assertThatCode(() -> {
             try (Producer<String, String> probe = new KafkaProducer<>(resolved)) {
                 assertThat(probe).isNotNull();

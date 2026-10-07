@@ -29,6 +29,7 @@ class SpringDataExceptionHandlerWebTest {
     @Test
     @DisplayName("unstorableValue_answers400AsProblemJson")
     void unstorableValue_answers400AsProblemJson() throws Exception {
+        // when / then
         controller.failWith(databaseRejected(
                 "ERROR: invalid byte sequence for encoding \"UTF8\": 0x00", "22021"));
 
@@ -43,10 +44,12 @@ class SpringDataExceptionHandlerWebTest {
     @Test
     @DisplayName("constraintViolation_staysUnhandled_soItKeepsItsServerErrorStatus")
     void constraintViolation_staysUnhandled_soItKeepsItsServerErrorStatus() {
+        // given
         DataIntegrityViolationException duplicateKey = databaseRejected(
                 "ERROR: duplicate key value violates unique constraint \"offer_pkey\"", "23505");
         controller.failWith(duplicateKey);
 
+        // when / then
         assertThatThrownBy(() -> mvc.perform(post("/offers")))
                 .as("declining the exception has to leave it unresolved rather than answer an empty 200")
                 .hasRootCauseInstanceOf(SQLException.class)

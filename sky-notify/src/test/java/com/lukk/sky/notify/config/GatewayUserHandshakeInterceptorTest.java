@@ -25,12 +25,15 @@ class GatewayUserHandshakeInterceptorTest {
     @Test
     @DisplayName("accepts X-Sky-User set by the gateway")
     void beforeHandshake_whenGatewayHeaderPresent_thenUsesGatewayIdentity() {
+        // given
         Map<String, Object> attributes = new HashMap<>();
 
+        // when
         boolean result = interceptor.beforeHandshake(
                 request(Map.of(GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("gateway@test.com"))),
                 response, handler, attributes);
 
+        // then
         assertThat(result).isTrue();
         assertThat(attributes).containsEntry(
                 GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE, "gateway@test.com");
@@ -39,12 +42,15 @@ class GatewayUserHandshakeInterceptorTest {
     @Test
     @DisplayName("rejects spoofed email header when X-Sky-User is absent")
     void beforeHandshake_whenOnlySpoofedEmailPresent_thenSetsNothing() {
+        // given
         Map<String, Object> attributes = new HashMap<>();
 
+        // when
         boolean result = interceptor.beforeHandshake(
                 request(Map.of("X-Auth-Request-Email", List.of("spoofed@evil.test"))),
                 response, handler, attributes);
 
+        // then
         assertThat(result).isTrue();
         assertThat(attributes).doesNotContainKey(GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE);
     }
@@ -52,10 +58,13 @@ class GatewayUserHandshakeInterceptorTest {
     @Test
     @DisplayName("sets no attribute when no identity header is present")
     void beforeHandshake_whenNoIdentityHeaders_thenSetsNothing() {
+        // given
         Map<String, Object> attributes = new HashMap<>();
 
+        // when
         boolean result = interceptor.beforeHandshake(request(Map.of()), response, handler, attributes);
 
+        // then
         assertThat(result).isTrue();
         assertThat(attributes).doesNotContainKey(GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE);
     }
@@ -63,12 +72,15 @@ class GatewayUserHandshakeInterceptorTest {
     @Test
     @DisplayName("ignores blank gateway header and sets nothing")
     void beforeHandshake_whenGatewayHeaderBlank_thenSetsNothing() {
+        // given
         Map<String, Object> attributes = new HashMap<>();
 
+        // when
         boolean result = interceptor.beforeHandshake(
                 request(Map.of(GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("  "))),
                 response, handler, attributes);
 
+        // then
         assertThat(result).isTrue();
         assertThat(attributes).doesNotContainKey(GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE);
     }
@@ -76,14 +88,17 @@ class GatewayUserHandshakeInterceptorTest {
     @Test
     @DisplayName("ignores an unknown email header and keeps the gateway identity")
     void beforeHandshake_whenHeadersDisagree_thenPrefersGatewayIdentity() {
+        // given
         Map<String, Object> attributes = new HashMap<>();
 
+        // when
         boolean result = interceptor.beforeHandshake(
                 request(Map.of(
                         GatewayUserHandshakeInterceptor.GATEWAY_USER_HEADER, List.of("gateway@test.com"),
                         "X-Auth-Request-Email", List.of("edge@test.com"))),
                 response, handler, attributes);
 
+        // then
         assertThat(result).isTrue();
         assertThat(attributes).containsEntry(
                 GatewayUserHandshakeInterceptor.GATEWAY_USER_ATTRIBUTE, "gateway@test.com");

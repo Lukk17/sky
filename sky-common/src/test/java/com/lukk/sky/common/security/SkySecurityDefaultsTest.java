@@ -41,30 +41,35 @@ class SkySecurityDefaultsTest {
     @Test
     @DisplayName("healthProbeIsOpen_withoutAToken")
     void healthProbeIsOpen_withoutAToken() throws Exception {
+        // when / then
         mvc.perform(get("/actuator/health/readiness")).andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("apiDocsAreOpen_withoutAToken")
     void apiDocsAreOpen_withoutAToken() throws Exception {
+        // when / then
         mvc.perform(get("/v3/api-docs/public")).andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("prometheusIsClosed_withoutAToken")
     void prometheusIsClosed_withoutAToken() throws Exception {
+        // when / then
         mvc.perform(get("/actuator/prometheus")).andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("businessEndpointIsClosed_withoutAToken")
     void businessEndpointIsClosed_withoutAToken() throws Exception {
+        // when / then
         mvc.perform(get("/api/v1/bookings")).andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("unauthorizedResponseHasAnEmptyBodyAndABearerChallenge_soTheOpenApiContractDeclaresNoContent")
     void unauthorizedResponseHasAnEmptyBodyAndABearerChallenge() throws Exception {
+        // when / then
         mvc.perform(get("/api/v1/bookings"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, startsWith("Bearer")))
@@ -74,6 +79,7 @@ class SkySecurityDefaultsTest {
     @Test
     @DisplayName("serviceSpecificRuleIsApplied_beforeTheAuthenticatedFallback")
     void serviceSpecificRuleIsApplied_beforeTheAuthenticatedFallback() throws Exception {
+        // when / then
         mvc.perform(get("/api/v1/offers/42")).andExpect(status().isNotFound());
     }
 

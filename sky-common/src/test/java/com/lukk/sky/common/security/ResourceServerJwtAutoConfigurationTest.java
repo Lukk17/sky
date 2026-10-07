@@ -23,24 +23,28 @@ class ResourceServerJwtAutoConfigurationTest {
     @Test
     @DisplayName("registersTheKeycloakRealmRoleConverter_inAServletWebApplication")
     void registersTheKeycloakRealmRoleConverter_inAServletWebApplication() {
+        // when / then
         webRunner.run(context -> assertThat(context).hasSingleBean(JwtAuthenticationConverter.class));
     }
 
     @Test
     @DisplayName("registersNoJwtDecoder_soBootBuildsItFromTheIssuerUriProperty")
     void registersNoJwtDecoder_soBootBuildsItFromTheIssuerUriProperty() {
+        // when / then
         webRunner.run(context -> assertThat(context).doesNotHaveBean(JwtDecoder.class));
     }
 
     @Test
     @DisplayName("registersNoAudienceValidator_whenOauth2AudienceIsUnset")
     void registersNoAudienceValidator_whenOauth2AudienceIsUnset() {
+        // when / then
         webRunner.run(context -> assertThat(context).doesNotHaveBean(OAuth2TokenValidator.class));
     }
 
     @Test
     @DisplayName("registersNoAudienceValidator_whenOauth2AudienceIsBlank")
     void registersNoAudienceValidator_whenOauth2AudienceIsBlank() {
+        // when / then
         webRunner.withPropertyValues("OAUTH2_AUDIENCE=")
                 .run(context -> assertThat(context)
                         .as("an empty environment variable must not enforce an empty audience")
@@ -50,6 +54,7 @@ class ResourceServerJwtAutoConfigurationTest {
     @Test
     @DisplayName("registersTheAudienceValidator_whenOauth2AudienceIsSet")
     void registersTheAudienceValidator_whenOauth2AudienceIsSet() {
+        // when / then
         webRunner.withPropertyValues("OAUTH2_AUDIENCE=sky-backend")
                 .run(context -> {
                     assertThat(context).hasSingleBean(OAuth2TokenValidator.class);
@@ -69,6 +74,7 @@ class ResourceServerJwtAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_outsideAServletWebApplication")
     void registersNothing_outsideAServletWebApplication() {
+        // when / then
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(ResourceServerJwtAutoConfiguration.class))
                 .run(context -> assertThat(context).doesNotHaveBean(JwtAuthenticationConverter.class));

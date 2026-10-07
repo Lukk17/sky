@@ -65,6 +65,7 @@ class OfferGalleryReorderServiceTest {
     @Test
     @DisplayName("reorderGalleryPhoto_whenMovingLastToFirst_thenCoverSwaps")
     void reorderGalleryPhoto_whenMovingLastToFirst_thenCoverSwaps() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0, p1));
@@ -72,8 +73,10 @@ class OfferGalleryReorderServiceTest {
         when(photoStorage.presignedUrl("k0")).thenReturn("u0");
         when(photoStorage.presignedUrl("k1")).thenReturn("u1");
 
+        // when
         OfferView dto = offerService.reorderGalleryPhoto(offerId, p1.getId(), 0, OWNER);
 
+        // then
         assertEquals(p1.getId(), dto.gallery().get(0).id());
         assertEquals("u1", dto.coverPhotoUrl());
         assertEquals(0, p1.getPosition());
@@ -86,10 +89,12 @@ class OfferGalleryReorderServiceTest {
     @Test
     @DisplayName("reorderGalleryPhoto_whenPhotoUnknown_thenGalleryUnchanged")
     void reorderGalleryPhoto_whenPhotoUnknown_thenGalleryUnchanged() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
                 .thenReturn(new ArrayList<>(List.of(p0)));
 
+        // when / then
         assertThrows(OfferNotFoundException.class,
                 () -> offerService.reorderGalleryPhoto(offerId, UUID.randomUUID(), 0, OWNER));
     }
@@ -97,10 +102,12 @@ class OfferGalleryReorderServiceTest {
     @Test
     @DisplayName("reorderGalleryPhoto_whenPositionOutOfRange_thenRejected")
     void reorderGalleryPhoto_whenPositionOutOfRange_thenRejected() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
                 .thenReturn(new ArrayList<>(List.of(p0)));
 
+        // when / then
         assertThrows(OfferException.class,
                 () -> offerService.reorderGalleryPhoto(offerId, p0.getId(), 5, OWNER));
     }
@@ -108,6 +115,7 @@ class OfferGalleryReorderServiceTest {
     @Test
     @DisplayName("reorderGalleryPhoto_whenMovingFirstToLast_thenShiftsForward")
     void reorderGalleryPhoto_whenMovingFirstToLast_thenShiftsForward() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         OfferPhoto p1 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1).objectKey("k1").build();
         OfferPhoto p2 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(2).objectKey("k2").build();
@@ -116,8 +124,10 @@ class OfferGalleryReorderServiceTest {
         when(photoStorage.presignedUrl(org.mockito.ArgumentMatchers.anyString()))
                 .thenAnswer(inv -> "u-" + inv.getArgument(0));
 
+        // when
         OfferView dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 2, OWNER);
 
+        // then
         assertEquals(2, p0.getPosition());
         assertEquals(0, p1.getPosition());
         assertEquals(1, p2.getPosition());
@@ -127,13 +137,16 @@ class OfferGalleryReorderServiceTest {
     @Test
     @DisplayName("reorderGalleryPhoto_whenPositionUnchanged_thenKeepsOrder")
     void reorderGalleryPhoto_whenPositionUnchanged_thenKeepsOrder() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         List<OfferPhoto> photos = new ArrayList<>(List.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(photos);
         when(photoStorage.presignedUrl("k0")).thenReturn("u0");
 
+        // when
         OfferView dto = offerService.reorderGalleryPhoto(offerId, p0.getId(), 0, OWNER);
 
+        // then
         assertEquals(0, p0.getPosition());
         assertEquals(p0.getId(), dto.gallery().get(0).id());
     }

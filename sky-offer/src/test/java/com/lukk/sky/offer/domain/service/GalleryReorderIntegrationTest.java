@@ -32,6 +32,7 @@ class GalleryReorderIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("reorderGalleryPhoto_whenRunTwice_thenNoUniqueViolation")
     void reorderGalleryPhoto_whenRunTwice_thenNoUniqueViolation() {
+        // given
         Offer unsaved = OfferAssembler.getPopulatedOffer(UUID.randomUUID());
         unsaved.setId(null);
         Offer offer = offerRepository.saveAndFlush(unsaved);
@@ -44,6 +45,7 @@ class GalleryReorderIntegrationTest extends AbstractIntegrationTest {
         List<OfferPhoto> initial = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
         UUID lastId = initial.get(2).getId();
 
+        // when / then
         offerService.reorderGalleryPhoto(offerId, lastId, 0, TEST_OWNER_EMAIL);
         List<OfferPhoto> afterFirst = offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId);
         assertEquals(lastId, afterFirst.get(0).getId());

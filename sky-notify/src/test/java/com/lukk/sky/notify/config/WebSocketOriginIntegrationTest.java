@@ -58,7 +58,7 @@ class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("the endpoints answer on the origins the bound property names, not on a list compiled into the code")
     void allowedOrigins_whenInspected_thenComeFromTheBoundProperty() {
-        // then
+        // when / then
         assertThat(boundAllowedOrigins).isEqualTo(CONFIGURED_ORIGINS);
         assertThat(List.of(boundAllowedOrigins.split(",")))
                 .doesNotContain(UNCONFIGURED_ORIGIN, FOREIGN_ORIGIN);

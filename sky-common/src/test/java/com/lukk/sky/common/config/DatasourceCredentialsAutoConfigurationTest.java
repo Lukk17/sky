@@ -22,6 +22,7 @@ class DatasourceCredentialsAutoConfigurationTest {
     @Test
     @DisplayName("run_whenTheCredentialsAreResolved_startsTheContext")
     void run_whenTheCredentialsAreResolved_startsTheContext() {
+        // when / then
         runner.withUserConfiguration(ResolvedCredentials.class)
                 .run(context -> assertThat(context)
                         .hasNotFailed()
@@ -31,6 +32,7 @@ class DatasourceCredentialsAutoConfigurationTest {
     @Test
     @DisplayName("run_whenThePasswordIsStillAPlaceholder_failsStartupNamingTheVariable")
     void run_whenThePasswordIsStillAPlaceholder_failsStartupNamingTheVariable() {
+        // when / then
         runner.withUserConfiguration(UnresolvedPassword.class)
                 .run(context -> assertThat(context)
                         .hasFailed()
@@ -44,6 +46,7 @@ class DatasourceCredentialsAutoConfigurationTest {
     @Test
     @DisplayName("run_whenNoConnectionDetailsBeanExists_registersTheValidatorButNeverFires")
     void run_whenNoConnectionDetailsBeanExists_registersTheValidatorButNeverFires() {
+        // when / then
         runner.run(context -> assertThat(context)
                 .hasNotFailed()
                 .hasSingleBean(DatasourceCredentialsValidator.class));
@@ -52,6 +55,7 @@ class DatasourceCredentialsAutoConfigurationTest {
     @Test
     @DisplayName("run_whenJdbcIsNotOnTheClasspath_doesNotRegisterTheValidator")
     void run_whenJdbcIsNotOnTheClasspath_doesNotRegisterTheValidator() {
+        // when / then
         runner.withClassLoader(new FilteredClassLoader(JdbcConnectionDetails.class))
                 .run(context -> assertThat(context)
                         .hasNotFailed()
@@ -61,6 +65,7 @@ class DatasourceCredentialsAutoConfigurationTest {
     @Test
     @DisplayName("run_whenTheDetailsBeanOnlyExposesCredentialsAfterInitialization_doesNotReadThemTooEarly")
     void run_whenTheDetailsBeanOnlyExposesCredentialsAfterInitialization_doesNotReadThemTooEarly() {
+        // when / then
         runner.withUserConfiguration(LateBindingCredentials.class)
                 .run(context -> assertThat(context).hasNotFailed());
     }

@@ -25,6 +25,7 @@ class ApiVersioningAutoConfigurationTest {
     @Test
     @DisplayName("configureApiVersioning_registersAVersionStrategy")
     void configureApiVersioning_registersAVersionStrategy() {
+        // when / then
         assertThat(strategy)
                 .as("no strategy means no request is ever version-resolved")
                 .isNotNull();
@@ -33,18 +34,21 @@ class ApiVersioningAutoConfigurationTest {
     @Test
     @DisplayName("resolveVersion_returnsTheSecondSegment_whenItIsAVersion")
     void resolveVersion_returnsTheSecondSegment_whenItIsAVersion() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/api/v1/offers"))).isEqualTo("v1");
     }
 
     @Test
     @DisplayName("resolveVersion_returnsTheSecondSegment_whenTheVersionHasSeveralDigits")
     void resolveVersion_returnsTheSecondSegment_whenTheVersionHasSeveralDigits() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/api/v12/offers"))).isEqualTo("v12");
     }
 
     @Test
     @DisplayName("resolveVersion_returnsNoVersion_whenTheSecondSegmentIsAResourceName")
     void resolveVersion_returnsNoVersion_whenTheSecondSegmentIsAResourceName() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/api/offers/42")))
                 .as("an unversioned path must fall through to the default version, not be read as version 'offers'")
                 .isNull();
@@ -53,18 +57,21 @@ class ApiVersioningAutoConfigurationTest {
     @Test
     @DisplayName("resolveVersion_returnsNoVersion_whenTheSecondSegmentStartsWithVButIsAWord")
     void resolveVersion_returnsNoVersion_whenTheSecondSegmentStartsWithVButIsAWord() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/api/version/offers"))).isNull();
     }
 
     @Test
     @DisplayName("resolveVersion_returnsNoVersion_whenTheSecondSegmentIsALoneV")
     void resolveVersion_returnsNoVersion_whenTheSecondSegmentIsALoneV() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/api/v/offers"))).isNull();
     }
 
     @Test
     @DisplayName("resolveVersion_returnsNoVersion_whenTheVersionSitsInTheFirstSegment")
     void resolveVersion_returnsNoVersion_whenTheVersionSitsInTheFirstSegment() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/v1/offers")))
                 .as("the version is read from the second segment, so /v1/... carries none")
                 .isNull();
@@ -73,26 +80,31 @@ class ApiVersioningAutoConfigurationTest {
     @Test
     @DisplayName("resolveVersion_returnsNoVersion_whenThePathHasOnlyOneSegment")
     void resolveVersion_returnsNoVersion_whenThePathHasOnlyOneSegment() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/api"))).isNull();
     }
 
     @Test
     @DisplayName("resolveVersion_returnsNoVersion_whenThePathHasNoSegments")
     void resolveVersion_returnsNoVersion_whenThePathHasNoSegments() {
+        // when / then
         assertThat(strategy.resolveVersion(request("/"))).isNull();
     }
 
     @Test
     @DisplayName("getDefaultVersion_isVersionOne")
     void getDefaultVersion_isVersionOne() {
+        // when / then
         assertThat(strategy.getDefaultVersion()).isEqualTo(strategy.parseVersion("1"));
     }
 
     @Test
     @DisplayName("validateVersion_accepts_whenTheRequestAsksForVersionOne")
     void validateVersion_accepts_whenTheRequestAsksForVersionOne() {
+        // when
         HttpServletRequest request = request("/api/v1/offers");
 
+        // then
         assertThatCode(() -> strategy.validateVersion(strategy.parseVersion("1"), request))
                 .doesNotThrowAnyException();
     }
@@ -100,8 +112,10 @@ class ApiVersioningAutoConfigurationTest {
     @Test
     @DisplayName("validateVersion_rejects_whenTheRequestAsksForAnUnsupportedVersion")
     void validateVersion_rejects_whenTheRequestAsksForAnUnsupportedVersion() {
+        // when
         HttpServletRequest request = request("/api/v2/offers");
 
+        // then
         assertThatThrownBy(() -> strategy.validateVersion(strategy.parseVersion("2"), request))
                 .isInstanceOf(InvalidApiVersionException.class);
     }
@@ -109,6 +123,7 @@ class ApiVersioningAutoConfigurationTest {
     @Test
     @DisplayName("registersTheConfigurer_inAServletWebApplication")
     void registersTheConfigurer_inAServletWebApplication() {
+        // when / then
         new WebApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(ApiVersioningAutoConfiguration.class))
                 .run(context -> assertThat(context).hasSingleBean(WebMvcConfigurer.class));
@@ -117,6 +132,7 @@ class ApiVersioningAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_outsideAServletWebApplication")
     void registersNothing_outsideAServletWebApplication() {
+        // when / then
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(ApiVersioningAutoConfiguration.class))
                 .run(context -> assertThat(context).doesNotHaveBean(WebMvcConfigurer.class));

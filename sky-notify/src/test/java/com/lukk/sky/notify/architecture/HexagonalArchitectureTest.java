@@ -45,6 +45,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Domain ports are interfaces")
     void domainPorts_whenInspected_thenAllAreInterfaces() {
+        // when / then
         classes()
                 .that().resideInAPackage("..domain.ports..")
                 .should().beInterfaces()
@@ -54,6 +55,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Domain never depends on an adapter")
     void domain_whenInspected_thenDoesNotDependOnAdapters() {
+        // when / then
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAPackage("..adapters..")
@@ -63,6 +65,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Nothing imports another service: only sky-common is shared")
     void allClasses_whenInspected_thenImportNoOtherServiceModule() {
+        // when / then
         noClasses()
                 .should().dependOnClassesThat(areOtherServiceModules())
                 .because("sky-common is the only module a service may share code through, and a second"
@@ -73,6 +76,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Domain depends only on the packages the architecture specification sanctions")
     void domain_whenInspected_thenDependsOnlyOnSanctionedPackages() {
+        // when / then
         classes()
                 .that().resideInAPackage("..domain..")
                 .should().onlyDependOnClassesThat(areSanctionedDomainDependencies())
@@ -84,6 +88,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Domain never depends on transport or serialization frameworks")
     void domain_whenInspected_thenHasNoTransportOrSerializationDependencies() {
+        // when / then
         noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAnyPackage(
@@ -101,6 +106,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("Kafka listeners live under adapters.inbound")
     void kafkaListeners_whenInspected_thenResideInInboundAdaptersPackage() {
+        // when / then
         classes()
                 .that().haveSimpleNameContaining("Listener")
                 .should().resideInAPackage("..adapters.inbound..")
@@ -110,6 +116,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("WebSocket publishing stays in adapters.outbound.websocket")
     void webSocketPublishing_whenInspected_thenResidesInTheWebSocketAdapterPackage() {
+        // when / then
         noClasses()
                 .that().resideOutsideOfPackage("..adapters.outbound.websocket..")
                 .should().dependOnClassesThat().haveFullyQualifiedName(
@@ -122,6 +129,7 @@ class HexagonalArchitectureTest {
     @Test
     @DisplayName("No adapter package is named for nothing")
     void adapterPackages_whenInspected_thenNoneCarriesANonDescriptiveName() {
+        // when / then
         noClasses()
                 .should().resideInAnyPackage(NON_DESCRIPTIVE_ADAPTER_PACKAGES)
                 .because("an adapter subpackage is named for the technology or the concern it adapts, as"

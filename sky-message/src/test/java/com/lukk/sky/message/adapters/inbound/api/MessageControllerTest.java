@@ -161,6 +161,7 @@ class MessageControllerTest {
     @Test
     @DisplayName("GET /messages/received without JWT returns 401 Unauthorized")
     void getReceivedMessages_whenNoJwt_thenReturn401() throws Exception {
+        // when / then
         mvc.perform(get("/messages/received").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
@@ -188,6 +189,7 @@ class MessageControllerTest {
     @Test
     @DisplayName("GET /messages/sent without JWT returns 401 Unauthorized")
     public void getSentMessages_whenNoJwt_thenReturn401() throws Exception {
+        // when / then
         mvc.perform(get("/messages/sent").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andReturn();

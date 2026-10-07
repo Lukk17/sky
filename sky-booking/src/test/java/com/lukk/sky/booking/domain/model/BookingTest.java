@@ -22,40 +22,49 @@ class BookingTest {
     @Test
     @DisplayName("equals is false for two unsaved bookings even when every business field matches")
     void equals_whenBothBookingsAreUnsaved_thenNotEqual() {
+        // given
         Booking one = booking(null, OWNER_EMAIL);
         Booking other = booking(null, OWNER_EMAIL);
 
+        // when / then
         assertThat(one).isNotEqualTo(other);
     }
 
     @Test
     @DisplayName("equals is true for the same identifier even when the owner email differs")
     void equals_whenSameIdentifierAndDifferentOwnerEmail_thenEqual() {
+        // given
         Booking one = booking(BOOKING_ID, OWNER_EMAIL);
         Booking other = booking(BOOKING_ID, "someone.else@sky.dev");
 
+        // when / then
         assertThat(one).isEqualTo(other);
     }
 
     @Test
     @DisplayName("equals is false for different identifiers")
     void equals_whenDifferentIdentifiers_thenNotEqual() {
+        // given
         Booking one = booking(BOOKING_ID, OWNER_EMAIL);
         Booking other = booking(UUID.randomUUID(), OWNER_EMAIL);
 
+        // when / then
         assertThat(one).isNotEqualTo(other);
     }
 
     @Test
     @DisplayName("hashCode does not change when the identifier is assigned on persist")
     void hashCode_whenIdentifierIsAssignedAfterInsertionIntoASet_thenTheEntityIsStillFound() {
+        // given
         Booking booking = booking(null, OWNER_EMAIL);
         Set<Booking> bookings = new HashSet<>();
         bookings.add(booking);
         int hashBeforePersist = booking.hashCode();
 
+        // when
         booking.setId(BOOKING_ID);
 
+        // then
         assertThat(booking.hashCode()).isEqualTo(hashBeforePersist);
         assertThat(bookings).contains(booking);
     }
@@ -63,8 +72,10 @@ class BookingTest {
     @Test
     @DisplayName("toString carries the identifying fields and never the personal email addresses")
     void toString_whenLogged_thenOmitsEmailAddresses() {
+        // when
         Booking booking = booking(BOOKING_ID, OWNER_EMAIL);
 
+        // then
         assertThat(booking.toString())
                 .contains(BOOKING_ID.toString(), OFFER_ID.toString(), BOOKED_DATE.toString())
                 .doesNotContain(BOOKING_USER, OWNER_EMAIL);
@@ -73,8 +84,10 @@ class BookingTest {
     @Test
     @DisplayName("equals is false against null and against a value of another type")
     void equals_whenComparedWithNullOrAValueOfAnotherType_thenNotEqual() {
+        // when
         Booking booking = booking(BOOKING_ID, OWNER_EMAIL);
 
+        // then
         assertThat(booking.equals(null)).isFalse();
         assertThat(booking.equals(BOOKING_ID.toString())).isFalse();
     }

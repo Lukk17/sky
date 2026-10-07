@@ -65,11 +65,13 @@ class OfferGalleryDeleteServiceTest {
     @Test
     @DisplayName("deleteGalleryPhoto_whenPhotoBelongsToAnotherOffer_thenNotFound")
     void deleteGalleryPhoto_whenPhotoBelongsToAnotherOffer_thenNotFound() {
+        // given
         Offer other = Offer.builder().id(UUID.randomUUID()).hotelName("H").city("C").country("K")
                 .price(new java.math.BigDecimal("100")).ownerEmail(OWNER).roomCapacity(2L).build();
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(other).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
 
+        // when / then
         assertThrows(OfferNotFoundException.class,
                 () -> offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER));
     }
@@ -77,14 +79,17 @@ class OfferGalleryDeleteServiceTest {
     @Test
     @DisplayName("deleteGalleryPhoto_whenStoreDeleteFails_thenStillReturns")
     void deleteGalleryPhoto_whenStoreDeleteFails_thenStillReturns() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
         org.mockito.Mockito.doThrow(new com.lukk.sky.offer.domain.exception.PhotoStorageUnavailableException("down", new java.io.IOException("refused")))
                 .when(photoStorage).delete(offerId, "k0");
 
+        // when
         OfferView dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
+        // then
         verify(offerPhotoRepository).delete(p0);
         assertTrue(dto.gallery().isEmpty());
     }
@@ -92,13 +97,16 @@ class OfferGalleryDeleteServiceTest {
     @Test
     @DisplayName("deleteGalleryPhoto_whenKeyIsBlank_thenSkipsStoreDelete")
     void deleteGalleryPhoto_whenKeyIsBlank_thenSkipsStoreDelete() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .externalUrl("https://cdn.example/x.png").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
 
+        // when
         offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
+        // then
         verify(offerPhotoRepository).delete(p0);
         org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
                 .delete(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
@@ -107,26 +115,32 @@ class OfferGalleryDeleteServiceTest {
     @Test
     @DisplayName("deleteGalleryPhoto_whenRenumberFindsGap_thenClosesIt")
     void deleteGalleryPhoto_whenRenumberFindsGap_thenClosesIt() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         OfferPhoto survivor = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(5).objectKey("k5").build();
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
                 .thenReturn(new ArrayList<>(List.of(survivor)));
 
+        // when
         offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
+        // then
         assertEquals(0, survivor.getPosition());
     }
 
     @Test
     @DisplayName("deleteGalleryPhoto_whenPhotoExists_thenRemovesRowAndObject")
     void deleteGalleryPhoto_whenPhotoExists_thenRemovesRowAndObject() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).objectKey("k0").build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId)).thenReturn(new ArrayList<>());
 
+        // when
         OfferView dto = offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
+        // then
         verify(offerPhotoRepository).delete(p0);
         verify(photoStorage).delete(offerId, "k0");
         assertTrue(dto.gallery().isEmpty());
@@ -135,6 +149,7 @@ class OfferGalleryDeleteServiceTest {
     @Test
     @DisplayName("deleteGalleryPhoto_whenCoverDeleted_thenFirstRemainingIsPromoted")
     void deleteGalleryPhoto_whenCoverDeleted_thenFirstRemainingIsPromoted() {
+        // given
         OfferPhoto cover = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0)
                 .objectKey("k0").main(true).build();
         OfferPhoto next = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(1)
@@ -144,8 +159,10 @@ class OfferGalleryDeleteServiceTest {
                 .thenReturn(new ArrayList<>(List.of(cover, next)), new ArrayList<>(List.of(next)));
         when(photoStorage.presignedUrl(anyString())).thenAnswer(inv -> "u-" + inv.getArgument(0));
 
+        // when
         OfferView dto = offerService.deleteGalleryPhoto(offerId, cover.getId(), OWNER);
 
+        // then
         verify(offerPhotoRepository).delete(cover);
         verify(offerPhotoRepository, org.mockito.Mockito.times(2)).saveAllAndFlush(anyList());
         assertTrue(next.isMain());
@@ -158,13 +175,16 @@ class OfferGalleryDeleteServiceTest {
     @Test
     @DisplayName("deleteGalleryPhoto_whenKeyIsNull_thenSkipsStoreDelete")
     void deleteGalleryPhoto_whenKeyIsNull_thenSkipsStoreDelete() {
+        // given
         OfferPhoto p0 = OfferPhoto.builder().id(UUID.randomUUID()).offer(offer).position(0).build();
         when(offerPhotoRepository.findById(p0.getId())).thenReturn(Optional.of(p0));
         when(offerPhotoRepository.findAllByOfferIdOrderByPositionAsc(offerId))
                 .thenReturn(new ArrayList<>(List.of(p0)));
 
+        // when
         offerService.deleteGalleryPhoto(offerId, p0.getId(), OWNER);
 
+        // then
         verify(offerPhotoRepository).delete(p0);
         org.mockito.Mockito.verify(photoStorage, org.mockito.Mockito.never())
                 .delete(any(), any());

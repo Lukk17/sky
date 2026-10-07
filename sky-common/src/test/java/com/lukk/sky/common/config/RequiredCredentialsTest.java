@@ -13,6 +13,7 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("orFailStartup_whenEveryValueIsResolved_doesNotThrow")
     void orFailStartup_whenEveryValueIsResolved_doesNotThrow() {
+        // when / then
         assertThatCode(() -> RequiredCredentials.check()
                 .and("spring.datasource.username", "sky")
                 .and("spring.datasource.password", "s3cret")
@@ -23,6 +24,7 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("orFailStartup_whenAValueIsStillAPlaceholder_namesTheVariableAndTheProperty")
     void orFailStartup_whenAValueIsStillAPlaceholder_namesTheVariableAndTheProperty() {
+        // when / then
         assertThatThrownBy(() -> RequiredCredentials.check()
                 .and("spring.datasource.username", "sky")
                 .and("spring.datasource.password", "${POSTGRES_PASSWORD}")
@@ -35,11 +37,13 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("orFailStartup_whenSeveralValuesArePlaceholders_reportsAllOfThemInDeclarationOrder")
     void orFailStartup_whenSeveralValuesArePlaceholders_reportsAllOfThemInDeclarationOrder() {
+        // given
         MissingCredentialException thrown = catchMissingCredential(() -> RequiredCredentials.check()
                 .and("spring.datasource.username", "${POSTGRES_USER}")
                 .and("spring.datasource.password", "${POSTGRES_PASSWORD}")
                 .orFailStartup());
 
+        // when / then
         assertThat(thrown.getMissing())
                 .extracting(MissingCredential::environmentVariable)
                 .containsExactly("POSTGRES_USER", "POSTGRES_PASSWORD");
@@ -51,6 +55,7 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("orFailStartup_whenAValueIsNull_doesNotThrow")
     void orFailStartup_whenAValueIsNull_doesNotThrow() {
+        // when / then
         assertThatCode(() -> RequiredCredentials.check()
                 .and("spring.datasource.password", null)
                 .orFailStartup())
@@ -60,6 +65,7 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("orFailStartup_whenAValueIsBlank_doesNotThrow")
     void orFailStartup_whenAValueIsBlank_doesNotThrow() {
+        // when / then
         assertThatCode(() -> RequiredCredentials.check()
                 .and("spring.datasource.password", "   ")
                 .orFailStartup())
@@ -69,6 +75,7 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("orFailStartup_whenAValueOnlyContainsPlaceholderSyntax_doesNotThrow")
     void orFailStartup_whenAValueOnlyContainsPlaceholderSyntax_doesNotThrow() {
+        // when / then
         assertThatCode(() -> RequiredCredentials.check()
                 .and("spring.datasource.password", "pa${ss}word")
                 .and("sky.s3.secret-key", "${unclosed")
@@ -80,6 +87,7 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("orFailStartup_whenAPlaceholderIsSurroundedByWhitespace_stillReportsIt")
     void orFailStartup_whenAPlaceholderIsSurroundedByWhitespace_stillReportsIt() {
+        // when / then
         assertThatThrownBy(() -> RequiredCredentials.check()
                 .and("sky.s3.access-key", "  ${S3_ACCESS_KEY}  ")
                 .orFailStartup())
@@ -90,10 +98,12 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("getMessage_whenOneCredentialIsMissing_readsWithoutKnowledgeOfThisCodebase")
     void getMessage_whenOneCredentialIsMissing_readsWithoutKnowledgeOfThisCodebase() {
+        // given
         MissingCredentialException thrown = catchMissingCredential(() -> RequiredCredentials.check()
                 .and("spring.datasource.password", "${POSTGRES_PASSWORD}")
                 .orFailStartup());
 
+        // when / then
         assertThat(thrown.getMessage())
                 .contains("1 required credential is not configured")
                 .contains("spring.datasource.password is still the literal text \"${POSTGRES_PASSWORD}\"")
@@ -104,11 +114,13 @@ class RequiredCredentialsTest {
     @Test
     @DisplayName("getMessage_whenTwoCredentialsAreMissing_pluralisesTheCount")
     void getMessage_whenTwoCredentialsAreMissing_pluralisesTheCount() {
+        // given
         MissingCredentialException thrown = catchMissingCredential(() -> RequiredCredentials.check()
                 .and("spring.datasource.username", "${POSTGRES_USER}")
                 .and("spring.datasource.password", "${POSTGRES_PASSWORD}")
                 .orFailStartup());
 
+        // when / then
         assertThat(thrown.getMessage())
                 .contains("2 required credentials are not configured")
                 .contains("Set POSTGRES_USER and POSTGRES_PASSWORD in this service's environment");
