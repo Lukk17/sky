@@ -8,6 +8,14 @@ against re-publishing an already-released version, so keep it at the top and bum
 every release. The `version` in `build.gradle.kts` is a cosmetic label the release workflow
 does not read. If the two disagree, this file wins for release purposes.
 
+## [2.1.0]
+
+### Changed
+- Adopt the shared web and security helpers from sky-common: the local `CorsConfig`,
+  `SecurityConfig` and `SpringConfigProperties` are gone in favour of the auto-configurations,
+  the event-sequence append loop builds on `SequenceEventAppender`, and reads go through the
+  `BookingView` with a shared `ClockConfig`.
+
 ## [2.0.0]
 
 Major. Four contracts this service publishes have changed shape, and a client built against

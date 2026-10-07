@@ -8,6 +8,13 @@ against re-publishing an already-released version, so keep it at the top and bum
 every release. The `version` in `build.gradle.kts` is a cosmetic label the release workflow
 does not read. If the two disagree, this file wins for release purposes.
 
+## [2.1.0]
+
+### Added
+- Backend-for-frontend session auth: cookie session with CSRF token served through
+  `/api/session`, origin check on mutating requests, OIDC logout, and `GatewayUserWebFilter`
+  forwarding the session user upstream.
+
 ## [2.0.0]
 
 Major, and the first release of this module. It starts at 2.0.0 rather than at 0.1.0 so that one

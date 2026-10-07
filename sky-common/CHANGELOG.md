@@ -8,6 +8,14 @@ compiled into all five service images, so a change here needs a version bump in 
 and in every service that ships it. The `version` in `build.gradle.kts` is a cosmetic
 label the release workflow does not read. If the two disagree, this file wins.
 
+## [2.1.0]
+
+### Added
+- Shared web and security helpers the services now build on: `SecurityAutoConfiguration`,
+  `CrossOriginAutoConfiguration`, `ProblemDetailFactory`, the `SequenceEventAppender` base for the
+  event-sequence append loop, shared OpenAPI defaults, and test support (`StubJwtDecoderFactory`,
+  `TestUsers`).
+
 ## [2.0.0]
 
 ### Added

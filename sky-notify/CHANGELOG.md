@@ -8,6 +8,13 @@ against re-publishing an already-released version, so keep it at the top and bum
 every release. The `version` in `build.gradle.kts` is a cosmetic label the release workflow
 does not read. If the two disagree, this file wins for release purposes.
 
+## [2.1.0]
+
+### Added
+- Trust the gateway session user on WebSocket connect: `GatewayUserHandshakeInterceptor`
+  accepts the gateway-authenticated principal, so the browser session needs no separate token
+  on the STOMP handshake.
+
 ## [2.0.0]
 
 Major. The WebSocket handshake now requires a token and the subscribe destination moved, so a

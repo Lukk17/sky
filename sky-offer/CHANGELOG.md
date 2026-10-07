@@ -8,6 +8,13 @@ against re-publishing an already-released version, so keep it at the top and bum
 every release. The `version` in `build.gradle.kts` is a cosmetic label the release workflow
 does not read. If the two disagree, this file wins for release purposes.
 
+## [2.1.0]
+
+### Added
+- Offer photo gallery with a main flag: `V5` adds the gallery table, `V6` adds the main flag,
+  `V7` enforces one main photo per offer, with reorder and cover endpoints resolving the live
+  main photo.
+
 ## [2.0.0]
 
 Major. Every write path moved to a new URL, the identifier type changed, and the error
