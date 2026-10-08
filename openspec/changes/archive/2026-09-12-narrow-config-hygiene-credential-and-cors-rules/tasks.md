@@ -98,11 +98,10 @@
   compose file, not in any chart. So the committed default is also the deployed value, which makes the narrowing a real
   widening of the deployed cross-origin policy rather than only a documentation fix. Recorded in design.md under Risks.
 - Task 2.4 found the rule's real gap. `sky-notify` has no cross-origin property at all: `WebSocketConfig` holds a
-  hardcoded list of four origins, two of which are different production hostnames, `https://sky.luksarna.com` and
-  `https://skycloud.luksarna.com`. The old rule spoke only of `application.yaml`, so the one allow-list that cannot be
+  hardcoded list of four origins, two of which are different production hostnames, `https://sky.luksarna.com` and a second, since-retired production hostname. The old rule spoke only of `application.yaml`, so the one allow-list that cannot be
   changed without a rebuild was outside it.
 - Task 2.7 found that only `sky-offer` carries `cors-allow-origin` ingress annotations, that they name
-  `https://sky.luksarna.com` while the three services default to `https://skycloud.luksarna.com`, and that
+  `https://sky.luksarna.com` while the three services default to the since-retired API hostname, and that
   `sky-booking` and `sky-message` carry no such annotation at all. Nothing was edited, because the Helm values are
   another agent's working area. Reported to the owner.
 - The merged file's Purpose still says no credential is committed as a default, which the exemption now contradicts. A

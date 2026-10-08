@@ -1,6 +1,8 @@
 # Build from repo root:
 #   docker build -f sky-notify/docker/Dockerfile -t sky-notify:latest .
 
+# Single shared pin: override with --build-arg RUNTIME_IMAGE=<image> to move all services at once.
+ARG RUNTIME_IMAGE=eclipse-temurin:25-jre-alpine
 # ===============> BUILD STAGE <===============
 FROM gradle:9-jdk25 AS build
 WORKDIR /workspace
@@ -14,7 +16,7 @@ RUN --mount=type=cache,id=gradle-sky-notify,target=/home/gradle/.gradle gradle :
         extract --layers --launcher --destination sky-notify/build/extracted
 
 # ===============> RUN STAGE <===============
-FROM eclipse-temurin:25-jre-alpine AS runtime
+FROM $RUNTIME_IMAGE AS runtime
 
 COPY config/keycloak/certs/localhost-ca.crt /tmp/local-dev-ca.crt
 RUN keytool -importcert -noprompt \

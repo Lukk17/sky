@@ -1,0 +1,75 @@
+<div class="flex justify-center mt-10 px-4">
+  <p-card styleClass="w-full max-w-2xl glass-card edit-offer-card">
+    <ng-template #header>
+      <h2 class="edit-offer-title" data-testid="edit-offer-title">Edit Offer</h2>
+      <p class="edit-offer-subtitle">Keep your listing fresh</p>
+    </ng-template>
+    @if (error) {
+      <p class="text-red-400">{{error}}</p>
+    }
+    @if (offer) {
+    <form #offerForm="ngForm" (ngSubmit)="onSubmit(offerForm)" aria-label="Edit offer form" class="flex flex-col gap-4">
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.hotelName" id="hotelName" name="hotelName" ngModel required type="text" class="w-full" />
+        <label for="hotelName">Hotel Name</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.description" id="description" name="description" ngModel required type="text" class="w-full" />
+        <label for="description">Description</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.city" id="city" name="city" ngModel required type="text" class="w-full" />
+        <label for="city">City</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.country" id="country" name="country" ngModel required type="text" class="w-full" />
+        <label for="country">Country</label>
+      </p-floatlabel>
+      <section aria-label="Photo gallery" class="gallery-manager" data-testid="edit-gallery">
+        <h3 class="gallery-title">Photos</h3>
+        @if (galleryError) {
+          <small class="text-red-400" data-testid="edit-gallery-error">{{galleryError}}</small>
+        }
+        @if (gallery().length > 0) {
+          <div class="gallery-grid">
+            @for (photo of gallery(); track photo.id) {
+              <figure class="gallery-thumb">
+                <img [src]="photo.url" [alt]="'Photo of offer'" loading="lazy" />
+                @if (photo.main) {
+                  <figcaption class="main-badge" data-testid="edit-gallery-main">Main</figcaption>
+                }
+                <div class="thumb-actions">
+                  @if (!photo.main) {
+                    <p-button label="Main" icon="pi pi-star" styleClass="glass-btn-accent thumb-btn" (onClick)="setMain(photo.id)" [disabled]="galleryBusy" [attr.data-testid]="'edit-set-main-' + photo.id"></p-button>
+                  }
+                  <p-button label="Remove" icon="pi pi-trash" styleClass="glass-btn-danger thumb-btn" (onClick)="removePhoto(photo.id)" [disabled]="galleryBusy" [attr.data-testid]="'edit-remove-' + photo.id"></p-button>
+                </div>
+              </figure>
+            }
+          </div>
+        } @else {
+          <p class="muted" data-testid="edit-gallery-empty">No photos yet. Add the first one below.</p>
+        }
+        <label class="glass-file-btn" for="galleryFile"><i class="pi pi-upload"></i> Add photos</label>
+        <input id="galleryFile" name="galleryFile" type="file" accept="image/*" class="glass-file-input" (change)="onFileSelected($event)" data-testid="edit-gallery-file" />
+        @if (uploading) {
+          <small class="muted" data-testid="edit-gallery-uploading">Uploading photo</small>
+        } @else {
+          <small class="muted">Image file, up to 5 MB. Added straight to the gallery.</small>
+        }
+      </section>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.roomCapacity" id="roomCapacity" name="roomCapacity" ngModel required type="number" class="w-full" />
+        <label for="roomCapacity">Room capacity</label>
+      </p-floatlabel>
+      <p-floatlabel variant="on">
+        <input pInputText [(ngModel)]="offer.price" id="price" name="price" ngModel required type="number" class="w-full" />
+        <label for="price">Price</label>
+      </p-floatlabel>
+      <p-button label="Save Offer" icon="pi pi-check" type="submit" styleClass="glass-btn-accent" [disabled]="offerForm.invalid" data-testid="edit-submit"></p-button>
+    </form>
+    } @else if (!error) {
+      <p class="muted">Loading offer</p>
+    }
+  </p-card>
+</div>

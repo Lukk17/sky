@@ -18,19 +18,18 @@ format (`.yml` request and environment files, with [request/opencollection.yml](
 as the collection root), which is the default format in Bruno v3.1 and later. It replaces the
 legacy single-file `.bru` format. Both still open in Bruno if you are on an older release.
 
-The collection has five environments in [request/environments/](request/environments/):
+The collection has four environments in [request/environments/](request/environments/):
 
 | File | `--env` value | Name shown in the app | `bookingUrl` / `offerUrl` / `messageUrl` | Target |
 |---|---|---|---|---|
 | [request/environments/local.yml](request/environments/local.yml) | `local` | `sky-local` | `http://localhost:5777` for all three | The local Docker Compose or Gradle stack behind sky-gateway |
 | [request/environments/k8s.yml](request/environments/k8s.yml) | `k8s` | `k8s` | `http://localhost:5777` for all three | A local in-cluster deployment (k3d, minikube, kind) |
-| [request/environments/prod.yml](request/environments/prod.yml) | `prod` | `sky-prod` | `https://skycloud.luksarna.com` for all three | The deployed cluster |
 | [request/environments/ci.yml](request/environments/ci.yml) | `ci` | `sky-e2e` | `http://sky-gateway:5777` for all three | The self-contained compose stack, from inside its own network |
 | [request/environments/direct.yml](request/environments/direct.yml) | `direct` | `sky-direct` | `:5555`, `:5552`, `:5553` on `http://localhost` | The services started from Gradle, with no gateway and no Keycloak |
 
 The `--env` value is the file name without its extension, which is what the CLI resolves. The name inside
 the file is what the Bruno desktop app shows in its environment selector. They do not have to match, and
-for `local` and `prod` they deliberately do not.
+for `local` they deliberately do not.
 
 There is no `baseUrl` any more. Each request names the service it belongs to, so `offer/create-offer.yml`
 reads `{{offerUrl}}/api/v1/owner/offers` and `booking/create-booking.yml` reads
@@ -70,7 +69,7 @@ saves it there.
 ### Authentication and the self-driving run
 
 The Sky services are Keycloak JWT resource servers. Tokens are issued by the `sky` realm at the host in the
-`keycloakUrl` environment variable (`https://keycloak.test:9443` locally, `https://keycloak.luksarna.com` in prod).
+`keycloakUrl` environment variable (`https://keycloak.test:9443` locally).
 
 The collection is self-driving: you never copy a token or an id by hand.
 
@@ -117,7 +116,7 @@ This is the normal way to use the collection day to day. The terminal path below
 agents, and the OpenSpec e2e runbooks.
 
 1. Open Bruno, choose "Open Collection", and point it at [request/](request/).
-2. In the environment selector (top right), pick `sky-local`, `k8s`, `sky-prod`, or `sky-direct`.
+2. In the environment selector (top right), pick `sky-local`, `k8s`, or `sky-direct`.
 3. To run single requests, run `auth/get-token.yml` once, then run any other request. The saved `bearerToken`
    and the chained ids (`offerId`, `bookingId`, `messageId`) are reused for the rest of the session. Under
    `sky-direct` do not run it at all: that environment has no Keycloak to call and its `bearerToken` is
@@ -136,11 +135,9 @@ agents, and the OpenSpec e2e runbooks.
 bru run -r --env local --insecure
 ```
 
-Switch `--env local` to `--env k8s` for a local in-cluster deployment, `--env prod` for the deployed stack,
-or `--env direct` for services started from Gradle.
+Switch `--env local` to `--env k8s` for a local in-cluster deployment, or `--env direct` for services started from Gradle.
 `--insecure` is there because `local` and `k8s` both mint tokens from a Keycloak on the self-signed development
-certificate. Drop it for `prod`, which has a real one, for `ci`, which is plain HTTP on a private network, and
-for `direct`, which mints nothing and is plain HTTP throughout.
+certificate. Drop it for `ci`, which is plain HTTP on a private network, and for `direct`, which mints nothing and is plain HTTP throughout.
 
 `ci` is not run this way. It runs inside the compose network:
 
@@ -148,8 +145,7 @@ for `direct`, which mints nothing and is plain HTTP throughout.
 docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml run --rm bruno
 ```
 
-Before a prod run, fill `keycloakClientSecret`, `keycloakUsername`, and `keycloakPassword` in
-[request/environments/prod.yml](request/environments/prod.yml). The `local` and `k8s` environments already carry the
+The `local` and `k8s` environments already carry the
 development realm credentials, taken from
 [config/k8s/helm/infra/keycloak/files/sky-realm.json](../../config/k8s/helm/infra/keycloak/files/sky-realm.json).
 
@@ -221,7 +217,7 @@ port. This is useful when running services directly without the gateway:
 The raw OpenAPI JSON is at `/v3/api-docs` on each service.
 
 Through an edge, the entry point carries the service prefix, `http://localhost:5777/offer/swagger-ui.html`
-under the gateway and `https://skycloud.luksarna.com/offer/swagger-ui.html` through the ingress, with `booking`
+under the gateway, with `booking`
 and `msg` for the other two. Each redirects to the page under the same prefix and the page finds its own
 document from there.
 

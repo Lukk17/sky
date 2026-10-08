@@ -32,6 +32,14 @@ dependencies {
     // login and the TokenRelay filter. The `local` chain permits every exchange and uses neither.
     implementation(libs.spring.boot.starter.oauth2.client)
 
+    // OAuth2 resource server: the same `!local` chain also validates bearer tokens itself, so
+    // non-browser API clients keep working without a session. The gateway only needs
+    // `authenticated()`, so the default scope-based converter applies and realm roles stay
+    // a service-side concern.
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
+
+    // springdoc annotations for SessionController docs only, kept off the WebFlux runtime.
+    compileOnly(libs.springdoc.openapi.starter.webmvc.ui)
     // Lombok for config properties
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

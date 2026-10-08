@@ -20,8 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.lukk.sky.notify.config.Constants.KAFKA_BOOKING_TOPIC;
-import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.BOOKING_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.OFFER_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,11 +68,11 @@ class KafkaListenersTest {
         KafkaPayloadModel payload = new KafkaPayloadModel("offer-data", TEST_DATE.toString(), "user@test.com");
 
         // when
-        kafkaListeners.offerListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        kafkaListeners.offerListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, null, acknowledgment);
 
         // then
-        verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
         verify(acknowledgment).acknowledge();
     }
@@ -84,11 +84,11 @@ class KafkaListenersTest {
         KafkaPayloadModel payload = new KafkaPayloadModel("booking-data", TEST_DATE.toString(), "user@test.com");
 
         // when
-        kafkaListeners.bookingListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, KAFKA_BOOKING_TOPIC,
+        kafkaListeners.bookingListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, BOOKING_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, null, acknowledgment);
 
         // then
-        verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, KAFKA_BOOKING_TOPIC,
+        verify(notificationTransmissionService).notifyClient(payload, TEST_PARTITION, BOOKING_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
         verify(acknowledgment).acknowledge();
     }
@@ -101,11 +101,11 @@ class KafkaListenersTest {
         String message = objectMapper.writeValueAsString(payload);
         doThrow(new RuntimeException("ws failed"))
                 .when(notificationTransmissionService)
-                .notifyClient(payload, TEST_PARTITION, KAFKA_OFFER_TOPIC,
+                .notifyClient(payload, TEST_PARTITION, OFFER_TOPIC,
                         TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET);
 
         // when / then
-        assertThatThrownBy(() -> kafkaListeners.offerListener(message, TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        assertThatThrownBy(() -> kafkaListeners.offerListener(message, TEST_PARTITION, OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, null, acknowledgment))
                 .isInstanceOf(RuntimeException.class);
 
@@ -116,7 +116,7 @@ class KafkaListenersTest {
     @DisplayName("malformed JSON fails before acknowledgement so the error handler can dead-letter it")
     void offerListener_whenMessageIsMalformed_thenFailsWithoutAcknowledging() {
         // when / then
-        assertThatThrownBy(() -> kafkaListeners.offerListener("{not-json", TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        assertThatThrownBy(() -> kafkaListeners.offerListener("{not-json", TEST_PARTITION, OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, null, acknowledgment))
                 .isInstanceOf(JacksonException.class);
 
@@ -139,7 +139,7 @@ class KafkaListenersTest {
                 .notifyClient(any(), anyString(), anyString(), anyString(), anyString(), anyString());
 
         // when
-        kafkaListeners.offerListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        kafkaListeners.offerListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET,
                 TEST_CORRELATION_ID.getBytes(StandardCharsets.UTF_8), acknowledgment);
 
@@ -159,7 +159,7 @@ class KafkaListenersTest {
                 .notifyClient(any(), anyString(), anyString(), anyString(), anyString(), anyString());
 
         // when / then
-        assertThatThrownBy(() -> kafkaListeners.offerListener(message, TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        assertThatThrownBy(() -> kafkaListeners.offerListener(message, TEST_PARTITION, OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET,
                 TEST_CORRELATION_ID.getBytes(StandardCharsets.UTF_8), acknowledgment))
                 .isInstanceOf(RuntimeException.class);
@@ -181,7 +181,7 @@ class KafkaListenersTest {
                 .notifyClient(any(), anyString(), anyString(), anyString(), anyString(), anyString());
 
         // when
-        kafkaListeners.offerListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, KAFKA_OFFER_TOPIC,
+        kafkaListeners.offerListener(objectMapper.writeValueAsString(payload), TEST_PARTITION, OFFER_TOPIC,
                 TEST_CONSUMER_GROUP_ID, TEST_DATE.toString(), TEST_OFFSET, new byte[0], acknowledgment);
 
         // then

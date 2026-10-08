@@ -20,7 +20,7 @@ Five real config files, committed and ready to use. They are not templates any m
 | [.vscode/mcp.json](../.vscode/mcp.json) | `servers` | GitHub Copilot in VS Code | key is `servers`, not `mcpServers` |
 | [.github/mcp.json](../.github/mcp.json) | `mcpServers` | the GitHub Copilot CLI | `"type": "http"` for remote, `"type": "local"` for a stdio server |
 
-All five carry the same five servers. Only the file name, the schema key, the `type` value, and the
+All five carry the same eight servers. Only the file name, the schema key, the `type` value, and the
 environment-variable syntax change between them. There is no per-tool overlay beyond these five: one file per agent
 surface, and that is the whole set.
 
@@ -47,7 +47,7 @@ has no substitution engine of its own for project-level files, so it would read 
 
 Shipping both files side by side has a real, measured consequence worth knowing before you rely on it. The Copilot
 CLI documents its own precedence rule: when `.mcp.json` and `.github/mcp.json` exist in the same directory and
-define a server with the same name, `.mcp.json` wins. All five servers in this repo share their name across both
+define a server with the same name, `.mcp.json` wins. All eight servers in this repo share their name across both
 files, so as things stand the CLI resolves every one of them from `.mcp.json`, not from `.github/mcp.json`. Verified
 directly against Copilot CLI 1.0.81 with both files present: `copilot mcp get context7 --json` reports
 `"sourcePath": "/work/project/.mcp.json"` and a `headers` block holding the literal, unresolved string
@@ -55,7 +55,7 @@ directly against Copilot CLI 1.0.81 with both files present: `copilot mcp get co
 `"sourcePath": "/work/project/.github/mcp.json"` with no `headers` block at all, the correct unauthenticated
 default. There is no Copilot CLI flag or setting that disables one workspace source while keeping the other; the
 options that exist (`--disable-mcp-server=NAME`, `/mcp disable NAME`) disable a named server in the CLI's own
-persisted configuration, not a source file. Until `.mcp.json` and `.github/mcp.json` stop naming the same five
+persisted configuration, not a source file. Until `.mcp.json` and `.github/mcp.json` stop naming the same eight
 servers, `.github/mcp.json` is present, correct, and shadowed.
 
 One catch with the shared OpenCode and Kilo file. Kilo Code accepts `opencode.json` as a valid project config
@@ -95,15 +95,24 @@ shipped default.
 | Server | Purpose | External dependency |
 | --- | --- | --- |
 | `context7` | Up-to-date library documentation lookup | none, hosted, free tier without a key |
+| `mongodb` | Read-only MongoDB introspection | a running MongoDB, development only, never production |
 | `grafana` | Grafana dashboards, queries, alerts | a Grafana instance plus a service-account token |
 | `playwright` | Cross-browser automation for UI tests | downloads roughly 500 MB of browsers on first run |
 | `chrome-devtools` | Performance, network, and console debugging | Chrome installed locally |
 | `redis` | Redis cache and queue introspection | a running Redis, development only |
+| `sonarqube` | Code-quality issue lookup | Docker plus a SonarQube instance and token |
+| `n8n` | n8n workflow node documentation, optional control | none for documentation only, instance plus key for control |
 
-Turn off a server you do not use. In [opencode.json](../opencode.json) set `"enabled": false` on its block. In
-[.mcp.json](../.mcp.json), [.vscode/mcp.json](../.vscode/mcp.json), [.codex/config.toml](../.codex/config.toml), and
-[.github/mcp.json](../.github/mcp.json) delete the block, because those schemas have no enable flag. A server you
-never disable still spawns and still fills your log with authentication failures.
+Turn off a server you do not use. In [opencode.json](../opencode.json) set `"enabled": false` on its block, and in
+[.codex/config.toml](../.codex/config.toml) set `enabled = false` in its table. In [.mcp.json](../.mcp.json),
+[.vscode/mcp.json](../.vscode/mcp.json), and [.github/mcp.json](../.github/mcp.json) delete the block, because those
+schemas have no enable flag. A server you never disable still spawns and still fills your log with authentication
+failures.
+
+The agent-standards live pipeline, which runs every agent against a real model, loads `context7` alone. It has the
+smallest tool descriptions of the eight and needs no secret, and the descriptions of all eight together pushed a
+single test past the provider's per-minute token limit. So only `context7` is proven to answer a real model there,
+and the other seven are proven to be discovered by every agent, not to answer.
 
 ---
 
@@ -389,7 +398,7 @@ from your secrets manager.
 
 The Copilot CLI reads [.github/mcp.json](../.github/mcp.json), the file this repo ships for it, plus
 [.mcp.json](../.mcp.json), the same file Claude Code reads, because its own documentation names both as valid
-per-project sources. When both name the same server, as all five do here, the CLI's own precedence rule makes
+per-project sources. When both name the same server, as all eight do here, the CLI's own precedence rule makes
 `.mcp.json` win, so see [What ships](#what-ships) above for what that means in practice before assuming
 `.github/mcp.json` is the file actually in effect. Project-level sources, both of them, load only once you confirm
 you trust the directory on first launch and are silently skipped otherwise; there is no flag to skip that prompt for

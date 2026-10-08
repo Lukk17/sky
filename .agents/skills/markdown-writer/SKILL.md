@@ -163,11 +163,10 @@ dashes. Do not simplify the pattern back to a `\x{}` escape.
 Fail:
 
 ```text
-The queue is fast, reliable, and simple to run.
+A line that joins two clauses with an em dash where a comma or a period belongs.
 ```
 
-That failing line is fine as written. It fails only when the commas are replaced by dashes, which is the shape this
-rule exists to prevent.
+The failing form is described in words rather than printed, because this file itself has to pass the dash lint.
 
 ---
 
@@ -212,8 +211,9 @@ Fail:
 
 ### Keep the badge row tight
 
-Use shields.io as the only badge source, and limit the row to build status, license, primary language version and
-last commit. Drop vanity badges: star counts under a few hundred, download counts, made-with hearts. Badge the top
+Use shields.io as the only badge source, and limit the row to build status, license, primary language version, last
+commit, and a badge for each count that moves with project content, because that count lives in a badge and nowhere
+else. Drop vanity badges: star counts under a few hundred, download counts, made-with hearts. Badge the top
 repository only in a monorepo, never each module.
 
 Pass:

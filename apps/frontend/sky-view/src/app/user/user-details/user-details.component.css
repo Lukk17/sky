@@ -1,0 +1,7 @@
+.user-head { padding: 1rem 1.5rem; text-align: center; width: fit-content; margin: 0 auto; }
+.user-head h2 { margin: 0; text-align: center; }
+:host ::ng-deep .p-card .p-card-title { text-align: center; }
+:host ::ng-deep .user-cols .p-card { width: fit-content; min-width: min(22rem, 100%); max-width: 100%; justify-self: center; }
+:host ::ng-deep .user-cols .p-card .p-card-title { text-align: left; }
+.compact-row { width: fit-content; min-width: 12rem; max-width: 100%; margin: 0.25rem auto; text-align: center; justify-content: center; }
+.compact-name, .compact-meta { text-align: center; }

@@ -1,10 +1,12 @@
 package com.lukk.sky.booking.domain.service;
 
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
+import com.lukk.sky.booking.assemblers.BookingAssembler;
 import com.lukk.sky.booking.domain.exception.BookingAccessDeniedException;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.exception.BookingNotFoundException;
 import com.lukk.sky.booking.domain.model.Booking;
+import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import com.lukk.sky.booking.domain.ports.outbound.RestClient;
@@ -32,8 +34,8 @@ import static com.lukk.sky.booking.assemblers.BookingAssembler.getPopulatedBooke
 import static com.lukk.sky.booking.assemblers.BookingAssembler.getPopulatedBookedDTO;
 import static com.lukk.sky.booking.assemblers.BookingAssembler.getPopulatedBookedDTOList;
 import static com.lukk.sky.booking.assemblers.BookingAssembler.getPopulatedBookedList;
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_USER_EMAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,8 +64,19 @@ class BookingServicePrimaryTest {
     @Mock
     BookingNotificationService bookingNotificationService;
 
+    @Mock
+    java.time.Clock clock;
+
     @InjectMocks
     BookingServicePrimary bookingService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void stubFixedClock() {
+        java.time.Clock fixed = java.time.Clock.fixed(
+                java.time.Instant.parse("2026-01-01T00:00:00Z"), java.time.ZoneId.of("UTC"));
+        org.mockito.Mockito.lenient().when(clock.instant()).thenReturn(fixed.instant());
+        org.mockito.Mockito.lenient().when(clock.getZone()).thenReturn(fixed.getZone());
+    }
 
     @Test
     @DisplayName("getBookedOffersForUser returns both DTOs in a page when user has two bookings")
@@ -76,13 +89,13 @@ class BookingServicePrimaryTest {
                 .thenReturn(new PageImpl<>(bookings, pageable, bookings.size()));
 
         // when
-        Page<BookingDTO> actual = bookingService.getBookedOffersForUser(TEST_USER_EMAIL, pageable);
+        Page<BookingView> actual = bookingService.getBookedOffersForUser(TEST_USER_EMAIL, pageable);
 
         // then
         assertEquals(2, actual.getTotalElements());
-        expected.get(0).setId(actual.getContent().get(0).getId());
-        expected.get(1).setId(actual.getContent().get(1).getId());
-        assertEquals(expected, actual.getContent());
+        expected.get(0).setId(actual.getContent().get(0).id());
+        expected.get(1).setId(actual.getContent().get(1).id());
+        assertEquals(expected, actual.getContent().stream().map(BookingAssembler::toBookingDTO).toList());
     }
 
     @Test
@@ -95,13 +108,13 @@ class BookingServicePrimaryTest {
         when(bookingPersister.saveAndPublish(any(), any(), any())).thenReturn(booking);
 
         // when
-        BookingDTO actual = bookingService.bookOffer(booking.getOfferId(), TEST_DATE, booking.getBookingUser());
+        BookingView actual = bookingService.bookOffer(booking.getOfferId(), TEST_DATE, booking.getBookingUser());
 
         // then
         verify(restClient).requestOfferOwner(booking.getOfferId());
         verify(bookingPersister).saveAndPublish(any(), any(), eq(TEST_DATE));
-        bookingDTO.setId(actual.getId());
-        assertEquals(bookingDTO, actual);
+        bookingDTO.setId(actual.id());
+        assertEquals(bookingDTO, BookingAssembler.toBookingDTO(actual));
     }
 
     @Test
@@ -130,7 +143,7 @@ class BookingServicePrimaryTest {
                 .thenReturn(new PageImpl<>(new ArrayList<>(), pageable, 0));
 
         // when
-        Page<BookingDTO> actual = bookingService.getBookedOffersForUser(TEST_USER_EMAIL, pageable);
+        Page<BookingView> actual = bookingService.getBookedOffersForUser(TEST_USER_EMAIL, pageable);
 
         // then
         assertEquals(0, actual.getTotalElements());
@@ -236,7 +249,7 @@ class BookingServicePrimaryTest {
         when(bookingPersister.saveAndPublish(any(), any(), any())).thenReturn(booking);
 
         // when
-        BookingDTO actual = bookingService.bookOffer(booking.getOfferId(), TEST_DATE, TEST_USER_EMAIL);
+        BookingView actual = bookingService.bookOffer(booking.getOfferId(), TEST_DATE, TEST_USER_EMAIL);
 
         // then
         InOrder order = inOrder(bookingPersister, bookingNotificationService);

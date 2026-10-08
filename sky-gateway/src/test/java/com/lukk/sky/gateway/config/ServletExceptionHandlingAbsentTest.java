@@ -29,6 +29,7 @@ class ServletExceptionHandlingAbsentTest {
     @Test
     @DisplayName("springWebMvcIsNotOnTheClasspath_soTheSharedAutoConfigurationNeverLoads")
     void springWebMvcIsNotOnTheClasspath_soTheSharedAutoConfigurationNeverLoads() {
+        // when / then
         assertThatThrownBy(() -> Class.forName(SERVLET_RESOLVER_API))
                 .as("adding spring-boot-starter-web here would also put Tomcat on the gateway")
                 .isInstanceOf(ClassNotFoundException.class);
@@ -37,6 +38,7 @@ class ServletExceptionHandlingAbsentTest {
     @Test
     @DisplayName("neitherTheSharedAdviceNorTheLastResortResolverIsABeanHere")
     void neitherTheSharedAdviceNorTheLastResortResolverIsABeanHere() {
+        // when / then
         assertThat(context.getBeanDefinitionNames())
                 .as("a reactive context must hold neither")
                 .noneMatch(name -> name.contains("unhandledExceptionResolver"))

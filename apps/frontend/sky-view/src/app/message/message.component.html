@@ -1,0 +1,62 @@
+<div class="msg-layout">
+  <div class="msg-toolbar">
+    <a routerLink="/new-message">
+      <p-button label="New message" icon="pi pi-plus" styleClass="glass-btn-accent" data-testid="new-thread"></p-button>
+    </a>
+    @if (unreadCount > 0) {
+      <span class="toolbar-unread" data-testid="threads-unread">{{unreadCount}} unread</span>
+    }
+  </div>
+  <div class="msg-columns">
+    <div class="msg-threads" data-testid="thread-list">
+      @for (thread of threads; track thread.email) {
+        <button type="button" class="thread-row" [class.active]="thread.email === selectedEmail"
+          (click)="selectThread(thread.email)" [attr.data-testid]="'thread-' + thread.email">
+          <p-avatar [label]="thread.email.charAt(0).toUpperCase()" shape="circle"></p-avatar>
+          <span class="thread-main">
+            <span class="thread-top">
+              <strong class="thread-name">{{thread.email}}</strong>
+              <span class="thread-time">{{thread.latest.createdTime?.replace("T", " ")}}</span>
+            </span>
+            <span class="thread-bottom">
+              <span class="thread-excerpt">{{thread.latest.text}}</span>
+              @if (thread.unread > 0) {
+                <p-badge value="{{thread.unread}}" severity="warn"
+                  [attr.data-testid]="'unread-' + thread.email"></p-badge>
+              }
+            </span>
+          </span>
+        </button>
+      } @empty {
+        <p class="text-surface-400">No conversations yet</p>
+      }
+    </div>
+    <div class="msg-conversation" data-testid="conversation">
+      @if (selected; as thread) {
+        <h3 class="conv-title">{{thread.email}}</h3>
+        <div class="bubbles">
+          @for (message of thread.messages; track message.id) {
+            <div class="bubble-row" [class.own]="isOwn(message)">
+              <div class="bubble" [attr.data-testid]="'bubble-' + message.id">
+                <p class="bubble-text">{{message.text}}</p>
+                <span class="bubble-time">{{message.createdTime?.replace("T", " ")}}</span>
+                @if (!isOwn(message) && !message.read) {
+                  <span class="bubble-unread">Unread</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="reply-box">
+          <label for="replyInput" class="sr-only">Reply message</label>
+          <input pInputText id="replyInput" [(ngModel)]="replyText" name="replyText" aria-label="Reply message" placeholder="Write a reply"
+            data-testid="reply-input" (keyup.enter)="sendReply()" />
+          <p-button label="Send" icon="pi pi-send" styleClass="send-ghost-btn" (onClick)="sendReply()"
+            [disabled]="!replyText.trim()" data-testid="reply-send"></p-button>
+        </div>
+      } @else {
+        <p class="text-surface-400">Select a conversation</p>
+      }
+    </div>
+  </div>
+</div>

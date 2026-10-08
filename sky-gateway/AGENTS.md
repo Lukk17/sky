@@ -27,9 +27,10 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
 - Spring Cloud BOM: `spring-cloud = 2025.1.2` (Oakwood) from `gradle/libs.versions.toml`, imported in the module
   `dependencyManagement` block after the Spring Boot BOM. The starter is
   `spring-cloud-starter-gateway-server-webflux`, renamed from the old reactive starter in Gateway 5.0.
-- Package layout (`com.lukk.sky.gateway`): two classes only, `SkyGatewayApplication` and `config/SecurityConfig`.
-  There is no hexagonal structure and no ArchUnit rule here, because the module holds no domain logic: the routing
-  table is configuration, not code.
+- Package layout (`com.lukk.sky.gateway`): `SkyGatewayApplication` plus `config/`, which holds `SecurityConfig`,
+  the `SessionController` session endpoint, and the `OriginCheckWebFilter` cross origin guard. There is no hexagonal
+  structure and no ArchUnit rule here, because the module holds no domain logic: the routing table is configuration,
+  not code, and the session endpoint reports the gateway session rather than deciding anything.
 - Routes live in `src/main/resources/application.yaml` under
   `spring.cloud.gateway.server.webflux.routes`, and no API route rewrites anything. The published path is the path
   the service serves, so a predicate names the resource and the request is forwarded byte for byte. Putting a
@@ -154,18 +155,24 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
 - Upstreams are bound under the `sky-gateway` property prefix (`booking-uri`, `offer-uri`, `message-uri`,
   `notify-uri`), defaulting to `http://localhost:5555`, `:5552`, `:5553` and `:5554` in that order and overridden per
   environment through `BOOKING_URI`,
-  `OFFER_URI`, `MESSAGE_URI` and `NOTIFY_URI`. Compose sets them to the Docker service names, and also sets
-  `SPRING_PROFILES_ACTIVE: local` on this service alone (the four services run on `default`), so the compose gateway
-  gets the permit-all chain and needs no Keycloak variables.
+  `OFFER_URI`, `MESSAGE_URI` and `NOTIFY_URI`. Compose sets them to the Docker service names, and runs this service on
+  `default` with `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID` and `KEYCLOAK_CLIENT_SECRET` pointed at the development
+  realm, so the compose gateway owns the browser session exactly like the cluster edge does.
 - Two security chains, both explicit in `SecurityConfig`, split on one profile rather than on a named pair.
   Spring Boot's reactive auto-configuration secures every exchange when no `SecurityWebFilterChain` bean exists,
   which would make the proxy answer 401, so each branch registers its own chain rather than relying on the default:
   - `@Profile("local")`: every exchange permitted, CSRF, HTTP Basic and form login disabled. The inbound
     `Authorization` header is forwarded untouched and each service validates the token itself. This is the
     opt-in branch, so `local` has to be active explicitly.
-  - `@Profile("!local")`: Keycloak OIDC login plus the `TokenRelay` filter on every route. Only
-    `SecurityPaths.probes()` from `sky-common` is permitted without a session, which is `/actuator/health/**` and
-    `/actuator/info` and nothing else, so `/actuator/prometheus` redirects to the login flow here. Requires
+  - `@Profile("!local")`: Keycloak OIDC login plus the `TokenRelay` filter on every route, an OIDC
+    client-initiated logout handler, cookie-free CSRF (token in the session, delivered through `/api/session`,
+    validated against the session copy), an origin check rejecting cross origin mutating requests, CORS for the
+    frontend origin, and post-login return to the frontend origin. `SecurityPaths.probes()` from `sky-common` is
+    permitted without a session, and so are the anonymous offer reads (`GET /api/v1/offers/**` and
+    `POST /api/v1/search`, mirroring sky-offer), so nothing else public regressed behind the login. An
+    unauthenticated `/api/**` call answers 401 with an empty body instead of a login redirect, so script driven
+    callers never fetch login pages into their cookie jar, while any other path still redirects to
+    `/oauth2/authorization/keycloak`. `/actuator/prometheus` therefore requires a session here. Requires
     `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID` and `KEYCLOAK_CLIENT_SECRET`. Its configuration is a second
     document in the same `application.yaml`, selected by `spring.config.activate.on-profile: "!local"` below the
     `---` separator. This branch is what a bare `bootRun` with no profile gets, and it fails at startup on the
@@ -177,7 +184,7 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
 
 ## Testing
 
-Five test classes, run from the repo root with `./gradlew :sky-gateway:test`. No Testcontainers and no database here.
+Seven test classes, run from the repo root with `./gradlew :sky-gateway:test`. No Testcontainers and no database here.
 `src/test/resources/application-test.yaml` points the four upstreams at ports nothing listens on (15552 to 15555), so
 a proxied request fails at the connection rather than being rejected by security, which is what the routing assertions
 rely on. A 5xx therefore means the path matched a route and the security chain let it through, and a 404 means no
@@ -202,12 +209,18 @@ predicate claimed it, which is what lets one assertion carry both halves.
   Three of them are the `/x/swagger-ui.html` entry point, which has to arrive as `/swagger-ui.html` rather than as
   `/swagger-ui/.html` or `/swagger-ui/`, and that is the half a status assertion would pass straight through.
   Keep this class pointed at a stub rather than at a dead port, because a 5xx would pass against a broken rewrite.
+- `OriginCheckWebFilterTest`, a pure unit test over the cross origin guard: foreign Origin or Referer on a
+  mutating request is rejected without reaching the chain, matching origins and headerless callers pass through, and
+  safe methods are never checked.
+- `SessionControllerTest`, a pure unit test over the session endpoint: an OIDC principal yields its email claim plus
+  the CSRF token from the exchange, a plain principal yields its name, and no authentication yields 401.
 - `ServletExceptionHandlingAbsentTest`, which pins that `sky-common`'s servlet exception handling never loads in
   this reactive module.
 - `SecurityConfigOidcProfileTest`, `test` only so the `!local` chain applies: unauthenticated `/actuator/prometheus`
-  and a proxied route both redirect to `/oauth2/authorization/keycloak`, while health, liveness, readiness and info
-  stay open. The six documentation paths redirect there too, which pins the decision to keep them behind the login
-  flow. That case cannot fail on a missing route, because the chain redirects every unauthenticated exchange whether
+  and the six documentation paths still redirect to `/oauth2/authorization/keycloak`, while health, liveness,
+  readiness and info stay open, and unauthenticated `/api/**` calls answer 401 with an empty body instead. Anonymous
+  `GET /api/v1/offers` passes security to routing, and anonymous `POST /api/v1/search` without a token is rejected
+  with 403, which pins CSRF ahead of routing. That case cannot fail on a missing route, because the chain redirects every unauthenticated exchange whether
   a predicate claimed it or not, so the class also asserts the six documentation route ids are present in the
   `RouteLocator` under this profile. That is what stops the second YAML document drifting from the first, which is a
   gap the four API routes carried unguarded until now.
@@ -220,12 +233,12 @@ Spring needs at context startup is the discovery document.
 The coverage gate is off for this module, and that is the one module-level exemption in the repository.
 `jacocoTestCoverageVerification` is disabled in `build.gradle.kts` here, not conditioned on a module name inside the
 shared `sky.jacoco-conventions` plugin, so the opt-out sits with the module that needs it. The reason is that the whole
-main source set is two classes, `SkyGatewayApplication` and `config/SecurityConfig`, and the plugin's filter excludes
+main source set lives in `SkyGatewayApplication` and `config/`, and the plugin's filter excludes
 `**/*Application.class` and `**/config/**`, so the measured set is empty. JaCoCo takes no ratio over an empty counter
 and reports the rule as satisfied, so leaving the gate on would publish a green tick standing for nothing measured at
-all. Keeping `SecurityConfig` in the measured set was the alternative and it does not fix that: the class declares two
-profile-selected filter chains and no conditional, so it carries no branch counter, and the 0.90 branch limit would
-still sit over an empty counter while only the line limit came alive. What guards this module is the five test classes
+all. Keeping `config/` in the measured set was the alternative and it does not fix that: the classes declare
+profile-selected chains and straight-line mappings with no branch counter, and the 0.90 branch limit would
+still sit over an empty counter while only the line limit came alive. What guards this module is the seven test classes
 above, which cover both filter chains and the whole route table. Delete the exemption as soon as this module owns a class the filter keeps.
 
 ## Conventions

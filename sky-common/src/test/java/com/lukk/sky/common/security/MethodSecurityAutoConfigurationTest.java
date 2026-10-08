@@ -36,9 +36,11 @@ class MethodSecurityAutoConfigurationTest {
     @Test
     @DisplayName("guardedMethod_runs_whenTheCallerHoldsTheUserRole")
     void guardedMethod_runs_whenTheCallerHoldsTheUserRole() {
+        // given
         runner.run(context -> {
             givenAuthority("ROLE_USER");
 
+            // when / then
             assertThat(context.getBean(GuardedService.class).readOffer()).isEqualTo(GUARDED_RESULT);
         });
     }
@@ -46,9 +48,11 @@ class MethodSecurityAutoConfigurationTest {
     @Test
     @DisplayName("guardedMethod_runs_whenTheCallerHoldsTheAdminRole")
     void guardedMethod_runs_whenTheCallerHoldsTheAdminRole() {
+        // given
         runner.run(context -> {
             givenAuthority("ROLE_ADMIN");
 
+            // when / then
             assertThat(context.getBean(GuardedService.class).readOffer()).isEqualTo(GUARDED_RESULT);
         });
     }
@@ -56,10 +60,12 @@ class MethodSecurityAutoConfigurationTest {
     @Test
     @DisplayName("guardedMethod_isDenied_whenTheCallerHoldsAnotherRole")
     void guardedMethod_isDenied_whenTheCallerHoldsAnotherRole() {
+        // given
         runner.run(context -> {
             givenAuthority("ROLE_SERVICE");
             GuardedService service = context.getBean(GuardedService.class);
 
+            // when / then
             assertThatThrownBy(service::readOffer)
                     .as("@IsUser must reject a realm role it does not list")
                     .isInstanceOf(AccessDeniedException.class);
@@ -69,9 +75,11 @@ class MethodSecurityAutoConfigurationTest {
     @Test
     @DisplayName("guardedMethod_isDenied_whenThereIsNoAuthentication")
     void guardedMethod_isDenied_whenThereIsNoAuthentication() {
+        // given
         runner.run(context -> {
             GuardedService service = context.getBean(GuardedService.class);
 
+            // when / then
             assertThatThrownBy(service::readOffer)
                     .isInstanceOf(AuthenticationCredentialsNotFoundException.class);
         });
@@ -80,6 +88,7 @@ class MethodSecurityAutoConfigurationTest {
     @Test
     @DisplayName("unguardedMethod_runs_whenThereIsNoAuthentication")
     void unguardedMethod_runs_whenThereIsNoAuthentication() {
+        // when / then
         runner.run(context -> assertThat(context.getBean(GuardedService.class).readPublicInfo())
                 .as("method security must not close a method nobody annotated")
                 .isEqualTo("public"));
@@ -88,6 +97,7 @@ class MethodSecurityAutoConfigurationTest {
     @Test
     @DisplayName("appliesNoMethodSecurity_whenTheAutoConfigurationIsAbsent")
     void appliesNoMethodSecurity_whenTheAutoConfigurationIsAbsent() {
+        // when / then
         new WebApplicationContextRunner()
                 .withUserConfiguration(GuardedServiceConfig.class)
                 .run(context -> assertThat(context.getBean(GuardedService.class).readOffer())
@@ -98,6 +108,7 @@ class MethodSecurityAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_outsideAServletWebApplication")
     void registersNothing_outsideAServletWebApplication() {
+        // when / then
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(MethodSecurityAutoConfiguration.class))
                 .run(context -> assertThat(context).doesNotHaveBean(MethodSecurityAutoConfiguration.class));

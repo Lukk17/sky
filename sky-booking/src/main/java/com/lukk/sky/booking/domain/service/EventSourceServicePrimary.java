@@ -1,7 +1,7 @@
 package com.lukk.sky.booking.domain.service;
 
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.exception.EventSequenceConflictException;
+import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.model.EventType;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,9 @@ public class EventSourceServicePrimary implements EventSourceService {
     public void saveEvent(Booking booking, EventType eventType) {
         Assert.notNull(booking.getId(), "Booking id must not be null when saving an event");
 
-        String payload = objectMapper.writeValueAsString(BookingDTO.of(booking));
+        BookingView view = new BookingView(booking.getId(), booking.getOfferId(),
+                booking.getBookedDate().toString(), booking.getBookingUser(), booking.getOwnerEmail());
+        String payload = objectMapper.writeValueAsString(view);
 
         appendRetryingSequenceConflicts(booking.getId(), eventType, payload);
     }

@@ -1,0 +1,26 @@
+<div class="glass-card user-head">
+  <h2>{{user}}</h2>
+  @if (error) { <p class="err">{{error}}</p> }
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 justify-items-center user-cols">
+  <p-card header="My offers" styleClass="glass-card">
+    @for (o of myOffers; track o.id) {
+      <button type="button" class="compact-row" (click)="openOffer(o.id)" [attr.data-testid]="'my-offer-' + o.id">
+        <span class="compact-name">{{o.hotelName}}</span>
+        <span class="compact-meta">{{o.city}} · ${{o.price}}</span>
+      </button>
+    } @empty {
+      <p class="muted">No offers yet</p>
+    }
+  </p-card>
+  <p-card header="My bookings" styleClass="glass-card">
+    @for (booked of bookedOffers; track booked.id) {
+      <button type="button" class="compact-row" (click)="openOffer(booked.offerId)" [attr.data-testid]="'my-booking-' + booked.id">
+        <span class="compact-name">{{booked.hotelName}}</span>
+        <span class="compact-meta">{{booked.date}}</span>
+      </button>
+    } @empty {
+      <p class="muted">No bookings yet</p>
+    }
+  </p-card>
+</div>

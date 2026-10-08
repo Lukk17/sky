@@ -35,7 +35,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_USER_EMAIL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -60,10 +60,6 @@ class ExceptionMappingPrecedenceTest {
 
     private static final UUID BOOKING_ID = UUID.fromString("11111111-2222-3333-4444-555555555555");
 
-    private static final String SEQUENCE_CONFLICT_DETAIL =
-            "A concurrent write advanced the booking event sequence. "
-                    + "Re-read the booking and retry the change against its current state.";
-
     @Autowired
     private MockMvc mvc;
 
@@ -80,28 +76,28 @@ class ExceptionMappingPrecedenceTest {
         return Stream.of(
                 Arguments.of("BookingNotFoundException",
                         new BookingNotFoundException("No booking with that id."),
-                        404, "No booking with that id."),
+                        404, "Resource not found."),
                 Arguments.of("OfferNotFoundException",
                         new OfferNotFoundException("No offer with that id."),
-                        404, "No offer with that id."),
+                        404, "Resource not found."),
                 Arguments.of("BookingAccessDeniedException",
                         new BookingAccessDeniedException("Not yours to cancel."),
-                        403, "Not yours to cancel."),
+                        403, "Access denied."),
                 Arguments.of("OfferServiceUnavailableException",
                         new OfferServiceUnavailableException("sky-offer is unreachable."),
-                        503, "sky-offer is unreachable."),
+                        503, "Service temporarily unavailable, please retry."),
                 Arguments.of("OfferServiceBadResponseException",
                         new OfferServiceBadResponseException("sky-offer answered 401."),
-                        502, "sky-offer answered 401."),
+                        502, "Upstream service failed."),
                 Arguments.of("BookingDateAlreadyBookedException",
                         new BookingDateAlreadyBookedException("Already booked on that date."),
-                        409, "Already booked on that date."),
+                        409, "Request conflicts with current state."),
                 Arguments.of("EventSequenceConflictException",
                         new EventSequenceConflictException("lost 20 races", new IllegalStateException("duplicate key")),
-                        409, SEQUENCE_CONFLICT_DETAIL),
+                        409, "Request conflicts with current state."),
                 Arguments.of("BookingException",
                         new BookingException("Date is in the past."),
-                        400, "Date is in the past."));
+                        400, "Invalid request."));
     }
 
     @ParameterizedTest(name = "{0} still answers {2}")
@@ -125,6 +121,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("outageMapping_keepsItsRetryAfterHeader")
     void outageMapping_keepsItsRetryAfterHeader() throws Exception {
+        // when / then
         doThrow(new OfferServiceUnavailableException("sky-offer is unreachable."))
                 .when(bookingService).removeBooking(eq(BOOKING_ID), any());
 
@@ -136,6 +133,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody")
     void unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody() throws Exception {
+        // when / then
         doThrow(new IllegalStateException("offerOwner was null"))
                 .when(bookingService).removeBooking(eq(BOOKING_ID), any());
 
@@ -154,15 +152,18 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage")
     void unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage() throws Exception {
+        // given
         doThrow(new IllegalStateException("offerOwner was null"))
                 .when(bookingService).removeBooking(eq(BOOKING_ID), any());
 
+        // when
         String body = mvc.perform(delete("/bookings/" + BOOKING_ID).with(userJwt()))
                 .andExpect(status().isInternalServerError())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
+        // then
         assertThat(body)
                 .as("an unanticipated failure is where an internal message is most likely to leak")
                 .doesNotContain("IllegalStateException")

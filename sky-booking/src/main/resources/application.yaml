@@ -4,7 +4,7 @@ sky:
   offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT:}
   offerOwnerEndpoint: api/v1/offers
   crossOrigin:
-    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:https://skycloud.luksarna.com,http://localhost:5777,http://localhost:4200,http://localhost:5555}
+    allowed: ${ACCESS_CONTROL_ALLOW_ORIGIN:http://localhost:5777,http://localhost:4200,http://localhost:5555}
 
 server:
   port: ${BOOKING_PORT:5555}
@@ -18,8 +18,6 @@ springdoc:
   servers:
     - url: http://localhost:5777
       description: Local, through the gateway, one origin for the whole stack
-    - url: https://skycloud.luksarna.com
-      description: Production, through the ingress, behind oauth2-proxy
     - url: http://localhost:5555
       description: Local, straight at the service, bypassing the gateway
   api-docs:

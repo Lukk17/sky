@@ -3,14 +3,15 @@ package com.lukk.sky.booking.assemblers;
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.booking.domain.model.Booking;
+import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_OWNER_EMAIL;
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_OWNER_EMAIL_2;
-import static com.lukk.sky.booking.assemblers.UserAssembler.TEST_USER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL_2;
+import static com.lukk.sky.common.test.TestUsers.TEST_USER_EMAIL;
 
 public class BookingAssembler {
 
@@ -48,7 +49,7 @@ public class BookingAssembler {
                 .id(id)
                 .offerId(offerId)
                 .bookedDate(TEST_DATE)
-                .bookingUser(UserAssembler.TEST_USER_EMAIL)
+                .bookingUser(TEST_USER_EMAIL)
                 .ownerEmail(owner)
                 .build();
     }
@@ -69,5 +70,20 @@ public class BookingAssembler {
 
     public static BookingPayload getBookingPayload() {
         return new BookingPayload(TEST_DEFAULT_OFFER_ID, TEST_DATE);
+    }
+
+    public static BookingView toBookingView(BookingDTO dto) {
+        return new BookingView(dto.getId(), dto.getOfferId(), dto.getBookedDate(),
+                dto.getBookingUser(), dto.getOwnerEmail());
+    }
+
+    public static BookingDTO toBookingDTO(BookingView view) {
+        return BookingDTO.builder()
+                .id(view.id())
+                .offerId(view.offerId())
+                .bookedDate(view.bookedDate())
+                .bookingUser(view.bookingUser())
+                .ownerEmail(view.ownerEmail())
+                .build();
     }
 }

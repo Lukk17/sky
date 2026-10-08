@@ -15,9 +15,9 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 
+import static com.lukk.sky.common.kafka.SkyTopics.BOOKING_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.OFFER_TOPIC;
 import static com.lukk.sky.notify.config.Constants.CONSUMER_GROUP_ID;
-import static com.lukk.sky.notify.config.Constants.KAFKA_BOOKING_TOPIC;
-import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
 
 @Component
 @Slf4j
@@ -27,7 +27,7 @@ public class KafkaListeners {
     private final NotificationTransmissionService notificationTransmissionService;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = KAFKA_OFFER_TOPIC, groupId = CONSUMER_GROUP_ID)
+    @KafkaListener(topics = OFFER_TOPIC, groupId = CONSUMER_GROUP_ID)
     void offerListener(@Payload String message,
                        @Header(KafkaHeaders.RECEIVED_PARTITION) String partition,
                        @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
@@ -39,7 +39,7 @@ public class KafkaListeners {
         consume(message, partition, topic, groupId, timestamp, offset, correlationId, ack);
     }
 
-    @KafkaListener(topics = KAFKA_BOOKING_TOPIC, groupId = CONSUMER_GROUP_ID)
+    @KafkaListener(topics = BOOKING_TOPIC, groupId = CONSUMER_GROUP_ID)
     void bookingListener(@Payload String message,
                          @Header(KafkaHeaders.RECEIVED_PARTITION) String partition,
                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,

@@ -17,7 +17,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @EnableConfigurationProperties({
         ServerConfigProperties.class,
         ManagementConfigProperties.class,
-        LoggingLvlConfigProperties.class
+        LoggingLvlConfigProperties.class,
+        SpringConfigProperties.class
 })
 public class CommonConfigPropertiesAutoConfiguration {
 }

@@ -3,6 +3,7 @@ package com.lukk.sky.booking.adapters.inbound.api;
 import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
+import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
@@ -57,7 +58,7 @@ public class BookingController {
     public ResponseEntity<Page<BookingDTO>> getBookedOffers(
             @PageableDefault(size = 20) Pageable pageable) {
         String userEmail = SecurityUtils.currentUserEmail();
-        Page<BookingDTO> bookings = bookingService.getBookedOffersForUser(userEmail, pageable);
+        Page<BookingDTO> bookings = bookingService.getBookedOffersForUser(userEmail, pageable).map(BookingController::toDto);
 
         return ResponseEntity.ok(bookings);
     }
@@ -80,8 +81,8 @@ public class BookingController {
         log.info("Starting to book offer with payload: {}", bookingPayload);
 
         String bookingUser = SecurityUtils.currentUserEmail();
-        BookingDTO bookingDTO = bookingService.bookOffer(
-                bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser);
+        BookingDTO bookingDTO = toDto(bookingService.bookOffer(
+                bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingDTO);
     }
@@ -102,5 +103,15 @@ public class BookingController {
         bookingService.removeBooking(bookingId, userEmail);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private static BookingDTO toDto(BookingView view) {
+        return BookingDTO.builder()
+                .id(view.id())
+                .offerId(view.offerId())
+                .bookedDate(view.bookedDate())
+                .bookingUser(view.bookingUser())
+                .ownerEmail(view.ownerEmail())
+                .build();
     }
 }

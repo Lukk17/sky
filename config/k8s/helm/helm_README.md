@@ -48,7 +48,7 @@ Then run the script as above.
 
 Two things the deploy scripts do not do, so plan around them:
 
-- They do not install an ingress controller. Install nginx-ingress first, see [config/k8s/local_README.md](../local_README.md) for a local cluster or [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md) for GKE.
+- They do not install an ingress controller. Install nginx-ingress first, see [config/k8s/local_README.md](../local_README.md) for a local cluster.
 - They always install the Sealed Secrets controller and apply the sealed secrets from [config/k8s/secret/sealed/](../secret/sealed/), including under `ENV=local`. One of those three, `sealed-secrets.yaml`, is not committed, so generate it with the command in section 2 first. Both deploy scripts check that it is there before they touch the cluster and stop with a message naming the section that produces it. A local k3d cluster has no sealed-secrets key material at all, so use the plain committed secret and the step-by-step runbook in [config/k8s/local_README.md](../local_README.md) instead of the scripts.
 
 The upgrade script skips the sealed secrets and reinstalls nothing, it only runs `helm upgrade` per release. The remove script deletes every release plus the `sealed-secrets` namespace and the Kafka PVC.
@@ -103,7 +103,7 @@ Namespace is never a value. Every template uses `.Release.Namespace`, so `-n <na
 
 ### 1. Sealed Secrets controller
 
-Sealed Secrets encrypts Kubernetes secrets in the repository. The controller decrypts them at deploy time using a TLS key that lives outside the repository, in a password manager or a secrets vault. Creating and rotating that key pair is covered in [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md).
+Sealed Secrets encrypts Kubernetes secrets in the repository. The controller decrypts them at deploy time using a TLS key that lives outside the repository, in a password manager or a secrets vault. Creating and rotating that key pair against the target cluster's live controller with kubeseal.
 
 Create the namespace:
 
@@ -165,9 +165,9 @@ Every chart that needs a credential reads it from one Secret named `sky-secrets`
 | `keycloak-client-secret` | oauth2-proxy | OIDC client secret |
 | `keycloak-client-cookie-secret` | oauth2-proxy | Cookie encryption secret, 32 random bytes base64-encoded |
 
-No SealedSecret for `sky-secrets` is committed, so generating one is a prerequisite of every production deploy rather than something you do when a credential changes. The file that used to sit here was sealed in July 2023, before the MySQL-to-PostgreSQL move and before the Auth0-to-Keycloak move: of the eleven keys above it carried only `postgres-user`, alongside twelve dead ones left over from MySQL, Auth0, the basic auth era, and the pre-rename `postgres-pass`. Applying it gave every pod a `CreateContainerConfigError`, so it was deleted rather than resealed with placeholder values, on the grounds that a file which looks deployable and is not costs more than an explicit step. Until the command below has been run there is nothing to apply. The path is listed in [config/.gitignore](../../.gitignore), so the file you generate never shows up in `git status` and nobody commits it back. Why a SealedSecret is excluded here when the tool makes it safe to commit is answered in section 3 of [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md). Neither local path is affected: a local cluster uses the plain committed [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml), which carries all eleven keys, and Docker Compose reads its credentials from inline fallbacks in [config/docker/docker-compose.yaml](../../docker/docker-compose.yaml). `minio-root-user` and `minio-root-password` appear in neither the table nor the command: the floci chart needs no credentials, so nothing reads them.
+No SealedSecret for `sky-secrets` is committed, so generating one is a prerequisite of every production deploy rather than something you do when a credential changes. The file that used to sit here was sealed in July 2023, before the MySQL-to-PostgreSQL move and before the Auth0-to-Keycloak move: of the eleven keys above it carried only `postgres-user`, alongside twelve dead ones left over from MySQL, Auth0, the basic auth era, and the pre-rename `postgres-pass`. Applying it gave every pod a `CreateContainerConfigError`, so it was deleted rather than resealed with placeholder values, on the grounds that a file which looks deployable and is not costs more than an explicit step. Until the command below has been run there is nothing to apply. The path is listed in [config/.gitignore](../../.gitignore), so the file you generate never shows up in `git status` and nobody commits it back. Neither local path is affected: a local cluster uses the plain committed [config/k8s/local/sky-secrets-local.yaml](../local/sky-secrets-local.yaml), which carries all eleven keys, and Docker Compose reads its credentials from inline fallbacks in [config/docker/docker-compose.yaml](../../docker/docker-compose.yaml). `minio-root-user` and `minio-root-password` appear in neither the table nor the command: the floci chart needs no credentials, so nothing reads them.
 
-Create the Secret and seal it, and repeat the whole command whenever any single credential changes. Seal against the certificate the target cluster's controller is using right now. The committed [config/k8s/secret/sealed-public.crt](../secret/sealed-public.crt) dates from July 2023, and a controller that has been reinstalled since then no longer holds the matching private key, so the command below omits `--cert` and lets `kubeseal` fetch the certificate through the two controller flags it already passes. The reasoning is in [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md). Substitute real values:
+Create the Secret and seal it, and repeat the whole command whenever any single credential changes. Seal against the certificate the target cluster's controller is using right now. The committed [config/k8s/secret/sealed-public.crt](../secret/sealed-public.crt) dates from July 2023, and a controller that has been reinstalled since then no longer holds the matching private key, so the command below omits `--cert` and lets `kubeseal` fetch the certificate through the two controller flags it already passes. Substitute real values:
 
 ```shell
 kubectl create secret generic sky-secrets --from-literal=postgres-user=<postgres-user> --from-literal=postgres-password=<postgres-password> --from-literal=s3-access-key=<s3-access-key> --from-literal=s3-secret-key=<s3-secret-key> --from-literal=keycloak-admin=admin --from-literal=keycloak-admin-password=<keycloak-admin-password> --from-literal=keycloak-db-user=keycloak_user --from-literal=keycloak-db-password=<keycloak-db-password> --from-literal=keycloak-client-id=sky-backend --from-literal=keycloak-client-secret=<client-secret> --from-literal=keycloak-client-cookie-secret=<32-byte-random-base64> --dry-run=client -o yaml | kubeseal --controller-namespace sealed-secrets --controller-name sealed-secrets-controller -o yaml > config/k8s/secret/sealed/sealed-secrets.yaml
@@ -363,8 +363,8 @@ Two consequences of that split are worth knowing before adding a path. Because t
 The annotations that delegate to oauth2-proxy, which live in each service chart's `values-prod.yaml` because the first two name a concrete environment's front door:
 
 ```yaml
-nginx.ingress.kubernetes.io/auth-url: "https://skycloud.luksarna.com/oauth2/auth"
-nginx.ingress.kubernetes.io/auth-signin: "https://skycloud.luksarna.com/oauth2/start"
+nginx.ingress.kubernetes.io/auth-url: "https://<ingress-host>/oauth2/auth"
+nginx.ingress.kubernetes.io/auth-signin: "https://<ingress-host>/oauth2/start"
 nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email, x-auth-request-access-token, authorization"
 ```
 
@@ -374,7 +374,7 @@ The third names no environment and stays in `values.yaml`. Each `values-local.ya
 
 ### Cross-origin origins
 
-The frontend and the API answer on different hosts, `https://sky.luksarna.com` and `https://skycloud.luksarna.com`, so every call the frontend makes is cross-origin and each service has to answer with that exact origin or the browser throws the response away. A wildcard is not an option: the calls carry a bearer token, and a browser refuses a wildcard on a credentialed request.
+The frontend and the API answer on different hosts, so every call the frontend makes is cross-origin and each service has to answer with that exact origin or the browser throws the response away. A wildcard is not an option: the calls carry a bearer token, and a browser refuses a wildcard on a credentialed request.
 
 `sky-booking`, `sky-offer` and `sky-message` read the allow-list from `sky.crossOrigin.allowed`, which takes its value from the `ACCESS_CONTROL_ALLOW_ORIGIN` environment variable. Each chart holds it as `crossOrigin.allowed`, empty in `values.yaml` behind `required`, and the deployment template renders it into that variable.
 
@@ -385,7 +385,7 @@ The frontend and the API answer on different hosts, `https://sky.luksarna.com` a
 
 The per-service ports are deliberately absent from the local list. In a cluster the four Services are `ClusterIP` with no host publishing, so nothing reaches `localhost:5552` and friends from a browser, and under Docker Compose, where those ports are published, a page served by a service calling that same service is same-origin and never consults the allow-list.
 
-Until this value existed in the charts nothing set the variable anywhere, so every deployed service fell back to the committed default in its own `application.yaml`, which names the API host plus three localhost origins. That default is unchanged and still applies to a bare `bootRun` or a Compose run. What changed is that a chart-installed service no longer uses it.
+Until this value existed in the charts nothing set the variable anywhere, so every deployed service fell back to the committed default in its own `application.yaml`, which names three localhost origins. That default is unchanged and still applies to a bare `bootRun` or a Compose run. What changed is that a chart-installed service no longer uses it.
 
 `sky-notify` is not in the table and cannot be. Its allowed origins are a hardcoded list in `WebSocketConfig`, pinned by a test, and no chart value reaches them. Narrowing it is a source change, tracked separately.
 
@@ -450,7 +450,7 @@ kubectl delete -f config/k8s/secret/sealed --recursive
 
 ### Troubleshooting
 
-`CreateContainerConfigError` on a pod. The pod cannot read a key from `sky-secrets`. Three causes, in the order worth checking: the `sky-secrets` SealedSecret was never generated and applied, since none is committed and generating it is a prerequisite (see the key inventory above, this is the likely one today), it was applied but the controller holds no private key matching the certificate it was sealed against so nothing decrypted, or it decrypted into a Secret that is missing a key the chart reads. See [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md).
+`CreateContainerConfigError` on a pod. The pod cannot read a key from `sky-secrets`. Three causes, in the order worth checking: the `sky-secrets` SealedSecret was never generated and applied, since none is committed and generating it is a prerequisite (see the key inventory above, this is the likely one today), it was applied but the controller holds no private key matching the certificate it was sealed against so nothing decrypted, or it decrypted into a Secret that is missing a key the chart reads.
 
 `cannot unmarshal number into Go struct field EnvVar...value of type string`. An environment value in a values file or a deployment template is unquoted. Wrap numeric-looking values in double quotes.
 
@@ -491,7 +491,6 @@ helm get values sky-offer
 | Document | What it covers |
 |---|---|
 | [README.md](../../../README.md) | Platform overview, modules, build, ports |
-| [config/k8s/_deployment-scripts/deployment_README.md](../_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [config/k8s/local_README.md](../local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/k8s/k8s_README.md](../k8s_README.md) | Operating a running cluster with kubectl |
 | [config/local-dev/local_README.md](../../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |

@@ -19,7 +19,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.OFFER_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -66,7 +66,7 @@ class KafkaConsumerConfigTest {
 
         ArgumentCaptor<ProducerRecord<String, String>> deadLettered = captorForProducerRecord();
         verify(dltKafkaTemplate).send(deadLettered.capture());
-        assertThat(deadLettered.getValue().topic()).isEqualTo(KAFKA_OFFER_TOPIC + ".DLT");
+        assertThat(deadLettered.getValue().topic()).isEqualTo(OFFER_TOPIC + ".DLT");
     }
 
     @Test
@@ -98,7 +98,7 @@ class KafkaConsumerConfigTest {
     }
 
     private ConsumerRecord<String, String> consumerRecord(long offset, String value) {
-        return new ConsumerRecord<>(KAFKA_OFFER_TOPIC, 0, offset, "key", value);
+        return new ConsumerRecord<>(OFFER_TOPIC, 0, offset, "key", value);
     }
 
     private JacksonException malformedJsonFailure() {

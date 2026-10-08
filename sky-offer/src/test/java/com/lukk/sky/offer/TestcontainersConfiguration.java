@@ -22,6 +22,7 @@ public class TestcontainersConfiguration {
     @Bean
     @ServiceConnection
     PostgreSQLContainer postgresContainer() {
-        return new PostgreSQLContainer(POSTGRES_IMAGE);
+        // Labelled for pruneSkyTestcontainers cleanup.
+        return new PostgreSQLContainer(POSTGRES_IMAGE).withLabel("sky-testcontainer", "true");
     }
 }

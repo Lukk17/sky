@@ -211,13 +211,15 @@ class OfferEventAppendConcurrencyTest {
         @Bean
         @ServiceConnection
         PostgreSQLContainer unsharedPostgresContainer() {
-            return new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withReuse(false);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            return new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true").withReuse(false);
         }
 
         @Bean
         @ServiceConnection
         ConfluentKafkaContainer kafkaContainer() {
-            return new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0")).withReuse(true);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            return new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0")).withLabel("sky-testcontainer", "true").withReuse(true);
         }
     }
 }

@@ -69,13 +69,13 @@ class ExceptionMappingPrecedenceTest {
         return Stream.of(
                 Arguments.of("MessageNotFoundException",
                         new MessageNotFoundException("No message with that id."),
-                        404, "No message with that id."),
+                        404, "Resource not found."),
                 Arguments.of("MessageAccessDeniedException",
                         new MessageAccessDeniedException("Not your message."),
-                        403, "Not your message."),
+                        403, "Access denied."),
                 Arguments.of("MessageException",
                         new MessageException("Message text must not be blank."),
-                        400, "Message text must not be blank."));
+                        400, "Invalid request."));
     }
 
     @ParameterizedTest(name = "{0} still answers {2}")
@@ -99,6 +99,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("noMappingCarriesRetryAfter_becauseThisServiceHasNoDependencyToWaitFor")
     void noMappingCarriesRetryAfter_becauseThisServiceHasNoDependencyToWaitFor() throws Exception {
+        // when / then
         doThrow(new MessageNotFoundException("No message with that id."))
                 .when(messageService).remove(eq(MESSAGE_ID), any());
 
@@ -110,6 +111,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody")
     void unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody() throws Exception {
+        // when / then
         doThrow(new IllegalStateException("senderEmail was null"))
                 .when(messageService).remove(eq(MESSAGE_ID), any());
 
@@ -128,15 +130,18 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage")
     void unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage() throws Exception {
+        // given
         doThrow(new IllegalStateException("senderEmail was null"))
                 .when(messageService).remove(eq(MESSAGE_ID), any());
 
+        // when
         String body = mvc.perform(delete("/messages/" + MESSAGE_ID).with(senderJwt()))
                 .andExpect(status().isInternalServerError())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
+        // then
         assertThat(body)
                 .as("an unanticipated failure is where an internal message is most likely to leak")
                 .doesNotContain("IllegalStateException")

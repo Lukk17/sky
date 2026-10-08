@@ -1,0 +1,62 @@
+---
+# Gateway-identical login/logout aliases (edge-session-parity 2.2/2.3).
+# /oauth2/authorization/keycloak -> /oauth2/start (oauth2-proxy serves no such
+# path natively; the /oauth2/* prefix already routes here, so this is an
+# ingress-level alias preserving rd return-to-frontend-origin).
+# POST /logout -> /oauth2/sign_out with method preserved (rewrite, not redirect).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: edge-alias-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /oauth2/start
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: {{ .Values.ingress.controller }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
+      http:
+        paths:
+          - path: /oauth2/authorization/keycloak
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Values.service.name }}
+                port:
+                  number: {{ $.Values.service.port }}
+    {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: edge-logout-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /oauth2/sign_out
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    {{- if $.Values.session.corsOrigin }}
+    # Local dev only: logout POST comes cross-origin from the dev server.
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: {{ $.Values.session.corsOrigin | quote }}
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-XSRF-TOKEN"
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.controller }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
+      http:
+        paths:
+          - path: /logout
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Values.service.name }}
+                port:
+                  number: {{ $.Values.service.port }}
+    {{- end }}

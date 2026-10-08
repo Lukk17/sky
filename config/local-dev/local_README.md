@@ -14,13 +14,14 @@ Development-only, non-secret, intentionally committed values. Real environments 
 
 | Service | Address | Credentials |
 |---|---|---|
-| Keycloak | https://keycloak.test:9443 | admin / admin for the console, realm `sky` |
-| Keycloak realm users | https://keycloak.test:9443/realms/sky | lukk / test1234, owner / owner, user / user |
+| Gateway | http://localhost:5777 | single edge for API, Keycloak (`/auth`) and store (`/s3`) |
+| Frontend | http://localhost:4200 | demo UI |
+| Keycloak | http://localhost:5777/auth (via gateway) | admin / admin for the console, realm `sky` |
+| Keycloak realm users | http://localhost:5777/auth/realms/sky | lukk / test1234, owner / owner, user / user |
 | Keycloak client | `sky-backend` | secret `dev-only-change-in-prod` |
-| PostgreSQL | localhost:5432 | database `sky`, user postgres, password local |
-| Object store S3 API | http://localhost:9070 | root / localdev |
-| Object store console | http://localhost:9071 | root / localdev |
-| Kafka | localhost:9092 | no authentication |
+| PostgreSQL | compose network only, no host port | database `sky`, user postgres, password local |
+| Object store S3 API | http://localhost:5777/s3 (via gateway) | root / localdev |
+| Kafka | compose network only, no host port | no authentication |
 
 The object-store password is `localdev` rather than `local` because MinIO refuses to start with a root password shorter than eight characters, and MinIO is still one of the two implementations this page offers:
 
@@ -135,9 +136,7 @@ The full procedure, with PowerShell and Unix variants for `openssl` and `keytool
 
 ### Option A, run everything in Docker Compose
 
-[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts Kafka, the four services, and the gateway. PostgreSQL, Keycloak, and the object store are not in the file, they must already be running from steps 1 to 3. The compose services reach all three on `host.docker.internal`, so they work against a host install or a separate compose project either way.
-
-There is no pre-step. The images bake the local development certificate authority into their own `cacerts`, and the compose file mounts no truststore and sets no `JAVA_TOOL_OPTIONS` override, so `up --build` is the whole flow. It used to mount one, and that was wrong: `-Djavax.net.ssl.trustStore` replaces the JVM trust store instead of adding to it, so the containers trusted Keycloak and no public authority.
+[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts the whole app with one command: PostgreSQL, Keycloak (realm `sky` imported, issuer `http://localhost:5777/auth/realms/sky`), the floci object store, Kafka, the four services, the gateway, the containerized frontend, and a one-shot seed job that loads the demo dataset from [seed/](../../seed/). Only the gateway (`5777`) and the frontend (`4200`) publish host ports; postgres, kafka, keycloak and floci are reachable only over the compose network, so this stack no longer collides with another local-dev compose stack holding those ports. Keycloak answers through the gateway at `http://localhost:5777/auth` and the object store at `http://localhost:5777/s3`, both plain HTTP, so there is no certificate to trust and no hosts file entry to add.
 
 Start the stack:
 
@@ -157,7 +156,9 @@ Stop it:
 docker compose -f config/docker/docker-compose.yaml down
 ```
 
-The gateway answers at `http://localhost:5777` with the same path prefixes the cluster ingress uses, and it is the only sky port published to the host. Ports 5552 to 5555 stay open inside the compose network, where the gateway and the services reach each other by service name, and no service port is dialable from the host. That matches the k3d cluster, which is created with `--port "5777:80@loadbalancer"` and publishes nothing else, so a path that works here works there. To call one service directly, run it with Gradle (option B below), which binds its port on the host.
+The frontend answers at `http://localhost:4200` and reads its API URLs from container environment at start: the nginx entrypoint renders `API_BASE_URL` into `/assets/config/app-config.json` on each start and Angular loads it via `APP_INITIALIZER` before boot, so the same image works against compose and k3d backends with only env changes. The gateway answers at `http://localhost:5777` with the same path prefixes the cluster ingress uses. Service ports 5552 to 5555 stay open inside the compose network only, where the gateway and the services reach each other by service name. That matches the k3d cluster, which is created with `--port "5777:80@loadbalancer"` and publishes nothing else, so a path that works here works there. To call one service directly, run it with Gradle (option B below), which binds its port on the host. Compose and k3d share host port 5777, so run only one stack at a time.
+
+Give the containers a few minutes after start: Keycloak imports the realm on first boot, the services wait on its health check, and readiness probes have a 60 second start period.
 
 Give the containers a minute after start: readiness probes have a 60 second start period, and calls before that return errors.
 
@@ -240,7 +241,7 @@ A service logs `PKIX path validation failed`. The Keycloak certificate is not tr
 
 A service starts but every authenticated call returns 401. The token came from a different issuer than the one the service validates against. Compare the `iss` claim in the token with the service's `OAUTH2_ISSUER_URI`. This is the usual symptom of pointing a host-run service at the cluster Keycloak, or the reverse.
 
-Photo upload fails while everything else works. The status says which half to look at. A 503 with `Retry-After: 10` means the store never answered, so check that the container from step 3 is up and listening on port 9070. A 502 means the store answered and refused, so check `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_BUCKET` against what the store actually holds. Either way `sky-offer` logs a warning and boots anyway when the bucket check fails at startup, so the failure only shows up on the photo endpoints.
+Photo upload fails while everything else works. The status says which half to look at. A 503 with `Retry-After: 10` means the store never answered, so check that the floci container is up (`docker compose -f config/docker/docker-compose.yaml ps floci`) and that `http://localhost:5777/s3/sky-offers` answers through the gateway. A 502 means the store answered and refused, so check `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_BUCKET` against what the store actually holds. Either way `sky-offer` logs a warning and boots anyway when the bucket check fails at startup, so the failure only shows up on the photo endpoints.
 
 ---
 
@@ -286,7 +287,6 @@ docker images -a --filter "reference=sky-*" --format "{{.ID}}" | xargs -r docker
 | [config/local-dev/e2e-stack_README.md](e2e-stack_README.md) | The self-contained end-to-end stack and the Bruno gate in CI |
 | [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/k8s/helm/helm_README.md](../k8s/helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
-| [config/k8s/_deployment-scripts/deployment_README.md](../k8s/_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [config/k8s/k8s_README.md](../k8s/k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |

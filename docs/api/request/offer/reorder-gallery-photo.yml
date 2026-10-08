@@ -1,0 +1,49 @@
+info:
+  name: Reorder Gallery Photo
+  type: http
+  seq: 13
+
+http:
+  method: PUT
+  url: "{{offerUrl}}/api/v1/owner/offers/{{offerId}}/photos/{{galleryPhotoId2}}/position?position=0"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("galleryCoverMatches", "cover does not match reordered head photo");
+        if (res.status === 200 && res.body && res.body.gallery && res.body.gallery.length >= 1) {
+          if (res.body.coverPhotoUrl === res.body.gallery[0].url) {
+            bru.setVar("galleryCoverMatches", "match");
+          }
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.gallery.length
+      operator: eq
+      value: "2"
+    - expression: res.body.gallery[0].id
+      operator: eq
+      value: "{{galleryPhotoId2}}"
+    - expression: res.body.gallery[0].position
+      operator: eq
+      value: "0"
+    - expression: res.body.gallery[1].position
+      operator: eq
+      value: "1"
+    - expression: res.body.coverPhotoUrl
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.coverPhotoUrl
+      operator: contains
+      value: "offers/"
+    - expression: galleryCoverMatches
+      operator: eq
+      value: "match"

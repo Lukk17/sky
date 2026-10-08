@@ -2,7 +2,7 @@
 
 Single source of commands for standing the full sky backend stack up on a local k3d cluster and verifying it with the Bruno collection.
 
-The cluster is named `k3d-sky`. Host port 5777 maps to the cluster load balancer port 80. All traffic enters through nginx-ingress. Keycloak is the OIDC provider at `http://keycloak.127.0.0.1.nip.io:5777`. The nip.io domain resolves to 127.0.0.1 on the host without touching the hosts file, and CoreDNS resolves it to the nginx-ingress ClusterIP inside the cluster so services can reach Keycloak for OIDC discovery.
+The cluster is named `k3d-sky`. Host ports 5777 and 80 both map to the cluster load balancer port 80. All traffic enters through nginx-ingress. Keycloak is the OIDC provider at `http://keycloak.127.0.0.1.nip.io:5777`. The nip.io domain resolves to 127.0.0.1 on the host without touching the hosts file, and CoreDNS resolves it to the nginx-ingress ClusterIP inside the cluster so services can reach Keycloak for OIDC discovery.
 
 Every command below is a single line and runs unchanged in a Unix shell and in PowerShell 7. Run all of them from the repository root.
 
@@ -15,7 +15,7 @@ For running the services without Kubernetes (Gradle or Docker Compose) see [conf
 The cluster the create command in step 1 produces runs as exactly two Docker containers, regardless of how many applications you deploy:
 
 - `k3d-sky-server-0`, the single k3s node. Every pod (the four services plus PostgreSQL, floci, Kafka, Keycloak, and Keycloak's own PostgreSQL) runs inside this one container as a containerd container, not as a Docker container. `docker ps` does not show them, `kubectl get pods` does.
-- `k3d-sky-serverlb`, a small proxy. It is not a second Kubernetes server. It is the load balancer that forwards host port 5777 into the cluster's nginx-ingress on port 80.
+- `k3d-sky-serverlb`, a small proxy. It is not a second Kubernetes server. It is the load balancer that forwards host ports 5777 and 80 into the cluster's nginx-ingress on port 80.
 
 So you do not run two Docker containers per app. You run two Docker containers for the entire cluster, and the sky pods live inside the server node. The name "serverlb" is k3d's, it means "load balancer in front of the server", not "a second server".
 
@@ -70,7 +70,7 @@ Building by hand works too and is documented in [config/local-dev/local_README.m
 Run once. Skip if the cluster already exists. Traefik is disabled because the stack uses nginx-ingress.
 
 ```bash
-k3d cluster create sky --port "5777:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
+k3d cluster create sky --port "5777:80@loadbalancer" --port "80:80@loadbalancer" --k3s-arg "--disable=traefik@server:0"
 ```
 
 If every `kubectl` command from here on fails to connect while the cluster itself is healthy, the kubeconfig address k3d just wrote is the likely cause. See item 6 under [Known issues](#known-issues-and-design-notes).
@@ -123,25 +123,73 @@ kubectl wait pod -n ingress-nginx -l app.kubernetes.io/component=controller --fo
 
 ### 4. Apply the local secrets
 
-The local credentials are committed at [config/k8s/local/sky-secrets-local.yaml](local/sky-secrets-local.yaml), so there is nothing to type and nothing to keep in sync by hand. They are plain-text development values. Never use them anywhere else.
+The real credentials are never committed. Copy the committed template and fill every
+`REPLACE_WITH_*` value with a per-machine random secret:
+
+```bash
+cp config/k8s/local/sky-secrets-local.yaml.example config/k8s/local/sky-secrets-local.yaml
+```
+
+PowerShell, one value per key (repeat for each `REPLACE_WITH_*` entry):
+
+```powershell
+[Convert]::ToHexString((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }) -replace '-','')
+```
+
+Unix shell:
+
+```bash
+openssl rand -hex 32
+```
+
+Use 16 bytes (`openssl rand -hex 16`) for `s3-access-key` and 12 bytes for
+`keycloak-admin-password`. Keep `keycloak-client-id` as `sky-backend`, and set
+`keycloak-client-secret` to the value you sourced into Keycloak at deploy time
+(the realm file ships no secret; step 7 sets it with the same value, otherwise
+oauth2-proxy and the Bruno password grant cannot authenticate).
 
 ```bash
 kubectl apply -f config/k8s/local/sky-secrets-local.yaml
 ```
 
-The cluster charts read this one `sky-secrets` Secret. The production path uses the same key names through a SealedSecret instead, see [config/k8s/helm/helm_README.md](helm/helm_README.md) for the full key inventory.
+The cluster charts read this one `sky-secrets` Secret. The production path uses the same key names through a SealedSecret instead, see [config/k8s/helm/helm_README.md](helm/helm_README.md) for the full key inventory. The gitignored real file stays on your machine only.
 
 ---
 
-### 5. Apply the development TLS secret
+### 5. Generate and apply the development TLS secret
 
-The self-signed development certificate and its ready-made Secret manifest are committed under [config/k8s/secret/ssl/](secret/ssl/). Apply the manifest rather than regenerating a certificate:
+The TLS key material is never committed. Each machine generates its own self-signed
+certificate and creates the `dev-ssl-cert` Secret the local ingresses reference:
+
+Unix shell:
 
 ```bash
-kubectl apply -f config/k8s/secret/ssl/dev-ssl-cert.yaml
+openssl req -x509 -newkey rsa:2048 -keyout /tmp/dev-ssl-cert.key -out /tmp/dev-ssl-cert.crt -days 825 -nodes -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,DNS:keycloak.127.0.0.1.nip.io,IP:127.0.0.1,IP:::1"
 ```
 
-The certificate carries `CN=localhost` and is valid for ten years. Its subject alternative names are `localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`, which is every host a local Ingress serves: the four services on `localhost` and Keycloak on the nip.io name. Trust it in a browser and those names verify, anything else does not. The local overlays set `ssl-redirect: "false"` and the cluster only maps host port 5777 to the load balancer's port 80, so the default local path is plain HTTP and the certificate mostly just satisfies the `tls` block on each Ingress.
+```bash
+kubectl create secret tls dev-ssl-cert --cert=/tmp/dev-ssl-cert.crt --key=/tmp/dev-ssl-cert.key
+```
+
+With mkcert (trusted by your browsers automatically):
+
+```bash
+mkcert -key-file /tmp/dev-ssl-cert.key -cert-file /tmp/dev-ssl-cert.crt localhost keycloak.127.0.0.1.nip.io 127.0.0.1 ::1
+```
+
+```bash
+kubectl create secret tls dev-ssl-cert --cert=/tmp/dev-ssl-cert.crt --key=/tmp/dev-ssl-cert.key
+```
+
+Then delete the temp files. The certificate must carry `CN=localhost` with subject
+alternative names `localhost`, `keycloak.127.0.0.1.nip.io`, `127.0.0.1` and `::1`,
+which is every host a local Ingress serves: the four services on `localhost` and
+Keycloak on the nip.io name. Trust it in a browser and those names verify, anything
+else does not. The local overlays set `ssl-redirect: "false"` and the default local
+path is plain HTTP on host port 5777 (host port 80 serves the same ingress for
+Keycloak's portless browser URLs), and the certificate mostly just satisfies the
+`tls` block on each Ingress. See [config/keycloak/SETUP.md](../keycloak/SETUP.md)
+for the per-machine generation reference.
 
 ---
 
@@ -203,6 +251,12 @@ Kafka has one definition, the chart at [config/k8s/helm/kafka/](helm/kafka/), wh
 helm upgrade --install kafka-service config/k8s/helm/kafka -f config/k8s/helm/kafka/values-local.yaml -n default
 ```
 
+The service overlays point `auth-url` at oauth2-proxy, so every authenticated write answers 500 on a fresh cluster until it is deployed:
+
+```bash
+helm upgrade --install oauth2-proxy config/k8s/helm/api-gateway/oauth2-proxy -f config/k8s/helm/api-gateway/oauth2-proxy/values-local.yaml -n default
+```
+
 Wait for infrastructure to be ready, one wait per command:
 
 ```bash
@@ -219,6 +273,10 @@ kubectl wait pod -l component=keycloak --for=condition=Ready --timeout=180s
 
 ```bash
 kubectl wait pod -l component=floci --for=condition=Ready --timeout=120s
+```
+
+```bash
+kubectl wait pod -l k8s-app=oauth2-proxy --for=condition=Ready --timeout=120s
 ```
 
 ```bash
@@ -299,6 +357,12 @@ The `issuer` field must read `http://keycloak.127.0.0.1.nip.io/realms/sky`. If i
 
 ---
 
+### 9b. Browser login needs no helper process
+
+API clients (Bruno, curl) only ever touch Keycloak on `:5777`. A browser login additionally `POST`s the Keycloak login form to the portless URL `http://keycloak.127.0.0.1.nip.io/...` (Keycloak builds all browser URLs from `KC_HOSTNAME`, which is deliberately portless so discovery and the token issuer stay portless for service-side validation). Host port 80 is mapped to the load balancer at cluster creation (step 1), so the portless URL answers through the ingress with no helper process. Binding host port 80 needs no extra privilege beyond what Docker already has; the mapping lives in the load balancer container, not in a per-test background forwarder.
+
+---
+
 ### 10. Run the Bruno collection
 
 Use the `k8s` environment, not `local`. The cluster runs its own Keycloak with issuer `http://keycloak.127.0.0.1.nip.io/realms/sky`, while `--env local` mints tokens from your host Keycloak at `https://keycloak.test:9443`. A token from the wrong issuer is rejected by the cluster services, so `--env local` against the cluster gives a valid token and a 401 on every authenticated call. The public endpoints (get-all-offers, search) still pass, which is the tell-tale sign you picked the wrong environment.
@@ -344,17 +408,34 @@ The environment file is [docs/api/request/environments/k8s.yml](../../docs/api/r
 
 ### Credentials
 
-Development-only, non-secret, intentionally committed. They come from [config/k8s/local/sky-secrets-local.yaml](local/sky-secrets-local.yaml) and the realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](helm/infra/keycloak/files/sky-realm.json). Never use them anywhere else.
+No credential is committed. The realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](helm/infra/keycloak/files/sky-realm.json) carries only usernames, emails and realm roles. Passwords and the client secret are sourced at deploy time:
+
+- User passwords are set by the seed script through the Keycloak admin API (`reset-password` per user in `seed/seed.mjs`, lines 79 and 98), so local login keeps working with no password stored in the repo. Proof: `ensureUser` calls `PUT /admin/realms/sky/users/{id}/reset-password` with the password from `seed/users.json` on both the update and the create path, then mints a token per user with it. All seed users share password `local` (see [seed/README.md](../../seed/README.md)).
+- The `sky-backend` client secret is generated per deploy (for example `openssl rand -hex 32`), stored in the `keycloak-client-secret` entry of your `sky-secrets-local.yaml` (step 4), and set on the imported client once Keycloak is up:
+
+```bash
+kcadm.sh set-password --help >/dev/null 2>&1
+```
+
+```bash
+docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
+```
+
+```bash
+docker exec keycloak /opt/keycloak/bin/kcadm.sh update clients/$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -q clientId=sky-backend --fields id --format csv --noquotes) -s secret=<the value from step 4>
+```
+
+- `oauth2-proxy` and the Bruno password grant read that same secret, so all three must agree.
+
+The redirect URIs and post-logout URIs stay localhost-only by direction: this stack is localhost-only (the deployed cluster references are out of scope), so `http://localhost:5777/oauth2/callback`, `http://localhost:5777/login/oauth2/code/keycloak` and the `post.logout.redirect.uris` localhost entries are correct here. `webOrigins` names the explicit local origins (`http://localhost:5777`, `http://localhost:4200`) instead of `+`. A production deploy must override both lists with its own public origins and never carry the localhost entries over.
 
 | What | Username | Password |
 |---|---|---|
-| PostgreSQL (sky database) | postgres | local |
-| S3 access key and secret | root | localdev |
-| Keycloak admin console | admin | admin |
-| Keycloak realm user (admin role) | lukk | test1234 |
-| Keycloak realm user (admin role) | owner | owner |
-| Keycloak realm user (user role) | user | user |
-| Keycloak client `sky-backend` | client secret | dev-only-change-in-prod |
+| PostgreSQL (sky database) | postgres | per-machine value in your `sky-secrets-local.yaml` |
+| S3 access key and secret | per-machine values in your `sky-secrets-local.yaml` | per-machine values in your `sky-secrets-local.yaml` |
+| Keycloak admin console | admin | per-machine value in your `sky-secrets-local.yaml` |
+| Keycloak realm users (roles in the realm file) | lukk, owner, user | `local`, set by the seed script |
+| Keycloak client `sky-backend` | client secret | per-deploy value shared by step 4, step 7 and the seed env |
 
 The last row is still needed and the list of who needs it has shrunk, which is worth saying so nobody puts it back where it no longer belongs. `oauth2-proxy` reads the secret to run its OIDC session flow, and [docs/api/request/auth/get-token.yml](../../docs/api/request/auth/get-token.yml) reads it to run the password grant that mints the caller's token, which is also why `sky-backend` is the `keycloakClientId` in the table above. No sky service reads it any more: `sky-message` used to fetch a service-account token with it for a receiver lookup against the Keycloak administration interface, and both the lookup and its `USER_DIRECTORY_CLIENT_SECRET` are gone. Validating a JWT needs no client secret, so a service environment block should never carry one.
 
@@ -385,7 +466,7 @@ Docker Desktop will not show the k3d containers as one grouped stack with a sing
 Remove the chart releases:
 
 ```bash
-helm uninstall sky-offer sky-booking sky-message sky-notify keycloak floci postgres database-persistent-volume-claim -n default
+helm uninstall sky-offer sky-booking sky-message sky-notify keycloak floci postgres database-persistent-volume-claim oauth2-proxy -n default
 ```
 
 That line takes the stored photos with it. [config/k8s/helm/infra/floci/templates/floci-pvc.yaml](helm/infra/floci/templates/floci-pvc.yaml) is a plain template rather than a StatefulSet volume claim template, so Helm owns `floci-pvc` and `helm uninstall floci` deletes the claim and every object in the store. To pause work and keep the objects, do not tear down at all, use `k3d cluster stop sky` from the section above.
@@ -472,7 +553,6 @@ k3d cluster delete sky
 | [config/local-dev/local_README.md](../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |
 | [config/local-dev/e2e-stack_README.md](../local-dev/e2e-stack_README.md) | The self-contained Compose stack and the Bruno gate CI runs on it |
 | [config/k8s/helm/helm_README.md](helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
-| [config/k8s/_deployment-scripts/deployment_README.md](_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [config/k8s/k8s_README.md](k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |

@@ -161,8 +161,7 @@ class SpringDataExceptionHandlerTest {
         DataIntegrityViolationException exception = databaseRejected(
                 "ERROR: duplicate key value violates unique constraint \"offer_pkey\"", "23505");
 
-        // when
-        // then
+        // when / then
         assertThatThrownBy(() -> handler.handleUnstorableValue(exception))
                 .as("a duplicate key is not a bad character, so it keeps its status instead of becoming a 400")
                 .isSameAs(exception);
@@ -175,8 +174,7 @@ class SpringDataExceptionHandlerTest {
         DataIntegrityViolationException exception = databaseRejected(
                 "ERROR: null value in column \"owner_email\" violates not-null constraint", "23502");
 
-        // when
-        // then
+        // when / then
         assertThatThrownBy(() -> handler.handleUnstorableValue(exception))
                 .as("a null the service itself failed to supply is a server fault and must not hide behind a 400")
                 .isSameAs(exception);
@@ -189,8 +187,7 @@ class SpringDataExceptionHandlerTest {
         DataIntegrityViolationException exception = databaseRejected(
                 "ERROR: insert or update on table \"booking_event\" violates foreign key constraint", "23503");
 
-        // when
-        // then
+        // when / then
         assertThatThrownBy(() -> handler.handleUnstorableValue(exception))
                 .as("a broken reference is not a bad character and keeps its current status")
                 .isSameAs(exception);
@@ -203,8 +200,7 @@ class SpringDataExceptionHandlerTest {
         DataIntegrityViolationException exception =
                 new DataIntegrityViolationException("translated without a SQL cause");
 
-        // when
-        // then
+        // when / then
         assertThatThrownBy(() -> handler.handleUnstorableValue(exception))
                 .as("with no SQL state there is nothing to classify, so the failure stays a server failure")
                 .isSameAs(exception);
@@ -237,8 +233,7 @@ class SpringDataExceptionHandlerTest {
         DataIntegrityViolationException exception =
                 new DataIntegrityViolationException("could not execute statement", new SelfCausingFailure());
 
-        // when
-        // then
+        // when / then
         assertThatThrownBy(() -> handler.handleUnstorableValue(exception))
                 .as("a cause chain that points at itself must end the walk instead of looping forever")
                 .isSameAs(exception);

@@ -10,7 +10,7 @@ oauth2:
   issuerUri: "http://keycloak.127.0.0.1.nip.io/realms/sky"
 
 crossOrigin:
-  allowed: "http://localhost:5777,http://localhost:4200"
+  allowed: "http://localhost:5777,http://127.0.0.1:5777,http://localhost:4200,http://127.0.0.1:4200"
 
 ingress:
   tls:
@@ -22,6 +22,12 @@ ingress:
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      # Session gate for the websocket handshake: oauth2-proxy validates the
+      # session cookie and the validated email reaches sky-notify as
+      # X-Auth-Request-Email (auth-response-headers overwrites a caller-sent
+      # header of the same name, so it stays edge-asserted).
+      nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local:4180/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-response-headers: "x-auth-request-user, x-auth-request-email"
     controller: "nginx"
     hosts:
       - host: "localhost"

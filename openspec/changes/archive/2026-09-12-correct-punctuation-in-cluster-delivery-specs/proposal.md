@@ -20,7 +20,7 @@ charts.
 The first divergence is that those very annotations are in the defaults, with the production hostname inside them. The
 requirement forbids a hostname or a TLS secret name in a default `values.yaml`, and its second scenario asks that
 `helm template` without an overlay render obviously-placeholder values so a forgotten overlay fails loudly. Read from
-`config/k8s/helm/service/sky-booking/values.yaml`: `host: "skycloud.luksarna.com"` at lines 59, 77 and 96,
+`config/k8s/helm/service/sky-booking/values.yaml`: `host:` with the production hostname at lines 59, 77 and 96,
 `secretName: dev-ssl-cert` at line 43, and the production hostname again inside the two oauth2-proxy annotations. The
 chart says so deliberately, in the header comment of
 `config/k8s/helm/service/sky-booking/values-prod.yaml`: "Defaults in values.yaml are also production-ready today". So a

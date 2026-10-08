@@ -1,6 +1,6 @@
 
 image:
-  name: "quay.io/oauth2-proxy/oauth2-proxy:v7.4.0"
+  name: "quay.io/oauth2-proxy/oauth2-proxy:v7.15.5"
   imagePullPolicy: "IfNotPresent"
 
 args:
@@ -9,6 +9,7 @@ args:
   upstream: "file:///dev/null"
   httpAddress: "0.0.0.0:4180"
   cookieSecure: "true"
+  cookieSamesite: "strict"
   oidcIssuerUrl: ""
   insecureOidcAllowUnverifiedEmail: "true"
   redirectUrl: ""
@@ -19,7 +20,9 @@ args:
   passAccessToken: "true"
   passHostHeader: "true"
   passUserHeaders: "true"
-  passBasicAuth: "true"
+  # No backend in this repo consumes HTTP Basic auth; keep off so the edge
+  # never forwards a basic authorization header upstream.
+  passBasicAuth: "false"
 
 secrets:
   clientIdKey: "keycloak-client-id"
@@ -31,6 +34,46 @@ service:
   name: oauth2-proxy
   port: 4180
 
+# Edge session parity (openspec edge-session-parity):
+# - Single session owner in Kubernetes is oauth2-proxy (sky-gateway ships no Helm chart).
+# - CSRF decision: oauth2-proxy cookie-CSRF (cookie-csrf-per-request=true, expire 15m,
+#   hardcoded in the deployment template) is the token layer; the session responder
+#   returns that per-session token as csrfToken; an nginx Origin/Referer snippet
+#   (edgeOriginCheck below) mirrors sky-gateway OriginCheckWebFilter: cross-origin
+#   cookie-authenticated mutations are rejected at the edge, headerless non-browser
+#   callers pass, services stay untouched (they ignore X-XSRF-TOKEN).
+# - Bearer passthrough: setAuthorizationHeader/passAuthorizationHeader already true,
+#   so caller-supplied Authorization: Bearer is forwarded verbatim and validated
+#   service-side.
+# - Login alias: /oauth2/authorization/keycloak rewrites to /oauth2/start (oauth2-proxy
+#   has no such path natively; the /oauth2 prefix already routes here, so this is an
+#   ingress-level alias preserving rd return-to-frontend-origin).
+# - Logout: POST /logout rewrites to /oauth2/sign_out with post-logout redirect to the
+#   frontend origin plus Keycloak end-session.
+session:
+  port: 4181
+  csrfHeader: "X-XSRF-TOKEN"
+  # Empty by default; values-local.yaml sets the dev-server origin so
+  # cross-origin credentialed calls to /api/session receive CORS headers.
+  corsOrigin: ""
+  # Keycloak RP-initiated logout URL served as logoutUrl by /api/session; the
+  # frontend routes the browser through it after POST /logout so the Keycloak
+  # SSO session dies too. Set per environment in values-<env>.yaml.
+  logoutUrl: ""
+
+# TRACKED EXCEPTION 2026-10-04: edgeOriginCheck below is recorded but NOT
+# applied: the k3d/prod ingress-nginx admission webhook rejects
+# configuration-snippet/server-snippet ("Snippet directives are disabled by the
+# Ingress administrator"), so the edge CSRF layer is oauth2-proxy cookie-CSRF
+# alone until the controller policy changes. Revisit when snippet policy allows.
+edgeOriginCheck: |
+  set $edge_csrf_fail "";
+  if ($request_method ~ "^(POST|PUT|PATCH|DELETE)$") { set $edge_csrf_fail "${edge_csrf_fail}M"; }
+  if ($http_cookie ~ "_oauth2_proxy=") { set $edge_csrf_fail "${edge_csrf_fail}C"; }
+  if ($http_x_xsrf_token = "") { set $edge_csrf_fail "${edge_csrf_fail}T"; }
+  if ($http_origin ~ "^https?://$host(:[0-9]+)?$") { set $edge_csrf_fail ""; }
+  if ($edge_csrf_fail = "MCT") { return 403; }
+
 ingress:
   name: oauth2-ingress
   tls:
@@ -38,6 +81,8 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
 
   controller: "nginx"
   hosts:

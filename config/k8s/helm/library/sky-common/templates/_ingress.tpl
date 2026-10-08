@@ -1,0 +1,37 @@
+{{- define "sky.ingress" -}}
+{{- $ingress := .Values.ingress.service }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $ingress.name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+  {{- range $key, $value := $ingress.annotations }}
+  {{- if $value }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+spec:
+  ingressClassName: {{ $ingress.controller }}
+  tls:
+    - hosts:
+      {{- range $ingress.hosts }}
+        - {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
+      {{- end }}
+      secretName: {{ required "ingress.tls.secretName must be set by a values-<env>.yaml overlay" .Values.ingress.tls.secretName }}
+  rules:
+    {{- range $ingress.hosts }}
+    - host: {{ required "ingress hosts[].host must be set by a values-<env>.yaml overlay" .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $.Values.service.name }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

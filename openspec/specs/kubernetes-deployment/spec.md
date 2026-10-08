@@ -13,5 +13,5 @@ The repository MUST maintain exactly one Kubernetes deployment path, which is th
 - **THEN** the search returns zero matches, because the entire vanilla tree and its deployment scripts have been removed
 
 #### Scenario: Documentation pointers
-- **WHEN** the root `README.md` or `config/k8s/_deployment-scripts/deployment_README.md` references the deployment process
+- **WHEN** the root `README.md` or `config/k8s/helm/helm_README.md` references the deployment process
 - **THEN** every link resolves to a Helm-side document, and no link targets a path under `config/k8s/vanilla/`

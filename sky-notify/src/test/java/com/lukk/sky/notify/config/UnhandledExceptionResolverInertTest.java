@@ -41,6 +41,7 @@ class UnhandledExceptionResolverInertTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("contextStarts_andTheResolverIsAmongTheResolversTheDispatcherServletDetected")
     void contextStarts_andTheResolverIsAmongTheResolversTheDispatcherServletDetected() {
+        // when / then
         assertThat(context.getBeansOfType(HandlerExceptionResolver.class).values())
                 .as("a servlet resolver in a servlet application is wiring, not a failure")
                 .hasAtLeastOneElementOfType(UnhandledExceptionResolver.class);
@@ -49,9 +50,11 @@ class UnhandledExceptionResolverInertTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("noRequestMappingOfThisServiceExists_soNothingCanEverReachTheResolver")
     void noRequestMappingOfThisServiceExists_soNothingCanEverReachTheResolver() {
+        // given
         RequestMappingHandlerMapping mappings =
                 context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
 
+        // when / then
         assertThat(mappings.getHandlerMethods().values().stream().map(HandlerMethod::getBeanType))
                 .as("this service exposes no REST surface, so the resolver has nothing to be last behind")
                 .noneMatch(beanType -> beanType.getName().startsWith("com.lukk.sky.notify"));
@@ -60,6 +63,7 @@ class UnhandledExceptionResolverInertTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("webSocketHandshakeEndpointStillAnswers_ratherThanAServerError")
     void webSocketHandshakeEndpointStillAnswers_ratherThanAServerError() throws IOException, InterruptedException {
+        // given
         HttpResponse<String> response = httpClient.send(
                 HttpRequest.newBuilder()
                         .uri(URI.create("http://localhost:" + port + "/notifyWebsocket/info"))
@@ -67,6 +71,7 @@ class UnhandledExceptionResolverInertTest extends AbstractIntegrationTest {
                         .build(),
                 HttpResponse.BodyHandlers.ofString());
 
+        // when / then
         assertThat(response.statusCode())
                 .as("the handshake path must not be touched by an exception resolver it never reaches")
                 .isLessThan(500);

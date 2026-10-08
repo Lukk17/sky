@@ -58,8 +58,10 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("addOffer declares 201 and no 200, because it never returns 200")
     void addOffer_declaresOnly201() {
+        // when
         JsonNode responses = responsesOf("addOffer");
 
+        // then
         assertThat(responses.has("201")).isTrue();
         assertThat(responses.has("200"))
                 .as("POST /owner/offers answers 201, so a blanket 200 would be a lie")
@@ -69,8 +71,10 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("deleteOffer declares 204 and no 200, because it never returns 200")
     void deleteOffer_declaresOnly204() {
+        // when
         JsonNode responses = responsesOf("deleteOffer");
 
+        // then
         assertThat(responses.has("204")).isTrue();
         assertThat(responses.has("200"))
                 .as("DELETE /owner/offers/{offerId} answers 204, so a blanket 200 would be a lie")
@@ -80,8 +84,10 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("a 401 is declared without a body, because Spring Security answers with headers only")
     void unauthorized_isDeclaredWithoutContent() {
+        // when
         JsonNode unauthorized = responsesOf("addOffer").get("401");
 
+        // then
         assertThat(unauthorized).isNotNull();
         assertThat(unauthorized.has("content"))
                 .as("the 401 body is empty, so no media type may be declared for it")
@@ -91,14 +97,17 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("a 400 is declared as application/problem+json, which is what the handlers produce")
     void badRequest_isDeclaredAsProblemJson() {
+        // when
         JsonNode badRequest = responsesOf("addOffer").get("400");
 
+        // then
         assertThat(badRequest.get("content").has("application/problem+json")).isTrue();
     }
 
     @Test
     @DisplayName("every secured offer operation declares 403, because the role check can deny it")
     void securedOperations_declare403() {
+        // when / then
         assertThat(responsesOf("addOffer").has("403")).isTrue();
         assertThat(responsesOf("edit").has("403")).isTrue();
         assertThat(responsesOf("deleteOffer").has("403")).isTrue();
@@ -110,9 +119,11 @@ class OfferApiDocumentTest {
     @DisplayName("the public browse and search operations declare 401 but not 403, because an "
             + "unverifiable token reaches them too while no realm role is ever checked")
     void publicOperations_declare401ButNot403() {
+        // given
         JsonNode browse = responsesOf("getAllOffers");
         JsonNode search = responsesOf("search");
 
+        // when / then
         assertThat(browse.has("401")).as("browse declares %s", browse.propertyNames()).isTrue();
         assertThat(browse.has("403")).as("browse declares %s", browse.propertyNames()).isFalse();
         assertThat(search.has("401")).as("search declares %s", search.propertyNames()).isTrue();
@@ -122,6 +133,7 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("the public browse and search operations stay anonymous, declaring an empty security list")
     void publicOperations_declareEmptySecurity() {
+        // when / then
         assertThat(operationOf("getAllOffers").get("security")).isEmpty();
         assertThat(operationOf("search").get("security")).isEmpty();
     }
@@ -129,11 +141,13 @@ class OfferApiDocumentTest {
     @Test
     @DisplayName("every operation declares a 401 carrying the bearer challenge header")
     void everyOperation_declares401WithChallengeHeader() {
+        // given
         for (JsonNode pathItem : document.get("paths")) {
             for (JsonNode operation : pathItem) {
                 String operationId = operation.path("operationId").asString();
                 JsonNode unauthorized = operation.get("responses").get("401");
 
+                // when / then
                 assertThat(unauthorized)
                         .as("%s declares no 401", operationId)
                         .isNotNull();
@@ -148,8 +162,10 @@ class OfferApiDocumentTest {
     @DisplayName("search states the blank and length rules in its operation description, which is the only "
             + "place a caller can read them")
     void search_describesWhatMakesATermInvalid() {
+        // when
         String description = operationOf("search").path("description").asString();
 
+        // then
         assertThat(description)
                 .contains("must not be blank")
                 .contains("100 characters")
@@ -160,38 +176,42 @@ class OfferApiDocumentTest {
     @DisplayName("the 400 on search keeps the shared description, because a class-level entry for a status "
             + "wins over a method-level one")
     void searchBadRequest_keepsTheSharedDescription() {
+        // when
         JsonNode badRequest = responsesOf("search").get("400");
 
+        // then
         assertThat(badRequest.path("description").asString())
                 .isEqualTo("Bad Request: invalid input or a rejected domain rule");
     }
 
     @Test
-    @DisplayName("getOfferOwner declares 401 but not 403, because it needs a token and no realm role")
-    void getOfferOwner_declares401ButNot403() {
+    @DisplayName("getOfferOwner declares 401 and 403, because it needs a token with a user realm role")
+    void getOfferOwner_declares401And403() {
+        // when
         JsonNode responses = responsesOf("getOfferOwner");
 
+        // then
         assertThat(responses.has("401")).as("owner lookup declares %s", responses.propertyNames()).isTrue();
-        assertThat(responses.has("403")).as("owner lookup declares %s", responses.propertyNames()).isFalse();
+        assertThat(responses.has("403")).as("owner lookup declares %s", responses.propertyNames()).isTrue();
     }
 
     @Test
     @DisplayName("the published servers name every address that serves these paths, gateway first, "
             + "and never the port the documentation build binds")
     void servers_nameEveryAddressThesePathsAreServedOn() {
+        // when
         JsonNode servers = document.get("servers");
 
+        // then
         assertThat(servers).isNotNull();
         assertThat(fieldOf(servers, "url"))
                 .as("each entry is a bare origin, because the published paths already carry /api/v1")
                 .containsExactly(
                         "http://localhost:5777",
-                        "https://skycloud.luksarna.com",
                         "http://localhost:5552");
         assertThat(fieldOf(servers, "description"))
                 .containsExactly(
                         "Local, through the gateway, one origin for the whole stack",
-                        "Production, through the ingress, behind oauth2-proxy",
                         "Local, straight at the service, bypassing the gateway");
         assertThat(servers.toString())
                 .as("port 7972 exists only while the documentation build forks a boot, and "

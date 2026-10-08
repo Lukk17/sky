@@ -8,8 +8,21 @@
 /k8s/secret/secrets.yaml
 /k8s/secret/sealed-private.key
 
+# Per-machine development TLS material under config/k8s/secret/ssl (never commit)
+/k8s/secret/ssl/*.key
+/k8s/secret/ssl/*.csr
+/k8s/secret/ssl/*.crt
+/k8s/secret/ssl/dev-ssl-cert.yaml
 
-# Sealed sky-secrets, generated per cluster before each deploy (see config/k8s/_deployment-scripts/deployment_README.md section 3)
+# Per-machine Keycloak dev TLS private keys (never commit; generate per machine,
+# see config/keycloak/SETUP.md "Generating the development TLS material per machine")
+/keycloak/certs/*.key
+
+# Local sky-secrets manifest, generated per machine from the .example template
+/k8s/local/sky-secrets-local.yaml
+
+
+# Sealed sky-secrets, generated per cluster before each deploy
 /k8s/secret/sealed/sealed-secrets.yaml
 
 

@@ -14,6 +14,8 @@ skyOpenApi {
 dependencies {
     implementation(project(":sky-common"))
 
+    testImplementation(testFixtures(project(":sky-common")))
+
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
 

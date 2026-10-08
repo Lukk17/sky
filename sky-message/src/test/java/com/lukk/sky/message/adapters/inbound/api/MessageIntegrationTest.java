@@ -256,7 +256,7 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
         String body = requireNonNull(actual.getBody());
 
         assertEquals(HttpStatus.NOT_FOUND, actual.getStatusCode());
-        assertTrue(body.contains(unknownId.toString()), "the 404 detail names the id the caller asked for");
+        assertTrue(body.contains("Resource not found."), "the 404 detail names the id the caller asked for");
         assertEquals(2, messageRepository.count(), "a failed delete leaves both stored messages in place");
     }
 

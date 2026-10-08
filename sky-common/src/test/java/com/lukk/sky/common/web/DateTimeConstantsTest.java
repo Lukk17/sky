@@ -58,6 +58,7 @@ class DateTimeConstantsTest {
     @Test
     @DisplayName("DISPLAY_ZONE_isEuropeWarsaw")
     void displayZone_isEuropeWarsaw() {
+        // when / then
         assertThat(DateTimeConstants.DISPLAY_ZONE.getId()).isEqualTo("Europe/Warsaw");
     }
 }

@@ -1,0 +1,11 @@
+<div class="p-4">
+  <div class="max-w-md">
+    @if (error) {
+      <p class="text-red-400">{{error}}</p>
+    }
+    <p>Sign in continues at the Keycloak login page.</p>
+    <div>
+      <p-button label="Login" icon="pi pi-sign-in" (onClick)="login()"></p-button>
+    </div>
+  </div>
+</div>

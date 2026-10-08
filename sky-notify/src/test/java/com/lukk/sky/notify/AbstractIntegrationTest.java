@@ -17,8 +17,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.lukk.sky.notify.config.Constants.KAFKA_BOOKING_TOPIC;
-import static com.lukk.sky.notify.config.Constants.KAFKA_OFFER_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.BOOKING_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.OFFER_TOPIC;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -32,7 +32,9 @@ public abstract class AbstractIntegrationTest {
     // field is started and stopped per test class, while the Spring context that binds to its address
     // is cached across classes, so the second class would talk to the address of a broker it no longer owns.
     protected static final ConfluentKafkaContainer KAFKA =
+            // Labelled for pruneSkyTestcontainers cleanup.
             new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"))
+                    .withLabel("sky-testcontainer", "true")
                     .withReuse(true);
 
     static {
@@ -55,8 +57,8 @@ public abstract class AbstractIntegrationTest {
 
         try (Admin admin = Admin.create(adminConfig)) {
             admin.createTopics(List.of(
-                            new NewTopic(KAFKA_OFFER_TOPIC, SINGLE_PARTITION, SINGLE_REPLICA),
-                            new NewTopic(KAFKA_BOOKING_TOPIC, SINGLE_PARTITION, SINGLE_REPLICA)))
+                            new NewTopic(OFFER_TOPIC, SINGLE_PARTITION, SINGLE_REPLICA),
+                            new NewTopic(BOOKING_TOPIC, SINGLE_PARTITION, SINGLE_REPLICA)))
                     .all()
                     .get(TOPIC_CREATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (ExecutionException ex) {

@@ -14,7 +14,7 @@ Spring Boot microservices backend for a flight and offer booking platform.
 
 Sky is the backend for a flight and offer booking platform. Independently deployable Spring Boot services cover offers with photo storage, bookings, user-to-user messaging, and real-time push notifications, on top of a shared library and a local-development gateway. The [Sky-View](https://github.com/Lukk17/sky-view) Angular frontend consumes the REST API and connects to the WebSocket notification endpoint.
 
-The platform runs two ways from the same images: as Helm charts on any Kubernetes cluster, with Google Kubernetes Engine as the production target at [https://skycloud.luksarna.com](https://skycloud.luksarna.com), or locally through Docker Compose behind a Spring Cloud Gateway. Authentication is OAuth2 and OIDC through a self-hosted Keycloak, at [https://keycloak.luksarna.com](https://keycloak.luksarna.com) in production and on your own machine for development.
+The platform runs two ways from the same images: as Helm charts on any Kubernetes cluster, or locally through Docker Compose behind a Spring Cloud Gateway. Authentication is OAuth2 and OIDC through a self-hosted Keycloak running on your own machine for development.
 
 ---
 
@@ -56,6 +56,18 @@ PowerShell:
 
 For a local Kubernetes cluster rather than Compose, go to [config/k8s/local_README.md](config/k8s/local_README.md).
 
+Seed demo data (compose or k3d must be running first so Keycloak and the edge answer). It populates 4 users, 9 offers, 15 bookings, 12 messages, and one photo per owned offer from [seed/](seed/). See [seed/README.md](seed/README.md) for the how-to. Required env: `KEYCLOAK_BASE` (default `https://keycloak.test:9443`), `EDGE_BASE` (default `http://localhost:5777`), `TLS_INSECURE=1` for the self-signed Keycloak cert. Unix shell:
+
+```bash
+TLS_INSECURE=1 node seed/seed.mjs
+```
+
+PowerShell:
+
+```powershell
+$env:TLS_INSECURE=1; node seed/seed.mjs
+```
+
 ---
 
 ### Architecture
@@ -68,7 +80,7 @@ graph TB
     FE["Sky-View
     (Angular frontend)"]
 
-    subgraph CLUSTER["Kubernetes cluster (skycloud.luksarna.com)"]
+    subgraph CLUSTER["Local Kubernetes cluster (k3d)"]
         KC["Keycloak 26
         (OIDC provider)"]
         GW["oauth2-proxy
@@ -131,7 +143,7 @@ The ingress layer handles TLS and path-based routing. Authenticated routes go th
 
 `sky-offer` stores offer photos in an S3-compatible object store through the AWS SDK v2 with presigned URLs, and the server owns the object key. That key is built as `offers/{offerId}/{uuid}-{filename}`, lives in the `photo_object_key` column, is written only by the photo upload endpoint and cleared only by the photo delete endpoint, and appears in no request body and no response body. A client never names an object. It addresses the photo through the offer, with `POST` and `DELETE` on `/api/v1/owner/offers/{offerId}/photo`, and reads the derived `photoUrl` every offer response carries: the presigned address of the uploaded object when there is one, the client-writable `externalPhotoUrl` when there is not, and null when there is neither. Replacing the photo, deleting the photo, and deleting the offer each delete the stored object, so no orphan survives the lifecycle. A store that is down during one of those removals is the deliberate exception: the failure is logged as `photo_delete_failed`, a photo delete still answers 204 and an offer delete still succeeds, so the object outlives the row it belonged to rather than blocking an owner from deleting their own photo or their own offer for the length of an outage. Upload and read do not swallow it. An upload answers 503 with a `Retry-After: 10` header when the store is unreachable or answers 5xx or 429, and 502 Bad Gateway when the store answers 401, 403 or a missing bucket, both as RFC 9457 problem details, and a read that has to sign a stored photo address answers 503 the same way. What the service itself rejects stays 4xx: an empty part and an unsupported image format are 400, an oversized upload is 413. The condition-by-condition table is in [sky-offer/README.md](sky-offer/README.md). Cluster and laptop now run the same store, floci, pinned to the same image digest, and the one adapter would serve a managed S3 just as well, because the only contract is the S3 API. The store has two addresses rather than one: `S3_ENDPOINT` is where the service uploads, `S3_PRESIGN_ENDPOINT` is what a presigned URL names for the client that has to fetch it.
 
-`sky-notify` ships an Ingress in its Helm chart, on `/notifyWebsocket` with `pathType: Prefix` and no rewrite, so a browser reaches the WebSocket in a cluster the same way it reaches everything else. It carries no oauth2-proxy auth annotations, because the STOMP `CONNECT` frame is where the JWT is checked rather than the HTTP handshake, and it raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not close an idle socket after 60. The host is `localhost` with the `dev-ssl-cert` secret locally and `skycloud.luksarna.com` with `sky-tls-cert` in production. Without Kubernetes the route still works the same way: `sky-gateway` passes `/notifyWebsocket/**` straight through to port 5554, so a client connects at `ws://localhost:5777/notifyWebsocket`. The gateway predicate used to be `/notify/**`, which matched nothing, and two gateway tests now pin the working one.
+`sky-notify` ships an Ingress in its Helm chart, on `/notifyWebsocket` with `pathType: Prefix` and no rewrite, so a browser reaches the WebSocket in a cluster the same way it reaches everything else. It carries no oauth2-proxy auth annotations, because the STOMP `CONNECT` frame is where the JWT is checked rather than the HTTP handshake, and it raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not close an idle socket after 60. The host is `localhost` with the `dev-ssl-cert` secret. Without Kubernetes the route still works the same way: `sky-gateway` passes `/notifyWebsocket/**` straight through to port 5554, so a client connects at `ws://localhost:5777/notifyWebsocket`. The gateway predicate used to be `/notify/**`, which matched nothing, and two gateway tests now pin the working one.
 
 The three stateful services share one PostgreSQL database named `sky`, each with its own Flyway migration path and its own `flyway_schema_history_*` table. Under the `local` Spring profile Flyway also applies the repeatable `R__demo_seed.sql`, which inserts demo offers and messages idempotently. `sky-notify` is stateless with no database at all.
 
@@ -242,7 +254,7 @@ Sky is a deliberate learning platform rather than a production SaaS, which shape
 
 Where it wins: low infrastructure cost, since every component is self-hosted on one node pool, a hexagonal structure that is enforced rather than aspirational, a coverage floor the build enforces rather than a review, and a complete path from a commit to a real TLS domain.
 
-Where it loses: the shared database means one bad migration can affect all three stateful services, there is no per-service data isolation, there is no distributed tracing so a slow request has to be followed by correlation id across four log streams by hand, and the `sky-secrets` SealedSecret is not committed at all, so a fresh production deploy has to generate and seal it before anything else, see [config/k8s/_deployment-scripts/deployment_README.md](config/k8s/_deployment-scripts/deployment_README.md).
+Where it loses: the shared database means one bad migration can affect all three stateful services, there is no per-service data isolation, there is no distributed tracing so a slow request has to be followed by correlation id across four log streams by hand, and the `sky-secrets` SealedSecret is not committed at all, so a fresh production deploy has to generate and seal it before anything else..
 
 ---
 
@@ -259,7 +271,7 @@ The three stateful services (`sky-offer`, `sky-booking`, `sky-message`) share th
 | `KAFKA_PORT` | `9092` | Kafka bootstrap port |
 | `OAUTH2_ISSUER_URI` | `https://keycloak.test:9443/realms/sky` | OIDC issuer, the default is the local Keycloak |
 | `OAUTH2_AUDIENCE` | unset | Set to `sky-backend` to enforce the audience claim |
-| `ACCESS_CONTROL_ALLOW_ORIGIN` | production host plus localhost origins | Comma-separated CORS allowlist |
+| `ACCESS_CONTROL_ALLOW_ORIGIN` | localhost origins | Comma-separated CORS allowlist |
 | `SHOW_SQL_QUERIES` | `false` | Log Hibernate SQL |
 | `SPRING_DEBUG` | `INFO` | Spring web log level |
 
@@ -350,7 +362,7 @@ Windows:
 .\config\k8s\_deployment-scripts\helm\win\helm-app-deploy.bat
 ```
 
-The script installs, in order: the Sealed Secrets controller and the sealed secrets, Keycloak with its own backing PostgreSQL, oauth2-proxy, the app PostgreSQL and its PVC, floci, Kafka, and the four service charts. It does not generate the `sky-secrets` SealedSecret, which is not committed and has to exist before the script runs. What each of those charts does is [config/k8s/helm/helm_README.md](config/k8s/helm/helm_README.md), and the surrounding GCP and sealed-secret work, generating that Secret included, is [config/k8s/_deployment-scripts/deployment_README.md](config/k8s/_deployment-scripts/deployment_README.md).
+The script installs, in order: the Sealed Secrets controller and the sealed secrets, Keycloak with its own backing PostgreSQL, oauth2-proxy, the app PostgreSQL and its PVC, floci, Kafka, and the four service charts. It does not generate the `sky-secrets` SealedSecret, which is not committed and has to exist before the script runs. What each of those charts does is [config/k8s/helm/helm_README.md](config/k8s/helm/helm_README.md)..
 
 CI is at [.github/workflows/ci.yaml](.github/workflows/ci.yaml): it builds and tests every module when a pull request is opened or reopened, on every push to a branch with an open pull request, and on demand. One run per pull request is in flight at a time, so a rapid series of pushes cancels the superseded runs. Cancellation is off for a manual dispatch and for the release gate below, so a release waiting on its tests cannot be killed by someone pushing to a pull request.
 
@@ -370,7 +382,6 @@ Platform documentation:
 | [config/local-dev/e2e-stack_README.md](config/local-dev/e2e-stack_README.md) | The self-contained Compose stack and the Bruno gate CI runs on it |
 | [config/k8s/local_README.md](config/k8s/local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/k8s/helm/helm_README.md](config/k8s/helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
-| [config/k8s/_deployment-scripts/deployment_README.md](config/k8s/_deployment-scripts/deployment_README.md) | Deploying to the GCP cluster, sealed secrets, deployment scripts |
 | [config/k8s/k8s_README.md](config/k8s/k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](config/keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [docs/api/README.md](docs/api/README.md) | Bruno collection, token minting, gateway routing, OpenAPI specs |

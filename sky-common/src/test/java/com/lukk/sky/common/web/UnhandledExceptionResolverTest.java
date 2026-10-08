@@ -54,6 +54,7 @@ class UnhandledExceptionResolverTest {
     @Test
     @DisplayName("logsTheFailureAtErrorWithItsStackAndTheCorrelationIdInTheMdc")
     void logsTheFailureAtErrorWithItsStackAndTheCorrelationIdInTheMdc() {
+        // when
         CorrelationId.set("corr-1234");
 
         resolverWith(new RecordingProblemDetailConverter())
@@ -61,6 +62,7 @@ class UnhandledExceptionResolverTest {
 
         ILoggingEvent logged = logAppender.list.getFirst();
 
+        // then
         assertThat(logged.getLevel()).isEqualTo(Level.ERROR);
         assertThat(logged.getFormattedMessage())
                 .isEqualTo("unhandled_exception method=DELETE path=/api/v1/bookings/42");
@@ -76,9 +78,11 @@ class UnhandledExceptionResolverTest {
     @Test
     @DisplayName("declinesTheException_whenNoConverterCanWriteAProblemDetail")
     void declinesTheException_whenNoConverterCanWriteAProblemDetail() {
+        // given
         ModelAndView resolved = resolverWith(new StringHttpMessageConverter())
                 .resolveException(request, response, null, new IllegalStateException("boom"));
 
+        // when / then
         assertThat(resolved)
                 .as("declining leaves the container error page in charge rather than answering an empty 200")
                 .isNull();
@@ -89,18 +93,22 @@ class UnhandledExceptionResolverTest {
     @Test
     @DisplayName("declinesTheException_whenNoHandlerAdapterExists")
     void declinesTheException_whenNoHandlerAdapterExists() {
+        // given
         ModelAndView resolved = new UnhandledExceptionResolver(StubObjectProvider.empty())
                 .resolveException(request, response, null, new IllegalStateException("boom"));
 
+        // when / then
         assertThat(resolved).isNull();
     }
 
     @Test
     @DisplayName("declinesTheException_whenWritingTheResponseFails")
     void declinesTheException_whenWritingTheResponseFails() {
+        // given
         ModelAndView resolved = resolverWith(new FailingProblemDetailConverter())
                 .resolveException(request, response, null, new IllegalStateException("boom"));
 
+        // when / then
         assertThat(resolved).isNull();
         assertThat(logAppender.list)
                 .anyMatch(event -> event.getFormattedMessage().contains("reason=write_failed"));
@@ -109,11 +117,14 @@ class UnhandledExceptionResolverTest {
     @Test
     @DisplayName("writesA500ProblemDetailWhoseInstanceIsTheRequestPath")
     void writesA500ProblemDetailWhoseInstanceIsTheRequestPath() {
+        // given
         RecordingProblemDetailConverter converter = new RecordingProblemDetailConverter();
 
+        // when
         ModelAndView resolved = resolverWith(converter)
                 .resolveException(request, response, null, new IllegalStateException("boom"));
 
+        // then
         assertThat(resolved)
                 .as("an empty ModelAndView tells the DispatcherServlet the response is already written")
                 .isNotNull();
@@ -129,6 +140,7 @@ class UnhandledExceptionResolverTest {
     @Test
     @DisplayName("detailNamesNeitherAnExceptionTypeNorAPackage")
     void detailNamesNeitherAnExceptionTypeNorAPackage() {
+        // when / then
         assertThat(UnhandledExceptionResolver.DETAIL)
                 .doesNotContain("Exception")
                 .doesNotContain("com.lukk")

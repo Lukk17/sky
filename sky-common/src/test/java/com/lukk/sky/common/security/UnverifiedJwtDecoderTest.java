@@ -72,6 +72,7 @@ class UnverifiedJwtDecoderTest {
     @Test
     @DisplayName("decode_throwsBadJwt_whenTheTokenIsNotAJwt")
     void decode_throwsBadJwt_whenTheTokenIsNotAJwt() {
+        // when / then
         assertThatThrownBy(() -> decoder.decode("not-a-token"))
                 .isInstanceOf(BadJwtException.class)
                 .hasMessageContaining("well-formed");
@@ -80,6 +81,7 @@ class UnverifiedJwtDecoderTest {
     @Test
     @DisplayName("decode_throwsBadJwt_whenTheTokenIsBlank")
     void decode_throwsBadJwt_whenTheTokenIsBlank() {
+        // when / then
         assertThatThrownBy(() -> decoder.decode("  "))
                 .isInstanceOf(BadJwtException.class)
                 .hasMessageContaining("no bearer token");

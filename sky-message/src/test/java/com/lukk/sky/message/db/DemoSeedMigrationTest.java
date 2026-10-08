@@ -2,7 +2,7 @@ package com.lukk.sky.message.db;
 
 import com.lukk.sky.common.config.CommonConfigPropertiesAutoConfiguration;
 import com.lukk.sky.message.TestcontainersConfiguration;
-import com.lukk.sky.message.config.propertyBind.SpringConfigProperties;
+import com.lukk.sky.common.config.SpringConfigProperties;
 import com.lukk.sky.message.domain.model.Message;
 import com.lukk.sky.message.domain.ports.outbound.MessageRepository;
 import org.junit.jupiter.api.DisplayName;

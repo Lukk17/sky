@@ -205,13 +205,15 @@ class BookingEventAppendConcurrencyTest {
         @Bean
         @ServiceConnection
         PostgreSQLContainer unsharedPostgresContainer() {
-            return new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withReuse(false);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            return new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true").withReuse(false);
         }
 
         @Bean
         @ServiceConnection
         ConfluentKafkaContainer kafkaContainer() {
-            return new ConfluentKafkaContainer(TestcontainersConfiguration.KAFKA_IMAGE).withReuse(true);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            return new ConfluentKafkaContainer(TestcontainersConfiguration.KAFKA_IMAGE).withLabel("sky-testcontainer", "true").withReuse(true);
         }
     }
 }

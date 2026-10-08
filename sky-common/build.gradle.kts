@@ -1,5 +1,6 @@
 plugins {
     id("sky.java-library-conventions")
+    `java-test-fixtures`
 }
 
 version = "2.0.0"
@@ -44,7 +45,8 @@ dependencies {
 
     compileOnly("org.springframework.boot:spring-boot-jdbc")
 
-    // Tests run with the real deps.
+    testFixturesImplementation("org.springframework:spring-web")
+    testFixturesImplementation(libs.spring.boot.starter.oauth2.resource.server)
     testImplementation("org.springframework:spring-web")
     testImplementation("org.springframework:spring-webmvc")
     testImplementation("jakarta.servlet:jakarta.servlet-api")

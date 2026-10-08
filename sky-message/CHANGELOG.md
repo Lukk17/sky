@@ -8,6 +8,13 @@ against re-publishing an already-released version, so keep it at the top and bum
 every release. The `version` in `build.gradle.kts` is a cosmetic label the release workflow
 does not read. If the two disagree, this file wins for release purposes.
 
+## [2.1.0]
+
+### Changed
+- Simplified to the plain stack: the local `CorsConfig`, `SecurityConfig` and
+  `SpringConfigProperties` are gone in favour of the shared sky-common auto-configurations.
+  The service keeps no outbound call of any kind.
+
 ## [2.0.0]
 
 Major. The send and delete paths moved, the identifier type changed, and the error contract

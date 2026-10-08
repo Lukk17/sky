@@ -21,9 +21,11 @@ class CorrelationIdAutoConfigurationTest {
     @Test
     @DisplayName("registersTheCorrelationIdFilter_forEveryRequestPath")
     void registersTheCorrelationIdFilter_forEveryRequestPath() {
+        // given
         runner.run(context -> {
             FilterRegistrationBean<?> registration = context.getBean(FilterRegistrationBean.class);
 
+            // when / then
             assertThat(registration.getFilter()).isInstanceOf(CorrelationIdFilter.class);
             assertThat(registration.getUrlPatterns()).containsExactly("/*");
         });
@@ -32,6 +34,7 @@ class CorrelationIdAutoConfigurationTest {
     @Test
     @DisplayName("registersTheCorrelationIdFilter_aheadOfEveryOtherFilter")
     void registersTheCorrelationIdFilter_aheadOfEveryOtherFilter() {
+        // when / then
         runner.run(context -> assertThat(context.getBean(FilterRegistrationBean.class).getOrder())
                 .as("a later filter would log before the correlation id reaches the MDC")
                 .isEqualTo(Ordered.HIGHEST_PRECEDENCE));
@@ -40,6 +43,7 @@ class CorrelationIdAutoConfigurationTest {
     @Test
     @DisplayName("registersTheOutboundInterceptor_soDownstreamCallsCarryTheCorrelationId")
     void registersTheOutboundInterceptor_soDownstreamCallsCarryTheCorrelationId() {
+        // when / then
         runner.run(context -> assertThat(context)
                 .hasSingleBean(CorrelationIdClientHttpRequestInterceptor.class));
     }
@@ -47,6 +51,7 @@ class CorrelationIdAutoConfigurationTest {
     @Test
     @DisplayName("backsOff_whenTheServiceSuppliesItsOwnOutboundInterceptor")
     void backsOff_whenTheServiceSuppliesItsOwnOutboundInterceptor() {
+        // when / then
         runner.withUserConfiguration(ServiceSuppliedInterceptorConfig.class)
                 .run(context -> assertThat(context)
                         .hasSingleBean(CorrelationIdClientHttpRequestInterceptor.class)
@@ -57,6 +62,7 @@ class CorrelationIdAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_outsideAServletWebApplication")
     void registersNothing_outsideAServletWebApplication() {
+        // when / then
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(CorrelationIdAutoConfiguration.class))
                 .run(context -> assertThat(context)

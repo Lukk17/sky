@@ -20,40 +20,49 @@ class EventTest {
     @Test
     @DisplayName("equals is false for two unsaved events even when every business field matches")
     void equals_whenBothEventsAreUnsaved_thenNotEqual() {
+        // given
         Event one = event(null, 1);
         Event other = event(null, 1);
 
+        // when / then
         assertThat(one).isNotEqualTo(other);
     }
 
     @Test
     @DisplayName("equals is true for the same identifier even when the sequence number differs")
     void equals_whenSameIdentifierAndDifferentSequenceNumber_thenEqual() {
+        // given
         Event one = event(EVENT_ID, 1);
         Event other = event(EVENT_ID, 7);
 
+        // when / then
         assertThat(one).isEqualTo(other);
     }
 
     @Test
     @DisplayName("equals is false for different identifiers")
     void equals_whenDifferentIdentifiers_thenNotEqual() {
+        // given
         Event one = event(EVENT_ID, 1);
         Event other = event(UUID.randomUUID(), 1);
 
+        // when / then
         assertThat(one).isNotEqualTo(other);
     }
 
     @Test
     @DisplayName("hashCode does not change when the identifier is assigned on persist")
     void hashCode_whenIdentifierIsAssignedAfterInsertionIntoASet_thenTheEntityIsStillFound() {
+        // given
         Event event = event(null, 1);
         Set<Event> events = new HashSet<>();
         events.add(event);
         int hashBeforePersist = event.hashCode();
 
+        // when
         event.setId(EVENT_ID);
 
+        // then
         assertThat(event.hashCode()).isEqualTo(hashBeforePersist);
         assertThat(events).contains(event);
     }
@@ -61,8 +70,10 @@ class EventTest {
     @Test
     @DisplayName("equals is false against null and against a value of another type")
     void equals_whenComparedWithNullOrAValueOfAnotherType_thenNotEqual() {
+        // when
         Event event = event(EVENT_ID, 1);
 
+        // then
         assertThat(event.equals(null)).isFalse();
         assertThat(event.equals(EVENT_ID.toString())).isFalse();
     }

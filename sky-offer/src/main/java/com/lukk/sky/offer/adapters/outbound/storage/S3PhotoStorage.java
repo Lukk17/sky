@@ -29,6 +29,8 @@ public class S3PhotoStorage implements PhotoStorage {
     private static final int FIRST_SERVER_ERROR_STATUS = 500;
     private static final int TOO_MANY_REQUESTS_STATUS = 429;
 
+    private static final int MAX_FILENAME_LENGTH = 100;
+
     private static final String UNAVAILABLE_SUFFIX = " The object store is unavailable.";
     private static final String REFUSED_SUFFIX = " The object store refused the request.";
 
@@ -53,7 +55,7 @@ public class S3PhotoStorage implements PhotoStorage {
             );
         } catch (SdkException ex) {
             log.error("photo_storage_call_failed operation=upload key={} bucket={} storeStatus={}",
-                    key, s3Properties.bucket(), storeStatus(ex), ex);
+                    key, s3Properties.bucket(), storeStatus(ex));
 
             throw storageFailure("Photo upload failed.", ex);
         }
@@ -81,7 +83,7 @@ public class S3PhotoStorage implements PhotoStorage {
             return s3Presigner.presignGetObject(presignRequest).url().toString();
         } catch (SdkException ex) {
             log.error("photo_storage_call_failed operation=presign key={} storeStatus={}",
-                    key, storeStatus(ex), ex);
+                    key, storeStatus(ex));
 
             throw storageFailure("Photo address could not be signed.", ex);
         }
@@ -106,7 +108,7 @@ public class S3PhotoStorage implements PhotoStorage {
                     .build());
         } catch (SdkException ex) {
             log.error("photo_storage_call_failed operation=delete key={} bucket={} storeStatus={}",
-                    key, s3Properties.bucket(), storeStatus(ex), ex);
+                    key, s3Properties.bucket(), storeStatus(ex));
 
             throw storageFailure("Photo delete failed.", ex);
         }
@@ -144,6 +146,18 @@ public class S3PhotoStorage implements PhotoStorage {
             return "photo";
         }
 
-        return filename.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String base = filename.replace('\\', '/');
+        int lastSlash = base.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            base = base.substring(lastSlash + 1);
+        }
+        if (base.isBlank()) {
+            return "photo";
+        }
+        String cleaned = base.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (cleaned.length() > MAX_FILENAME_LENGTH) {
+            cleaned = cleaned.substring(0, MAX_FILENAME_LENGTH);
+        }
+        return cleaned;
     }
 }

@@ -23,9 +23,31 @@ spec:
             - --upstream={{ .Values.args.upstream }}
             - --http-address={{ .Values.args.httpAddress }}
             - --cookie-secure={{ .Values.args.cookieSecure }}
+            - --cookie-samesite={{ .Values.args.cookieSamesite }}
             - --oidc-issuer-url={{ required "args.oidcIssuerUrl must be set by a values-<env>.yaml overlay" .Values.args.oidcIssuerUrl }}
             - --insecure-oidc-allow-unverified-email={{ .Values.args.insecureOidcAllowUnverifiedEmail }}
             - --redirect-url={{ required "args.redirectUrl must be set by a values-<env>.yaml overlay" .Values.args.redirectUrl }}
+{{- if .Values.args.whitelistDomain }}
+            - --whitelist-domain={{ .Values.args.whitelistDomain }}
+{{- end }}
+{{- if .Values.args.loginUrl }}
+            - --login-url={{ .Values.args.loginUrl }}
+{{- end }}
+{{- if .Values.args.skipOidcDiscovery }}
+            - --skip-oidc-discovery={{ .Values.args.skipOidcDiscovery }}
+{{- end }}
+{{- if .Values.args.redeemUrl }}
+            - --redeem-url={{ .Values.args.redeemUrl }}
+{{- end }}
+{{- if .Values.args.oidcJwksUrl }}
+            - --oidc-jwks-url={{ .Values.args.oidcJwksUrl }}
+{{- end }}
+{{- if .Values.args.profileUrl }}
+            - --profile-url={{ .Values.args.profileUrl }}
+{{- end }}
+{{- if .Values.args.insecureOidcSkipIssuerVerification }}
+            - --insecure-oidc-skip-issuer-verification={{ .Values.args.insecureOidcSkipIssuerVerification }}
+{{- end }}
             - --scope={{ .Values.args.scope }}
             - --set-xauthrequest={{ .Values.args.setXauthrequest }}
             - --pass-authorization-header={{ .Values.args.passAuthorizationHeader }}
@@ -36,6 +58,12 @@ spec:
             - --pass-basic-auth={{ .Values.args.passBasicAuth }}
             - --cookie-csrf-per-request=true
             - --cookie-csrf-expire=15m
+            # Bearer passthrough (edge-session-parity 2.6): callers presenting a
+            # valid Keycloak JWT in Authorization bypass the cookie session on the
+            # /oauth2/auth probe (validated against oidc-issuer-url JWKS) and the
+            # header continues upstream verbatim via set/pass-authorization-header,
+            # where services validate it themselves as today.
+            - --skip-jwt-bearer-tokens=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
@@ -59,3 +87,24 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
               protocol: TCP
+        # Session responder sidecar: answers GET /api/session as {email, csrfToken}
+        # behind the session ingress auth-url gate. Email comes from the
+        # auth-request headers oauth2-proxy sets (X-Auth-Request-Email/User);
+        # csrfToken is the per-session oauth2-proxy CSRF cookie value echoed back
+        # for the frontend in-memory store (X-XSRF-TOKEN on mutations).
+        - name: session-responder
+          image: "python:3.12-alpine"
+          command: ["python3", "/srv/server.py"]
+          env:
+            - name: SKY_LOGOUT_URL
+              value: {{ required "session.logoutUrl must be set by a values-<env>.yaml overlay" $.Values.session.logoutUrl | quote }}
+          volumeMounts:
+            - name: session-responder
+              mountPath: /srv
+          ports:
+            - containerPort: {{ .Values.session.port }}
+              protocol: TCP
+      volumes:
+        - name: session-responder
+          configMap:
+            name: session-responder

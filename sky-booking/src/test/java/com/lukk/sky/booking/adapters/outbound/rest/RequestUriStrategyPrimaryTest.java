@@ -16,20 +16,24 @@ class RequestUriStrategyPrimaryTest {
     @Test
     @DisplayName("createRestUrl leaves out the port segment when no port is configured, which is the deployed default")
     void createRestUrl_whenConfiguredPortIsBlank_thenUrlHasNoPortSegment() {
+        // when
         RequestUriStrategyPrimary strategy = strategyWithPort("");
 
         String url = strategy.createRestUrl(ENDPOINT);
 
+        // then
         assertThat(url).isEqualTo(HOSTNAME + "/" + ENDPOINT);
     }
 
     @Test
     @DisplayName("createRestUrl appends the configured port after a colon")
     void createRestUrl_whenPortIsConfigured_thenUrlCarriesHostColonPort() {
+        // when
         RequestUriStrategyPrimary strategy = strategyWithPort("5552");
 
         String url = strategy.createRestUrl(ENDPOINT);
 
+        // then
         assertThat(url).isEqualTo(HOSTNAME + ":5552/" + ENDPOINT);
     }
 

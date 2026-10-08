@@ -24,7 +24,7 @@ public class BookingPersister {
     public Booking saveAndPublish(Booking booking, List<Booking> existingBookings, LocalDate dateToBook) {
         checkIfAlreadyBooked(existingBookings, dateToBook);
 
-        log.info("Saving booking to DB with data {}", booking);
+        log.info("Saving booking for offer: {}", booking.getOfferId());
         Booking saved = bookingRepository.save(booking);
 
         eventSourceService.saveEvent(saved, EventType.BOOKED);

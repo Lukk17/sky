@@ -1,3 +1,5 @@
+# Single shared pin: override with --build-arg RUNTIME_IMAGE=<image> to move all services at once.
+ARG RUNTIME_IMAGE=eclipse-temurin:25-jre-alpine
 # ===============> BUILD STAGE <===============
 FROM gradle:9-jdk25 AS build
 WORKDIR /workspace
@@ -11,7 +13,7 @@ RUN --mount=type=cache,id=gradle-sky-gateway,target=/home/gradle/.gradle gradle 
         extract --layers --launcher --destination sky-gateway/build/extracted
 
 # ===============> RUN STAGE <===============
-FROM eclipse-temurin:25-jre-alpine AS runtime
+FROM $RUNTIME_IMAGE AS runtime
 
 COPY config/keycloak/certs/localhost-ca.crt /tmp/local-dev-ca.crt
 RUN keytool -importcert -noprompt \
@@ -29,7 +31,7 @@ COPY --from=build --chown=sky:sky /workspace/sky-gateway/build/extracted/spring-
 COPY --from=build --chown=sky:sky /workspace/sky-gateway/build/extracted/snapshot-dependencies/ ./
 COPY --from=build --chown=sky:sky /workspace/sky-gateway/build/extracted/application/ ./
 EXPOSE 5777
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Djava.net.preferIPv4Stack=true"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD wget -qO- http://localhost:5777/actuator/health/liveness | grep -q '"status":"UP"' || exit 1
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

@@ -20,6 +20,7 @@ class LocalSecurityAutoConfigurationTest {
     @Test
     @DisplayName("registersTheUnverifiedDecoder_whenTheLocalProfileIsActive")
     void registersTheUnverifiedDecoder_whenTheLocalProfileIsActive() {
+        // when / then
         runner.withPropertyValues("spring.profiles.active=local")
                 .run(context -> assertThat(context)
                         .hasSingleBean(JwtDecoder.class)
@@ -30,6 +31,7 @@ class LocalSecurityAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_whenNoProfileIsActive")
     void registersNothing_whenNoProfileIsActive() {
+        // when / then
         runner.run(context -> assertThat(context)
                 .as("the unverified decoder must never exist outside the local profile")
                 .doesNotHaveBean(JwtDecoder.class));
@@ -38,6 +40,7 @@ class LocalSecurityAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_whenAnotherProfileIsActive")
     void registersNothing_whenAnotherProfileIsActive() {
+        // when / then
         runner.withPropertyValues("spring.profiles.active=prod")
                 .run(context -> assertThat(context)
                         .as("the unverified decoder must never exist outside the local profile")
@@ -47,6 +50,7 @@ class LocalSecurityAutoConfigurationTest {
     @Test
     @DisplayName("keepsTheServiceDecoder_whenTheServiceAlreadyDefinesOne")
     void keepsTheServiceDecoder_whenTheServiceAlreadyDefinesOne() {
+        // when / then
         runner.withPropertyValues("spring.profiles.active=local")
                 .withUserConfiguration(ServiceSuppliedDecoderConfig.class)
                 .run(context -> assertThat(context)

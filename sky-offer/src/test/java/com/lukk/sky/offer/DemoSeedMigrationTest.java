@@ -45,8 +45,10 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("Every seeded offer is readable through the repository with its declared UUID")
     void demoSeed_whenApplied_thenSeededOffersAreReadableByUuid() {
+        // given
         List<Offer> seeded = offerRepository.findAllById(SEEDED_OFFER_IDS);
 
+        // when / then
         assertEquals(3, seeded.size());
         assertEquals("Sopot Beach Hotel", offerRepository.findById(SOPOT_OFFER_ID).orElseThrow().getHotelName());
         assertEquals("Warsaw City Suites", offerRepository.findById(WARSAW_OFFER_ID).orElseThrow().getHotelName());
@@ -57,8 +59,10 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("Every seeded event points at an offer the same migration inserted")
     void demoSeed_whenApplied_thenEverySeededEventReferencesASeededOffer() {
+        // when
         List<Event> events = eventSourceRepository.findAll();
 
+        // then
         assertEquals(SEEDED_OFFER_IDS.size(), events.size());
         for (UUID offerId : SEEDED_OFFER_IDS) {
             Event event = events.stream()
@@ -76,9 +80,11 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("Every seeded offer carries an external image address and no server-owned object key")
     void demoSeed_whenApplied_thenSeededOffersCarryAnExternalAddressAndNoObjectKey() {
+        // given
         for (UUID offerId : SEEDED_OFFER_IDS) {
             Offer seeded = offerRepository.findById(offerId).orElseThrow();
 
+            // when / then
             assertNull(seeded.getPhotoObjectKey());
             assertTrue(seeded.getExternalPhotoUrl().startsWith("https://"));
         }

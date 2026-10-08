@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static com.lukk.sky.offer.assemblers.UserAssembler.TEST_OWNER_EMAIL;
+import static com.lukk.sky.common.test.TestUsers.TEST_OWNER_EMAIL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,10 +63,6 @@ class ExceptionMappingPrecedenceTest {
 
     private static final long FIVE_MEGABYTES = 5L * 1024 * 1024;
 
-    private static final String SEQUENCE_CONFLICT_DETAIL =
-            "A concurrent write advanced the offer event sequence. "
-                    + "Re-read the offer and retry the change against its current state.";
-
     @Autowired
     private MockMvc mvc;
 
@@ -83,25 +79,29 @@ class ExceptionMappingPrecedenceTest {
         return Stream.of(
                 Arguments.of("OfferNotFoundException",
                         new OfferNotFoundException("No offer with that id."),
-                        404, "No offer with that id."),
+                        404, "Resource not found."),
                 Arguments.of("OfferAccessDeniedException",
                         new OfferAccessDeniedException("Not your offer."),
-                        403, "Not your offer."),
+                        403, "Access denied."),
                 Arguments.of("EventSequenceConflictException",
                         new EventSequenceConflictException("lost 20 races", new IllegalStateException("duplicate key")),
-                        409, SEQUENCE_CONFLICT_DETAIL),
+                        409, "Request conflicts with current state."),
                 Arguments.of("PhotoStorageUnavailableException",
                         new PhotoStorageUnavailableException(
                                 "Photo delete failed. The object store is unavailable.", new IOException("refused")),
-                        503, "Photo delete failed. The object store is unavailable."),
+                        503, "Service temporarily unavailable, please retry."),
                 Arguments.of("PhotoStorageBadResponseException",
                         new PhotoStorageBadResponseException(
                                 "Photo delete failed. The object store rejected the request.",
                                 new IllegalStateException("403")),
-                        502, "Photo delete failed. The object store rejected the request."),
+                        502, "Upstream service failed."),
                 Arguments.of("OfferException",
                         new OfferException("Uploaded file must not be empty."),
-                        400, "Uploaded file must not be empty."));
+                        400, "Invalid request."),
+                Arguments.of("GalleryLimitExceededException",
+                        new com.lukk.sky.offer.domain.exception.GalleryLimitExceededException(
+                                "Gallery holds at most 10 photos."),
+                        413, "Request payload too large."));
     }
 
     @ParameterizedTest(name = "{0} still answers {2}")
@@ -125,6 +125,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("outageMapping_keepsItsRetryAfterHeader")
     void outageMapping_keepsItsRetryAfterHeader() throws Exception {
+        // when / then
         doThrow(new PhotoStorageUnavailableException("store down", new IOException("refused")))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
@@ -136,6 +137,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("oversizedUpload_staysWithTheSharedHandlerAnd413_ratherThanTheLastResort500")
     void oversizedUpload_staysWithTheSharedHandlerAnd413_ratherThanTheLastResort500() throws Exception {
+        // when / then
         doThrow(new MaxUploadSizeExceededException(FIVE_MEGABYTES))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
@@ -148,6 +150,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("validationFailure_staysWithTheSharedHandlerAndKeepsItsFieldErrors")
     void validationFailure_staysWithTheSharedHandlerAndKeepsItsFieldErrors() throws Exception {
+        // when / then
         mvc.perform(MockMvcRequestBuilders.post("/" + apiPrefix + "/owner/offers")
                         .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -161,6 +164,7 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody")
     void unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody() throws Exception {
+        // when / then
         doThrow(new NullPointerException("photoObjectKey was null"))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
@@ -179,15 +183,18 @@ class ExceptionMappingPrecedenceTest {
     @Test
     @DisplayName("unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage")
     void unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage() throws Exception {
+        // given
         doThrow(new NullPointerException("photoObjectKey was null"))
                 .when(offerService).deleteOffer(eq(OFFER_ID), any());
 
+        // when
         String body = mvc.perform(delete("/owner/offers/" + OFFER_ID).with(ownerJwt()))
                 .andExpect(status().isInternalServerError())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
+        // then
         assertThat(body)
                 .as("an unanticipated failure is where an internal message is most likely to leak")
                 .doesNotContain("NullPointerException")

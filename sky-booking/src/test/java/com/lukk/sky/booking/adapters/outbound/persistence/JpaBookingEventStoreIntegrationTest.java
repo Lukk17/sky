@@ -34,6 +34,7 @@ class JpaBookingEventStoreIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("findLastSequenceNumber returns empty when the booking has no events yet")
     void findLastSequenceNumber_whenNoEventExists_thenReturnEmpty() {
+        // when / then
         assertThat(bookingEventStore.findLastSequenceNumber(UUID.randomUUID())).isEmpty();
     }
 

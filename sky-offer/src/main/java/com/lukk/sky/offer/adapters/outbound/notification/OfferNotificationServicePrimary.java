@@ -2,7 +2,7 @@ package com.lukk.sky.offer.adapters.outbound.notification;
 
 import com.lukk.sky.common.kafka.KafkaNotificationPublisher;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
+import com.lukk.sky.offer.domain.ports.inbound.OfferView;
 import com.lukk.sky.offer.domain.ports.outbound.OfferNotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
@@ -14,12 +14,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static com.lukk.sky.common.web.DateTimeConstants.DATE_TIME_FORMAT;
-import static com.lukk.sky.offer.config.Constants.KAFKA_TOPIC;
+import static com.lukk.sky.common.kafka.SkyTopics.OFFER_TOPIC;
 
-/**
- * Primary implementation of the {@link OfferNotificationService}.
- * Builds the wire envelope and delegates serialisation and Kafka dispatch to {@link KafkaNotificationPublisher}.
- */
 @Service
 @Primary
 @Slf4j
@@ -31,17 +27,17 @@ public class OfferNotificationServicePrimary implements OfferNotificationService
     private final ObjectMapper objectMapper;
 
     public OfferNotificationServicePrimary(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
-        this.publisher = new KafkaNotificationPublisher(kafkaTemplate, objectMapper, KAFKA_TOPIC);
+        this.publisher = new KafkaNotificationPublisher(kafkaTemplate, objectMapper, OFFER_TOPIC);
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public void publishCreated(OfferDTO offer, String ownerEmail) {
+    public void publishCreated(OfferView offer, String ownerEmail) {
         publish(objectMapper.writeValueAsString(offer), ownerEmail);
     }
 
     @Override
-    public void publishEdited(OfferDTO offer, String ownerEmail) {
+    public void publishEdited(OfferView offer, String ownerEmail) {
         publish(objectMapper.writeValueAsString(offer), ownerEmail);
     }
 

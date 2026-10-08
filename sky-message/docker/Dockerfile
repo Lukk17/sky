@@ -1,6 +1,8 @@
 # Build from repo root:
 #   docker build -f sky-message/docker/Dockerfile -t sky-message:latest .
 
+# Single shared pin: override with --build-arg RUNTIME_IMAGE=<image> to move all services at once.
+ARG RUNTIME_IMAGE=eclipse-temurin:25-jre-alpine
 # ===============> BUILD STAGE <===============
 FROM gradle:9-jdk25 AS build
 WORKDIR /workspace
@@ -14,7 +16,7 @@ RUN --mount=type=cache,id=gradle-sky-message,target=/home/gradle/.gradle gradle 
         extract --layers --launcher --destination sky-message/build/extracted
 
 # ===============> RUN STAGE <===============
-FROM eclipse-temurin:25-jre-alpine AS runtime
+FROM $RUNTIME_IMAGE AS runtime
 
 COPY config/keycloak/certs/localhost-ca.crt /tmp/local-dev-ca.crt
 RUN keytool -importcert -noprompt \

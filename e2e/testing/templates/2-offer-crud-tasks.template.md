@@ -36,6 +36,9 @@ under Additional tasks I did.
 - [ ] Photo delete returns HTTP 204 and the address it cleared answers 404.
 - [ ] Restore upload returns HTTP 200, so the teardown has a photo to remove.
 - [ ] Teardown delete returns HTTP 204 (removal from `public.offer`, and the object it held answers 404).
+- [ ] Gallery upload twice returns HTTP 200 with ordered `gallery` of length 1 then 2 and `coverPhotoUrl` equal to `gallery[0].url`, and both `url` values fetch the canary.
+- [ ] Gallery reorder of the second photo to position 0 returns HTTP 200 with the order swapped and `coverPhotoUrl` equal to the new `gallery[0].url`.
+- [ ] Gallery delete of the non-cover photo returns HTTP 200 with a one-element gallery at position 0, the deleted `url` answers 404, and the survivor still fetches the canary.
 
 ### Verdict
 

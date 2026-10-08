@@ -2,6 +2,7 @@ package com.lukk.sky.gateway.config;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -53,7 +54,9 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
+    @DisplayName("prometheus_whenNoCredentialsSupplied_thenRedirectsToLoginInsteadOfExposingMetrics")
     void prometheus_whenNoCredentialsSupplied_thenRedirectsToLoginInsteadOfExposingMetrics() {
+        // when / then
         client.get().uri("/actuator/prometheus")
                 .exchange()
                 .expectStatus().isFound()
@@ -63,38 +66,68 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
+    @DisplayName("health_whenNoCredentialsSupplied_thenReturnsOk")
     void health_whenNoCredentialsSupplied_thenReturnsOk() {
+        // when / then
         client.get().uri("/actuator/health")
                 .exchange()
                 .expectStatus().isOk();
     }
 
     @Test
+    @DisplayName("livenessProbe_whenNoCredentialsSupplied_thenReturnsOk")
     void livenessProbe_whenNoCredentialsSupplied_thenReturnsOk() {
+        // when / then
         client.get().uri("/actuator/health/liveness")
                 .exchange()
                 .expectStatus().isOk();
     }
 
     @Test
+    @DisplayName("readinessProbe_whenNoCredentialsSupplied_thenReturnsOk")
     void readinessProbe_whenNoCredentialsSupplied_thenReturnsOk() {
+        // when / then
         client.get().uri("/actuator/health/readiness")
                 .exchange()
                 .expectStatus().isOk();
     }
 
     @Test
+    @DisplayName("info_whenNoCredentialsSupplied_thenReturnsOk")
     void info_whenNoCredentialsSupplied_thenReturnsOk() {
+        // when / then
         client.get().uri("/actuator/info")
                 .exchange()
                 .expectStatus().isOk();
     }
 
     @Test
-    void proxiedRoute_whenNoCredentialsSupplied_thenRedirectsToLogin() {
+    @DisplayName("session_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect")
+    void session_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect() {
+        // when / then
+        client.get().uri("/api/session")
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody().isEmpty();
+    }
+
+    @Test
+    @DisplayName("anonymousSearch_whenNoCredentialsSupplied_thenPassesSecurityToRouting")
+    void anonymousSearch_whenNoCredentialsSupplied_thenPassesSecurityToRouting() {
+        // when / then
+        client.post().uri("/api/v1/search")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @DisplayName("proxiedRoute_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect")
+    void proxiedRoute_whenNoCredentialsSupplied_thenUnauthorizedInsteadOfRedirect() {
+        // when / then
         client.get().uri("/api/v1/bookings")
                 .exchange()
-                .expectStatus().isFound();
+                .expectStatus().isUnauthorized()
+                .expectBody().isEmpty();
     }
 
     @ParameterizedTest
@@ -110,6 +143,7 @@ class SecurityConfigOidcProfileTest {
             "/msg/v3/api-docs"
     })
     void documentationPath_whenNoCredentialsSupplied_thenRedirectsToLoginInsteadOfServingTheDocs(String path) {
+        // when / then
         client.get().uri(path)
                 .exchange()
                 .expectStatus().isFound()
@@ -118,18 +152,88 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
+    @DisplayName("logout_whenGetRequest_thenDoesNotRunOidcLogout")
+    void logout_whenGetRequest_thenDoesNotRunOidcLogout() {
+        // when / then
+        client.get().uri("/logout")
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    @DisplayName("logout_whenPostRequestWithoutCsrfToken_thenRejectedBeforeOidcLogoutInsteadOf404")
+    void logout_whenPostRequestWithoutCsrfToken_thenRejectedBeforeOidcLogoutInsteadOf404() {
+        // when / then
+        client.post().uri("/logout")
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    @DisplayName("keycloakPath_whenPostRequestWithoutCsrfToken_thenPassesSecurityToRoutingInsteadOf403")
+    void keycloakPath_whenPostRequestWithoutCsrfToken_thenPassesSecurityToRoutingInsteadOf403() {
+        // when / then: upstream is a dead port under test, so reaching the route
+        // answers 5xx; a 403 would mean the gateway session CSRF gate fired,
+        // which must never gate Keycloak browser form posts.
+        client.post().uri("/auth/realms/sky/login-actions/authenticate")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @DisplayName("keycloakPath_whenPostRequestWithOpaqueOrigin_thenPassesCorsToRoutingInsteadOf403")
+    void keycloakPath_whenPostRequestWithOpaqueOrigin_thenPassesCorsToRoutingInsteadOf403() {
+        // when / then: privacy-hardened browsers send Origin null on the Keycloak
+        // login post; the gateway must echo it rather than answer 403, and the dead
+        // upstream answers 5xx to prove the request was routed.
+        client.post().uri("/auth/realms/sky/login-actions/authenticate")
+                .header("Origin", "null")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @DisplayName("storePath_whenPostRequestWithoutCsrfToken_thenNotRejectedByCsrfGate")
+    void storePath_whenPostRequestWithoutCsrfToken_thenNotRejectedByCsrfGate() {
+        // when / then: POST /s3 needs a session, so an anonymous call redirects to
+        // login; a 403 would mean the gateway session CSRF gate fired, which must
+        // never gate store fetches (presigned capability URLs carry their own auth).
+        client.post().uri("/s3/sky-offers/offers/probe")
+                .exchange()
+                .expectStatus().is3xxRedirection();
+    }
+
+    @Test
+    @DisplayName("loginCallback_whenAuthorizationRequestIsUnknown_thenRedirectsToFrontendInsteadOfLoginErrorPage")
+    void loginCallback_whenAuthorizationRequestIsUnknown_thenRedirectsToFrontendInsteadOfLoginErrorPage() {
+        // when / then: a failed code exchange must return to the frontend where
+        // the login button can retry; the default /login?error target names a
+        // path no gateway route serves.
+        client.get().uri("/login/oauth2/code/keycloak?code=bogus&state=bogus")
+                .exchange()
+                .expectStatus().isFound()
+                .expectHeader().value("Location", location ->
+                        assertThat(location).startsWith("http://localhost:4200"));
+    }
+
+    @Test
+    @DisplayName("routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas")
     void routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas() {
+        // given
         List<String> routeIds = routeLocator.getRoutes()
                 .map(Route::getId)
                 .collectList()
                 .block();
 
+        // when / then
         assertThat(routeIds).contains(
                 "booking-swagger-route",
                 "booking-api-docs-route",
                 "offer-swagger-route",
                 "offer-api-docs-route",
                 "message-swagger-route",
-                "message-api-docs-route");
+                "message-api-docs-route",
+                "keycloak-route",
+                "s3-route");
     }
 }

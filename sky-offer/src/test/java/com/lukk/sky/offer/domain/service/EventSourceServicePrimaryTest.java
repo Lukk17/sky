@@ -80,7 +80,7 @@ class EventSourceServicePrimaryTest {
         verify(offerEventAppender).appendNextEvent(eq(TEST_DEFAULT_OFFER_ID), eq(TEST_EVENT_TYPE), payload.capture());
         assertEquals("{\"id\":\"00000000-0000-0000-0000-000000000001\",\"hotelName\":\"testHotelName\","
                         + "\"description\":\"Bed & breakfast <near> the old town\","
-                        + "\"comment\":\"testComment\",\"price\":20,\"ownerEmail\":\"test@owner.com\","
+                        + "\"comment\":\"testComment\",\"price\":20,\"ownerEmail\":\"owner@owner.com\","
                         + "\"roomCapacity\":5,\"city\":\"testCity\",\"country\":\"testCountry\","
                         + "\"photoObjectKey\":null,"
                         + "\"externalPhotoUrl\":\"https://images.example.com/test-hotel.jpeg\"}",

@@ -1,0 +1,66 @@
+<div class="flex justify-center mt-10 px-4">
+  <p-card styleClass="w-full max-w-2xl glass-card add-offer-card">
+    <ng-template #header>
+      <h2 class="add-offer-title" data-testid="add-offer-title">Add Offer</h2>
+      <p class="add-offer-subtitle">Share your place with travelers</p>
+    </ng-template>
+    @if (error) {
+      <p class="text-red-400" data-testid="add-offer-error">{{error}}</p>
+    }
+    <form #offerForm="ngForm" (ngSubmit)="onSubmit(offerForm)" class="flex flex-col gap-4">
+      <p-floatlabel variant="on">
+        <input pInputText id="hotelName" name="hotelName" ngModel required type="text" class="w-full" #hotelName="ngModel" data-testid="add-hotel" />
+        <label for="hotelName">Hotel Name</label>
+      </p-floatlabel>
+      @if (hotelName.invalid && hotelName.touched) {
+        <small class="text-red-400">Hotel name is required</small>
+      }
+      <p-floatlabel variant="on">
+        <input pInputText id="description" name="description" ngModel required type="text" class="w-full" #description="ngModel" data-testid="add-description" />
+        <label for="description">Description</label>
+      </p-floatlabel>
+      @if (description.invalid && description.touched) {
+        <small class="text-red-400">Description is required</small>
+      }
+      <p-floatlabel variant="on">
+        <input pInputText id="city" name="city" ngModel required type="text" class="w-full" #city="ngModel" data-testid="add-city" />
+        <label for="city">City</label>
+      </p-floatlabel>
+      @if (city.invalid && city.touched) {
+        <small class="text-red-400">City is required</small>
+      }
+      <p-floatlabel variant="on">
+        <input pInputText id="country" name="country" ngModel required type="text" class="w-full" #country="ngModel" data-testid="add-country" />
+        <label for="country">Country</label>
+      </p-floatlabel>
+      @if (country.invalid && country.touched) {
+        <small class="text-red-400">Country is required</small>
+      }
+      <label class="glass-file-btn" for="photoFile"><i class="pi pi-upload"></i> Choose photo file</label>
+      <input id="photoFile" name="photoFile" type="file" accept="image/*" class="glass-file-input" (change)="onFileSelected($event)" data-testid="add-photo-file" required />
+      @if (fileError) {
+        <small class="text-red-400" data-testid="add-photo-error">{{fileError}}</small>
+      }
+      @if (selectedFileName) {
+        <small class="text-surface-400" data-testid="add-photo-filename">{{selectedFileName}}</small>
+      } @else {
+        <small class="muted" data-testid="add-photo-hint">A photo file is required</small>
+      }
+      <p-floatlabel variant="on">
+        <input pInputText id="roomCapacity" name="roomCapacity" ngModel required type="number" min="1" class="w-full" #roomCapacity="ngModel" data-testid="add-capacity" />
+        <label for="roomCapacity">Room capacity</label>
+      </p-floatlabel>
+      @if (roomCapacity.invalid && roomCapacity.touched) {
+        <small class="text-red-400">Room capacity is required</small>
+      }
+      <p-floatlabel variant="on">
+        <input pInputText id="price" name="price" ngModel required type="number" min="1" class="w-full" #price="ngModel" data-testid="add-price" />
+        <label for="price">Price</label>
+      </p-floatlabel>
+      @if (price.invalid && price.touched) {
+        <small class="text-red-400">Price is required</small>
+      }
+      <p-button label="Add Offer" icon="pi pi-plus" type="submit" styleClass="glass-btn-accent" [disabled]="offerForm.invalid || !isFileValid()" data-testid="add-submit"></p-button>
+    </form>
+  </p-card>
+</div>

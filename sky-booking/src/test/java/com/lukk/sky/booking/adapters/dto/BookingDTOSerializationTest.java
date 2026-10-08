@@ -20,10 +20,12 @@ class BookingDTOSerializationTest {
     @Test
     @DisplayName("a fully populated booking serialises to the same JSON object Gson produced")
     void writeValueAsString_whenEveryFieldIsSet_thenMatchesThePreviousWireFormat() {
+        // when
         BookingDTO booking = booking("owner@owner.com");
 
         String actual = objectMapper.writeValueAsString(booking);
 
+        // then
         String expected = """
                 {"id":"00000000-0000-0000-0000-000000000001",\
                 "offerId":"00000000-0000-0000-0000-000000000101",\
@@ -36,10 +38,12 @@ class BookingDTOSerializationTest {
     @Test
     @DisplayName("a null field is omitted from the JSON rather than written as null")
     void writeValueAsString_whenAFieldIsNull_thenTheKeyIsOmitted() {
+        // when
         BookingDTO booking = booking(null);
 
         String actual = objectMapper.writeValueAsString(booking);
 
+        // then
         assertThat(actual).doesNotContain("ownerEmail").doesNotContain("null");
         assertThat(objectMapper.readTree(actual).has("ownerEmail")).isFalse();
     }
@@ -47,10 +51,12 @@ class BookingDTOSerializationTest {
     @Test
     @DisplayName("HTML-significant characters are written raw and survive a round trip unchanged")
     void writeValueAsString_whenValueContainsHtmlCharacters_thenTheyAreWrittenRaw() {
+        // when
         BookingDTO booking = booking("a<b>&c='d'@owner.com");
 
         String actual = objectMapper.writeValueAsString(booking);
 
+        // then
         assertThat(actual).contains("\"a<b>&c='d'@owner.com\"").doesNotContain("\\u003");
         assertThat(objectMapper.readTree(actual).get("ownerEmail").asString())
                 .isEqualTo("a<b>&c='d'@owner.com");

@@ -31,11 +31,14 @@ public abstract class AbstractIntegrationTest {
     @Container
     @ServiceConnection
     protected static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true");
 
     @Container
     @ServiceConnection
     protected static final ConfluentKafkaContainer KAFKA =
+            // Labelled for pruneSkyTestcontainers cleanup.
             new ConfluentKafkaContainer(TestcontainersConfiguration.KAFKA_IMAGE)
+                    .withLabel("sky-testcontainer", "true")
                     .withReuse(true);
 }

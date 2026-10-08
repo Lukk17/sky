@@ -16,11 +16,14 @@ class MissingCredentialFailureAnalyzerTest {
     @Test
     @DisplayName("analyze_whenTheFailureIsAMissingCredential_describesItAndSaysWhatToDo")
     void analyze_whenTheFailureIsAMissingCredential_describesItAndSaysWhatToDo() {
+        // given
         MissingCredentialException failure = new MissingCredentialException(
                 List.of(new MissingCredential("POSTGRES_PASSWORD", "spring.datasource.password")));
 
+        // when
         FailureAnalysis analysis = analyzer.analyze(failure);
 
+        // then
         assertThat(analysis).isNotNull();
         assertThat(analysis.getDescription())
                 .contains("spring.datasource.password")
@@ -34,11 +37,14 @@ class MissingCredentialFailureAnalyzerTest {
     @Test
     @DisplayName("analyze_whenTheFailureIsWrappedByTheContainer_stillFindsTheCause")
     void analyze_whenTheFailureIsWrappedByTheContainer_stillFindsTheCause() {
+        // given
         MissingCredentialException cause = new MissingCredentialException(
                 List.of(new MissingCredential("S3_SECRET_KEY", "sky.s3.secret-key")));
 
+        // when
         FailureAnalysis analysis = analyzer.analyze(new IllegalStateException("wrapped", cause));
 
+        // then
         assertThat(analysis).isNotNull();
         assertThat(analysis.getDescription()).contains("sky.s3.secret-key");
     }
@@ -46,6 +52,7 @@ class MissingCredentialFailureAnalyzerTest {
     @Test
     @DisplayName("analyze_whenTheFailureIsSomethingElse_returnsNull")
     void analyze_whenTheFailureIsSomethingElse_returnsNull() {
+        // when / then
         assertThat(analyzer.analyze(new IllegalStateException("unrelated"))).isNull();
     }
 }

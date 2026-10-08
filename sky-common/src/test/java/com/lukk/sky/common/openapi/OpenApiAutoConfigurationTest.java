@@ -20,6 +20,7 @@ class OpenApiAutoConfigurationTest {
     @Test
     @DisplayName("publicApi_isGroupedAsPublic")
     void publicApi_isGroupedAsPublic() {
+        // when / then
         runner.run(context -> assertThat(context.getBean(GroupedOpenApi.class).getGroup())
                 .isEqualTo("public"));
     }
@@ -27,6 +28,7 @@ class OpenApiAutoConfigurationTest {
     @Test
     @DisplayName("publicApi_documentsOnlyTheApiAndOwnersPaths")
     void publicApi_documentsOnlyTheApiAndOwnersPaths() {
+        // when / then
         runner.run(context -> assertThat(context.getBean(GroupedOpenApi.class).getPathsToMatch())
                 .as("a wider match would publish the actuator endpoints as public API")
                 .containsExactly("/api/**", "/owners/**"));
@@ -35,6 +37,7 @@ class OpenApiAutoConfigurationTest {
     @Test
     @DisplayName("publicApi_namesTheServiceInTheDropdown")
     void publicApi_namesTheServiceInTheDropdown() {
+        // when / then
         runner.withPropertyValues("springdoc.info.title=sky-offer")
                 .run(context -> assertThat(context.getBean(GroupedOpenApi.class).getDisplayName())
                         .as("the dropdown label is the only place a reader learns which service answered")
@@ -44,6 +47,7 @@ class OpenApiAutoConfigurationTest {
     @Test
     @DisplayName("publicApi_fallsBackToTheApplicationName_whenNoTitleIsSet")
     void publicApi_fallsBackToTheApplicationName_whenNoTitleIsSet() {
+        // when / then
         runner.withPropertyValues("spring.application.name=sky-message")
                 .run(context -> assertThat(context.getBean(GroupedOpenApi.class).getDisplayName())
                         .isEqualTo("sky-message"));
@@ -52,6 +56,7 @@ class OpenApiAutoConfigurationTest {
     @Test
     @DisplayName("backsOff_whenTheServiceDeclaresItsOwnGroup")
     void backsOff_whenTheServiceDeclaresItsOwnGroup() {
+        // when / then
         runner.withUserConfiguration(ServiceSuppliedGroupConfig.class)
                 .run(context -> assertThat(context)
                         .hasSingleBean(GroupedOpenApi.class)
@@ -62,6 +67,7 @@ class OpenApiAutoConfigurationTest {
     @Test
     @DisplayName("registersNothing_whenSpringdocIsNotOnTheClasspath")
     void registersNothing_whenSpringdocIsNotOnTheClasspath() {
+        // when / then
         runner.withClassLoader(new FilteredClassLoader(GroupedOpenApi.class))
                 .run(context -> assertThat(context)
                         .as("sky-notify has no Swagger UI, so the group must not be created there")

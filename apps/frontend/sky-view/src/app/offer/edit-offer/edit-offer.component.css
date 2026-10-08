@@ -1,0 +1,24 @@
+:host { display: block; }
+:host ::ng-deep .p-card.glass-card { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03) 35%, rgba(20,20,28,0.6)); backdrop-filter: blur(20px) saturate(1.4); border: 1px solid rgba(255,255,255,0.14); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 12px 32px rgba(0,0,0,0.5); }
+:host ::ng-deep input.p-inputtext { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 0.7rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
+:host ::ng-deep input.p-inputtext:focus { outline: none; border-color: transparent; box-shadow: 0 0 0 2px rgba(249,115,22,0.55), 0 0 0 4px rgba(59,130,246,0.25); }
+:host ::ng-deep .p-floatlabel label { color: rgba(255,255,255,0.55); background: transparent; }
+:host ::ng-deep .p-floatlabel:has(input:not(:placeholder-shown)) label,
+:host ::ng-deep .p-floatlabel:has(input:focus) label,
+:host ::ng-deep .p-floatlabel.p-floatlabel-focus label,
+:host ::ng-deep .p-floatlabel.p-floatlabel-filled label { color: rgba(255,255,255,0.92); background: transparent; padding: 0 0.35rem; border-radius: 0.3rem; }
+.edit-offer-title { text-align: center; font-size: 1.9rem; font-weight: 800; letter-spacing: 0.02em; line-height: 1.2; margin: 1.25rem 0 0.15rem; background: linear-gradient(180deg,#fff,#fdba74 60%,#f97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.edit-offer-subtitle { text-align: center; color: rgba(255,255,255,0.55); font-size: 0.9rem; margin: 0 0 1rem; }
+.gallery-manager { display: flex; flex-direction: column; gap: 0.75rem; }
+.gallery-title { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; }
+.gallery-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+@media (max-width: 480px) { .gallery-grid { grid-template-columns: minmax(0, 1fr); } }
+.gallery-thumb { position: relative; margin: 0; border-radius: 0.8rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); }
+.gallery-thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.main-badge { position: absolute; top: 0.5rem; left: 0.5rem; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: rgba(249,115,22,0.85); border-radius: 999px; padding: 0.2rem 0.6rem; }
+.thumb-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem; }
+.thumb-actions .thumb-btn { flex: 1 1 auto; white-space: nowrap; }
+:host ::ng-deep .edit-offer-card { width: 100%; }
+@media (min-width: 768px) { :host ::ng-deep .edit-offer-card { padding-inline: 0.5rem; } }
+:host ::ng-deep .thumb-btn.p-button, :host ::ng-deep .thumb-btn .p-button { font-size: 0.8rem; padding: 0.4rem 0.6rem; }
+.muted { color: rgba(255,255,255,0.55); }

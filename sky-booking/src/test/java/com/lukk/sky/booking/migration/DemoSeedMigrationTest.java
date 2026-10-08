@@ -31,7 +31,8 @@ class DemoSeedMigrationTest {
 
     @Container
     private static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE);
+            // Labelled for pruneSkyTestcontainers cleanup.
+            new PostgreSQLContainer(TestcontainersConfiguration.POSTGRES_IMAGE).withLabel("sky-testcontainer", "true");
 
     @BeforeAll
     static void migrateWithDemoSeed() {
@@ -45,6 +46,7 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("the demo seed inserts two bookings and one event for each of them")
     void migrate_whenDemoLocationIsIncluded_thenBookingsAndEventsAreSeeded() {
+        // when / then
         assertThat(count("SELECT count(*) FROM booking")).isEqualTo(2);
         assertThat(count("SELECT count(*) FROM booking_event")).isEqualTo(2);
     }
@@ -52,18 +54,21 @@ class DemoSeedMigrationTest {
     @Test
     @DisplayName("every seeded event joins to a booking the same file inserted")
     void migrate_whenDemoLocationIsIncluded_thenEveryEventJoinsToASeededBooking() {
+        // given
         long joined = count("""
                 SELECT count(*) FROM booking_event event
                 JOIN booking seeded ON seeded.id = event.booking_id
                 WHERE seeded.booking_user = 'user@sky.dev'
                 """);
 
+        // when / then
         assertThat(joined).isEqualTo(count("SELECT count(*) FROM booking_event"));
     }
 
     @Test
     @DisplayName("the seed payload carries the offer id of the booking it belongs to")
     void migrate_whenDemoLocationIsIncluded_thenEventPayloadMatchesItsBooking() {
+        // given
         long matching = count("""
                 SELECT count(*) FROM booking_event event
                 JOIN booking seeded ON seeded.id = event.booking_id
@@ -71,14 +76,17 @@ class DemoSeedMigrationTest {
                   AND event.payload::json ->> 'id' = seeded.id::text
                 """);
 
+        // when / then
         assertThat(matching).isEqualTo(count("SELECT count(*) FROM booking_event"));
     }
 
     @Test
     @DisplayName("re-running the seed inserts nothing because every insert is idempotent")
     void demoSeed_whenExecutedASecondTime_thenRowCountsAreUnchanged() {
+        // when
         execute(readDemoSeed());
 
+        // then
         assertThat(count("SELECT count(*) FROM booking")).isEqualTo(2);
         assertThat(count("SELECT count(*) FROM booking_event")).isEqualTo(2);
     }
