@@ -204,6 +204,19 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
+    @DisplayName("loginCallback_whenAuthorizationRequestIsUnknown_thenRedirectsToFrontendInsteadOfLoginErrorPage")
+    void loginCallback_whenAuthorizationRequestIsUnknown_thenRedirectsToFrontendInsteadOfLoginErrorPage() {
+        // when / then: a failed code exchange must return to the frontend where
+        // the login button can retry; the default /login?error target names a
+        // path no gateway route serves.
+        client.get().uri("/login/oauth2/code/keycloak?code=bogus&state=bogus")
+                .exchange()
+                .expectStatus().isFound()
+                .expectHeader().value("Location", location ->
+                        assertThat(location).startsWith("http://localhost:4200"));
+    }
+
+    @Test
     @DisplayName("routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas")
     void routeTable_whenTheOidcDocumentIsActive_thenCarriesEveryDocumentationRouteTheLocalDocumentHas() {
         // given

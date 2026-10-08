@@ -16,6 +16,7 @@ import org.springframework.security.web.server.DelegatingServerAuthenticationEnt
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationEntryPoint;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationFailureHandler;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.csrf.CsrfWebFilter;
 import org.springframework.security.web.server.csrf.WebSessionServerCsrfTokenRepository;
@@ -102,8 +103,17 @@ public class SecurityConfig {
                     exceptions.authenticationEntryPoint(entryPoint);
                 })
                 .cors(cors -> cors.configurationSource(frontendCorsConfigurationSource()))
-                .oauth2Login(login -> login.authenticationSuccessHandler(
-                        new RedirectServerAuthenticationSuccessHandler(validatedFrontendUrl(frontendUrl))))
+                .oauth2Login(login -> login
+                        .authenticationSuccessHandler(
+                                new RedirectServerAuthenticationSuccessHandler(
+                                        validatedFrontendUrl(frontendUrl)))
+                        // The default failure handler redirects to /login?error, which
+                        // no gateway route serves, so a failed login ended on a 404
+                        // Whitelabel page. Return to the frontend instead, where the
+                        // login button can retry.
+                        .authenticationFailureHandler(
+                                new RedirectServerAuthenticationFailureHandler(
+                                        validatedFrontendUrl(frontendUrl) + "/home?loginError=true")))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .logout(logout -> logout
                         .requiresLogout(new PathPatternParserServerWebExchangeMatcher("/logout", HttpMethod.POST))
