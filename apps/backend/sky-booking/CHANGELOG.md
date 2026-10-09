@@ -1,3 +1,12 @@
+## [2.1.3] - 2026-10-09
+
+### Added
+- Phase 2 build hygiene: versionFromChangelog, aggregate JaCoCo report and gate, -parameters on JavaCompile, test logging with full stack traces
+
+## [2.1.2] - 2026-10-09
+
+### Added
+- Add OWASP dependency-check plugin to backend build and configure fail on CVSS >= 7.0
 # Changelog: sky-booking
 
 All notable changes to this module are documented in this file. The format follows

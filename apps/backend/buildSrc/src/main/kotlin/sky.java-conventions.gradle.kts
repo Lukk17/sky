@@ -28,9 +28,18 @@ dependencies {
     }
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-parameters")
+}
+
 tasks.test {
     useJUnitPlatform()
     maxHeapSize = "1536m"
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+    }
 }
 
 // Removes orphaned Testcontainers left behind on red builds or Ctrl+C.

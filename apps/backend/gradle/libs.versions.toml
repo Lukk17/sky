@@ -16,6 +16,8 @@ java = "25"
 lombok = "1.18.38"
 springdoc = "3.0.3"
 springdoc-gradle-plugin = "1.9.0"
+# OWASP Dependency Check
+owasp-dependency-check = "11.1.1"
 resilience4j = "2.4.0"
 
 # Test
@@ -100,3 +102,6 @@ testcontainers-kafka = { module = "org.testcontainers:testcontainers-kafka" }
 
 [bundles]
 jaxb = ["jakarta-xml-bind-api", "jaxb-runtime"]
+
+[plugins]
+org-owasp-dependencycheck = { id = "org.owasp.dependencycheck", version.ref = "owasp-dependency-check" }
