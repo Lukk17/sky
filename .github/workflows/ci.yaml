@@ -416,3 +416,20 @@ jobs:
             exit 1
           fi
           printf 'contracts/sky-api/openapi.yaml is in sync with its source.\n'
+
+  client-freshness:
+    needs: verify-changelog
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: '26'
+      - name: Check client freshness
+        run: |
+          set -euo pipefail
+          bash scripts/check-client-freshness.sh

@@ -1,7 +1,8 @@
-## [2.1.3] - 2026-10-09
+## [2.1.4] - 2026-10-19
 
 ### Added
 - Phase 2 build hygiene: versionFromChangelog, aggregate JaCoCo report and gate, -parameters on JavaCompile, test logging with full stack traces
+- Cross-repo gap program: replace hand-written offer models with generated ones and route through generated services; add client freshness check to CI
 
 ## [2.1.2] - 2026-10-09
 
