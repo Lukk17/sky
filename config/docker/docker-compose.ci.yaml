@@ -132,7 +132,7 @@ services:
   sky-booking:
     build:
       dockerfile: sky-booking/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
     image: sky-booking:e2e
     networks:
       - sky-e2e-network
@@ -166,7 +166,7 @@ services:
   sky-offer:
     build:
       dockerfile: sky-offer/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
     image: sky-offer:e2e
     networks:
       - sky-e2e-network
@@ -203,7 +203,7 @@ services:
   sky-message:
     build:
       dockerfile: sky-message/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
     image: sky-message:e2e
     networks:
       - sky-e2e-network
@@ -231,7 +231,7 @@ services:
   sky-notify:
     build:
       dockerfile: sky-notify/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
     image: sky-notify:e2e
     networks:
       - sky-e2e-network
@@ -256,7 +256,7 @@ services:
   sky-gateway:
     build:
       dockerfile: sky-gateway/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
     image: sky-gateway:e2e
     networks:
       - sky-e2e-network

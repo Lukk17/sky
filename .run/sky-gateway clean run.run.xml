@@ -2,7 +2,7 @@
   <configuration default="false" name="sky-gateway clean run" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/sky-gateway" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/apps/backend/sky-gateway" />
       <option name="externalSystemIdString" value="GRADLE" />
       <option name="scriptParameters" value="" />
       <option name="taskDescriptions">

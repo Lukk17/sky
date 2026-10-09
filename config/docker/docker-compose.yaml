@@ -137,7 +137,7 @@ services:
     container_name: sky-booking
     build:
       dockerfile: sky-booking/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
       tags:
         - "sky-booking:${SKY_VERSION:-2.0.0}"
     image: sky-booking:latest
@@ -178,7 +178,7 @@ services:
     container_name: sky-offer
     build:
       dockerfile: sky-offer/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
       tags:
         - "sky-offer:${SKY_VERSION:-2.0.0}"
     image: sky-offer:latest
@@ -225,7 +225,7 @@ services:
     container_name: sky-message
     build:
       dockerfile: sky-message/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
       tags:
         - "sky-message:${SKY_VERSION:-2.0.0}"
     image: sky-message:latest
@@ -252,7 +252,7 @@ services:
     container_name: sky-notify
     build:
       dockerfile: sky-notify/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
       tags:
         - "sky-notify:${SKY_VERSION:-2.0.0}"
     image: sky-notify:latest
@@ -284,7 +284,7 @@ services:
     container_name: sky-gateway
     build:
       dockerfile: sky-gateway/docker/Dockerfile
-      context: ../../
+      context: ../../apps/backend
       tags:
         - "sky-gateway:${SKY_VERSION:-2.0.0}"
     image: sky-gateway:latest

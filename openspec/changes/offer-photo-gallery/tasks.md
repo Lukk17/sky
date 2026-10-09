@@ -2,7 +2,7 @@
 
 ## 1. Persistence and migration
 
-- [ ] 1.1 Add `offer_photo` table migration plus backfill of legacy single-slot values into position 0, and verify with `./gradlew :sky-offer:flywayMigrate` equivalent or Testcontainers repository test showing legacy values land exactly once in order
+- [ ] 1.1 Add `offer_photo` table migration plus backfill of legacy single-slot values into position 0, and verify with `./apps/backend/gradlew :sky-offer:flywayMigrate` equivalent or Testcontainers repository test showing legacy values land exactly once in order
 - [ ] 1.2 Add gallery repository queries (ordered by position, cover as position 0) and verify with a repository test asserting order, empty gallery, and stored-object precedence
 - [ ] 1.3 Document the S3 key layout `offers/{offerId}/{photoId}-{filename}` in the sky-offer module docs and verify the documented layout matches the upload path in code review
 

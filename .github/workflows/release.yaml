@@ -148,7 +148,7 @@ jobs:
           read -r -a services <<< "$SERVICES"
           for svc in "${services[@]}"; do
             image="lukk17/${svc}"
-            docker build -f "${svc}/docker/Dockerfile" -t "${image}:${image_tag}" .
+            docker build -f "apps/backend/${svc}/docker/Dockerfile" -t "${image}:${image_tag}" ./apps/backend
             docker push "${image}:${image_tag}"
           done
 

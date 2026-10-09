@@ -30,9 +30,9 @@
 #   docker run -d --name sky-postgres -p 5432:5432 -e POSTGRES_DB=sky -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=local postgres:16-alpine
 #   docker run -d --name floci -p 9070:4566 -e FLOCI_STORAGE_MODE=persistent -e FLOCI_STORAGE_PERSISTENT_PATH=/app/data -v floci_data:/app/data floci/floci:2.0.1
 #   docker compose -f config/docker/docker-compose.yaml up -d kafka
-#   ./gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
-#   ./gradlew :sky-booking:bootRun --args='--spring.profiles.active=local'
-#   ./gradlew :sky-message:bootRun --args='--spring.profiles.active=local'
+#   ./apps/backend/gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
+#   ./apps/backend/gradlew :sky-booking:bootRun --args='--spring.profiles.active=local'
+#   ./apps/backend/gradlew :sky-message:bootRun --args='--spring.profiles.active=local'
 #
 # The broker advertises itself as kafka:9092, so the host needs a 127.0.0.1 kafka entry in its hosts
 # file, which config/local-dev/local_README.md option B already explains. sky-message needs no broker

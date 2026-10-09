@@ -13,7 +13,7 @@ A test that asserts Kafka behaviour MUST run against a Testcontainers-managed br
 A module MUST start only the containers its own stack needs: sky-booking and sky-offer need both, sky-message needs PostgreSQL alone because it declares no Kafka dependency, and sky-notify needs Kafka alone because it holds no persistent state.
 
 #### Scenario: Running integration tests locally
-- **WHEN** a developer runs `./gradlew :sky-booking:test` with Docker available
+- **WHEN** a developer runs `./apps/backend/gradlew :sky-booking:test` with Docker available
 - **THEN** the tests that exercise persistence or assert Kafka behaviour start an ephemeral `postgres:17-alpine` container and an ephemeral Kafka container, applying real Flyway migrations and real Spring Kafka serialization
 
 #### Scenario: A test asserts that a record reached the broker
@@ -54,7 +54,7 @@ A JaCoCo coverage verification task MUST run as part of `check`, and therefore a
 
 #### Scenario: Coverage drops below threshold
 - **WHEN** a change reduces line coverage below 0.90 over the measured set of any module that has one
-- **THEN** `./gradlew check` fails with a JaCoCo coverage-verification error naming the violated counter, the measured ratio and the required minimum, reported over the whole module bundle because the violation rule sets no finer element
+- **THEN** `./apps/backend/gradlew check` fails with a JaCoCo coverage-verification error naming the violated counter, the measured ratio and the required minimum, reported over the whole module bundle because the violation rule sets no finer element
 
 #### Scenario: A module has nothing left to measure
 - **WHEN** every class in a module falls inside the exclusion set, as in sky-gateway, whose only classes are its application class and one configuration class
@@ -66,3 +66,4 @@ The Bruno collection MUST be runnable against a freshly-deployed stack (Docker C
 #### Scenario: A regression breaks an end-to-end flow
 - **WHEN** a code change breaks the booking-creation flow such that the Bruno assertion for the create-booking request fails
 - **THEN** the `bru run` exits non-zero and the e2e runbook is marked failed
+

@@ -183,7 +183,7 @@ same mapping via nginx-ingress.
 | `/notifyWebsocket` | sky-notify | 5554 |
 
 The collection covers the three REST services. The fourth row is the WebSocket handshake, which Bruno does not drive,
-and it is listed so the route table here matches [sky-gateway/README.md](../../sky-gateway/README.md).
+and it is listed so the route table here matches [sky-gateway/README.md](../../apps/backend/sky-gateway/README.md).
 
 The Bruno collection uses `{{offerUrl}}/api/v1/...`, `{{bookingUrl}}/api/v1/...` and
 `{{messageUrl}}/api/v1/...`, so the same request works against the gateway, against the cluster ingress, and
@@ -227,7 +227,7 @@ document from there.
 
 The three specs in [openapi/](openapi/) are generated output. Never edit one by hand, the next build overwrites
 it. They are produced by the springdoc Gradle plugin, wired once in the
-[sky.openapi-conventions](../../buildSrc/src/main/kotlin/sky.openapi-conventions.gradle.kts) convention plugin and
+[sky.openapi-conventions](../../apps/backend/buildSrc/src/main/kotlin/sky.openapi-conventions.gradle.kts) convention plugin and
 applied by the three REST service build files. Each spec carries the component schemas springdoc derives from the
 Java DTO fields, the Spring Data `Page<T>` envelope shape, and the problem-detail error shape the shared exception
 handler in `sky-common` produces, and nothing beyond what the annotations on the controllers declare.
@@ -241,22 +241,22 @@ handler in `sky-common` produces, and nothing beyond what the annotations on the
 Regenerate all three, from the repository root:
 
 ```bash
-./gradlew generateOpenApiDocs
+./apps/backend/gradlew generateOpenApiDocs
 ```
 
 ```powershell
-.\gradlew.bat generateOpenApiDocs
+.\apps/backend\gradlew.bat generateOpenApiDocs
 ```
 
 `build` depends on `generateOpenApiDocs` in each of the three services, so a full build refreshes the specs and a
 stale spec shows up as a dirty working tree. Skip generation when you do not want it:
 
 ```bash
-./gradlew build -x generateOpenApiDocs
+./apps/backend/gradlew build -x generateOpenApiDocs
 ```
 
 ```powershell
-.\gradlew.bat build -x generateOpenApiDocs
+.\apps/backend\gradlew.bat build -x generateOpenApiDocs
 ```
 
 Generation forks the service under the `local,openapi` profile pair on the port in the table above. The `openapi`

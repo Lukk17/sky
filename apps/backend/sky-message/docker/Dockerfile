@@ -1,0 +1,40 @@
+# Build from the backend root (apps/backend):
+#   docker build -f sky-message/docker/Dockerfile -t sky-message:latest .
+
+# Single shared pin: override with --build-arg RUNTIME_IMAGE=<image> to move all services at once.
+ARG RUNTIME_IMAGE=eclipse-temurin:25-jre-alpine
+# ===============> BUILD STAGE <===============
+FROM gradle:9-jdk25 AS build
+WORKDIR /workspace
+COPY settings.gradle.kts build.gradle.kts ./
+COPY gradle ./gradle
+COPY buildSrc ./buildSrc
+COPY sky-common ./sky-common
+COPY sky-message ./sky-message
+RUN --mount=type=cache,id=gradle-sky-message,target=/home/gradle/.gradle gradle :sky-message:bootJar --no-daemon -x test \
+ && java -Djarmode=tools -jar sky-message/build/libs/sky-message.jar \
+        extract --layers --launcher --destination sky-message/build/extracted
+
+# ===============> RUN STAGE <===============
+FROM $RUNTIME_IMAGE AS runtime
+
+COPY config/keycloak/certs/localhost-ca.crt /tmp/local-dev-ca.crt
+RUN keytool -importcert -noprompt \
+      -alias local-dev-ca \
+      -file /tmp/local-dev-ca.crt \
+      -keystore "$JAVA_HOME/lib/security/cacerts" \
+      -storepass changeit \
+ && rm /tmp/local-dev-ca.crt
+
+RUN addgroup -S -g 1000 sky && adduser -S -u 1000 sky -G sky
+USER sky
+WORKDIR /app
+COPY --from=build --chown=sky:sky /workspace/sky-message/build/extracted/dependencies/ ./
+COPY --from=build --chown=sky:sky /workspace/sky-message/build/extracted/spring-boot-loader/ ./
+COPY --from=build --chown=sky:sky /workspace/sky-message/build/extracted/snapshot-dependencies/ ./
+COPY --from=build --chown=sky:sky /workspace/sky-message/build/extracted/application/ ./
+EXPOSE 5553
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD wget -qO- http://localhost:5553/actuator/health/liveness | grep -q '"status":"UP"' || exit 1
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

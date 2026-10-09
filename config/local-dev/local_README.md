@@ -29,7 +29,7 @@ The object-store password is `localdev` rather than `local` because MinIO refuse
 HINT: MINIO_ROOT_USER length should be at least 3, and MINIO_ROOT_PASSWORD length at least 8 characters
 ```
 
-`keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows). The four services default to `OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky`, so a bare `./gradlew :sky-offer:bootRun` works without exporting anything.
+`keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows). The four services default to `OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky`, so a bare `./apps/backend/gradlew :sky-offer:bootRun` works without exporting anything.
 
 ---
 
@@ -81,7 +81,7 @@ docker exec sky-postgres pg_isready -U postgres -d sky
 
 ### 3. Start the object store
 
-`sky-offer` stores offer photos here. The only requirement is an S3-compatible endpoint on port 9070. The bucket is created on startup by [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), so no bucket-init step is needed.
+`sky-offer` stores offer photos here. The only requirement is an S3-compatible endpoint on port 9070. The bucket is created on startup by [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](..\..\apps/backend/sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), so no bucket-init step is needed.
 
 Two implementations both satisfy it, and the application cannot tell them apart:
 
@@ -128,7 +128,7 @@ The health path differs between the two, so do not reach for `/minio/health/live
 
 The OAuth2 resource server fetches the JWKS over HTTPS, and the JVM rejects the certificate with a PKIX path validation error until the authority that issued it is trusted. Never disable TLS validation in committed code.
 
-Every image in this repository already trusts it, the gateway included: each `docker/Dockerfile` imports [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt) under the alias `local-dev-ca` into the JRE `cacerts` store at build time, next to the public certificate authorities rather than instead of them. Trusting the authority rather than the leaf means a reissued leaf needs no image rebuild. So the whole Docker Compose stack needs nothing extra, and this step is only for a service you start with `./gradlew bootRun` on the host, which uses your own JDK's trust store.
+Every image in this repository already trusts it, the gateway included: each `docker/Dockerfile` imports [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt) under the alias `local-dev-ca` into the JRE `cacerts` store at build time, next to the public certificate authorities rather than instead of them. Trusting the authority rather than the leaf means a reissued leaf needs no image rebuild. So the whole Docker Compose stack needs nothing extra, and this step is only for a service you start with `./apps/backend/gradlew bootRun` on the host, which uses your own JDK's trust store.
 
 The full procedure, with PowerShell and Unix variants for `openssl` and `keytool`, is in [config/keycloak/SETUP.md](../keycloak/SETUP.md).
 
@@ -171,13 +171,13 @@ Useful when you are changing one service and want a fast edit-run loop.
 Unix shell:
 
 ```bash
-./gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
+./apps/backend/gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 PowerShell:
 
 ```powershell
-.\gradlew.bat :sky-offer:bootRun --args='--spring.profiles.active=local'
+.\apps/backend\gradlew.bat :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 The `local` profile turns on the Flyway repeatable demo seed. The datasource, Kafka, S3, and issuer defaults live in each service's `application.yaml`, and the defaults already point at the host addresses in the table above, except for two:
@@ -202,23 +202,23 @@ docker compose -f config/docker/docker-compose.yaml up -d kafka
 Compose builds the images for you and tags each one twice from a single build. Build one on its own when you want to push it or import it into a cluster, and carry both tags by hand too: the version tag records what is inside, and `latest` is what the Compose stack runs and what the local Helm overlays expect on a cluster node. A local tag carries no leading `v`, unlike a published one, and `SKY_VERSION` overrides the version Compose uses. Every build runs from the repository root, not from the module directory, because the Dockerfile copies `settings.gradle.kts`, `buildSrc`, and `sky-common` alongside the service.
 
 ```bash
-docker build . -f sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
+docker build ./apps/backend -f apps/backend/sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
 ```
 
 ```bash
-docker build . -f sky-booking/docker/Dockerfile -t sky-booking:2.0.0 -t sky-booking:latest
+docker build ./apps/backend -f apps/backend/sky-booking/docker/Dockerfile -t sky-booking:2.0.0 -t sky-booking:latest
 ```
 
 ```bash
-docker build . -f sky-message/docker/Dockerfile -t sky-message:2.0.0 -t sky-message:latest
+docker build ./apps/backend -f apps/backend/sky-message/docker/Dockerfile -t sky-message:2.0.0 -t sky-message:latest
 ```
 
 ```bash
-docker build . -f sky-notify/docker/Dockerfile -t sky-notify:2.0.0 -t sky-notify:latest
+docker build ./apps/backend -f apps/backend/sky-notify/docker/Dockerfile -t sky-notify:2.0.0 -t sky-notify:latest
 ```
 
 ```bash
-docker build . -f sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gateway:latest
+docker build ./apps/backend -f apps/backend/sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gateway:latest
 ```
 
 To run them outside compose, put them on one network so they can resolve each other by container name:
@@ -290,3 +290,4 @@ docker images -a --filter "reference=sky-*" --format "{{.ID}}" | xargs -r docker
 | [config/k8s/k8s_README.md](../k8s/k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+

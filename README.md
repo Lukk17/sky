@@ -25,13 +25,13 @@ Prerequisites: JDK 25 for the Gradle daemon (the compile toolchain is downloaded
 Build and test every module. Unix shell:
 
 ```bash
-./gradlew build
+./apps/backend/gradlew build
 ```
 
 PowerShell:
 
 ```powershell
-.\gradlew.bat build
+.\apps/backend\gradlew.bat build
 ```
 
 Start Kafka, the four services, and the gateway in Docker Compose:
@@ -45,13 +45,13 @@ The gateway then answers at `http://localhost:5777`, and that is the only sky po
 Run one service against the local stack instead. Unix shell:
 
 ```bash
-./gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
+./apps/backend/gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 PowerShell:
 
 ```powershell
-.\gradlew.bat :sky-offer:bootRun --args='--spring.profiles.active=local'
+.\apps/backend\gradlew.bat :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 For a local Kubernetes cluster rather than Compose, go to [config/k8s/local_README.md](config/k8s/local_README.md).
@@ -139,9 +139,9 @@ graph TB
 
 The ingress layer handles TLS and path-based routing. Authenticated routes go through `oauth2-proxy`, which validates the OIDC session against Keycloak and forwards the caller's identity in the `x-auth-request-email`, `x-auth-request-access-token`, and `authorization` headers. The services do not trust those identity headers: each one validates the bearer token itself as an OAuth2 resource server using `OAUTH2_ISSUER_URI`, and reads the caller from the token's `email` claim through `SecurityUtils.currentUserEmail()` in `sky-common`. Setting `OAUTH2_AUDIENCE=sky-backend` additionally enforces the audience claim that the realm's mapper writes.
 
-`sky-booking` calls `sky-offer` over internal REST to resolve offer ownership before creating a booking, through Spring's synchronous `RestClient` wrapped in a Resilience4j retry and circuit breaker. When that call cannot complete, the booking answers 503 with a `Retry-After: 10` header and an RFC 9457 problem-detail body, and that covers connection refused, a connect timeout, a read timeout, a 5xx once the three attempts are spent, and an open circuit breaker. An offer that does not exist is still 404. Any other client-error status from `sky-offer` is 502, and 400 stays reserved for a request that really is wrong, such as a date in the past. The breaker records transport failures only, so a run of lookups for offers nobody created cannot open it and turn the next caller's booking into an outage answer. The condition-by-condition table is in [sky-booking/README.md](sky-booking/README.md). Both services produce Kafka events, `sky-notify` consumes them and pushes to connected browsers over STOMP user destinations (`/user/{email}/queue/notify`).
+`sky-booking` calls `sky-offer` over internal REST to resolve offer ownership before creating a booking, through Spring's synchronous `RestClient` wrapped in a Resilience4j retry and circuit breaker. When that call cannot complete, the booking answers 503 with a `Retry-After: 10` header and an RFC 9457 problem-detail body, and that covers connection refused, a connect timeout, a read timeout, a 5xx once the three attempts are spent, and an open circuit breaker. An offer that does not exist is still 404. Any other client-error status from `sky-offer` is 502, and 400 stays reserved for a request that really is wrong, such as a date in the past. The breaker records transport failures only, so a run of lookups for offers nobody created cannot open it and turn the next caller's booking into an outage answer. The condition-by-condition table is in [sky-booking/README.md](apps/backend/sky-booking/README.md). Both services produce Kafka events, `sky-notify` consumes them and pushes to connected browsers over STOMP user destinations (`/user/{email}/queue/notify`).
 
-`sky-offer` stores offer photos in an S3-compatible object store through the AWS SDK v2 with presigned URLs, and the server owns the object key. That key is built as `offers/{offerId}/{uuid}-{filename}`, lives in the `photo_object_key` column, is written only by the photo upload endpoint and cleared only by the photo delete endpoint, and appears in no request body and no response body. A client never names an object. It addresses the photo through the offer, with `POST` and `DELETE` on `/api/v1/owner/offers/{offerId}/photo`, and reads the derived `photoUrl` every offer response carries: the presigned address of the uploaded object when there is one, the client-writable `externalPhotoUrl` when there is not, and null when there is neither. Replacing the photo, deleting the photo, and deleting the offer each delete the stored object, so no orphan survives the lifecycle. A store that is down during one of those removals is the deliberate exception: the failure is logged as `photo_delete_failed`, a photo delete still answers 204 and an offer delete still succeeds, so the object outlives the row it belonged to rather than blocking an owner from deleting their own photo or their own offer for the length of an outage. Upload and read do not swallow it. An upload answers 503 with a `Retry-After: 10` header when the store is unreachable or answers 5xx or 429, and 502 Bad Gateway when the store answers 401, 403 or a missing bucket, both as RFC 9457 problem details, and a read that has to sign a stored photo address answers 503 the same way. What the service itself rejects stays 4xx: an empty part and an unsupported image format are 400, an oversized upload is 413. The condition-by-condition table is in [sky-offer/README.md](sky-offer/README.md). Cluster and laptop now run the same store, floci, pinned to the same image digest, and the one adapter would serve a managed S3 just as well, because the only contract is the S3 API. The store has two addresses rather than one: `S3_ENDPOINT` is where the service uploads, `S3_PRESIGN_ENDPOINT` is what a presigned URL names for the client that has to fetch it.
+`sky-offer` stores offer photos in an S3-compatible object store through the AWS SDK v2 with presigned URLs, and the server owns the object key. That key is built as `offers/{offerId}/{uuid}-{filename}`, lives in the `photo_object_key` column, is written only by the photo upload endpoint and cleared only by the photo delete endpoint, and appears in no request body and no response body. A client never names an object. It addresses the photo through the offer, with `POST` and `DELETE` on `/api/v1/owner/offers/{offerId}/photo`, and reads the derived `photoUrl` every offer response carries: the presigned address of the uploaded object when there is one, the client-writable `externalPhotoUrl` when there is not, and null when there is neither. Replacing the photo, deleting the photo, and deleting the offer each delete the stored object, so no orphan survives the lifecycle. A store that is down during one of those removals is the deliberate exception: the failure is logged as `photo_delete_failed`, a photo delete still answers 204 and an offer delete still succeeds, so the object outlives the row it belonged to rather than blocking an owner from deleting their own photo or their own offer for the length of an outage. Upload and read do not swallow it. An upload answers 503 with a `Retry-After: 10` header when the store is unreachable or answers 5xx or 429, and 502 Bad Gateway when the store answers 401, 403 or a missing bucket, both as RFC 9457 problem details, and a read that has to sign a stored photo address answers 503 the same way. What the service itself rejects stays 4xx: an empty part and an unsupported image format are 400, an oversized upload is 413. The condition-by-condition table is in [sky-offer/README.md](apps/backend/sky-offer/README.md). Cluster and laptop now run the same store, floci, pinned to the same image digest, and the one adapter would serve a managed S3 just as well, because the only contract is the S3 API. The store has two addresses rather than one: `S3_ENDPOINT` is where the service uploads, `S3_PRESIGN_ENDPOINT` is what a presigned URL names for the client that has to fetch it.
 
 `sky-notify` ships an Ingress in its Helm chart, on `/notifyWebsocket` with `pathType: Prefix` and no rewrite, so a browser reaches the WebSocket in a cluster the same way it reaches everything else. It carries no oauth2-proxy auth annotations, because the STOMP `CONNECT` frame is where the JWT is checked rather than the HTTP handshake, and it raises `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds so nginx does not close an idle socket after 60. The host is `localhost` with the `dev-ssl-cert` secret. Without Kubernetes the route still works the same way: `sky-gateway` passes `/notifyWebsocket/**` straight through to port 5554, so a client connects at `ws://localhost:5777/notifyWebsocket`. The gateway predicate used to be `/notify/**`, which matched nothing, and two gateway tests now pin the working one.
 
@@ -190,12 +190,12 @@ sequenceDiagram
 
 | Module | Port | Responsibility |
 |---|---|---|
-| [sky-offer](sky-offer/) | 5552 | Offer CRUD: add, edit, delete, search, photo upload to object storage |
-| [sky-message](sky-message/) | 5553 | User-to-user messaging: send, receive, delete |
-| [sky-notify](sky-notify/) | 5554 | Push notifications: consumes Kafka events, pushes over WebSocket |
-| [sky-booking](sky-booking/) | 5555 | Booking lifecycle: create, list, delete bookings against offers |
-| [sky-gateway](sky-gateway/) | 5777 | Local-development edge proxy: path rewriting, Keycloak token relay outside the `local` profile |
-| [sky-common](sky-common/) | none | Shared library: wire types, security and web auto-configurations |
+| [sky-offer](apps/backend/sky-offer/) | 5552 | Offer CRUD: add, edit, delete, search, photo upload to object storage |
+| [sky-message](apps/backend/sky-message/) | 5553 | User-to-user messaging: send, receive, delete |
+| [sky-notify](apps/backend/sky-notify/) | 5554 | Push notifications: consumes Kafka events, pushes over WebSocket |
+| [sky-booking](apps/backend/sky-booking/) | 5555 | Booking lifecycle: create, list, delete bookings against offers |
+| [sky-gateway](apps/backend/sky-gateway/) | 5777 | Local-development edge proxy: path rewriting, Keycloak token relay outside the `local` profile |
+| [sky-common](apps/backend/sky-common/) | none | Shared library: wire types, security and web auto-configurations |
 
 Each module has a README with its endpoints, environment variables, and architecture, and an AGENTS.md with its coding conventions.
 
@@ -213,13 +213,13 @@ Each module has a README with its endpoints, environment variables, and architec
 | Object storage | AWS SDK v2 against any S3 API, floci in the cluster and on a laptop, presigned URLs either way |
 | Auth | Keycloak 26 OIDC, Spring Security OAuth2 resource server |
 | API docs | springdoc-openapi, OpenAPI 3.1, Swagger UI at `/swagger-ui/index.html` |
-| Build | Gradle Kotlin DSL, one composite build, versions in [gradle/libs.versions.toml](gradle/libs.versions.toml) |
+| Build | Gradle Kotlin DSL, one composite build, versions in [gradle/libs.versions.toml](apps/backend/gradle/libs.versions.toml) |
 | Testing | JUnit 5, Testcontainers (PostgreSQL 17 and Kafka), ArchUnit for layering |
 | Resiliency | Resilience4j retry and circuit breaker on the booking-to-offer call. A dependency outage answers 503 with `Retry-After: 10` in both sky-booking and sky-offer, and a dependency that answers unusably is 502 |
 | Packaging | Fat `bootJar` per service, per-module Dockerfile, Helm charts under [config/k8s/helm/](config/k8s/helm/) |
 | CI/CD | GitHub Actions: build and test on every push to an open pull request, manual release gated on that same build before any image is pushed, with the GitHub release and the `:latest` move behind a required reviewer |
 
-Every version is pinned centrally in [gradle/libs.versions.toml](gradle/libs.versions.toml). Bump it there, never per module.
+ Every version is pinned centrally in [gradle/libs.versions.toml](apps/backend/gradle/libs.versions.toml). Bump it there, never per module.
 
 ---
 
@@ -233,7 +233,7 @@ Every version is pinned centrally in [gradle/libs.versions.toml](gradle/libs.ver
 - Hexagonal architecture enforced at build time by ArchUnit, so a layering mistake fails the build rather than a review.
 - Realm as code: one committed Keycloak realm file, imported identically by the local container and the cluster chart.
 - Demo seed data applied by a Flyway repeatable migration on the `local` profile, matching the realm's demo users.
-- One composite Gradle build: a single `./gradlew` command covers every module.
+- One composite Gradle build: a single `./apps/backend/gradlew` command covers every module.
 - Bruno API collection that mints its own token and chains ids, plus OpenAPI 3.1 specs for code generation.
 
 ---
@@ -275,7 +275,7 @@ The three stateful services (`sky-offer`, `sky-booking`, `sky-message`) share th
 | `SHOW_SQL_QUERIES` | `false` | Log Hibernate SQL |
 | `SPRING_DEBUG` | `INFO` | Spring web log level |
 
-`sky-message` uses no Kafka, so it ignores the two Kafka variables. `sky-notify` needs `OAUTH2_ISSUER_URI`, `KAFKA_ADDRESS`, and `KAFKA_PORT`, and has no database variables at all. `sky-offer` adds the S3 settings documented in [sky-offer/README.md](sky-offer/README.md).
+`sky-message` uses no Kafka, so it ignores the two Kafka variables. `sky-notify` needs `OAUTH2_ISSUER_URI`, `KAFKA_ADDRESS`, and `KAFKA_PORT`, and has no database variables at all. `sky-offer` adds the S3 settings documented in [sky-offer/README.md](apps/backend/sky-offer/README.md).
 
 Service ports come from `OFFER_PORT`, `MESSAGE_PORT`, `NOTIFY_PORT`, `BOOKING_PORT`, and `GATEWAY_PORT`, each defaulting to the port in the module table above.
 
@@ -292,7 +292,7 @@ the path the service serves, and the edge only decides which service it belongs 
 This works because the three REST services own disjoint top-level resources. A new one has to stay disjoint and
 has to be added to the gateway route and to the service ingress, or it is unreachable from outside.
 
-The gateway defaults to the OIDC login flow and the token-relay filter, which need `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID`, and `KEYCLOAK_CLIENT_SECRET`. Set `SPRING_PROFILES_ACTIVE=local` to get the permit-all chain instead, which is what Docker Compose does and what a laptop run wants. See [sky-gateway/README.md](sky-gateway/README.md).
+The gateway defaults to the OIDC login flow and the token-relay filter, which need `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID`, and `KEYCLOAK_CLIENT_SECRET`. Set `SPRING_PROFILES_ACTIVE=local` to get the permit-all chain instead, which is what Docker Compose does and what a laptop run wants. See [sky-gateway/README.md](apps/backend/sky-gateway/README.md).
 
 ---
 
@@ -314,25 +314,25 @@ Two things catch people out on a first run:
 Run every test from the repository root. Unix shell:
 
 ```bash
-./gradlew test
+./apps/backend/gradlew test
 ```
 
 PowerShell:
 
 ```powershell
-.\gradlew.bat test
+.\apps/backend\gradlew.bat test
 ```
 
 One module only. Unix shell:
 
 ```bash
-./gradlew :sky-booking:test
+./apps/backend/gradlew :sky-booking:test
 ```
 
 PowerShell:
 
 ```powershell
-.\gradlew.bat :sky-booking:test
+.\apps/backend\gradlew.bat :sky-booking:test
 ```
 
 The test stack per service:
@@ -342,13 +342,13 @@ The test stack per service:
 - Architecture tests on ArchUnit, enforcing the hexagonal layer direction in every module.
 - End-to-end runbooks under [e2e/](e2e/), driven through the Bruno collection in [docs/api/request/](docs/api/request/).
 
-JaCoCo HTML coverage reports land in `build/reports/jacoco/test/html/` per module after each run, and the gate reads the same class set the report does: `jacocoTestCoverageVerification` is wired into `check`, so `./gradlew build` fails when a module drops below 0.90 line or 0.90 branch coverage. Five modules are gated: the four services plus the `sky-common` library, which reaches the same convention plugin through `sky.java-conventions`. `sky-gateway` is the one exemption and it opts itself out in its own `build.gradle.kts` rather than being named in the shared plugin, because the measured set excludes `**/dto/**`, `**/config/**`, the application class and `Constants`, which is that module's whole main source set: a rule over an empty counter passes and reports a green tick for nothing measured. Its two filter chains are covered by their own tests instead.
+JaCoCo HTML coverage reports land in `build/reports/jacoco/test/html/` per module after each run, and the gate reads the same class set the report does: `jacocoTestCoverageVerification` is wired into `check`, so `./apps/backend/gradlew build` fails when a module drops below 0.90 line or 0.90 branch coverage. Five modules are gated: the four services plus the `sky-common` library, which reaches the same convention plugin through `sky.java-conventions`. `sky-gateway` is the one exemption and it opts itself out in its own `build.gradle.kts` rather than being named in the shared plugin, because the measured set excludes `**/dto/**`, `**/config/**`, the application class and `Constants`, which is that module's whole main source set: a rule over an empty counter passes and reports a green tick for nothing measured. Its two filter chains are covered by their own tests instead.
 
 ---
 
 ### Deployment
 
-Each service builds as a fat `bootJar`, gets containerized by its own Dockerfile (for example [sky-offer/docker/Dockerfile](sky-offer/docker/Dockerfile)), and deploys as a Helm chart under [config/k8s/helm/service/](config/k8s/helm/service/). The four deployment templates wrap `deployment.image.repository` and `deployment.image.tag` in Helm's `required`, so an overlay that drops either one fails the render with the value name instead of deploying an image the cluster cannot pull.
+Each service builds as a fat `bootJar`, gets containerized by its own Dockerfile (for example [sky-offer/docker/Dockerfile](apps/backend/sky-offer/docker/Dockerfile)), and deploys as a Helm chart under [config/k8s/helm/service/](config/k8s/helm/service/). The four deployment templates wrap `deployment.image.repository` and `deployment.image.tag` in Helm's `required`, so an overlay that drops either one fails the render with the value name instead of deploying an image the cluster cannot pull.
 
 The scripted path is one command. Unix shell:
 
@@ -391,12 +391,12 @@ Per-module documentation:
 
 | Document | What it covers |
 |---|---|
-| [sky-offer/README.md](sky-offer/README.md) | Offer endpoints, photo storage, environment variables |
-| [sky-booking/README.md](sky-booking/README.md) | Booking endpoints, the outbound call to sky-offer, environment variables |
-| [sky-message/README.md](sky-message/README.md) | Message endpoints and environment variables |
-| [sky-notify/README.md](sky-notify/README.md) | Kafka topics, the WebSocket contract, JWT validation |
-| [sky-gateway/README.md](sky-gateway/README.md) | Gateway route table, the two security profiles, image build |
-| [sky-common/README.md](sky-common/README.md) | What the shared library exports and its dependency rules |
+| [sky-offer/README.md](apps/backend/sky-offer/README.md) | Offer endpoints, photo storage, environment variables |
+| [sky-booking/README.md](apps/backend/sky-booking/README.md) | Booking endpoints, the outbound call to sky-offer, environment variables |
+| [sky-message/README.md](apps/backend/sky-message/README.md) | Message endpoints and environment variables |
+| [sky-notify/README.md](apps/backend/sky-notify/README.md) | Kafka topics, the WebSocket contract, JWT validation |
+| [sky-gateway/README.md](apps/backend/sky-gateway/README.md) | Gateway route table, the two security profiles, image build |
+| [sky-common/README.md](apps/backend/sky-common/README.md) | What the shared library exports and its dependency rules |
 
 Agent and tooling documentation:
 
@@ -413,3 +413,4 @@ Agent and tooling documentation:
 ### License
 
 This project is for personal and educational use. No open-source license is attached.
+

@@ -18,6 +18,7 @@ The repository MUST NOT track files produced by running infrastructure (Kafka br
 The repository MUST gitignore all standard Gradle build outputs so that an accidental `git add .` never stages compiled artifacts.
 
 #### Scenario: Build output never stages
-- **WHEN** `./gradlew build` produces `build/` directories in every module
+- **WHEN** `./apps/backend/gradlew build` produces `build/` directories in every module
 - **THEN** `git status` reports a clean tree (the `build/` pattern in `.gitignore` excludes them)
+
 

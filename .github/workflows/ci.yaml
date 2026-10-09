@@ -108,21 +108,21 @@ jobs:
               # sky-common is a library with no image of its own. It is compiled
               # into all five service jars, so a change here changes all five
               # published artefacts and every one of them needs a new version.
-              sky-common/*)
+              apps/backend/sky-common/*)
                 mark sky-common
                 mark_every_service
                 ;;
-              sky-booking/*) mark sky-booking ;;
-              sky-offer/*) mark sky-offer ;;
-              sky-message/*) mark sky-message ;;
-              sky-notify/*) mark sky-notify ;;
-              sky-gateway/*) mark sky-gateway ;;
+              apps/backend/sky-booking/*) mark sky-booking ;;
+              apps/backend/sky-offer/*) mark sky-offer ;;
+              apps/backend/sky-message/*) mark sky-message ;;
+              apps/backend/sky-notify/*) mark sky-notify ;;
+              apps/backend/sky-gateway/*) mark sky-gateway ;;
               # The convention plugins, the version catalogue, the wrapper and the
               # root build files decide what every module compiles against, so a
               # change to any of them changes every artefact. A dependency bump in
               # gradle/libs.versions.toml is the common case and it is exactly the
               # kind of change that must not ship under an unchanged version.
-              buildSrc/*|gradle/*|build.gradle.kts|settings.gradle.kts|gradlew|gradlew.bat)
+              apps/backend/buildSrc/*|apps/backend/gradle/*|apps/backend/build.gradle.kts|apps/backend/settings.gradle.kts|apps/backend/gradlew|apps/backend/gradlew.bat)
                 mark_every_module
                 ;;
               # Everything else (config/, docs/, e2e/, openspec/, .github/, the
@@ -240,7 +240,7 @@ jobs:
           # request reports every missing bump in one run instead of one per push.
           failed=0
           for module in ${affected}; do
-            check_module "${module}" "${module}/CHANGELOG.md" || failed=1
+            check_module "${module}" "apps/backend/${module}/CHANGELOG.md" || failed=1
           done
 
           if [ "${failed}" -ne 0 ]; then
@@ -285,7 +285,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build and test
-        run: ./gradlew build --console=plain
+        run: ./apps/backend/gradlew build --console=plain
 
   # The Bruno collection in docs/api/request, run against a stack this job builds from nothing.
   # It is a separate job on purpose: a red e2e-collection reads as "the running system is wrong",

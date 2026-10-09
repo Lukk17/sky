@@ -9,7 +9,7 @@ Keeps each service's configuration honest: only the starters actually used on th
 No module may declare a Spring Boot starter it does not use. Three rules make that checkable. `spring-boot-starter-data-rest` MUST NOT be declared anywhere. A module on the servlet stack MUST NOT declare `spring-boot-starter-webflux`, which leaves sky-gateway as the one reactive module, and it is reactive through `spring-cloud-starter-gateway-server-webflux` rather than through the Spring Boot starter, because Spring Cloud Gateway requires Netty and breaks when Tomcat reaches the classpath. Exactly one springdoc-openapi UI starter MUST be on the classpath of a module that serves a REST API and none MUST be on the classpath of a module that does not, which is achieved by declaring it once in the shared web convention plugin rather than per module, so the three REST services get a Swagger UI by applying that plugin and sky-notify and sky-gateway get none by not applying it.
 
 #### Scenario: Auditing dependencies
-- **WHEN** a contributor runs `./gradlew :sky-booking:dependencies`, and the same for the other modules
+- **WHEN** a contributor runs `./apps/backend/gradlew :sky-booking:dependencies`, and the same for the other modules
 - **THEN** `spring-boot-starter-data-rest` appears nowhere, `spring-boot-starter-webflux` appears in no servlet-stack module, and exactly one springdoc starter appears for each of the three REST services and none for the other modules
 
 ### Requirement: No default credentials in committed config outside the local profile
@@ -33,3 +33,4 @@ No cross-origin configuration this repository ships for a service, or for the in
 #### Scenario: Auditing every cross-origin value for a wildcard
 - **WHEN** an operator lists every cross-origin value this repository ships for a service or for an ingress in front of one, covering all four services and the ingress annotations in the Helm values
 - **THEN** none of them is a wildcard or an origin pattern a wildcard would satisfy, and each one names its origins explicitly
+

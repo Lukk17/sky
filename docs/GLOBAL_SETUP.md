@@ -943,7 +943,7 @@ What counts as running a script:
   `cargo build`, `go run .`, `go generate`, `go test`, `dotnet build`, `mvn test`, `gradle build`, `just test`, or
   `rake`. `make --version`, `go version` and `dotnet --info` stay allowed.
 - A program called by a script file name, such as `.\deploy.ps1`, and any program whose path lands inside the
-  project, such as `./gradlew build` or `./bin/tool`.
+  project, such as `./apps/backend/gradlew build` or `./bin/tool`.
 - A native program named by any other path, such as `/usr/local/bin/terraform apply`, unless it is a known read-only
   tool such as `/usr/bin/grep`.
 
@@ -1278,3 +1278,4 @@ OpenCode 1.18.32 and Kilo Code 7.7.9, each in a throwaway home.
 | OpenCode | [config](https://opencode.ai/docs/config/), [skills](https://opencode.ai/docs/skills/), [agents](https://opencode.ai/docs/agents/), [plugins](https://opencode.ai/docs/plugins/), [rules](https://opencode.ai/docs/rules/) |
 | Kilo Code | [skills](https://kilo.ai/docs/customize/skills), [custom subagents](https://kilo.ai/docs/customize/custom-subagents), [plugins](https://kilo.ai/docs/automate/extending/plugins), [CLI](https://kilo.ai/docs/code-with-ai/platforms/cli), [custom rules](https://kilo.ai/docs/customize/custom-rules) |
 | GitHub Copilot | [CLI config dir](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference), [agent skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills), [custom agents](https://docs.github.com/en/copilot/reference/custom-agents-configuration), [hooks](https://docs.github.com/en/copilot/reference/hooks-reference), [CLI custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions), [VS Code hooks](https://code.visualstudio.com/docs/copilot/customization/hooks), [VS Code custom agents](https://code.visualstudio.com/docs/copilot/customization/custom-agents) |
+
