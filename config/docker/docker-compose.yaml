@@ -385,6 +385,9 @@ services:
       - sky-network
     ports:
       - "127.0.0.1:9090:9090"
+    depends_on:
+      keycloak:
+        condition: service_healthy
     volumes:
       - ../observability/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - ../observability/prometheus/alerts:/etc/prometheus/alerts:ro

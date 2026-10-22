@@ -7,15 +7,22 @@ Logs stay plain text in every service; Alloy parses the correlation id.
 
 | Service | URL | Purpose |
 |---|---|---|
-| Prometheus | http://localhost:9090 | scrapes `/actuator/prometheus` on all five JVM services every 15s |
+| Prometheus | http://localhost:9090 | scrapes `/actuator/prometheus` on all five JVM services every 15s with OAuth2 client_credentials |
 | Grafana | http://localhost:3000 (admin/admin) | Sky Overview dashboard, Explore for logs and metrics |
 | Loki | http://localhost:3100 | log store, fed by Alloy only |
 | Alloy | http://localhost:12345 | tails Docker stdout, parses `correlation_id`, pushes to Loki |
 
 Prometheus scrapes via the compose network (`sky-booking:5555`, `sky-offer:5552`,
 `sky-message:5553`, `sky-notify:5554`, `sky-gateway:5777`) on
-`/actuator/prometheus`. The `SkyServiceDown` and `SkyHighErrorRate` alerts are in
-`prometheus/alerts/sky-alerts.yaml`.
+`/actuator/prometheus` with an OAuth2 client_credentials token for the existing
+confidential client `sky-backend` (token URL
+`http://keycloak:8080/auth/realms/sky/protocol/openid-connect/token`, secret is
+the local-dev default `dev-only-change-in-prod`). Anonymous stays closed by
+design: 401 on the four services, 302 to Keycloak login on the gateway, pinned
+by `SkySecurityDefaultsTest`, `SecurityPathsTest`,
+`NotifySecurityIntegrationTest` and `SecurityConfigOidcProfileTest`. No Java
+change, no separate management port, no opened endpoint. The `SkyServiceDown`
+and `SkyHighErrorRate` alerts are in `prometheus/alerts/sky-alerts.yaml`.
 
 ## Run
 
@@ -35,10 +42,23 @@ Prometheus targets UP:
 curl -s http://localhost:9090/api/v1/targets | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['activeTargets'])"
 ```
 
-Actuator endpoints (each answers OpenMetrics text with `jvm_memory_used_bytes`):
+Actuator stays secured on the main port (anonymous fails by design):
 
 ```sh
-for p in 5555 5552 5553 5554 5777; do echo "== $p"; curl -sf http://localhost:$p/actuator/prometheus | grep -m1 jvm_memory_used_bytes; done
+docker exec sky-prometheus wget -S -O- http://sky-booking:5555/actuator/prometheus 2>&1 | head -5
+# HTTP/1.1 401
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5777/actuator/prometheus
+# 302
+```
+
+Authenticated scrape (each answers OpenMetrics text with `jvm_memory_used_bytes`):
+
+```sh
+TOKEN=$(curl -s -X POST http://localhost:5777/auth/realms/sky/protocol/openid-connect/token \
+  -d grant_type=client_credentials -d client_id=sky-backend \
+  -d client_secret=dev-only-change-in-prod | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+docker exec -e TOKEN=$TOKEN sky-prometheus sh -c 'wget -qO- --header="Authorization: Bearer $TOKEN" http://sky-booking:5555/actuator/prometheus' | grep -m1 jvm_memory_used_bytes
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:5777/actuator/prometheus | grep -m1 jvm_memory_used_bytes
 ```
 
 Grafana Explore log query (Loki):
