@@ -1,0 +1,106 @@
+{
+  "title": "Sky Overview",
+  "uid": "sky-overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["sky", "local"],
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "definition": "label_values(http_server_requests_seconds_count, application)",
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "selected": true,
+          "text": ["All"],
+          "value": ["$__all"]
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Error rate (5xx / total)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (application) (rate(http_server_requests_seconds_count{application=~\"$application\",status=~\"5..\"}[5m])) / sum by (application) (rate(http_server_requests_seconds_count{application=~\"$application\"}[5m]))",
+          "legendFormat": "{{application}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "title": "Request rate",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (application) (rate(http_server_requests_seconds_count{application=~\"$application\"}[5m]))",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "JVM memory used",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (application) (jvm_memory_used_bytes{application=~\"$application\"})",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Service logs",
+      "type": "logs",
+      "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F694"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=~\"sky-.*\"} |~ \"$application\"",
+          "queryType": "range"
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,8 @@
+## [2.1.5] - 2026-10-22
+
+### Fixed
+- Phase 5 local observability: re-add Prometheus to local actuator exposure so the compose Prometheus can scrape this service.
+
 ## [2.1.4] - 2026-10-19
 
 ### Added

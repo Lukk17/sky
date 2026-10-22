@@ -36,12 +36,12 @@ spring:
     admin:
       auto-create: true
 
-# expose actuator endpoints (* for all)
+# expose actuator endpoints (health, info, Prometheus only)
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: "health,info,prometheus"
 
 logging:
   level:

@@ -1,3 +1,8 @@
+## [2.1.6] - 2026-10-22
+
+### Changed
+- Phase 5 local observability: tighten local actuator exposure from star to health plus info plus Prometheus.
+
 ## [2.1.5] - 2026-10-20
 
 ### Fixed

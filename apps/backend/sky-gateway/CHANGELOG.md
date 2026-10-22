@@ -1,3 +1,8 @@
+## [2.1.4] - 2026-10-22
+
+### Added
+- Phase 5 local observability: add reactive CorrelationIdWebFilter so gateway logs join on the same X-Correlation-Id header as downstream services.
+
 ## [2.1.3] - 2026-10-09
 
 ### Added

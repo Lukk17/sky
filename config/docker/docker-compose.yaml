@@ -378,10 +378,107 @@ services:
       TLS_INSECURE: "0"
     command: ["sh", "-c", "node seed.mjs || true"]
 
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: sky-prometheus
+    networks:
+      - sky-network
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ../observability/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ../observability/prometheus/alerts:/etc/prometheus/alerts:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: sky-loki
+    networks:
+      - sky-network
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ../observability/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3100/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  alloy:
+    image: grafana/alloy:v1.7.3
+    container_name: sky-alloy
+    networks:
+      - sky-network
+    ports:
+      - "127.0.0.1:12345:12345"
+    volumes:
+      - ../observability/alloy/alloy-config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+    depends_on:
+      loki:
+        condition: service_healthy
+    # No healthcheck: the alloy image ships neither wget nor curl nor bash
+    # /dev/tcp, so no in-container HTTP probe is possible. Liveness is
+    # observable from the host on http://localhost:12345/-/healthy and
+    # nothing depends on this service reaching healthy.
+    healthcheck:
+      disable: true
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    container_name: sky-grafana
+    networks:
+      - sky-network
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+
 volumes:
   kafka_data:
   postgres_data:
   floci_data:
+  prometheus_data:
+  loki_data:
+  alloy_data:
+  grafana_data:
 
 networks:
   sky-network:
