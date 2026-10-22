@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # Single shared pin: override with --build-arg RUNTIME_IMAGE=<image> to move all services at once.
 ARG RUNTIME_IMAGE=eclipse-temurin:25-jre-alpine
 # ===============> BUILD STAGE <===============

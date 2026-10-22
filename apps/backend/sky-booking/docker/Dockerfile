@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # Build from the backend root (apps/backend):
 #   docker build -f sky-booking/docker/Dockerfile -t sky-booking:latest .
 

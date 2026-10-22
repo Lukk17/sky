@@ -12,7 +12,7 @@ deployment:
   image:
     repository: lukk17/sky-notify
     pullPolicy: IfNotPresent
-    tag: "v2.0.0"
+    tag: "v2.1.3"
   container:
     name: sky-notify-container
   env:

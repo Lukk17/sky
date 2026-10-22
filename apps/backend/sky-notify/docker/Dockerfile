@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # Build from the backend root (apps/backend):
 #   docker build -f sky-notify/docker/Dockerfile -t sky-notify:latest .
 

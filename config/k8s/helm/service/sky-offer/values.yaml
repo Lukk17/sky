@@ -12,7 +12,7 @@ deployment:
   image:
     repository: "lukk17/sky-offer"
     pullPolicy: "IfNotPresent"
-    tag: "v2.0.0"
+    tag: "v2.1.7"
   container:
     name: "sky-offer-container"
   env:
