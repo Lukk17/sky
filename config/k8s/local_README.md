@@ -65,6 +65,22 @@ Building by hand works too and is documented in [config/local-dev/local_README.m
 
 ---
 
+### 0. Verify host DNS
+
+Run first, before creating anything. It checks `localhost`, wildcard `*.localhost` subdomains and `keycloak.test` resolve to loopback, and reports whether the gateway edge answers:
+
+```bash
+bash scripts/verify-host-dns.sh
+```
+
+A DNS failure exits 1 and names the fix, usually a hosts-file entry. Gateway ports are reported without failing in this mode. After the stack is up, rerun with the strict flag before the Bruno gate:
+
+```bash
+bash scripts/verify-host-dns.sh --require-gateway
+```
+
+---
+
 ### 1. Create the k3d cluster
 
 Run once. Skip if the cluster already exists. Traefik is disabled because the stack uses nginx-ingress.

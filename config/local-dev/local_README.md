@@ -33,6 +33,22 @@ HINT: MINIO_ROOT_USER length should be at least 3, and MINIO_ROOT_PASSWORD lengt
 
 ---
 
+### 0. Verify host DNS
+
+Run first, before starting anything. It checks `localhost`, wildcard `*.localhost` subdomains and `keycloak.test` resolve to loopback, and reports whether the gateway edge answers:
+
+```bash
+bash scripts/verify-host-dns.sh
+```
+
+A DNS failure exits 1 and names the fix, usually a hosts-file entry. Host-run services need `keycloak.test` for the default issuer `https://keycloak.test:9443/realms/sky`, while the Compose gateway stack itself needs no hosts entry. Gateway ports are reported without failing in this mode. After the stack is up, rerun with the strict flag:
+
+```bash
+bash scripts/verify-host-dns.sh --require-gateway
+```
+
+---
+
 ### 1. Start Keycloak
 
 Keycloak serves HTTPS on host port 9443 using the development keypair the `local-dev` stack generates at `local-dev/auth/certificates/localhost/`, and imports the `sky` realm from the chart's realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](../k8s/helm/infra/keycloak/files/sky-realm.json). That file is the only copy of the realm in the repository.
