@@ -1,3 +1,8 @@
+## [2.1.7] - 2026-10-22
+
+### Fixed
+- Remove unused OpenAPI server-stub generation whose inputSpec pointed outside the Docker build context. The generator produced interfaces nothing implements, while breaking docker build. sky-offer now matches sky-booking and sky-message: no client generation, docs come from code via sky.openapi-conventions. Drop jackson-databind-nullable, keep swagger-annotations for hand-written controllers.
+
 ## [2.1.6] - 2026-10-22
 
 ### Changed
