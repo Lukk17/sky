@@ -305,6 +305,22 @@ That last selector is the odd one out because the Kafka chart labels its pod `ap
 
 ### 8. Deploy the service charts
 
+The `sky-offer`, `sky-booking` and `sky-message` charts declare the local `sky-common` library chart as a dependency, and Helm needs that dependency built into each chart's `charts/` directory before the install. `sky-notify` declares no dependency. Build all three first:
+
+```bash
+helm dependency build config/k8s/helm/service/sky-offer
+```
+
+```bash
+helm dependency build config/k8s/helm/service/sky-booking
+```
+
+```bash
+helm dependency build config/k8s/helm/service/sky-message
+```
+
+Then install the four charts:
+
 ```bash
 helm upgrade --install sky-offer config/k8s/helm/service/sky-offer -f config/k8s/helm/service/sky-offer/values-local.yaml -n default
 ```
