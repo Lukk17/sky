@@ -29,8 +29,6 @@ dependencies {
 
     implementation(libs.bundles.jaxb)
 
-    implementation(libs.swagger.annotations)
-
     testImplementation(libs.spring.boot.webmvc.test)
     testImplementation(libs.spring.boot.resttestclient)
     testImplementation(libs.spring.boot.restclient)

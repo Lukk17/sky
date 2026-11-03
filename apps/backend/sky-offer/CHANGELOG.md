@@ -1,3 +1,8 @@
+## [2.1.8] - 2026-11-03
+
+### Fixed
+- Remove the stale direct swagger-annotations 2.2.30 dependency. Its non-Jakarta jar shadowed springdoc's swagger-annotations-jakarta 2.2.47 on the runtime classpath, so `/v3/api-docs` failed with `NoSuchMethodError` on `Schema.$dynamicRef()` and `OfferApiDocumentTest` could not read the document. The generated document is unchanged.
+
 ## [2.1.7] - 2026-10-22
 
 ### Fixed
