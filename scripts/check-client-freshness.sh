@@ -9,7 +9,7 @@ npx --yes @openapitools/openapi-generator-cli@latest generate \
   -g typescript-angular \
   -o "$TMP_DIR/api-generated" \
   --skip-validate-spec \
-  --additional-properties=ngVersion=22.1.0,useCustomConfigurationClass=true,configurationClass=SkyApiConfiguration,providedInRoot=false
+  --additional-properties=ngVersion=22.1.0,configurationPrefix=SkyApi,providedInRoot=false
 
-diff -r /home/lukk/Projects/sky/apps/frontend/sky-view/src/app/api-generated/api "$TMP_DIR/api-generated/api" >/dev/null
-diff -r /home/lukk/Projects/sky/apps/frontend/sky-view/src/app/api-generated/model "$TMP_DIR/api-generated/model" >/dev/null
+diff -r /home/lukk/Projects/sky/apps/frontend/sky-view/src/app/api-generated/api "$TMP_DIR/api-generated/api"
+diff -r /home/lukk/Projects/sky/apps/frontend/sky-view/src/app/api-generated/model "$TMP_DIR/api-generated/model"
