@@ -1,3 +1,8 @@
+## [2.1.5] - 2026-11-03
+
+### Fixed
+- Pin `sky-gateway.s3-uri` to a dead port in the test profile, so the routing-table test no longer depends on a live object store on `localhost:4566`. A legitimate 404 for a missing object no longer fails the 5xx route assertion.
+
 ## [2.1.4] - 2026-10-22
 
 ### Added

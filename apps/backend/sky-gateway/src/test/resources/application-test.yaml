@@ -3,3 +3,4 @@ sky-gateway:
   offer-uri: http://localhost:15552
   message-uri: http://localhost:15553
   notify-uri: http://localhost:15554
+  s3-uri: http://localhost:15556

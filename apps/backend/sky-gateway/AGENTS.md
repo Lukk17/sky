@@ -185,7 +185,7 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
 ## Testing
 
 Seven test classes, run from the repo root with `./apps/backend/gradlew :sky-gateway:test`. No Testcontainers and no database here.
-`src/test/resources/application-test.yaml` points the four upstreams at ports nothing listens on (15552 to 15555), so
+`src/test/resources/application-test.yaml` points the five upstreams at ports nothing listens on (15552 to 15556), so
 a proxied request fails at the connection rather than being rejected by security, which is what the routing assertions
 rely on. A 5xx therefore means the path matched a route and the security chain let it through, and a 404 means no
 predicate claimed it, which is what lets one assertion carry both halves.
