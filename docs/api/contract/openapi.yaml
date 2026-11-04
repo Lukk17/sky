@@ -2,13 +2,14 @@ openapi: 3.1.0
 info:
   title: sky-api
   version: v1
-  description: |
-    Contract for the sky API. This file is the source of truth for the bundle committed at contracts/sky-api/openapi.yaml. The CI re-bundles from this file and diffs against the committed bundle.
+  description: >
+    Contract for the sky API. This file is the single source of truth for the
+    API surface and is linted with the redocly configuration beside it. The
+    per-service documents under docs/api/openapi are generated from service
+    annotations and are a different artefact.
 servers:
-  - description: Local, through the gateway, one origin for the whole stack
+  - description: "Local, through the gateway, one origin for the whole stack"
     url: http://localhost:5777
-security:
-  - bearerAuth: []
 tags:
   - name: Offers
     description: Public browsing and search over the offer inventory.
@@ -18,13 +19,14 @@ tags:
     description: Booking lifecycle operations.
   - name: Messages
     description: Messaging operations.
+security:
+  - bearerAuth: []
 paths:
   /api/v1/offers:
     get:
       operationId: getAllOffers
       summary: Get all offers (paginated)
-      tags:
-        - Offers
+      tags: [Offers]
       security: []
       parameters:
         - $ref: '#/components/parameters/Pageable'
@@ -47,8 +49,7 @@ paths:
     get:
       operationId: getOfferById
       summary: Get one offer by id
-      tags:
-        - Offers
+      tags: [Offers]
       security: []
       parameters:
         - $ref: '#/components/parameters/OfferId'
@@ -73,8 +74,7 @@ paths:
     get:
       operationId: getOfferOwner
       summary: Get the owner email for an offer
-      tags:
-        - Offers
+      tags: [Offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
       responses:
@@ -96,8 +96,7 @@ paths:
     get:
       operationId: getOwnedOffers
       summary: Get owned offers (paginated)
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/Pageable'
       responses:
@@ -120,8 +119,7 @@ paths:
     post:
       operationId: addOffer
       summary: Create new offer
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       requestBody:
         required: true
         content:
@@ -151,8 +149,7 @@ paths:
     delete:
       operationId: deleteOffer
       summary: Delete offer
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
       responses:
@@ -174,8 +171,7 @@ paths:
     delete:
       operationId: deletePhoto
       summary: Delete the stored photo of an offer
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
       responses:
@@ -194,8 +190,7 @@ paths:
     post:
       operationId: uploadPhoto
       summary: Upload photo
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
       requestBody:
@@ -229,8 +224,7 @@ paths:
     get:
       operationId: getAllPhotos
       summary: Get all photos for an offer
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
       responses:
@@ -255,8 +249,7 @@ paths:
     post:
       operationId: addPhoto
       summary: Add photo to offer
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
       requestBody:
@@ -294,8 +287,7 @@ paths:
     delete:
       operationId: deletePhotoById
       summary: Delete photo by id
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
         - $ref: '#/components/parameters/PhotoId'
@@ -316,8 +308,7 @@ paths:
     patch:
       operationId: setPhotoAsCover
       summary: Set photo as cover
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
         - $ref: '#/components/parameters/PhotoId'
@@ -338,8 +329,7 @@ paths:
     put:
       operationId: updatePhotoPosition
       summary: Update photo position
-      tags:
-        - Owner offers
+      tags: [Owner offers]
       parameters:
         - $ref: '#/components/parameters/OfferId'
         - $ref: '#/components/parameters/PhotoId'
@@ -368,8 +358,7 @@ paths:
     get:
       operationId: searchOffers
       summary: Search offers
-      tags:
-        - Offers
+      tags: [Offers]
       security: []
       parameters:
         - $ref: '#/components/parameters/Pageable'
@@ -395,8 +384,7 @@ paths:
     post:
       operationId: bookOffer
       summary: Create new booking
-      tags:
-        - Bookings
+      tags: [Bookings]
       requestBody:
         required: true
         content:
@@ -432,8 +420,7 @@ paths:
     delete:
       operationId: removeBooking
       summary: Delete booking
-      tags:
-        - Bookings
+      tags: [Bookings]
       parameters:
         - $ref: '#/components/parameters/BookingId'
       responses:
@@ -453,8 +440,7 @@ paths:
     get:
       operationId: getBookedOffers
       summary: Get all user's bookings (paginated)
-      tags:
-        - Bookings
+      tags: [Bookings]
       parameters:
         - $ref: '#/components/parameters/Pageable'
       responses:
@@ -476,8 +462,7 @@ paths:
     post:
       operationId: sendMessage
       summary: Send message
-      tags:
-        - Messages
+      tags: [Messages]
       requestBody:
         required: true
         content:
@@ -505,8 +490,7 @@ paths:
     get:
       operationId: getReceivedMessages
       summary: Get received messages (paginated)
-      tags:
-        - Messages
+      tags: [Messages]
       parameters:
         - $ref: '#/components/parameters/Pageable'
       responses:
@@ -528,8 +512,7 @@ paths:
     get:
       operationId: getSentMessages
       summary: Get sent messages (paginated)
-      tags:
-        - Messages
+      tags: [Messages]
       parameters:
         - $ref: '#/components/parameters/Pageable'
       responses:
@@ -551,8 +534,7 @@ paths:
     delete:
       operationId: deleteMessage
       summary: Delete message
-      tags:
-        - Messages
+      tags: [Messages]
       parameters:
         - $ref: '#/components/parameters/MessageId'
       responses:
@@ -644,13 +626,13 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     UnsupportedMediaType:
-      description: Unsupported Media Type
+      description: 'Unsupported Media Type'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     InternalServerError:
-      description: Internal Server Error
+      description: 'Internal Server Error'
       content:
         application/problem+json:
           schema:

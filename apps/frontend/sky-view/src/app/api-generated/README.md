@@ -1,6 +1,6 @@
 # @
 
-Contract for the sky API. This file is the source of truth for the bundle committed at contracts/sky-api/openapi.yaml. The CI re-bundles from this file and diffs against the committed bundle. 
+Contract for the sky API. This file is the single source of truth for the API surface and is linted with the redocly configuration beside it. The per-service documents under docs/api/openapi are generated from service annotations and are a different artefact.
 
 The version of the OpenAPI document: v1
 

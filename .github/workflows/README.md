@@ -25,7 +25,7 @@ Concurrency is one in-flight run per pull request. A new push cancels the supers
 | `build-and-test` | `backend == true` | Builds and tests only the affected modules (`:<service>:build`). A `sky-common`, `buildSrc`, catalogue, or wrapper change builds everything. Skipped entirely on a docs-only pull request. |
 | `e2e-collection` | After `build-and-test` | Builds the five service images from their Dockerfiles, starts the compose stack, runs the Bruno collection. Skipped when `build-and-test` is skipped. |
 | `owasp-dependency-check` | `pull_request` and `backend == true` | Runs `dependencyCheckAggregate`. Skipped on docs-only. |
-| `bundle-contract` | Non-PR, or `contracts == true` | Re-bundles `contracts/sky-api/src/openapi.yaml` and diffs against the committed bundle. Skipped on docs-only. |
+| `validate-contract` | Non-PR, or `contracts == true` | Lints `docs/api/contract/openapi.yaml` with redocly. Skipped on docs-only. |
 | `client-freshness` | Non-PR, or `contracts`/`frontend` changed | Regenerates the Angular client and diffs against the committed one. Skipped on docs-only. |
 
 ## Docs-only fast path
