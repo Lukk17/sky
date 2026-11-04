@@ -223,8 +223,11 @@ predicate claimed it, which is what lets one assertion carry both halves.
 - `SecurityConfigOidcProfileTest`, `test` only so the `!local` chain applies: unauthenticated `/actuator/prometheus`
   and the six documentation paths still redirect to `/oauth2/authorization/keycloak`, while health, liveness,
   readiness and info stay open, and unauthenticated `/api/**` calls answer 401 with an empty body instead. Anonymous
-  `GET /api/v1/offers` passes security to routing, and anonymous `POST /api/v1/search` without a token is rejected
-  with 403, which pins CSRF ahead of routing. That case cannot fail on a missing route, because the chain redirects every unauthenticated exchange whether
+  `GET /api/v1/offers` passes security to routing, and `POST /api/v1/search` is exempt from the CSRF gate because it
+  is a safe, idempotent public read: a caller that carries a `SESSION` cookie but no `X-XSRF-TOKEN` reaches routing
+  (the test upstreams are dead, so 5xx) instead of 403, which is the browser path the e2e exercises. The exemption
+  names the method and the exact path, so `POST /api/v1/offers` with the same cookie and no token still answers 403.
+  That case cannot fail on a missing route, because the chain redirects every unauthenticated exchange whether
   a predicate claimed it or not, so the class also asserts the six documentation route ids are present in the
   `RouteLocator` under this profile. That is what stops the second YAML document drifting from the first, which is a
   gap the four API routes carried unguarded until now.

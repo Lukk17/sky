@@ -132,6 +132,10 @@ public class SecurityConfig {
                             if (path.startsWith("/auth/") || path.startsWith("/s3/")) {
                                 return ServerWebExchangeMatcher.MatchResult.notMatch();
                             }
+                            if (HttpMethod.POST.equals(exchange.getRequest().getMethod())
+                                    && "/api/v1/search".equals(path)) {
+                                return ServerWebExchangeMatcher.MatchResult.notMatch();
+                            }
                             // /logout is a full-browser form POST and must always carry
                             // the session CSRF token, even with an Authorization header.
                             if (exchange.getRequest().getPath().value().equals("/logout")) {

@@ -1,3 +1,11 @@
+## [2.1.7] - 2026-11-04
+
+### Fixed
+- `POST /api/v1/search` is exempt from the session CSRF gate. Search is a public, read-only request, so a browser
+  that carries the `SESSION` cookie but sends no `X-XSRF-TOKEN` (the e2e path, and any real browser calling public
+  search) now reaches sky-offer instead of answering 403. The exemption matches only `POST` on that exact path, so
+  every other mutating `/api/v1` call still requires the session token.
+
 ## [2.1.6] - 2026-11-04
 
 ### Fixed

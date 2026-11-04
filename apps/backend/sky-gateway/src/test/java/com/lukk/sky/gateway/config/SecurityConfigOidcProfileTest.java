@@ -15,6 +15,8 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -171,6 +173,54 @@ class SecurityConfigOidcProfileTest {
         client.post().uri("/api/v1/search")
                 .exchange()
                 .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @DisplayName("publicSearch_whenSessionCookieWithoutCsrfToken_thenNotRejectedByCsrfGate")
+    void publicSearch_whenSessionCookieWithoutCsrfToken_thenNotRejectedByCsrfGate() {
+        // given: a browser holds a session cookie obtained from the session endpoint
+        ResponseCookie sessionCookie = sessionCookie();
+
+        // when: a public, read-only search carries the cookie and no CSRF header
+        var result = client.post().uri("/api/v1/search")
+                .contentType(MediaType.TEXT_PLAIN)
+                .bodyValue("Paris")
+                .cookie("SESSION", sessionCookie.getValue())
+                .exchange()
+                .returnResult(String.class);
+
+        // then: the CSRF gate must not stop it. The test upstream is a dead port, so
+        // reaching the route answers 5xx; 403 would be the CSRF gate and 401 would
+        // mean the public path lost its anonymous access.
+        assertThat(result.getStatus().value()).isIn(404, 500, 502, 503);
+    }
+
+    @Test
+    @DisplayName("protectedMutation_whenSessionCookieWithoutCsrfToken_thenStillRejectedWithForbidden")
+    void protectedMutation_whenSessionCookieWithoutCsrfToken_thenStillRejectedWithForbidden() {
+        // given: the same browser session cookie, with no CSRF header
+        ResponseCookie sessionCookie = sessionCookie();
+
+        // when / then: the search exemption is narrow, so every other mutating API
+        // path still requires the session CSRF token.
+        client.post().uri("/api/v1/offers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{}")
+                .cookie("SESSION", sessionCookie.getValue())
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    private ResponseCookie sessionCookie() {
+        var result = client.get().uri("/api/session")
+                .headers(headers -> headers.setBearerAuth("bearer-token"))
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult(Void.class);
+        ResponseCookie sessionCookie = result.getResponseCookies().getFirst("SESSION");
+        assertThat(sessionCookie).isNotNull();
+        assertThat(sessionCookie.getValue()).isNotBlank();
+        return sessionCookie;
     }
 
     @Test
