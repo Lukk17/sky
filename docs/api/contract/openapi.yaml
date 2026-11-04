@@ -16,7 +16,7 @@ tags:
   - name: Owner offers
     description: Create, edit, delete, and photograph the offers the caller owns.
   - name: Bookings
-    description: Booking lifecycle operations.
+    description: "Booking lifecycle: create, list, and cancel bookings placed against offers."
   - name: Messages
     description: Messaging operations.
 security:
