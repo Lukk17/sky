@@ -1,3 +1,17 @@
+## [2.2.0] - 2026-11-04
+
+### Changed
+- Generate the offer REST interfaces from `docs/api/contract/openapi.yaml` and implement `OffersApi` and
+  `OwnerOffersApi` in `OfferApiController`. The generated interfaces now supply the paths, status codes,
+  summaries and operation descriptions, while the controller keeps the security and shared error annotations
+  on top of them. Spring Data pages are mapped to the generated `Page` by `OfferPageMapper`. The `/api/v1`
+  paths and response shapes are unchanged.
+
+### Removed
+- Delete `OfferGalleryApiController` and merge its four gallery operations into `OfferApiController`, which
+  is the single bean that implements both generated interfaces. The gallery endpoints and their tests are
+  unchanged.
+
 ## [2.1.8] - 2026-11-03
 
 ### Fixed

@@ -108,9 +108,11 @@ import {{javaxPackage}}.annotation.Generated;
 @RestController
 {{/useResponseEntity}}
 {{/useSpringController}}
+{{^omitTypeLevelTags}}
 {{#swagger2AnnotationLibrary}}
 @Tag(name = "{{{tagName}}}", description = {{#tagDescription}}"{{{.}}}"{{/tagDescription}}{{^tagDescription}}"the {{{tagName}}} API"{{/tagDescription}})
 {{/swagger2AnnotationLibrary}}
+{{/omitTypeLevelTags}}
 {{#swagger1AnnotationLibrary}}
 @Api(value = "{{{tagName}}}", description = {{#tagDescription}}"{{{.}}}"{{/tagDescription}}{{^tagDescription}}"the {{{tagName}}} API"{{/tagDescription}})
 {{/swagger1AnnotationLibrary}}
@@ -168,6 +170,9 @@ public interface {{classname}} {
     {{#virtualService}}
     @ApiVirtual
     {{/virtualService}}
+    {{#omitTypeLevelTags}}
+    @Tag(name = "{{{tagName}}}", description = {{#tagDescription}}"{{{.}}}"{{/tagDescription}}{{^tagDescription}}"the {{{tagName}}} API"{{/tagDescription}})
+    {{/omitTypeLevelTags}}
     {{#swagger2AnnotationLibrary}}
     @Operation(
         operationId = "{{{operationId}}}",

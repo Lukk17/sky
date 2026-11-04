@@ -154,7 +154,9 @@ paths:
       responses:
         "200":
           content:
-            application/json: {}
+            application/json:
+              schema:
+                type: string
           description: Owner email returned
         "400":
           content:
@@ -203,6 +205,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Get the owner email for an offer
       tags:
       - Offers
@@ -279,6 +283,8 @@ paths:
             \ so retry it unchanged after the number of seconds in the Retry-After\
             \ header, which is always 10. The detail is one of a fixed set of sentences\
             \ and carries nothing from the dependency's own answer."
+      security:
+      - bearerAuth: []
       summary: Get owned offers (paginated)
       tags:
       - Owner offers
@@ -360,6 +366,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Create new offer
       tags:
       - Owner offers
@@ -455,6 +463,8 @@ paths:
             \ so retry it unchanged after the number of seconds in the Retry-After\
             \ header, which is always 10. The detail is one of a fixed set of sentences\
             \ and carries nothing from the dependency's own answer."
+      security:
+      - bearerAuth: []
       summary: Edit offer
       tags:
       - Owner offers
@@ -529,6 +539,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Delete offer
       tags:
       - Owner offers
@@ -592,7 +604,9 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
-      summary: Delete the stored photo of an offer (owner only)
+      security:
+      - bearerAuth: []
+      summary: Delete the stored photo of an offer
       tags:
       - Owner offers
     post:
@@ -664,8 +678,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-          description: "Content Too Large: the file is over 5 MB, or the whole multipart\
-            \ request is over 6 MB."
+          description: "Content Too Large: the upload exceeds the file or gallery\
+            \ limit"
         "415":
           content:
             application/problem+json:
@@ -704,7 +718,9 @@ paths:
             \ so retry it unchanged after the number of seconds in the Retry-After\
             \ header, which is always 10. The detail is one of a fixed set of sentences\
             \ and carries nothing from the dependency's own answer."
-      summary: Upload a photo for an offer (owner only)
+      security:
+      - bearerAuth: []
+      summary: Upload photo
       tags:
       - Owner offers
   /api/v1/owner/offers/{offerId}/photos:
@@ -790,7 +806,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-          description: "Content Too Large: gallery holds at most 10 photos."
+          description: "Content Too Large: the upload exceeds the file or gallery\
+            \ limit"
         "415":
           content:
             application/problem+json:
@@ -829,6 +846,8 @@ paths:
             \ so retry it unchanged after the number of seconds in the Retry-After\
             \ header, which is always 10. The detail is one of a fixed set of sentences\
             \ and carries nothing from the dependency's own answer."
+      security:
+      - bearerAuth: []
       summary: Upload a photo to the offer gallery (owner only)
       tags:
       - Owner offers
@@ -902,6 +921,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Delete a gallery photo (owner only)
       tags:
       - Owner offers
@@ -975,6 +996,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Set a gallery photo as cover (owner only)
       tags:
       - Owner offers
@@ -1054,6 +1077,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Reorder a gallery photo (owner only)
       tags:
       - Owner offers

@@ -269,7 +269,7 @@ paths:
     post:
       operationId: uploadGalleryPhoto
       summary: Upload a photo to the offer gallery (owner only)
-      description: >
+      description: >-
         Appends a photo at the end of the gallery, which holds at most 10
         photos. A concurrent cover change is answered with 409.
       tags: [Owner offers]
@@ -399,7 +399,7 @@ paths:
     post:
       operationId: search
       summary: Search for offers (paginated)
-      description: >
+      description: >-
         Searches the offer inventory for the term sent as the request body. The
         term must not be blank, and it must not be longer than 100 characters. A
         term that breaks either rule is answered with 400.

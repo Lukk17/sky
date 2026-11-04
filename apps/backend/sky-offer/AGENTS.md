@@ -21,9 +21,14 @@ independently-deployable services. The module version is not restated here: the 
     `EventSourceRepository`, `OfferNotificationService`, `PhotoStorage`).
   - `domain/service`: domain service implementations (`OfferServicePrimary`, `EventSourceService`,
     `EventSourceServicePrimary`).
-  - `adapters/inbound/api`: REST controllers; `adapters/dto`: wire DTOs and the `@NullOrNotBlank` and
-    `@ExternalPhotoUrl` constraints; `adapters/outbound/notification`: outbound notification;
-    `adapters/outbound/storage`: the S3 photo storage adapter.
+  - `adapters/inbound/api`: the REST controller; `OfferApiController` implements the generated `OffersApi`
+    and `OwnerOffersApi` in `adapters/inbound/api/contract` and declares no method-level mappings, and
+    `OfferPageMapper` converts a Spring Data `Page` to the generated page model. The OpenAPI Generator plugin
+    reads `docs/api/contract/openapi.yaml` into `build/generated/contract` on the main source set, so
+    `compileJava` depends on `openApiGenerate`. `adapters/dto`: wire DTOs and the `@NullOrNotBlank` and
+    `@ExternalPhotoUrl` constraints; `adapters/dto/contract`: generated page models;
+    `adapters/outbound/notification`: outbound notification; `adapters/outbound/storage`: the S3 photo storage
+    adapter.
   - `config`, `config/kafka`, `config/propertyBind`: Spring wiring and bound properties.
 - MVC stack: plain Spring Web (`spring-boot-starter-web`), no WebFlux. `sky-booking` finished its WebFlux
   removal too, so `sky-gateway` is now the only module on the reactive stack.
@@ -199,6 +204,11 @@ independently-deployable services. The module version is not restated here: the 
   `SemanticApiVersionParser.parseVersion` calls `skipNonDigits` before it matches, so `"v1"` and `"1"` parse
   to the same version and the `addSupportedVersions("1")` and `setDefaultVersion("1")` calls in sky-common
   keep matching. Do not change it back.
+  `OffersApi` supplies the public browse and search operations, `OwnerOffersApi` the owner operations, and
+  `OfferApiController` implements both because the generated `OwnerOffersApi` cannot be split across two
+  beans. The gallery operations live in that same controller; there is no second gallery controller. The
+  paths, success statuses, summaries and the generated operation descriptions therefore come from the
+  contract, while the controller keeps the security and shared error annotations on top of them.
   The error contract is the annotations and nothing else. The 409 on create, edit and delete, the 415 on
   every operation that takes a body, and the 503 on every operation that presigns a stored photo come from
   `@ApiConflictResponse`, `@ApiUnsupportedMediaTypeResponse` and `@ApiDependencyUnavailableResponse` in
@@ -210,7 +220,7 @@ independently-deployable services. The module version is not restated here: the 
   publish a 401, from the class-level `@ApiCommonErrorResponses`, because the resource-server filter chain
   rejects an unverifiable bearer token before either handler runs, and they publish no 403, because neither
   one checks a realm role. An anonymous endpoint here is one that needs no token, not one that ignores a bad
-  token. All nine operations publish that one shared 401 description, and no method here declares a 401 of its
+  token. All 14 operations publish that one shared 401 description, and no method here declares a 401 of its
   own: springdoc applies the class-level `@ApiResponses` over a method-level one for the same status, so an
   inline entry for a status a class-level annotation already declares contributes nothing. `getOfferOwner`
   carried one until it was removed, and removing it left the generated document byte identical. `POST /search`
@@ -218,9 +228,13 @@ independently-deployable services. The module version is not restated here: the 
   and no caller ever read them: the shared 400 won and published only its generic sentence. Those rules now
   live in the operation `description`, built from `SEARCH_TERM_MAX_LENGTH` so the published text and the
   runtime message move together. A per-endpoint refinement of a shared status belongs there, because a
-  response entry for that status cannot win. `OfferApiDocumentTest` pins both halves. The two tags
-  are declared per method rather than on the class, because springdoc unions the class tag with the method
-  tag, so a class-level `@Tag` would put every owner operation under `Offers` as well.
+  response entry for that status cannot win. `OfferApiDocumentTest` pins both halves. Tags are declared per
+  method rather than on the controller, because springdoc unions the class tag with the method tag and a
+  class-level `@Tag` would put every operation under both `Offers` and `Owner offers`. The generated
+  interfaces carry a type-level `@Tag` each, and because one controller implements both, springdoc would find
+  both tags on every handler. `sky-offer` therefore sets the template option `omitTypeLevelTags` in
+  `build.gradle.kts`; `api.mustache` then emits the tag on each generated operation instead, which keeps the
+  per-operation tag and the top-level tag descriptions from the contract without the union.
 
 ## Testing
 

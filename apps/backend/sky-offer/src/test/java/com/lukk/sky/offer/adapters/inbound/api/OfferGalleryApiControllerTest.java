@@ -58,7 +58,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("OfferGalleryApiController: MockMvc tests for the gallery endpoints")
+@DisplayName("Gallery endpoints: MockMvc tests for the offer gallery operations")
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
