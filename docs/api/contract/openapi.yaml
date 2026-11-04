@@ -36,7 +36,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/OfferPage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -107,7 +107,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/OfferPage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -396,33 +396,33 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/search:
-    post:
+    get:
       operationId: search
       summary: Search for offers (paginated)
       description: >-
-        Searches the offer inventory for the term sent as the request body. The
-        term must not be blank, and it must not be longer than 100 characters. A
-        term that breaks either rule is answered with 400.
+        Searches the offer inventory for the term sent as the `term` query
+        parameter. The term must not be blank, and it must not be longer than
+        100 characters. A term that breaks either rule is answered with 400.
       tags: [Offers]
       security: []
       parameters:
+        - in: query
+          name: term
+          required: true
+          description: The term to search for; it must not be blank and is at most 100 characters.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            pattern: '[\s\S]*\S[\s\S]*'
         - $ref: '#/components/parameters/Pageable'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: string
-          text/plain:
-            schema:
-              type: string
       responses:
         '200':
           description: Offers found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/OfferPage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -500,7 +500,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/BookingPage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -550,7 +550,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/MessagePage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -572,7 +572,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/MessagePage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -774,12 +774,80 @@ components:
           type: boolean
         unsorted:
           type: boolean
-    Page:
+    OfferPage:
       type: object
       properties:
         content:
           type: array
-          items: {}
+          default: []
+          items:
+            $ref: '#/components/schemas/OfferDTO'
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    BookingPage:
+      type: object
+      properties:
+        content:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/BookingDTO'
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    MessagePage:
+      type: object
+      properties:
+        content:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/MessageDTO'
         empty:
           type: boolean
         first:
@@ -807,109 +875,125 @@ components:
           format: int32
     OfferDTO:
       type: object
-      properties:
-        city:
-          type: string
-          minLength: 0
-          maxLength: 255
-        comment:
-          type: string
-          minLength: 0
-          maxLength: 1000
-        country:
-          type: string
-          minLength: 0
-          maxLength: 255
-        coverPhotoUrl:
-          type: string
-        description:
-          type: string
-          minLength: 0
-          maxLength: 3000
-        externalPhotoUrl:
-          type: string
-        gallery:
-          type: array
-          items:
-            $ref: '#/components/schemas/PhotoDTO'
-        hotelName:
-          type: string
-          minLength: 0
-          maxLength: 255
-        id:
-          type: string
-          format: uuid
-        ownerEmail:
-          type: string
-        photoUrl:
-          type: string
-        price:
-          type: number
-          minimum: 0
-        roomCapacity:
-          type: integer
-          format: int64
-          minimum: 1
       required:
         - city
         - country
         - hotelName
         - price
         - roomCapacity
-    OfferEditDTO:
-      type: object
       properties:
-        city:
-          type: string
-          minLength: 0
-          maxLength: 255
-        comment:
-          type: string
-          minLength: 0
-          maxLength: 1000
-        country:
-          type: string
-          minLength: 0
-          maxLength: 255
-        description:
-          type: string
-          minLength: 0
-          maxLength: 3000
-        externalPhotoUrl:
-          type: string
+        id:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
         hotelName:
           type: string
-          minLength: 0
+          minLength: 1
           maxLength: 255
-        id:
-          type: string
-          format: uuid
-        ownerEmail:
-          type: string
+          pattern: '[\s\S]*\S[\s\S]*'
+        description:
+          type: [string, 'null']
+          maxLength: 3000
+        comment:
+          type: [string, 'null']
+          maxLength: 1000
         price:
           type: number
           minimum: 0
+        ownerEmail:
+          type: [string, 'null']
+          readOnly: true
         roomCapacity:
           type: integer
           format: int64
           minimum: 1
+        city:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        country:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        externalPhotoUrl:
+          type: [string, 'null']
+          pattern: '^https?://\S+$'
+          maxLength: 1024
+        photoUrl:
+          type: [string, 'null']
+          readOnly: true
+        gallery:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/PhotoDTO'
+        coverPhotoUrl:
+          type: [string, 'null']
+          readOnly: true
+    OfferEditDTO:
+      type: object
       required:
         - id
-    PhotoDTO:
-      type: object
       properties:
         id:
           type: string
           format: uuid
+        hotelName:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        description:
+          type: [string, 'null']
+          maxLength: 3000
+        comment:
+          type: [string, 'null']
+          maxLength: 1000
+        price:
+          type: [number, 'null']
+          minimum: 0
+        ownerEmail:
+          type: [string, 'null']
+          readOnly: true
+        roomCapacity:
+          type: [integer, 'null']
+          format: int64
+          minimum: 1
+        city:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        country:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        externalPhotoUrl:
+          type: [string, 'null']
+          pattern: '^https?://\S+$'
+          maxLength: 1024
+    PhotoDTO:
+      type: object
+      properties:
+        id:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
         main:
           type: boolean
         position:
           type: integer
           format: int32
         url:
-          type: string
+          type: [string, 'null']
     BookingPayload:
       type: object
+      required:
+        - dateToBook
+        - offerId
       properties:
         dateToBook:
           type: string
@@ -917,56 +1001,61 @@ components:
         offerId:
           type: string
           format: uuid
-      required:
-        - dateToBook
-        - offerId
     BookingDTO:
       type: object
-      properties:
-        bookedDate:
-          type: string
-          format: date
-          minLength: 1
-        bookingUser:
-          type: string
-          format: email
-          minLength: 1
-        id:
-          type: string
-          format: uuid
-        offerId:
-          type: string
-          format: uuid
-        ownerEmail:
-          type: string
-          format: email
       required:
         - bookedDate
         - bookingUser
         - id
         - offerId
         - ownerEmail
-    MessageDTO:
-      type: object
       properties:
+        bookedDate:
+          type: string
+          format: date
+        bookingUser:
+          type: string
+          format: email
+          minLength: 1
+          pattern: '[\s\S]*\S[\s\S]*'
         id:
           type: string
           format: uuid
-        createdTime:
+          readOnly: true
+        offerId:
           type: string
-        read:
-          type: boolean
-        receiverEmail:
+          format: uuid
+        ownerEmail:
           type: string
           format: email
-          minLength: 0
-          maxLength: 255
-        senderEmail:
-          type: string
-        text:
-          type: string
-          minLength: 0
-          maxLength: 65000
+          readOnly: true
+    MessageDTO:
+      type: object
       required:
         - receiverEmail
         - text
+      properties:
+        id:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
+        createdTime:
+          type: [string, 'null']
+          readOnly: true
+        read:
+          type: [boolean, 'null']
+          readOnly: true
+        receiverEmail:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        senderEmail:
+          type: [string, 'null']
+          readOnly: true
+        text:
+          type: string
+          minLength: 1
+          maxLength: 65000
+          pattern: '[\s\S]*\S[\s\S]*'
