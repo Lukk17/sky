@@ -11,6 +11,8 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
+
 @Component
 @Slf4j
 public class GatewayUserWebFilter implements GlobalFilter, Ordered {
@@ -35,7 +37,7 @@ public class GatewayUserWebFilter implements GlobalFilter, Ordered {
         return ReactiveSecurityContextHolder.getContext()
                 .mapNotNull(ctx -> ctx.getAuthentication())
                 .filter(Authentication::isAuthenticated)
-                .map(GatewayUserWebFilter::principalName)
+                .flatMap(authentication -> Mono.justOrEmpty(principalName(authentication)))
                 .doOnNext(name -> log.debug("gateway WS identity: forwarding notify upgrade as {}", name))
                 .flatMap(name -> {
                     ServerHttpRequest withUser = strippedExchange.getRequest().mutate()
@@ -46,7 +48,7 @@ public class GatewayUserWebFilter implements GlobalFilter, Ordered {
                 .switchIfEmpty(chain.filter(strippedExchange));
     }
 
-    static String principalName(Authentication authentication) {
+    static Optional<String> principalName(Authentication authentication) {
         return GatewayIdentity.emailOf(authentication);
     }
 }

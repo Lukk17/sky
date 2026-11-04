@@ -19,6 +19,7 @@ import org.springframework.security.web.server.authentication.RedirectServerAuth
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationFailureHandler;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.csrf.CsrfWebFilter;
+import org.springframework.security.web.server.csrf.ServerCsrfTokenRepository;
 import org.springframework.security.web.server.csrf.WebSessionServerCsrfTokenRepository;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
@@ -83,6 +84,7 @@ public class SecurityConfig {
     public SecurityWebFilterChain oidcSecurityWebFilterChain(
             ServerHttpSecurity http,
             ReactiveClientRegistrationRepository clientRegistrationRepository,
+            ServerCsrfTokenRepository csrfTokenRepository,
             @Value("${sky-gateway.frontend-url:http://localhost:4200}") String frontendUrl) {
         http
                 .authorizeExchange(exchanges -> exchanges
@@ -120,7 +122,7 @@ public class SecurityConfig {
                         .logoutSuccessHandler(oidcLogoutSuccessHandler(
                                 clientRegistrationRepository, validatedFrontendUrl(frontendUrl))))
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(sessionCsrfTokenRepository())
+                        .csrfTokenRepository(csrfTokenRepository)
                         .requireCsrfProtectionMatcher(exchange -> {
                             String path = exchange.getRequest().getPath().value();
                             // Keycloak and the object store sit behind /auth and /s3 with
@@ -147,7 +149,8 @@ public class SecurityConfig {
         return http.build();
     }
 
-    private static WebSessionServerCsrfTokenRepository sessionCsrfTokenRepository() {
+    @Bean
+    public ServerCsrfTokenRepository csrfTokenRepository() {
         var repository = new WebSessionServerCsrfTokenRepository();
         repository.setHeaderName("X-XSRF-TOKEN");
         return repository;

@@ -9,12 +9,19 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -22,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@Import(SecurityConfigOidcProfileTest.BearerTokenDecoder.class)
 class SecurityConfigOidcProfileTest {
 
     private static final StubOidcProvider OIDC_PROVIDER = StubOidcProvider.start();
@@ -33,6 +41,26 @@ class SecurityConfigOidcProfileTest {
     private RouteLocator routeLocator;
 
     private WebTestClient client;
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class BearerTokenDecoder {
+
+        @Bean
+        @Primary
+        ReactiveJwtDecoder bearerTokenReactiveJwtDecoder() {
+            return token -> Mono.just(switch (token) {
+                case "no-identity-token" -> Jwt.withTokenValue(token)
+                        .header("alg", "none")
+                        .claim("iss", "sky-test")
+                        .build();
+                default -> Jwt.withTokenValue(token)
+                        .header("alg", "none")
+                        .subject("bearer-user")
+                        .claim("email", "bearer@sky.dev")
+                        .build();
+            });
+        }
+    }
 
     @DynamicPropertySource
     static void keycloakProperties(DynamicPropertyRegistry registry) {
@@ -109,6 +137,31 @@ class SecurityConfigOidcProfileTest {
                 .exchange()
                 .expectStatus().isUnauthorized()
                 .expectBody().isEmpty();
+    }
+
+    @Test
+    @DisplayName("session_whenBearerTokenSupplied_thenReturnsEmailAndCsrfToken")
+    void session_whenBearerTokenSupplied_thenReturnsEmailAndCsrfToken() {
+        // when / then
+        client.get().uri("/api/session")
+                .headers(headers -> headers.setBearerAuth("bearer-token"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.email").isEqualTo("bearer@sky.dev")
+                .jsonPath("$.csrfToken").isNotEmpty()
+                .jsonPath("$.logoutUrl").value(url ->
+                        assertThat(url.toString()).contains("openid-connect/logout"));
+    }
+
+    @Test
+    @DisplayName("session_whenBearerTokenHasNoIdentity_thenUnauthorizedInsteadOfServerError")
+    void session_whenBearerTokenHasNoIdentity_thenUnauthorizedInsteadOfServerError() {
+        // when / then
+        client.get().uri("/api/session")
+                .headers(headers -> headers.setBearerAuth("no-identity-token"))
+                .exchange()
+                .expectStatus().isUnauthorized();
     }
 
     @Test

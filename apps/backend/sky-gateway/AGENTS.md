@@ -165,9 +165,11 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
     `Authorization` header is forwarded untouched and each service validates the token itself. This is the
     opt-in branch, so `local` has to be active explicitly.
   - `@Profile("!local")`: Keycloak OIDC login plus the `TokenRelay` filter on every route, an OIDC
-    client-initiated logout handler, cookie-free CSRF (token in the session, delivered through `/api/session`,
-    validated against the session copy), an origin check rejecting cross origin mutating requests, CORS for the
-    frontend origin, and post-login return to the frontend origin. `SecurityPaths.probes()` from `sky-common` is
+    client-initiated logout handler, cookie-free CSRF (one shared
+    `WebSessionServerCsrfTokenRepository` bean used by both the chain and `/api/session`, which reports the session
+    token and generates and persists one when a bearer caller skipped the CSRF filter), an origin check rejecting
+    cross origin mutating requests, CORS for the frontend origin, and post-login return to the frontend origin.
+    `SecurityPaths.probes()` from `sky-common` is
     permitted without a session, and so are the anonymous offer reads (`GET /api/v1/offers/**` and
     `POST /api/v1/search`, mirroring sky-offer), so nothing else public regressed behind the login. An
     unauthenticated `/api/**` call answers 401 with an empty body instead of a login redirect, so script driven
@@ -213,7 +215,9 @@ predicate claimed it, which is what lets one assertion carry both halves.
   mutating request is rejected without reaching the chain, matching origins and headerless callers pass through, and
   safe methods are never checked.
 - `SessionControllerTest`, a pure unit test over the session endpoint: an OIDC principal yields its email claim plus
-  the CSRF token from the exchange, a plain principal yields its name, and no authentication yields 401.
+  the CSRF token from the exchange, a bearer JWT yields its email claim or subject and a generated session token, a
+  plain principal yields its name and a generated token, no authentication yields 401, and a JWT with no derivable
+  identity yields 401 instead of crashing.
 - `ServletExceptionHandlingAbsentTest`, which pins that `sky-common`'s servlet exception handling never loads in
   this reactive module.
 - `SecurityConfigOidcProfileTest`, `test` only so the `!local` chain applies: unauthenticated `/actuator/prometheus`

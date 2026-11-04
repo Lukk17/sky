@@ -1,3 +1,12 @@
+## [2.1.6] - 2026-11-04
+
+### Fixed
+- `/api/session` no longer answers 500 for a bearer token. The session CSRF token repository is now one bean shared by
+  the `!local` security chain and `SessionController`, which reports the session token when present and otherwise
+  generates and persists one, so every authenticated response carries a non-blank `csrfToken`. `GatewayIdentity.emailOf`
+  now reads the JWT email claim or subject before the authentication name and never returns null, so a bearer token
+  with no derivable identity answers 401 instead of crashing.
+
 ## [2.1.5] - 2026-11-03
 
 ### Fixed
