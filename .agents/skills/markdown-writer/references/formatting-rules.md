@@ -1,5 +1,14 @@
 # Formatting Mechanics
 
+Contents:
+
+- [Format code blocks for copying](#format-code-blocks-for-copying)
+- [Link every real path, once per mention](#link-every-real-path-once-per-mention)
+- [Start sections at level 3 and divide them](#start-sections-at-level-3-and-divide-them)
+- [Keep changing numbers in badges only](#keep-changing-numbers-in-badges-only)
+- [Order lists with digits, never Roman numerals](#order-lists-with-digits-never-roman-numerals)
+- [Do not hard-wrap, unless the project lints a line cap](#do-not-hard-wrap-unless-the-project-lints-a-line-cap)
+
 The mechanical formatting rules in full, each with a passing and a failing form: code blocks, links, heading levels
 and dividers, counts in badges, list markers, and line wrapping. Load this file when applying one of these rules or
 when a draft breaks one and you need the exact repair.
@@ -119,8 +128,7 @@ ii. Authenticate
 
 Write each paragraph, list item and table row as one physical line and let the viewer soft-wrap it. Never break a
 command, path or URL inside a fenced block, because a reader copies it and a break corrupts it. The one exception is
-a project whose own lint enforces a maximum line length, such as this repository at 120 characters. Wrap to the cap
-there and nowhere else, and never rewrap a file the project does not lint.
+a project whose own lint enforces a maximum line length. Wrap to the cap there and nowhere else, and never rewrap a file the project does not lint.
 
 Pass:
 

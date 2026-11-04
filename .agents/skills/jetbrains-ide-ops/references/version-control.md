@@ -1,5 +1,14 @@
 # Version Control for .idea
 
+Contents:
+
+- [The rule behind the table](#the-rule-behind-the-table)
+- [Commit and ignore, per file](#commit-and-ignore-per-file)
+- [What JetBrains says](#what-jetbrains-says)
+- [The half-done state, as it happened](#the-half-done-state-as-it-happened)
+- [External storage does not keep modules.xml quiet](#external-storage-does-not-keep-modulesxml-quiet)
+- [Verify per path rather than trusting the pattern](#verify-per-path-rather-than-trusting-the-pattern)
+
 Which files under `.idea/` are committed, which are ignored, why each one falls where it does, and what the half-done
 state looks like from the next machine. Load this file when writing the ignore rules for a JetBrains project or when
 a committed `modules.xml` has produced duplicate modules on somebody else's clone. The rules live in
@@ -43,10 +52,7 @@ its own negation entry.
 
 ### What JetBrains says
 
-The vendor page is
-[How to manage projects under Version Control Systems](https://intellij-support.jetbrains.com/hc/en-us/articles/206544839),
-read on 2026-09-09. It lists `workspace.xml`, `usage.statistics.xml` and the `shelf` directory as user-specific, and
-under items to exclude from sharing it says:
+The vendor page is [How to manage projects under Version Control Systems](https://intellij-support.jetbrains.com/hc/en-us/articles/206544839). It lists `workspace.xml`, `usage.statistics.xml` and the `shelf` directory as user-specific, and under items to exclude from sharing it says:
 
 ```text
 .iml files and .idea/modules.xml file for the Gradle or Maven based projects since these files will be generated on import
@@ -65,11 +71,10 @@ A monorepo committed `.idea/modules.xml` listing 28 `.iml` files under `.idea/mo
 that directory. On the next machine IntelliJ read the registry, found no file behind any of the 28 entries, and
 created a placeholder module for each missing file. The Gradle import then ran, found each of its module names
 already taken by a module it had not created, and de-duplicated by prefixing the Gradle group, so
-`pha-pharma-messaging.main` gained a twin named `com.revdevs.pha-pharma.pha-pharma-messaging.main`. Every Java
+`backend-messaging.main` gained a twin named `com.example.backend.backend-messaging.main`. Every Java
 module showed twice, once empty and once real.
 
-JetBrains has the same diagnosis on record. In
-[IDEA-263842](https://youtrack.jetbrains.com/issue/IDEA-263842), open, a JetBrains developer wrote on 2021-03-09:
+JetBrains has the same diagnosis on record. In [IDEA-263842](https://youtrack.jetbrains.com/issue/IDEA-263842), open, a JetBrains developer wrote:
 
 ```text
 Looks like it happens b/c the old module iml files are not properly loaded and are ignored by the IDE and it creates new module files and tries de-duplicate them which lead to module names renaming with the name containing the groupID.
@@ -117,14 +122,14 @@ tell you. Check the exact paths in both directions.
 A file you intend to track returns nothing and exits non-zero:
 
 ```bash
-git check-ignore -v .idea/pharmacy.iml
+git check-ignore -v .idea/monorepo.iml
 ```
 
 A file you still want ignored is still matched, so a broad negation has not quietly reopened the generated module
 files:
 
 ```bash
-git check-ignore -v .idea/modules/pha-pharma.pha-pharma-app.main.iml
+git check-ignore -v .idea/modules/backend.backend-app.main.iml
 ```
 
 Run both after every edit to the ignore rules, and read the rule the second command prints back rather than just
