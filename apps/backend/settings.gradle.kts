@@ -9,6 +9,7 @@ rootProject.name = "sky"
 
 listOf(
     "sky-common",
+    "sky-contract",
     "sky-booking",
     "sky-offer",
     "sky-message",
