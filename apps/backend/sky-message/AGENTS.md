@@ -19,8 +19,12 @@ the cosmetic `version` in `build.gradle.kts`.
   - `domain/ports/inbound`: driving port interfaces called by controllers (`MessageService`).
   - `domain/ports/outbound`: driven port interfaces implemented by infrastructure adapters (`MessageRepository`).
   - `domain/service`: domain service implementations (`MessageServicePrimary`).
-  - `adapters/inbound/api`: REST controllers; `adapters/dto`: wire DTOs. There is no `adapters/outbound` package:
-    this service makes no outbound call of any kind.
+  - `adapters/inbound/api`: REST controllers; `MessageController` implements the generated `MessagesApi` in
+    `adapters/inbound/api/contract` and declares no method-level mappings, and `MessagePageMapper` converts a
+    Spring Data `Page` to the generated page model. `adapters/dto`: wire DTOs; `adapters/dto/contract`: generated
+    page models. The OpenAPI Generator plugin reads `docs/api/contract/openapi.yaml` into
+    `build/generated/contract` on the main source set, so `compileJava` depends on `openApiGenerate`. There is no
+    `adapters/outbound` package: this service makes no outbound call of any kind.
   - `config`, `config/propertyBind`: Spring wiring and bound properties.
 - MVC stack: plain Spring Web (`spring-boot-starter-web`).
 - No receiver validation runs, and that is deliberate. `POST /messages` accepts any `receiverEmail` that passes Bean

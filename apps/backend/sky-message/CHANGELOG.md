@@ -1,3 +1,11 @@
+## [2.2.0] - 2026-11-04
+
+### Changed
+- Generate the message REST interface from `docs/api/contract/openapi.yaml` and implement it in
+  `MessageController`. `MessagesApi` now supplies the paths, status codes and documentation, while the
+  controller keeps the security and shared error annotations on top of it. Spring Data pages are mapped
+  to the generated `Page` by `MessagePageMapper`. The `/api/v1` paths and response shapes are unchanged.
+
 ## [2.1.4] - 2026-10-22
 
 ### Changed

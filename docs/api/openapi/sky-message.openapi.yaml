@@ -11,7 +11,7 @@ servers:
 security:
 - bearerAuth: []
 tags:
-- description: "Messaging: send, retrieve, and delete user-to-user messages."
+- description: Messaging operations.
   name: Messages
 paths:
   /api/v1/messages:
@@ -82,6 +82,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Send message
       tags:
       - Messages
@@ -146,6 +148,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Get received messages (paginated)
       tags:
       - Messages
@@ -210,6 +214,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Get sent messages (paginated)
       tags:
       - Messages
@@ -273,6 +279,8 @@ paths:
             \ carrying no exception type, no message and no class name, so treat a\
             \ 500 as opaque, retry once, and quote the X-Correlation-Id when reporting\
             \ it."
+      security:
+      - bearerAuth: []
       summary: Delete message
       tags:
       - Messages
