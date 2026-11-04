@@ -9,7 +9,7 @@ CLIENT_DIR="${REPO_ROOT}/apps/frontend/sky-view/src/app/api-generated"
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-npx --yes @openapitools/openapi-generator-cli@latest generate \
+npx --yes @openapitools/openapi-generator-cli@2.42.0 generate \
   -i "${CONTRACT}" \
   -g typescript-angular \
   -o "$TMP_DIR/api-generated" \
