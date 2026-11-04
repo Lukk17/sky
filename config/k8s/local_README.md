@@ -442,7 +442,7 @@ The environment file is [docs/api/request/environments/k8s.yml](../../docs/api/r
 
 No credential is committed. The realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](helm/infra/keycloak/files/sky-realm.json) carries only usernames, emails and realm roles. Passwords and the client secret are sourced at deploy time:
 
-- User passwords are set by the seed script through the Keycloak admin API (`reset-password` per user in `seed/seed.mjs`, lines 79 and 98), so local login keeps working with no password stored in the repo. Proof: `ensureUser` calls `PUT /admin/realms/sky/users/{id}/reset-password` with the password from `seed/users.json` on both the update and the create path, then mints a token per user with it. All seed users share password `local` (see [seed/README.md](../../seed/README.md)).
+- User passwords are set by the seed script through the Keycloak admin API (`reset-password` per user in `config/seed/seed.mjs`, lines 79 and 98), so local login keeps working with no password stored in the repo. Proof: `ensureUser` calls `PUT /admin/realms/sky/users/{id}/reset-password` with the password from `config/seed/users.json` on both the update and the create path, then mints a token per user with it. All seed users share password `local` (see [config/seed/README.md](../../config/seed/README.md)).
 - The `sky-backend` client secret is generated per deploy (for example `openssl rand -hex 32`), stored in the `keycloak-client-secret` entry of your `sky-secrets-local.yaml` (step 4), and set on the imported client once Keycloak is up:
 
 ```bash

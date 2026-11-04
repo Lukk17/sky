@@ -24,7 +24,7 @@ What the file defines:
 - Three demo users whose emails match the Flyway demo seed data. The file carries
   only usernames, emails and realm roles: no password and no client secret is committed.
   Passwords are set after import by the seed script through the Keycloak admin API
-  (`reset-password` per user in `seed/seed.mjs`), and the `sky-backend` client secret
+  (`reset-password` per user in `config/seed/seed.mjs`), and the `sky-backend` client secret
   is generated per deploy and set on the imported client as described under
   [Sourcing the client secret at deploy time](#sourcing-the-client-secret-at-deploy-time).
 

@@ -370,7 +370,7 @@ services:
       sky-view:
         condition: service_healthy
     volumes:
-      - ../../seed:/workspace/seed:ro
+      - ../../config/seed:/workspace/seed:ro
     working_dir: /workspace/seed
     environment:
       EDGE_BASE: http://sky-gateway:5777

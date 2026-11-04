@@ -182,14 +182,14 @@ in `package.json` under `scripts` add:
 
 ## Seed data
 
-The backend seed lives in [../../../../seed/](../../../../seed/) at the repo root. It creates the four demo users, nine offers, fifteen bookings, twelve messages, and one photo per owned offer. Compose or k3d must be running first so Keycloak and the edge answer.
+The backend seed lives in [../../../../config/seed/](../../../../config/seed/) under config/. It creates the four demo users, nine offers, fifteen bookings, twelve messages, and one photo per owned offer. Compose or k3d must be running first so Keycloak and the edge answer.
 
 ```powershell
-$env:TLS_INSECURE=1; node ../../../../seed/seed.mjs
+$env:TLS_INSECURE=1; node ../../../../config/seed/seed.mjs
 ```
 
 ```sh
-TLS_INSECURE=1 node ../../../../seed/seed.mjs
+TLS_INSECURE=1 node ../../../../config/seed/seed.mjs
 ```
 
 ---------
