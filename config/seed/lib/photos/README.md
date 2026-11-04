@@ -1,8 +1,8 @@
-# config/seed/photos
+# config/seed/lib/photos
 
 Layout:
 
-- `hotels/<offer-slug>-exterior.jpg`: live photo. One per offer in `config/seed/offers.json`. The `photoFile` value points here. The backend has a single photo slot per offer, so this is the only image uploaded by `config/seed/seed.mjs`.
+- `hotels/<offer-slug>-exterior.jpg`: live photo. One per offer in `config/seed/lib/offers.json`. The `photoFile` value points here. The backend has a single photo slot per offer, so this is the only image uploaded by `config/seed/seed.mjs`.
 - `rooms/<offer-slug>-room.jpg`: room view, kept for the future. Rooms have nowhere to upload today. The backend accepts exactly one photo per offer, so these files are not referenced by any seed data or script.
 - `unused/`: spare exterior images, never referenced by seed data or scripts.
 
