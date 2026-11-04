@@ -131,7 +131,7 @@ Spec-driven work still starts with an OpenSpec proposal (`/opsx:propose`) before
 
 ## Seed data
 
-[config/seed/](config/seed/) holds the local demo dataset: 4 users, 9 offers, 15 bookings, 12 messages, one photo per owned offer. [config/seed/seed.mjs](config/seed/seed.mjs) is zero-dependency Node, env-driven (`KEYCLOAK_BASE`, `EDGE_BASE`, `TLS_INSECURE`), idempotent on rerun. Compose or k3d must be running first so Keycloak and the edge answer. Unix shell:
+[config/seed/](config/seed/) holds the local demo dataset: 4 users, 12 offers, 21 bookings, 24 messages, one photo per owned offer. [config/seed/seed.mjs](config/seed/seed.mjs) is zero-dependency Node, env-driven (`KEYCLOAK_BASE`, `EDGE_BASE`, `TLS_INSECURE`), idempotent on rerun. Compose or k3d must be running first so Keycloak and the edge answer. Unix shell:
 
 ```text
 TLS_INSECURE=1 node config/seed/seed.mjs
