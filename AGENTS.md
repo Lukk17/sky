@@ -106,6 +106,29 @@ Spawn subagents proactively, not reactively, and run them in parallel when the w
 
 Spec-driven work still starts with an OpenSpec proposal (`/opsx:propose`) before delegating implementation.
 
+### Routing for this repository
+
+1. Route by work type before defaulting to general:
+
+   | Work type | Agent |
+   |---|---|
+   | Java or Spring implementation | `java-pro` |
+   | New tests, failing suites, coverage | `test-automator` |
+   | Docker, Compose, Helm, CI workflows | `devops-automator` |
+   | Observability stack, metrics, logs, alerts | `observability-engineer` |
+   | API contract, OpenAPI, reference docs | `api-documenter` |
+   | Long-form docs and repository documentation | `docs-architect` |
+   | Review before merge | `code-reviewer` |
+   | Architecture or service boundaries | `backend-architect` |
+   | Database schema, migrations, queries | `database-expert` |
+   | Root-cause debugging | `debugger` |
+   | Unknown codebase exploration | `explore` |
+
+2. Use general only when no specialized agent fits, or after a specialized agent has failed for an environmental reason. Record the failure and the fallback.
+3. Name the chosen agent and the skills it must load before delegating.
+4. Known environment issue: specialized agents configured with `anthropic/claude-opus-4-7` fail with Model not found. The working identifier is `Anthropic: Claude Opus 4.7` on provider `kilo`, but it returns Payment Required at zero balance. If a specialized agent fails this way, retry the same agent with model `DeepSeek V4.1 Flash` on provider `opencode-go` instead of falling back to general.
+5. The global agent-standards install is currently one commit behind upstream master. Do not edit generated copies. Update it only through the documented updater, with explicit approval.
+
 ## Seed data
 
 [config/seed/](config/seed/) holds the local demo dataset: 4 users, 9 offers, 15 bookings, 12 messages, one photo per owned offer. [config/seed/seed.mjs](config/seed/seed.mjs) is zero-dependency Node, env-driven (`KEYCLOAK_BASE`, `EDGE_BASE`, `TLS_INSECURE`), idempotent on rerun. Compose or k3d must be running first so Keycloak and the edge answer. Unix shell:
