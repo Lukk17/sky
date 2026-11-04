@@ -10,10 +10,10 @@
 
 
 export interface BookingDTO { 
-    id?: string;
-    bookedDate?: string;
-    bookingUser?: string;
-    offerId?: string;
-    ownerEmail?: string;
+    bookedDate: string;
+    bookingUser: string;
+    id: string;
+    offerId: string;
+    ownerEmail: string;
 }
 

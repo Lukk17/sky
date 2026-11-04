@@ -6,10 +6,9 @@ import {ResponseHandlerService} from './responseHandler.service';
 import {OffersService} from '../api-generated/api/offers.service';
 import {OwnerOffersService} from '../api-generated/api/ownerOffers.service';
 import {OfferDTO} from '../api-generated/model/offerDTO';
+import {OfferEditDTO} from '../api-generated/model/offerEditDTO';
 import {Pageable} from '../api-generated/model/pageable';
 import {Page} from '../api-generated/model/page';
-import {PhotoDTO} from '../api-generated/model/photoDTO';
-import {PhotoPositionDTO} from '../api-generated/model/photoPositionDTO';
 
 export interface OfferDraft {
   hotelName: string;
@@ -64,44 +63,33 @@ export class OfferService {
   constructor(private offersService: OffersService, private ownerOffersService: OwnerOffersService) {
   }
 
-  private static buildOffer(draft: OfferDraft) {
-    return new Offer(
-      draft.hotelName,
-      draft.description,
-      draft.price,
-      draft.roomCapacity,
-      draft.city,
-      draft.country,
-    );
-  }
-
   private static mapPageToOffers(page: Page): Offer[] {
     const content = (page as any)?.content ?? [];
     return content.map((dto: any) => OfferService.mapOfferDtoToOffer(dto));
   }
 
-  private static mapOfferDtoToOffer(dto: OfferDTO | any): Offer {
+  private static mapOfferDtoToOffer(dto: OfferDTO): Offer {
     const offer = new Offer(
-      (dto as any).hotelName ?? (dto as any).name ?? '',
-      (dto as any).description ?? '',
-      typeof (dto as any).price === 'number' ? (dto as any).price : ((dto as any).price ? parseFloat((dto as any).price) : 0),
-      (dto as any).roomCapacity ?? 1,
-      (dto as any).city ?? '',
-      (dto as any).country ?? '',
-      (dto as any).photoPath ?? (dto as any).photoUrl ?? '',
+      dto.hotelName ?? '',
+      dto.description ?? '',
+      dto.price ?? 0,
+      dto.roomCapacity ?? 1,
+      dto.city ?? '',
+      dto.country ?? '',
+      dto.photoUrl ?? '',
     );
-    offer.id = (dto as any).id ?? '';
-    offer.ownerEmail = (dto as any).ownerEmail ?? '';
-    offer.comment = (dto as any).comment ?? '';
-    offer.photoUrl = (dto as any).photoUrl ?? null;
-    offer.externalPhotoUrl = (dto as any).externalPhotoUrl ?? null;
-    offer.coverPhotoUrl = (dto as any).coverPhotoUrl ?? (dto as any).photoUrl ?? null;
-    if ((dto as any).gallery) {
-      offer.gallery = (dto as any).gallery.map((p: any) => ({
+    offer.id = dto.id ?? '';
+    offer.ownerEmail = dto.ownerEmail ?? '';
+    offer.comment = dto.comment ?? '';
+    offer.photoUrl = dto.photoUrl ?? null;
+    offer.externalPhotoUrl = dto.externalPhotoUrl ?? null;
+    offer.coverPhotoUrl = dto.coverPhotoUrl ?? null;
+    if (dto.gallery) {
+      offer.gallery = dto.gallery.map((p) => ({
         id: String(p.id ?? ''),
         position: Number(p.position ?? 0),
         url: p.url ?? '',
-        main: p.main === true || p.cover === true,
+        main: p.main === true,
       }));
     }
     return offer;
@@ -124,14 +112,16 @@ export class OfferService {
   }
 
   public editOffer(id: string, draft: OfferDraft) {
-    const offer = OfferService.buildOffer(draft);
-    offer.id = id;
-    const offerDTO: OfferDTO = {
-      id: offer.id,
-      name: offer.hotelName,
-      price: String(offer.price),
-    } as OfferDTO;
-    return this.ownerOffersService.addOffer(offerDTO, 'body', false).pipe(
+    const offerEditDTO: OfferEditDTO = {
+      id,
+      hotelName: draft.hotelName,
+      description: draft.description,
+      price: draft.price,
+      roomCapacity: draft.roomCapacity,
+      city: draft.city,
+      country: draft.country,
+    };
+    return this.ownerOffersService.edit(offerEditDTO, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'editOffer()')),
       map((resp: OfferDTO) => OfferService.mapOfferDtoToOffer(resp))
     );
@@ -145,18 +135,21 @@ export class OfferService {
 
   public searchOffer(searched: string) {
     const pageable: Pageable = {} as Pageable;
-    return this.offersService.searchOffers(pageable, searched, 'body', false).pipe(
+    return this.offersService.search(pageable, searched, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'searchOffer()')),
       map((resp: Page) => ResponseHandlerService.handleGetOffersResponse(OfferService.mapPageToOffers(resp)))
     );
   }
 
   public addOffer(draft: OfferDraft) {
-    const offer = OfferService.buildOffer(draft);
     const offerDTO: OfferDTO = {
-      name: offer.hotelName,
-      price: String(offer.price),
-    } as OfferDTO;
+      hotelName: draft.hotelName,
+      description: draft.description,
+      price: draft.price,
+      roomCapacity: draft.roomCapacity,
+      city: draft.city,
+      country: draft.country,
+    };
     return this.ownerOffersService.addOffer(offerDTO, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'addOffer()')),
       map((resp: OfferDTO) => OfferService.mapOfferDtoToOffer(resp))
@@ -183,49 +176,26 @@ export class OfferService {
   }
 
   public uploadGalleryPhoto(offerId: string, file: File) {
-    return this.ownerOffersService.addPhoto(offerId, file as Blob, 'body', false).pipe(
-      map((resp: PhotoDTO) => {
-        const offer: Offer = new Offer('', '', 0, 0, '', '');
-        offer.id = offerId;
-        // Map PhotoDTO to offer's gallery - but service returns PhotoDTO; components expect updated offer structure
-        // Keep behavior identical - just pass through as best as possible
-        const anyResp: any = resp;
-        if (anyResp && anyResp.gallery) {
-          offer.gallery = anyResp.gallery;
-        }
-        if (anyResp && anyResp.coverPhotoUrl) {
-          offer.coverPhotoUrl = anyResp.coverPhotoUrl;
-        }
-        return offer;
-      })
+    return this.ownerOffersService.uploadGalleryPhoto(offerId, file as Blob, 'body', false).pipe(
+      map((resp: OfferDTO) => OfferService.mapOfferDtoToOffer(resp))
     );
   }
 
   public deleteGalleryPhoto(offerId: string, photoId: string) {
-    return this.ownerOffersService.deletePhotoById(offerId, photoId, 'body', false).pipe(
-      map((resp: any) => {
-        if (!resp) return new Offer('', '', 0, 0, '', '');
-        return OfferService.mapOfferDtoToOffer(resp);
-      })
+    return this.ownerOffersService.deleteGalleryPhoto(offerId, photoId, 'body', false).pipe(
+      map((resp: OfferDTO) => OfferService.mapOfferDtoToOffer(resp))
     );
   }
 
   public setGalleryCover(offerId: string, photoId: string) {
-    return this.ownerOffersService.setPhotoAsCover(offerId, photoId, 'body', false).pipe(
-      map((resp: any) => {
-        if (!resp) return new Offer('', '', 0, 0, '', '');
-        return OfferService.mapOfferDtoToOffer(resp);
-      })
+    return this.ownerOffersService.setGalleryCover(offerId, photoId, 'body', false).pipe(
+      map((resp: OfferDTO) => OfferService.mapOfferDtoToOffer(resp))
     );
   }
 
   public reorderGalleryPhoto(offerId: string, photoId: string, position: number) {
-    const dto: PhotoPositionDTO = { position } as PhotoPositionDTO;
-    return this.ownerOffersService.updatePhotoPosition(offerId, photoId, dto, 'body', false).pipe(
-      map((resp: any) => {
-        if (!resp) return new Offer('', '', 0, 0, '', '');
-        return OfferService.mapOfferDtoToOffer(resp);
-      })
+    return this.ownerOffersService.reorderGalleryPhoto(offerId, photoId, position, 'body', false).pipe(
+      map((resp: OfferDTO) => OfferService.mapOfferDtoToOffer(resp))
     );
   }
 }

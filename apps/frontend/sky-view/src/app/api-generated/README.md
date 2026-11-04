@@ -1,6 +1,6 @@
 # @
 
-Contract for the sky API. This file is the single source of truth for the API surface and is linted with the redocly configuration beside it. The per-service documents under docs/api/openapi are generated from service annotations and are a different artefact.
+Contract for the sky API. This file is the single source of truth for the API surface and is linted with the redocly configuration beside it. The per-service documents under docs/api/openapi are generated from service annotations and are a different artefact. 
 
 The version of the OpenAPI document: v1
 
@@ -75,7 +75,7 @@ export const appConfig: ApplicationConfig = {
 **NOTE**
 If you're still using `AppModule` and haven't [migrated](https://angular.dev/reference/migrations/standalone) yet, you can still import an Angular module:
 ```typescript
-import { SkyApiApiModule } from '';
+import { ApiModule } from '';
 ```
 
 If different from the generated base path, during app bootstrap, you can provide the base path to your service.

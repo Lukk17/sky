@@ -9,18 +9,18 @@ import { HttpClient } from '@angular/common/http';
   exports:      [],
   providers: []
 })
-export class SkyApiApiModule {
-    public static forRoot(configurationFactory: () => SkyApiConfiguration): ModuleWithProviders<SkyApiApiModule> {
+export class ApiModule {
+    public static forRoot(configurationFactory: () => SkyApiConfiguration): ModuleWithProviders<ApiModule> {
         return {
-            ngModule: SkyApiApiModule,
+            ngModule: ApiModule,
             providers: [ { provide: SkyApiConfiguration, useFactory: configurationFactory } ]
         };
     }
 
-    constructor( @Optional() @SkipSelf() parentModule: SkyApiApiModule,
+    constructor( @Optional() @SkipSelf() parentModule: ApiModule,
                  @Optional() http: HttpClient) {
         if (parentModule) {
-            throw new Error('SkyApiApiModule is already loaded. Import in your base AppModule only.');
+            throw new Error('ApiModule is already loaded. Import in your base AppModule only.');
         }
         if (!http) {
             throw new Error('You need to import the HttpClientModule in your AppModule! \n' +

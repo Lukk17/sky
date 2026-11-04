@@ -19,13 +19,11 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { OfferDTO } from '../model/offerDTO';
 // @ts-ignore
+import { OfferEditDTO } from '../model/offerEditDTO';
+// @ts-ignore
 import { Page } from '../model/page';
 // @ts-ignore
 import { Pageable } from '../model/pageable';
-// @ts-ignore
-import { PhotoDTO } from '../model/photoDTO';
-// @ts-ignore
-import { PhotoPositionDTO } from '../model/photoPositionDTO';
 // @ts-ignore
 import { ProblemDetail } from '../model/problemDetail';
 
@@ -116,23 +114,23 @@ export class OwnerOffersService extends BaseService {
     }
 
     /**
-     * Add photo to offer
-     * @endpoint post /api/v1/owner/offers/{offerId}/photos
+     * Delete a gallery photo (owner only)
+     * @endpoint delete /api/v1/owner/offers/{offerId}/photos/{photoId}
      * @param offerId 
-     * @param file 
+     * @param photoId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public addPhoto(offerId: string, file: Blob, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PhotoDTO>;
-    public addPhoto(offerId: string, file: Blob, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PhotoDTO>>;
-    public addPhoto(offerId: string, file: Blob, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PhotoDTO>>;
-    public addPhoto(offerId: string, file: Blob, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public deleteGalleryPhoto(offerId: string, photoId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferDTO>;
+    public deleteGalleryPhoto(offerId: string, photoId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferDTO>>;
+    public deleteGalleryPhoto(offerId: string, photoId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferDTO>>;
+    public deleteGalleryPhoto(offerId: string, photoId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (offerId === null || offerId === undefined) {
-            throw new Error('Required parameter offerId was null or undefined when calling addPhoto.');
+            throw new Error('Required parameter offerId was null or undefined when calling deleteGalleryPhoto.');
         }
-        if (file === null || file === undefined) {
-            throw new Error('Required parameter file was null or undefined when calling addPhoto.');
+        if (photoId === null || photoId === undefined) {
+            throw new Error('Required parameter photoId was null or undefined when calling deleteGalleryPhoto.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -152,28 +150,6 @@ export class OwnerOffersService extends BaseService {
 
         const localVarTransferCache: boolean = options?.transferCache ?? true;
 
-        // to determine the Content-Type header
-        const consumes: string[] = [
-            'multipart/form-data'
-        ];
-
-        const canConsumeForm = this.canConsumeForm(consumes);
-
-        let localVarFormParams: { append(param: string, value: any): any; };
-        let localVarUseForm = false;
-        let localVarConvertFormParamsToString = false;
-        // use FormData to transmit files using content-type "multipart/form-data"
-        // see https://stackoverflow.com/questions/4007969/application-x-www-form-urlencoded-or-multipart-form-data
-        localVarUseForm = canConsumeForm;
-        if (localVarUseForm) {
-            localVarFormParams = new FormData();
-        } else {
-            localVarFormParams = new HttpParams({encoder: this.encoder});
-        }
-
-        if (file !== undefined) {
-            localVarFormParams = localVarFormParams.append('file', <any>file) as any || localVarFormParams;
-        }
 
         let responseType_: 'text' | 'json' | 'blob' = 'json';
         if (localVarHttpHeaderAcceptSelected) {
@@ -186,12 +162,11 @@ export class OwnerOffersService extends BaseService {
             }
         }
 
-        let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos`;
+        let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos/${this.configuration.encodeParam({name: "photoId", value: photoId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<PhotoDTO>('post', `${basePath}${localVarPath}`,
+        return this.httpClient.request<OfferDTO>('delete', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
-                body: localVarConvertFormParamsToString ? localVarFormParams.toString() : localVarFormParams,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -321,82 +296,19 @@ export class OwnerOffersService extends BaseService {
     }
 
     /**
-     * Delete photo by id
-     * @endpoint delete /api/v1/owner/offers/{offerId}/photos/{photoId}
-     * @param offerId 
-     * @param photoId 
+     * Edit offer
+     * @endpoint put /api/v1/owner/offers
+     * @param offerEditDTO 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public deletePhotoById(offerId: string, photoId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
-    public deletePhotoById(offerId: string, photoId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
-    public deletePhotoById(offerId: string, photoId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
-    public deletePhotoById(offerId: string, photoId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (offerId === null || offerId === undefined) {
-            throw new Error('Required parameter offerId was null or undefined when calling deletePhotoById.');
-        }
-        if (photoId === null || photoId === undefined) {
-            throw new Error('Required parameter photoId was null or undefined when calling deletePhotoById.');
-        }
-
-        let localVarHeaders = this.defaultHeaders;
-
-        // authentication (bearerAuth) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
-
-        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
-            'application/problem+json'
-        ]);
-        if (localVarHttpHeaderAcceptSelected !== undefined) {
-            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
-        }
-
-        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
-
-        const localVarTransferCache: boolean = options?.transferCache ?? true;
-
-
-        let responseType_: 'text' | 'json' | 'blob' = 'json';
-        if (localVarHttpHeaderAcceptSelected) {
-            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
-                responseType_ = 'text';
-            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
-                responseType_ = 'json';
-            } else {
-                responseType_ = 'blob';
-            }
-        }
-
-        let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos/${this.configuration.encodeParam({name: "photoId", value: photoId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}`;
-        const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<any>('delete', `${basePath}${localVarPath}`,
-            {
-                context: localVarHttpContext,
-                responseType: <any>responseType_,
-                ...(withCredentials ? { withCredentials } : {}),
-                headers: localVarHeaders,
-                observe: observe,
-                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
-                reportProgress: reportProgress
-            }
-        );
-    }
-
-    /**
-     * Get all photos for an offer
-     * @endpoint get /api/v1/owner/offers/{offerId}/photos
-     * @param offerId 
-     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
-     * @param reportProgress flag to report request and response progress.
-     * @param options additional options
-     */
-    public getAllPhotos(offerId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<PhotoDTO>>;
-    public getAllPhotos(offerId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<PhotoDTO>>>;
-    public getAllPhotos(offerId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<PhotoDTO>>>;
-    public getAllPhotos(offerId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (offerId === null || offerId === undefined) {
-            throw new Error('Required parameter offerId was null or undefined when calling getAllPhotos.');
+    public edit(offerEditDTO: OfferEditDTO, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferDTO>;
+    public edit(offerEditDTO: OfferEditDTO, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferDTO>>;
+    public edit(offerEditDTO: OfferEditDTO, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferDTO>>;
+    public edit(offerEditDTO: OfferEditDTO, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (offerEditDTO === null || offerEditDTO === undefined) {
+            throw new Error('Required parameter offerEditDTO was null or undefined when calling edit.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -417,6 +329,15 @@ export class OwnerOffersService extends BaseService {
         const localVarTransferCache: boolean = options?.transferCache ?? true;
 
 
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
         let responseType_: 'text' | 'json' | 'blob' = 'json';
         if (localVarHttpHeaderAcceptSelected) {
             if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
@@ -428,11 +349,12 @@ export class OwnerOffersService extends BaseService {
             }
         }
 
-        let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos`;
+        let localVarPath = `/api/v1/owner/offers`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Array<PhotoDTO>>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<OfferDTO>('put', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                body: offerEditDTO,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -516,23 +438,103 @@ export class OwnerOffersService extends BaseService {
     }
 
     /**
-     * Set photo as cover
-     * @endpoint patch /api/v1/owner/offers/{offerId}/photos/{photoId}/cover
+     * Reorder a gallery photo (owner only)
+     * @endpoint put /api/v1/owner/offers/{offerId}/photos/{photoId}/position
+     * @param offerId 
+     * @param photoId 
+     * @param position 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reorderGalleryPhoto(offerId: string, photoId: string, position: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferDTO>;
+    public reorderGalleryPhoto(offerId: string, photoId: string, position: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferDTO>>;
+    public reorderGalleryPhoto(offerId: string, photoId: string, position: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferDTO>>;
+    public reorderGalleryPhoto(offerId: string, photoId: string, position: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (offerId === null || offerId === undefined) {
+            throw new Error('Required parameter offerId was null or undefined when calling reorderGalleryPhoto.');
+        }
+        if (photoId === null || photoId === undefined) {
+            throw new Error('Required parameter photoId was null or undefined when calling reorderGalleryPhoto.');
+        }
+        if (position === null || position === undefined) {
+            throw new Error('Required parameter position was null or undefined when calling reorderGalleryPhoto.');
+        }
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'position',
+            <any>position,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos/${this.configuration.encodeParam({name: "photoId", value: photoId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/position`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<OfferDTO>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Set a gallery photo as cover (owner only)
+     * @endpoint put /api/v1/owner/offers/{offerId}/photos/{photoId}/cover
      * @param offerId 
      * @param photoId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public setPhotoAsCover(offerId: string, photoId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
-    public setPhotoAsCover(offerId: string, photoId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
-    public setPhotoAsCover(offerId: string, photoId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
-    public setPhotoAsCover(offerId: string, photoId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public setGalleryCover(offerId: string, photoId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferDTO>;
+    public setGalleryCover(offerId: string, photoId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferDTO>>;
+    public setGalleryCover(offerId: string, photoId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferDTO>>;
+    public setGalleryCover(offerId: string, photoId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (offerId === null || offerId === undefined) {
-            throw new Error('Required parameter offerId was null or undefined when calling setPhotoAsCover.');
+            throw new Error('Required parameter offerId was null or undefined when calling setGalleryCover.');
         }
         if (photoId === null || photoId === undefined) {
-            throw new Error('Required parameter photoId was null or undefined when calling setPhotoAsCover.');
+            throw new Error('Required parameter photoId was null or undefined when calling setGalleryCover.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -541,6 +543,7 @@ export class OwnerOffersService extends BaseService {
         localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
             'application/problem+json'
         ]);
         if (localVarHttpHeaderAcceptSelected !== undefined) {
@@ -565,7 +568,7 @@ export class OwnerOffersService extends BaseService {
 
         let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos/${this.configuration.encodeParam({name: "photoId", value: photoId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/cover`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<any>('patch', `${basePath}${localVarPath}`,
+        return this.httpClient.request<OfferDTO>('put', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,
@@ -579,27 +582,24 @@ export class OwnerOffersService extends BaseService {
     }
 
     /**
-     * Update photo position
-     * @endpoint put /api/v1/owner/offers/{offerId}/photos/{photoId}/position
+     * Upload a photo to the offer gallery (owner only)
+     * Appends a photo at the end of the gallery, which holds at most 10 photos. A concurrent cover change is answered with 409. 
+     * @endpoint post /api/v1/owner/offers/{offerId}/photos
      * @param offerId 
-     * @param photoId 
-     * @param photoPositionDTO 
+     * @param file 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public updatePhotoPosition(offerId: string, photoId: string, photoPositionDTO: PhotoPositionDTO, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
-    public updatePhotoPosition(offerId: string, photoId: string, photoPositionDTO: PhotoPositionDTO, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
-    public updatePhotoPosition(offerId: string, photoId: string, photoPositionDTO: PhotoPositionDTO, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
-    public updatePhotoPosition(offerId: string, photoId: string, photoPositionDTO: PhotoPositionDTO, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public uploadGalleryPhoto(offerId: string, file: Blob, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferDTO>;
+    public uploadGalleryPhoto(offerId: string, file: Blob, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferDTO>>;
+    public uploadGalleryPhoto(offerId: string, file: Blob, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferDTO>>;
+    public uploadGalleryPhoto(offerId: string, file: Blob, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (offerId === null || offerId === undefined) {
-            throw new Error('Required parameter offerId was null or undefined when calling updatePhotoPosition.');
+            throw new Error('Required parameter offerId was null or undefined when calling uploadGalleryPhoto.');
         }
-        if (photoId === null || photoId === undefined) {
-            throw new Error('Required parameter photoId was null or undefined when calling updatePhotoPosition.');
-        }
-        if (photoPositionDTO === null || photoPositionDTO === undefined) {
-            throw new Error('Required parameter photoPositionDTO was null or undefined when calling updatePhotoPosition.');
+        if (file === null || file === undefined) {
+            throw new Error('Required parameter file was null or undefined when calling uploadGalleryPhoto.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -608,6 +608,7 @@ export class OwnerOffersService extends BaseService {
         localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
             'application/problem+json'
         ]);
         if (localVarHttpHeaderAcceptSelected !== undefined) {
@@ -618,14 +619,27 @@ export class OwnerOffersService extends BaseService {
 
         const localVarTransferCache: boolean = options?.transferCache ?? true;
 
-
         // to determine the Content-Type header
         const consumes: string[] = [
-            'application/json'
+            'multipart/form-data'
         ];
-        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
-        if (httpContentTypeSelected !== undefined) {
-            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+
+        const canConsumeForm = this.canConsumeForm(consumes);
+
+        let localVarFormParams: { append(param: string, value: any): any; };
+        let localVarUseForm = false;
+        let localVarConvertFormParamsToString = false;
+        // use FormData to transmit files using content-type "multipart/form-data"
+        // see https://stackoverflow.com/questions/4007969/application-x-www-form-urlencoded-or-multipart-form-data
+        localVarUseForm = canConsumeForm;
+        if (localVarUseForm) {
+            localVarFormParams = new FormData();
+        } else {
+            localVarFormParams = new HttpParams({encoder: this.encoder});
+        }
+
+        if (file !== undefined) {
+            localVarFormParams = localVarFormParams.append('file', <any>file) as any || localVarFormParams;
         }
 
         let responseType_: 'text' | 'json' | 'blob' = 'json';
@@ -639,12 +653,12 @@ export class OwnerOffersService extends BaseService {
             }
         }
 
-        let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos/${this.configuration.encodeParam({name: "photoId", value: photoId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/position`;
+        let localVarPath = `/api/v1/owner/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/photos`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<any>('put', `${basePath}${localVarPath}`,
+        return this.httpClient.request<OfferDTO>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
-                body: photoPositionDTO,
+                body: localVarConvertFormParamsToString ? localVarFormParams.toString() : localVarFormParams,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

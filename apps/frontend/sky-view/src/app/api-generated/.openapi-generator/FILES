@@ -17,11 +17,11 @@ model/bookingPayload.ts
 model/messageDTO.ts
 model/models.ts
 model/offerDTO.ts
+model/offerEditDTO.ts
 model/page.ts
 model/pageable.ts
 model/pageableObject.ts
 model/photoDTO.ts
-model/photoPositionDTO.ts
 model/problemDetail.ts
 model/sortObject.ts
 param.ts

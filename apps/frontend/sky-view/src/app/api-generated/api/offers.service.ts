@@ -175,9 +175,9 @@ export class OffersService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public getOfferOwner(offerId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
-    public getOfferOwner(offerId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
-    public getOfferOwner(offerId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public getOfferOwner(offerId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public getOfferOwner(offerId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public getOfferOwner(offerId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
     public getOfferOwner(offerId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (offerId === null || offerId === undefined) {
             throw new Error('Required parameter offerId was null or undefined when calling getOfferOwner.');
@@ -214,7 +214,7 @@ export class OffersService extends BaseService {
 
         let localVarPath = `/api/v1/offers/${this.configuration.encodeParam({name: "offerId", value: offerId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/owner`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<any>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<string>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,
@@ -228,20 +228,24 @@ export class OffersService extends BaseService {
     }
 
     /**
-     * Search offers
-     * @endpoint get /api/v1/search
+     * Search for offers (paginated)
+     * Searches the offer inventory for the term sent as the request body. The term must not be blank, and it must not be longer than 100 characters. A term that breaks either rule is answered with 400. 
+     * @endpoint post /api/v1/search
      * @param pageable 
-     * @param name 
+     * @param body 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public searchOffers(pageable: Pageable, name?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Page>;
-    public searchOffers(pageable: Pageable, name?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Page>>;
-    public searchOffers(pageable: Pageable, name?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Page>>;
-    public searchOffers(pageable: Pageable, name?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public search(pageable: Pageable, body: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Page>;
+    public search(pageable: Pageable, body: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Page>>;
+    public search(pageable: Pageable, body: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Page>>;
+    public search(pageable: Pageable, body: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (pageable === null || pageable === undefined) {
-            throw new Error('Required parameter pageable was null or undefined when calling searchOffers.');
+            throw new Error('Required parameter pageable was null or undefined when calling search.');
+        }
+        if (body === null || body === undefined) {
+            throw new Error('Required parameter body was null or undefined when calling search.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -250,15 +254,6 @@ export class OffersService extends BaseService {
             localVarQueryParameters,
             'pageable',
             <any>pageable,
-            QueryParamStyle.Form,
-            true,
-        );
-
-
-        localVarQueryParameters = this.addToHttpParams(
-            localVarQueryParameters,
-            'name',
-            <any>name,
             QueryParamStyle.Form,
             true,
         );
@@ -279,6 +274,15 @@ export class OffersService extends BaseService {
         const localVarTransferCache: boolean = options?.transferCache ?? true;
 
 
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
         let responseType_: 'text' | 'json' | 'blob' = 'json';
         if (localVarHttpHeaderAcceptSelected) {
             if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
@@ -292,9 +296,10 @@ export class OffersService extends BaseService {
 
         let localVarPath = `/api/v1/search`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Page>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<Page>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                body: body,
                 params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),

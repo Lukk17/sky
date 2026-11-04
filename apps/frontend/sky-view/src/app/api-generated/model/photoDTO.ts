@@ -11,7 +11,7 @@
 
 export interface PhotoDTO { 
     id?: string;
-    cover?: boolean;
+    main?: boolean;
     position?: number;
     url?: string;
 }

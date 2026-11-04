@@ -7,13 +7,22 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PhotoDTO } from './photoDTO';
 
 
 export interface OfferDTO { 
+    city: string;
+    comment?: string;
+    country: string;
+    coverPhotoUrl?: string;
+    description?: string;
+    externalPhotoUrl?: string;
+    gallery?: Array<PhotoDTO>;
+    hotelName: string;
     id?: string;
-    name: string;
     ownerEmail?: string;
     photoUrl?: string;
-    price: string;
+    price: number;
+    roomCapacity: number;
 }
 
