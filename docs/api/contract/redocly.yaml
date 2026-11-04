@@ -2,11 +2,9 @@ extends:
   - recommended
 
 rules:
-  # The stub operation is anonymous by design, matching the public offer read
-  # in the published document, which carries no root security and marks the
-  # list operation with security: []. Relaxed until the contract grows auth.
-  security-defined: off
-  # The stub is a scaffold, not a production document, so it carries no
-  # license field and points at the local development addresses.
+  # Bearer auth is defined once at document level, and the two anonymous offer
+  # reads opt out with security: [], so the rule has something real to check.
+  # The contract points at the local gateway on purpose, so the localhost server
+  # and the absent license stay warnings rather than errors.
   info-license: warn
   no-server-example.com: warn
