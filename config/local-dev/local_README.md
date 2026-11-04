@@ -38,13 +38,13 @@ HINT: MINIO_ROOT_USER length should be at least 3, and MINIO_ROOT_PASSWORD lengt
 Run first, before starting anything. It checks `localhost`, wildcard `*.localhost` subdomains and `keycloak.test` resolve to loopback, and reports whether the gateway edge answers:
 
 ```bash
-bash scripts/verify-host-dns.sh
+bash config/scripts/verify-host-dns.sh
 ```
 
 A DNS failure exits 1 and names the fix, usually a hosts-file entry. Host-run services need `keycloak.test` for the default issuer `https://keycloak.test:9443/realms/sky`, while the Compose gateway stack itself needs no hosts entry. Gateway ports are reported without failing in this mode. After the stack is up, rerun with the strict flag:
 
 ```bash
-bash scripts/verify-host-dns.sh --require-gateway
+bash config/scripts/verify-host-dns.sh --require-gateway
 ```
 
 ---

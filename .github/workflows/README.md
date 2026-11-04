@@ -21,7 +21,7 @@ Concurrency is one in-flight run per pull request. A new push cancels the supers
 |---|---|---|
 | `detect-changes` | Always | Maps changed files to outputs (`booking`, `offer`, `message`, `notify`, `gateway`, `common`, `shared`, `contracts`, `frontend`, `workflows`) plus `backend` (any backend file) and `docs-only` (none of backend, contracts, frontend, workflows). Non-PR events report `backend=true`, `docs-only=false`. |
 | `verify-changelog` | `pull_request` only | Every touched module has a new top `## [x.y.z]` entry with content. Compares HEAD against the base branch. |
-| `dockerfile-parity` | Always | Runs `scripts/check-dockerfile-parity.sh`. Fails when a Gradle module is missing from a Dockerfile `COPY` list. Takes seconds. |
+| `dockerfile-parity` | Always | Runs `config/scripts/check-dockerfile-parity.sh`. Fails when a Gradle module is missing from a Dockerfile `COPY` list. Takes seconds. |
 | `build-and-test` | `backend == true` | Builds and tests only the affected modules (`:<service>:build`). A `sky-common`, `buildSrc`, catalogue, or wrapper change builds everything. Skipped entirely on a docs-only pull request. |
 | `e2e-collection` | After `build-and-test` | Builds the five service images from their Dockerfiles, starts the compose stack, runs the Bruno collection. Skipped when `build-and-test` is skipped. |
 | `owasp-dependency-check` | `pull_request` and `backend == true` | Runs `dependencyCheckAggregate`. Skipped on docs-only. |
@@ -54,8 +54,8 @@ Artifact name is `test-reports-<run_id>-<run_attempt>`, retained seven days. A g
 
 ## Parity script
 
-`scripts/check-dockerfile-parity.sh` is the executable form of one rule: every service Dockerfile must `COPY` its own module, every `project(":...")` dependency named in its `build.gradle.kts` (today `sky-common` everywhere), and the shared build inputs (`settings.gradle.kts`, `build.gradle.kts`, `gradle`, `buildSrc`), and must build `:<service>:bootJar`. It also checks that every service with a Dockerfile is listed in `settings.gradle.kts`. Run it locally before pushing a Dockerfile change:
+`config/scripts/check-dockerfile-parity.sh` is the executable form of one rule: every service Dockerfile must `COPY` its own module, every `project(":...")` dependency named in its `build.gradle.kts` (today `sky-common` everywhere), and the shared build inputs (`settings.gradle.kts`, `build.gradle.kts`, `gradle`, `buildSrc`), and must build `:<service>:bootJar`. It also checks that every service with a Dockerfile is listed in `settings.gradle.kts`. Run it locally before pushing a Dockerfile change:
 
 ```bash
-bash scripts/check-dockerfile-parity.sh
+bash config/scripts/check-dockerfile-parity.sh
 ```

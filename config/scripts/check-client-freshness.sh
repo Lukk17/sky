@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CONTRACT="${REPO_ROOT}/docs/api/contract/openapi.yaml"
 CLIENT_DIR="${REPO_ROOT}/apps/frontend/sky-view/src/app/api-generated"
 

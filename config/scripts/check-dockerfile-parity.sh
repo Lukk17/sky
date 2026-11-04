@@ -4,14 +4,14 @@
 # or when a Dockerfile COPYs a directory that is not a Gradle module.
 #
 # Run from the repository root or from anywhere:
-#   bash scripts/check-dockerfile-parity.sh
+#   bash config/scripts/check-dockerfile-parity.sh
 #
 # Exit 0 when every service Dockerfile carries its own module, sky-common,
 # and the shared build inputs. Exit 1 with a named missing entry otherwise.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BACKEND_DIR="${REPO_ROOT}/apps/backend"
 SETTINGS_FILE="${BACKEND_DIR}/settings.gradle.kts"
 

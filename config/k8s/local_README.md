@@ -70,13 +70,13 @@ Building by hand works too and is documented in [config/local-dev/local_README.m
 Run first, before creating anything. It checks `localhost`, wildcard `*.localhost` subdomains and `keycloak.test` resolve to loopback, and reports whether the gateway edge answers:
 
 ```bash
-bash scripts/verify-host-dns.sh
+bash config/scripts/verify-host-dns.sh
 ```
 
 A DNS failure exits 1 and names the fix, usually a hosts-file entry. Gateway ports are reported without failing in this mode. After the stack is up, rerun with the strict flag before the Bruno gate:
 
 ```bash
-bash scripts/verify-host-dns.sh --require-gateway
+bash config/scripts/verify-host-dns.sh --require-gateway
 ```
 
 ---

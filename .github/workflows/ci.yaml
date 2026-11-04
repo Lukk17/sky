@@ -146,7 +146,7 @@ jobs:
       - name: Check Dockerfile COPY lists match Gradle modules
         run: |
           set -euo pipefail
-          bash scripts/check-dockerfile-parity.sh
+          bash config/scripts/check-dockerfile-parity.sh
 
   # Each module carries its own CHANGELOG.md, and the topmost "## [x.y.z]" entry
   # in it is the version release.yaml publishes as that module's image tag. This
@@ -603,4 +603,4 @@ jobs:
       - name: Check client freshness
         run: |
           set -euo pipefail
-          bash scripts/check-client-freshness.sh
+          bash config/scripts/check-client-freshness.sh

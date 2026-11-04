@@ -16,8 +16,8 @@
 #                    compose does not publish it
 #
 # Run from the repository root or from anywhere:
-#   bash scripts/verify-host-dns.sh
-#   bash scripts/verify-host-dns.sh --require-gateway
+#   bash config/scripts/verify-host-dns.sh
+#   bash config/scripts/verify-host-dns.sh --require-gateway
 #
 # Default mode checks DNS strictly and reports gateway ports without failing,
 # so it works as the first step before the stack is up. Pass --require-gateway
@@ -32,7 +32,7 @@ GATEWAY_PORT="5777"
 REQUIRE_GATEWAY=0
 
 usage() {
-  printf 'Usage: bash scripts/verify-host-dns.sh [--require-gateway] [--gateway-host HOST] [--gateway-port PORT]\n'
+  printf 'Usage: bash config/scripts/verify-host-dns.sh [--require-gateway] [--gateway-host HOST] [--gateway-port PORT]\n'
 }
 
 while [ "$#" -gt 0 ]; do
@@ -126,7 +126,7 @@ check_port "${GATEWAY_HOST}" "${GATEWAY_PORT}" "Gateway edge" "${REQUIRE_GATEWAY
 check_port "${GATEWAY_HOST}" "80" "Gateway portless HTTP (k3d only)" 0 || true
 
 if [ "${failed}" -ne 0 ]; then
-  printf '\nHost and DNS verification failed. Fix the FAIL line above, then rerun bash scripts/verify-host-dns.sh.\n' >&2
+  printf '\nHost and DNS verification failed. Fix the FAIL line above, then rerun bash config/scripts/verify-host-dns.sh.\n' >&2
   exit 1
 fi
 
