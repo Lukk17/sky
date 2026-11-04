@@ -229,7 +229,7 @@ export class OffersService extends BaseService {
 
     /**
      * Search for offers (paginated)
-     * Searches the offer inventory for the term sent as the request body. The term must not be blank, and it must not be longer than 100 characters. A term that breaks either rule is answered with 400. 
+     * Searches the offer inventory for the term sent as the request body. The term must not be blank, and it must not be longer than 100 characters. A term that breaks either rule is answered with 400.
      * @endpoint post /api/v1/search
      * @param pageable 
      * @param body 

@@ -583,7 +583,7 @@ export class OwnerOffersService extends BaseService {
 
     /**
      * Upload a photo to the offer gallery (owner only)
-     * Appends a photo at the end of the gallery, which holds at most 10 photos. A concurrent cover change is answered with 409. 
+     * Appends a photo at the end of the gallery, which holds at most 10 photos. A concurrent cover change is answered with 409.
      * @endpoint post /api/v1/owner/offers/{offerId}/photos
      * @param offerId 
      * @param file 
