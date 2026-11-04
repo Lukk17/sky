@@ -1,3 +1,11 @@
+## [2.1.6] - 2026-11-04
+
+### Changed
+- Generate the booking REST interface from `docs/api/contract/openapi.yaml` and implement it in
+  `BookingController`. `BookingsApi` now supplies the paths, status codes and documentation, while the
+  controller keeps the security and shared error annotations on top of it. Spring Data pages are mapped
+  to the generated `Page` by `BookingPageMapper`. The `/api/v1` paths and response shapes are unchanged.
+
 ## [2.1.5] - 2026-10-22
 
 ### Fixed

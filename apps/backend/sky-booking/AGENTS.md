@@ -21,8 +21,12 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
     `EventSourceRepository`, `BookingNotificationService`, `RestClient`, `RequestUriStrategy`).
   - `domain/service`: domain service implementations (`BookingServicePrimary`, `BookingPersister`,
     `EventSourceService`, `EventSourceServicePrimary`).
-  - `adapters/inbound/api`: REST controllers; `adapters/dto`: wire DTOs; `adapters/outbound/rest`: the
-    outbound offer-service client, caller, and URI strategy; `adapters/outbound/notification`: outbound notification.
+  - `adapters/inbound/api`: REST controllers; `BookingController` implements the generated `BookingsApi` in
+    `adapters/inbound/api/contract` and declares no method-level mappings. The OpenAPI Generator plugin reads
+    `docs/api/contract/openapi.yaml` into `build/generated/contract` on the main source set, so `compileJava`
+    depends on `openApiGenerate`. `adapters/dto`: wire DTOs; `adapters/dto/contract`: generated page models;
+    `adapters/outbound/rest`: the outbound offer-service client, caller, and URI strategy;
+    `adapters/outbound/notification`: outbound notification.
   - `config`, `config/kafka`, `config/propertyBind`: Spring wiring and bound properties.
 - Synchronous stack: the WebFlux migration is done. `BookingService` returns plain types (`BookingDTO` and
   `Page<BookingDTO>`, no `Mono`), and inter-service calls go through Spring's blocking `RestClient`, built in
@@ -141,9 +145,10 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
   `SemanticApiVersionParser.parseVersion` calls `skipNonDigits` before it matches, so `"v1"` and `"1"` parse
   to the same version and the `addSupportedVersions("1")` and `setDefaultVersion("1")` calls in sky-common
   keep matching. Do not change it back.
-  The error contract is the annotations and nothing else. The 409, 415, 502 and 503 on `POST /bookings` come
+  The error contract is the annotations. The 409, 415, 502 and 503 on `POST /bookings` come
   from `@ApiConflictResponse`, `@ApiUnsupportedMediaTypeResponse`, `@ApiDependencyBadGatewayResponse` and
-  `@ApiDependencyUnavailableResponse` in sky-common, and `BookingDTO` marks `id` and `ownerEmail` required
+  `@ApiDependencyUnavailableResponse` in sky-common, and the generated `BookingsApi` mirrors the same statuses
+  from the contract. `BookingDTO` marks `id` and `ownerEmail` required
   through `@Schema` because neither carries a Bean Validation constraint that springdoc could read, though
   both are always present on a response. A status this service answers and no annotation declares is simply
   absent from the published document, so add the annotation in the same change as the exception mapping.
