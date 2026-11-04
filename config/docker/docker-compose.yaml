@@ -138,6 +138,8 @@ services:
     build:
       dockerfile: sky-booking/docker/Dockerfile
       context: ../../apps/backend
+      secrets:
+        - contract
       tags:
         - "sky-booking:${SKY_VERSION:-2.0.0}"
     image: sky-booking:latest
@@ -179,6 +181,8 @@ services:
     build:
       dockerfile: sky-offer/docker/Dockerfile
       context: ../../apps/backend
+      secrets:
+        - contract
       tags:
         - "sky-offer:${SKY_VERSION:-2.0.0}"
     image: sky-offer:latest
@@ -226,6 +230,8 @@ services:
     build:
       dockerfile: sky-message/docker/Dockerfile
       context: ../../apps/backend
+      secrets:
+        - contract
       tags:
         - "sky-message:${SKY_VERSION:-2.0.0}"
     image: sky-message:latest
@@ -473,6 +479,10 @@ services:
       timeout: 5s
       retries: 8
       start_period: 30s
+
+secrets:
+  contract:
+    file: ../../docs/api/contract/openapi.yaml
 
 volumes:
   kafka_data:

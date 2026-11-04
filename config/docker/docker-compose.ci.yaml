@@ -133,6 +133,8 @@ services:
     build:
       dockerfile: sky-booking/docker/Dockerfile
       context: ../../apps/backend
+      secrets:
+        - contract
     image: sky-booking:e2e
     networks:
       - sky-e2e-network
@@ -167,6 +169,8 @@ services:
     build:
       dockerfile: sky-offer/docker/Dockerfile
       context: ../../apps/backend
+      secrets:
+        - contract
     image: sky-offer:e2e
     networks:
       - sky-e2e-network
@@ -204,6 +208,8 @@ services:
     build:
       dockerfile: sky-message/docker/Dockerfile
       context: ../../apps/backend
+      secrets:
+        - contract
     image: sky-message:e2e
     networks:
       - sky-e2e-network
@@ -320,6 +326,10 @@ configs:
       CREATE USER keycloak WITH PASSWORD 'local';
       CREATE DATABASE keycloak OWNER keycloak;
       GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
+
+secrets:
+  contract:
+    file: ../../docs/api/contract/openapi.yaml
 
 volumes:
   postgres_data:

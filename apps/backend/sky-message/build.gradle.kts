@@ -12,7 +12,9 @@ skyOpenApi {
     docsPort.set(7973)
 }
 
-val contractFile = rootDir.parentFile.parentFile.resolve("docs/api/contract/openapi.yaml")
+val contractFile = providers.environmentVariable("SKY_CONTRACT_FILE").map { file(it) }
+    .orElse(providers.provider { rootDir.parentFile.parentFile.resolve("docs/api/contract/openapi.yaml") })
+    .get()
 
 openApiGenerate {
     generatorName.set("spring")

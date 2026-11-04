@@ -1,19 +1,26 @@
 # syntax=docker/dockerfile:1.7
 
-# Build from the backend root (apps/backend):
-#   docker build -f sky-message/docker/Dockerfile -t sky-message:latest .
+# Build from the repository root (the secret source path is relative to it):
+#   docker build -f apps/backend/sky-message/docker/Dockerfile \
+#     --secret id=contract,src=docs/api/contract/openapi.yaml \
+#     -t sky-message:latest apps/backend
 
 # Single shared pin: override with --build-arg RUNTIME_IMAGE=<image> to move all services at once.
 ARG RUNTIME_IMAGE=eclipse-temurin:25-jre-alpine
 # ===============> BUILD STAGE <===============
 FROM gradle:9-jdk25 AS build
 WORKDIR /workspace
+ENV SKY_CONTRACT_FILE=/workspace/docs/api/contract/openapi.yaml
 COPY settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle
 COPY buildSrc ./buildSrc
+COPY openapi-templates ./openapi-templates
 COPY sky-common ./sky-common
 COPY sky-message ./sky-message
-RUN --mount=type=cache,id=gradle-sky-message,target=/home/gradle/.gradle gradle :sky-message:bootJar --no-daemon -x test \
+RUN mkdir -p /workspace/docs/api/contract
+RUN --mount=type=cache,id=gradle-sky-message,target=/home/gradle/.gradle \
+    --mount=type=secret,id=contract,target=/workspace/docs/api/contract/openapi.yaml,required=true \
+    gradle :sky-message:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-message/build/libs/sky-message.jar \
         extract --layers --launcher --destination sky-message/build/extracted
 
