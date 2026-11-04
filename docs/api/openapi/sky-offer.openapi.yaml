@@ -1099,6 +1099,9 @@ paths:
           application/json:
             schema:
               type: string
+          text/plain:
+            schema:
+              type: string
         required: true
       responses:
         "200":
