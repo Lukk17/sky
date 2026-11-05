@@ -19,9 +19,9 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { BookingDTO } from '../model/bookingDTO';
 // @ts-ignore
-import { BookingPayload } from '../model/bookingPayload';
+import { BookingPage } from '../model/bookingPage';
 // @ts-ignore
-import { Page } from '../model/page';
+import { BookingPayload } from '../model/bookingPayload';
 // @ts-ignore
 import { Pageable } from '../model/pageable';
 // @ts-ignore
@@ -121,9 +121,9 @@ export class BookingsService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public getBookedOffers(pageable: Pageable, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Page>;
-    public getBookedOffers(pageable: Pageable, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Page>>;
-    public getBookedOffers(pageable: Pageable, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Page>>;
+    public getBookedOffers(pageable: Pageable, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<BookingPage>;
+    public getBookedOffers(pageable: Pageable, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<BookingPage>>;
+    public getBookedOffers(pageable: Pageable, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<BookingPage>>;
     public getBookedOffers(pageable: Pageable, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (pageable === null || pageable === undefined) {
             throw new Error('Required parameter pageable was null or undefined when calling getBookedOffers.');
@@ -171,7 +171,7 @@ export class BookingsService extends BaseService {
 
         let localVarPath = `/api/v1/user/bookings`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Page>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<BookingPage>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),

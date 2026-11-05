@@ -11,18 +11,18 @@ import { PhotoDTO } from './photoDTO';
 
 
 export interface OfferDTO { 
-    city: string;
-    comment?: string;
-    country: string;
-    coverPhotoUrl?: string;
-    description?: string;
-    externalPhotoUrl?: string;
-    gallery?: Array<PhotoDTO>;
+    readonly id?: string | null;
     hotelName: string;
-    id?: string;
-    ownerEmail?: string;
-    photoUrl?: string;
+    description?: string | null;
+    comment?: string | null;
     price: number;
+    readonly ownerEmail?: string | null;
     roomCapacity: number;
+    city: string;
+    country: string;
+    externalPhotoUrl?: string | null;
+    readonly photoUrl?: string | null;
+    readonly gallery?: Array<PhotoDTO>;
+    readonly coverPhotoUrl?: string | null;
 }
 

@@ -10,9 +10,9 @@
 
 
 export interface PhotoDTO { 
-    id?: string;
-    main?: boolean;
-    position?: number;
-    url?: string;
+    readonly id: string | null;
+    main: boolean;
+    position: number;
+    readonly url: string | null;
 }
 

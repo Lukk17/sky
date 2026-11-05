@@ -12,8 +12,8 @@
 export interface BookingDTO { 
     bookedDate: string;
     bookingUser: string;
-    id: string;
+    readonly id: string;
     offerId: string;
-    ownerEmail: string;
+    readonly ownerEmail: string;
 }
 

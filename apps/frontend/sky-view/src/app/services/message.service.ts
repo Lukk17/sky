@@ -1,17 +1,19 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
 import {shareReplay, switchMap, timer} from 'rxjs';
 import {ResponseHandlerService} from './responseHandler.service';
-import {AppConfigService} from './app-config.service';
+import {MessagesService} from '../api-generated/api/messages.service';
+import {MessageDTO} from '../api-generated/model/messageDTO';
+import {MessagePage} from '../api-generated/model/messagePage';
+import {Pageable} from '../api-generated/model/pageable';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MessageReadStore {
-  private readIds = new Set<number>();
+  private readIds = new Set<string>();
 
-  markRead(id: number): void {
+  markRead(id: string): void {
     this.readIds.add(id);
   }
 
@@ -24,20 +26,26 @@ export class MessageReadStore {
   providedIn: 'root'
 })
 export class MessageService {
-  private BASE_ADDRESS: string;
 
-  private RECEIVED_MESSAGES_URL: string;
-  private SENT_MESSAGES_URL: string;
-  private SEND_MESSAGE_URL: string;
-  private DELETE_MESSAGE_URL: string;
+  // Threads are built client-side from the whole inbox, so ask for one big
+  // page: the default size 20 hides older threads and any message past it.
+  // PAGE_SIZE is the inbox page size used by getReceived/getSent; increase only with backend pagination support.
+  private static readonly PAGE_SIZE = 500;
+  public readonly unread$ = timer(0, 5000).pipe(
+    switchMap(() => this.getReceived()),
+    shareReplay({bufferSize: 1, refCount: true}),
+  );
 
-  constructor(private http: HttpClient, config: AppConfigService) {
-    const cfg = config.get();
-    this.BASE_ADDRESS = `${cfg.apiBaseUrl}`;
-    this.RECEIVED_MESSAGES_URL = this.BASE_ADDRESS + `${cfg.receivedMessages}`;
-    this.SENT_MESSAGES_URL = this.BASE_ADDRESS + `${cfg.sentMessages}`;
-    this.SEND_MESSAGE_URL = this.BASE_ADDRESS + `${cfg.sendMessage}`;
-    this.DELETE_MESSAGE_URL = this.BASE_ADDRESS + `${cfg.deleteMessage}`;
+  constructor(private messagesService: MessagesService) {
+  }
+
+  private static mapMessageDtoToMessage(dto: MessageDTO): Message {
+    const message = new Message(dto.text, dto.receiverEmail);
+    message.id = dto.id ?? '';
+    message.createdTime = dto.createdTime ?? '';
+    message.read = dto.read ?? false;
+    message.senderEmail = dto.senderEmail ?? '';
+    return message;
   }
 
   private static buildMessage(draft: MessageDraft) {
@@ -47,26 +55,21 @@ export class MessageService {
     );
   }
 
-  // Threads are built client-side from the whole inbox, so ask for one big
-  // page: the default size 20 hides older threads and any message past it.
-  // PAGE is the inbox page size used by getReceived/getSent; increase only with backend pagination support.
-  private static readonly PAGE = '?size=500';
-  public readonly unread$ = timer(0, 5000).pipe(
-    switchMap(() => this.getReceived()),
-    shareReplay({bufferSize: 1, refCount: true}),
-  );
-
   getReceived() {
-    return this.http.get<Message[]>(`${this.RECEIVED_MESSAGES_URL}${MessageService.PAGE}`).pipe(
+    const pageable: Pageable = {size: MessageService.PAGE_SIZE};
+    return this.messagesService.getReceivedMessages(pageable, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getReceived()')),
-      map((resp) => ResponseHandlerService.handleMessageResponse(resp))
+      map((resp: MessagePage) => ResponseHandlerService.handleMessageResponse(
+        resp.content.map((dto) => MessageService.mapMessageDtoToMessage(dto))))
     );
   }
 
   getSent() {
-    return this.http.get<Message[]>(`${this.SENT_MESSAGES_URL}${MessageService.PAGE}`).pipe(
+    const pageable: Pageable = {size: MessageService.PAGE_SIZE};
+    return this.messagesService.getSentMessages(pageable, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getSent()')),
-      map((resp) => ResponseHandlerService.handleMessageResponse(resp))
+      map((resp: MessagePage) => ResponseHandlerService.handleMessageResponse(
+        resp.content.map((dto) => MessageService.mapMessageDtoToMessage(dto))))
     );
   }
 
@@ -76,22 +79,23 @@ export class MessageService {
   }
 
   sendDirect(receiverEmail: string, text: string) {
-    return this.http.post<Message>(this.SEND_MESSAGE_URL,
-      {receiverEmail, text}).pipe(
-      catchError((err) => ResponseHandlerService.handleError(err, 'sendMessage()'))
+    return this.messagesService.sendMessage({receiverEmail, text}, 'body', false).pipe(
+      catchError((err) => ResponseHandlerService.handleError(err, 'sendMessage()')),
+      map((resp: MessageDTO) => MessageService.mapMessageDtoToMessage(resp))
     );
   }
 
-  deleteMessage(id: number) {
-    return this.http.delete<void>(this.DELETE_MESSAGE_URL + id).pipe(
-      catchError((err) => ResponseHandlerService.handleError(err, 'deleteMessage()'))
+  deleteMessage(id: string) {
+    return this.messagesService.deleteMessage(id, 'body', false).pipe(
+      catchError((err) => ResponseHandlerService.handleError(err, 'deleteMessage()')),
+      map(() => undefined)
     );
   }
 }
 
 export class Message {
 
-  'id': number;
+  'id': string;
   'text': string;
   'receiverEmail': string;
   'senderEmail': string;

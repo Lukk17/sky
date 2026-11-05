@@ -221,7 +221,7 @@ export class OfferDetailsComponent implements OnInit {
       }});
   }
 
-  cancelBooking(id: number) {
+  cancelBooking(id: string) {
     if (!this.isLoggedIn) {
       this.auth.login(this.router.url);
       return;
@@ -238,7 +238,7 @@ export class OfferDetailsComponent implements OnInit {
       }});
   }
 
-  deleteBooking(id: number) {
+  deleteBooking(id: string) {
     this.cancelBooking(id);
   }
 

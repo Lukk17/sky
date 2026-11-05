@@ -21,7 +21,7 @@ import { OfferDTO } from '../model/offerDTO';
 // @ts-ignore
 import { OfferEditDTO } from '../model/offerEditDTO';
 // @ts-ignore
-import { Page } from '../model/page';
+import { OfferPage } from '../model/offerPage';
 // @ts-ignore
 import { Pageable } from '../model/pageable';
 // @ts-ignore
@@ -373,9 +373,9 @@ export class OwnerOffersService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public getOwnedOffers(pageable: Pageable, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Page>;
-    public getOwnedOffers(pageable: Pageable, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Page>>;
-    public getOwnedOffers(pageable: Pageable, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Page>>;
+    public getOwnedOffers(pageable: Pageable, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferPage>;
+    public getOwnedOffers(pageable: Pageable, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferPage>>;
+    public getOwnedOffers(pageable: Pageable, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferPage>>;
     public getOwnedOffers(pageable: Pageable, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (pageable === null || pageable === undefined) {
             throw new Error('Required parameter pageable was null or undefined when calling getOwnedOffers.');
@@ -423,7 +423,7 @@ export class OwnerOffersService extends BaseService {
 
         let localVarPath = `/api/v1/owner/offers`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Page>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<OfferPage>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),

@@ -37,6 +37,7 @@ import {ToolbarModule} from 'primeng/toolbar';
 import {OffersOwnedComponent} from './offer/offers-owned/offers-owned.component';
 import {PageNotFoundComponent} from './page-not-found/page-not-found.component';
 import {sessionCookieInterceptor} from './services/session-cookie.interceptor';
+import {BASE_PATH} from './api-generated/variables';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -73,6 +74,6 @@ import {sessionCookieInterceptor} from './services/session-cookie.interceptor';
         PopoverModule,
         TextareaModule,
         ToolbarModule,
-    ], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi(), withInterceptors([sessionCookieInterceptor])), AppConfigService, {provide: APP_INITIALIZER, multi: true, deps: [AppConfigService], useFactory: (config: AppConfigService) => () => config.load()}] })
+    ], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi(), withInterceptors([sessionCookieInterceptor])), AppConfigService, {provide: APP_INITIALIZER, multi: true, deps: [AppConfigService], useFactory: (config: AppConfigService) => () => config.load()}, {provide: BASE_PATH, useFactory: (config: AppConfigService) => config.get().apiBaseUrl, deps: [AppConfigService]}] })
 export class AppModule {
 }

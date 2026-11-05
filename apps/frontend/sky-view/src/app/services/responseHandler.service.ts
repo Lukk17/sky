@@ -15,22 +15,6 @@ export class ResponseHandlerService {
     return throwError(() => errorResp);
   }
 
-  private static unwrap<T>(respData: T[] | { content?: T[] } | Record<string, T>): T[] {
-    if (Array.isArray(respData)) {
-      return [...respData];
-    }
-    if (respData != null && Array.isArray((respData as { content?: unknown }).content)) {
-      return [...((respData as { content: T[] }).content)];
-    }
-    const items: T[] = [];
-    for (const key in respData) {
-      if (Object.hasOwn(respData, key)) {
-        items.push((respData as Record<string, T>)[key]);
-      }
-    }
-    return items;
-  }
-
   public static normalizeOfferGallery(offer: Offer): Offer {
     const raw = Array.isArray((offer as Offer).gallery) ? [...(offer.gallery as unknown[])] : [];
     const gallery = (raw as Partial<import('./offer.service').OfferPhoto>[])
@@ -50,23 +34,20 @@ export class ResponseHandlerService {
     return offer;
   }
 
-  public static handleGetOffersResponse(respData: Offer[] | { content?: Offer[] }) {
-    const offers = ResponseHandlerService.unwrap<Offer>(respData as Offer[]);
-    offers.forEach((o) => ResponseHandlerService.normalizeOfferGallery(o));
-    return offers;
+  public static handleGetOffersResponse(respData: Offer[]) {
+    respData.forEach((o) => ResponseHandlerService.normalizeOfferGallery(o));
+    return respData;
   }
 
   public static handleGetOfferResponse(respData: Offer): Offer {
     return ResponseHandlerService.normalizeOfferGallery(respData);
   }
 
-  public static handleGetBookingsResponse(respData: Booking[] | { content?: Booking[] }) {
-    const bookings = ResponseHandlerService.unwrap<Booking>(respData as Booking[]);
-    return bookings;
+  public static handleGetBookingsResponse(respData: Booking[]) {
+    return respData;
   }
 
-  public static handleMessageResponse(respData: Message[] | { content?: Message[] }) {
-    const messages = ResponseHandlerService.unwrap<Message>(respData as Message[]);
-    return messages;
+  public static handleMessageResponse(respData: Message[]) {
+    return respData;
   }
 }

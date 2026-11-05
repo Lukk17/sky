@@ -10,11 +10,11 @@
 
 
 export interface MessageDTO { 
-    id?: string;
-    createdTime?: string;
-    read?: boolean;
+    readonly id?: string | null;
+    readonly createdTime?: string | null;
+    readonly read?: boolean | null;
     receiverEmail: string;
-    senderEmail?: string;
+    readonly senderEmail?: string | null;
     text: string;
 }
 

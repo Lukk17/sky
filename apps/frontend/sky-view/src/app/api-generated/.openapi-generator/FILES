@@ -13,12 +13,14 @@ encoder.ts
 git_push.sh
 index.ts
 model/bookingDTO.ts
+model/bookingPage.ts
 model/bookingPayload.ts
 model/messageDTO.ts
+model/messagePage.ts
 model/models.ts
 model/offerDTO.ts
 model/offerEditDTO.ts
-model/page.ts
+model/offerPage.ts
 model/pageable.ts
 model/pageableObject.ts
 model/photoDTO.ts

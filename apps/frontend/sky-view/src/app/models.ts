@@ -22,7 +22,7 @@ export interface OfferModel {
 }
 
 export interface BookingModel {
-  id: number;
+  id: string;
   offerId: string;
   bookedDate: string;
   bookingUser: string;
@@ -31,13 +31,13 @@ export interface BookingModel {
 
 export interface PersonalBookingModel {
   hotelName: string;
-  id: number;
+  id: string;
   offerId: string;
   date: string;
 }
 
 export interface MessageModel {
-  id: number;
+  id: string;
   text: string;
   receiverEmail: string;
   senderEmail: string;

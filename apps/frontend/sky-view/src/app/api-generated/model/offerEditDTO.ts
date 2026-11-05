@@ -10,15 +10,15 @@
 
 
 export interface OfferEditDTO { 
-    city?: string;
-    comment?: string;
-    country?: string;
-    description?: string;
-    externalPhotoUrl?: string;
-    hotelName?: string;
     id: string;
-    ownerEmail?: string;
-    price?: number;
-    roomCapacity?: number;
+    hotelName?: string | null;
+    description?: string | null;
+    comment?: string | null;
+    price?: number | null;
+    readonly ownerEmail?: string | null;
+    roomCapacity?: number | null;
+    city?: string | null;
+    country?: string | null;
+    externalPhotoUrl?: string | null;
 }
 

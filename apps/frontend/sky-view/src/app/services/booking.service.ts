@@ -1,9 +1,11 @@
 import {Injectable} from '@angular/core';
 import {catchError, map} from 'rxjs/operators';
 import {ResponseHandlerService} from './responseHandler.service';
-import {HttpClient} from '@angular/common/http';
-import {AppConfigService} from './app-config.service';
 import {Offer} from './offer.service';
+import {BookingsService} from '../api-generated/api/bookings.service';
+import {BookingDTO} from '../api-generated/model/bookingDTO';
+import {BookingPage} from '../api-generated/model/bookingPage';
+import {Pageable} from '../api-generated/model/pageable';
 
 
 @Injectable({
@@ -11,44 +13,34 @@ import {Offer} from './offer.service';
 })
 export class BookingService {
 
-  private BASE_ADDRESS: string;
-  private BOOKINGS: string;
-  private ADD_BOOKING: string;
-  private DELETE_BOOKING: string;
-
-  constructor(private http: HttpClient, config: AppConfigService) {
-    const cfg = config.get();
-    this.BASE_ADDRESS = `${cfg.apiBaseUrl}`;
-    this.BOOKINGS = this.BASE_ADDRESS + `${cfg.bookings}`;
-    this.ADD_BOOKING = this.BASE_ADDRESS + `${cfg.addBooking}`;
-    this.DELETE_BOOKING = this.BASE_ADDRESS + `${cfg.deleteBooking}`;
+  constructor(private bookingsService: BookingsService) {
   }
 
-  private static buildBookingPayload(offer: Offer, dateToBook: string) {
-    return new BookingPayload(String(offer.id), dateToBook);
+  private static mapBookingDtoToBooking(dto: BookingDTO): Booking {
+    return new Booking(dto.id, dto.offerId, dto.bookedDate, dto.bookingUser, dto.ownerEmail);
   }
 
   public getBookedOffers() {
-    return this.http
-      .get<Booking[]>(this.BOOKINGS)
-      .pipe(
-        catchError((err) => ResponseHandlerService.handleError(err, 'getBookedOffers()')),
-        map((resp) => ResponseHandlerService.handleGetBookingsResponse(resp))
-      );
+    const pageable: Pageable = {} as Pageable;
+    return this.bookingsService.getBookedOffers(pageable, 'body', false).pipe(
+      catchError((err) => ResponseHandlerService.handleError(err, 'getBookedOffers()')),
+      map((resp: BookingPage) => ResponseHandlerService.handleGetBookingsResponse(
+        resp.content.map((dto) => BookingService.mapBookingDtoToBooking(dto))))
+    );
   }
 
-  deleteBooking(id: number) {
-    return this.http.delete<void>(this.DELETE_BOOKING + id)
-      .pipe(
-        catchError((err) => ResponseHandlerService.handleError(err, 'deleteOffer()'))
-      );
+  deleteBooking(id: string) {
+    return this.bookingsService.removeBooking(id, 'body', false).pipe(
+      catchError((err) => ResponseHandlerService.handleError(err, 'deleteBooking()')),
+      map(() => undefined)
+    );
   }
 
   addBooking(offer: Offer, dateToBook: string) {
-    const bookingPayload = BookingService.buildBookingPayload(offer, dateToBook);
-    return this.http.post<Booking>(this.ADD_BOOKING,
-      bookingPayload).pipe(
-      catchError((err) => ResponseHandlerService.handleError(err, 'addBooking()'))
+    const bookingPayload = new BookingPayload(String(offer.id), dateToBook);
+    return this.bookingsService.bookOffer(bookingPayload, 'body', false).pipe(
+      catchError((err) => ResponseHandlerService.handleError(err, 'addBooking()')),
+      map((resp: BookingDTO) => BookingService.mapBookingDtoToBooking(resp))
     );
   }
 }
@@ -64,13 +56,13 @@ export class BookingPayload {
 }
 
 export class Booking {
-  'id': number;
+  'id': string;
   'offerId': string;
   'bookedDate': string;
   'bookingUser': string;
   'ownerEmail': string;
 
-  constructor(id: number, offerId: string, bookedDate: string, bookingUser: string, ownerEmail: string) {
+  constructor(id: string, offerId: string, bookedDate: string, bookingUser: string, ownerEmail: string) {
     this.id = id;
     this.offerId = offerId;
     this.bookedDate = bookedDate;
@@ -81,11 +73,11 @@ export class Booking {
 
 export class PersonalBooking {
   'hotelName': string;
-  'id': number;
+  'id': string;
   'offerId': string;
   'date': string;
 
-  constructor(hotelName: string, id: number, offerId: string, date: string) {
+  constructor(hotelName: string, id: string, offerId: string, date: string) {
     this.hotelName = hotelName;
     this.id = id;
     this.date = date;

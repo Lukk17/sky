@@ -19,7 +19,7 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { OfferDTO } from '../model/offerDTO';
 // @ts-ignore
-import { Page } from '../model/page';
+import { OfferPage } from '../model/offerPage';
 // @ts-ignore
 import { Pageable } from '../model/pageable';
 // @ts-ignore
@@ -49,9 +49,9 @@ export class OffersService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public getAllOffers(pageable: Pageable, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Page>;
-    public getAllOffers(pageable: Pageable, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Page>>;
-    public getAllOffers(pageable: Pageable, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Page>>;
+    public getAllOffers(pageable: Pageable, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferPage>;
+    public getAllOffers(pageable: Pageable, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferPage>>;
+    public getAllOffers(pageable: Pageable, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferPage>>;
     public getAllOffers(pageable: Pageable, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (pageable === null || pageable === undefined) {
             throw new Error('Required parameter pageable was null or undefined when calling getAllOffers.');
@@ -96,7 +96,7 @@ export class OffersService extends BaseService {
 
         let localVarPath = `/api/v1/offers`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Page>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<OfferPage>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
@@ -229,26 +229,35 @@ export class OffersService extends BaseService {
 
     /**
      * Search for offers (paginated)
-     * Searches the offer inventory for the term sent as the request body. The term must not be blank, and it must not be longer than 100 characters. A term that breaks either rule is answered with 400.
-     * @endpoint post /api/v1/search
+     * Searches the offer inventory for the term sent as the &#x60;term&#x60; query parameter. The term must not be blank, and it must not be longer than 100 characters. A term that breaks either rule is answered with 400.
+     * @endpoint get /api/v1/search
+     * @param term The term to search for; it must not be blank and is at most 100 characters.
      * @param pageable 
-     * @param body 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public search(pageable: Pageable, body: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Page>;
-    public search(pageable: Pageable, body: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Page>>;
-    public search(pageable: Pageable, body: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Page>>;
-    public search(pageable: Pageable, body: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public search(term: string, pageable: Pageable, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfferPage>;
+    public search(term: string, pageable: Pageable, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfferPage>>;
+    public search(term: string, pageable: Pageable, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfferPage>>;
+    public search(term: string, pageable: Pageable, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (term === null || term === undefined) {
+            throw new Error('Required parameter term was null or undefined when calling search.');
+        }
         if (pageable === null || pageable === undefined) {
             throw new Error('Required parameter pageable was null or undefined when calling search.');
         }
-        if (body === null || body === undefined) {
-            throw new Error('Required parameter body was null or undefined when calling search.');
-        }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'term',
+            <any>term,
+            QueryParamStyle.Form,
+            true,
+        );
+
 
         localVarQueryParameters = this.addToHttpParams(
             localVarQueryParameters,
@@ -274,16 +283,6 @@ export class OffersService extends BaseService {
         const localVarTransferCache: boolean = options?.transferCache ?? true;
 
 
-        // to determine the Content-Type header
-        const consumes: string[] = [
-            'application/json',
-            'text/plain'
-        ];
-        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
-        if (httpContentTypeSelected !== undefined) {
-            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
-        }
-
         let responseType_: 'text' | 'json' | 'blob' = 'json';
         if (localVarHttpHeaderAcceptSelected) {
             if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
@@ -297,10 +296,9 @@ export class OffersService extends BaseService {
 
         let localVarPath = `/api/v1/search`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Page>('post', `${basePath}${localVarPath}`,
+        return this.httpClient.request<OfferPage>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
-                body: body,
                 params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),

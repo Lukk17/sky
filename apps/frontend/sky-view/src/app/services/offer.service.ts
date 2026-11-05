@@ -7,8 +7,8 @@ import {OffersService} from '../api-generated/api/offers.service';
 import {OwnerOffersService} from '../api-generated/api/ownerOffers.service';
 import {OfferDTO} from '../api-generated/model/offerDTO';
 import {OfferEditDTO} from '../api-generated/model/offerEditDTO';
+import {OfferPage} from '../api-generated/model/offerPage';
 import {Pageable} from '../api-generated/model/pageable';
-import {Page} from '../api-generated/model/page';
 
 export interface OfferDraft {
   hotelName: string;
@@ -63,9 +63,8 @@ export class OfferService {
   constructor(private offersService: OffersService, private ownerOffersService: OwnerOffersService) {
   }
 
-  private static mapPageToOffers(page: Page): Offer[] {
-    const content = (page as any)?.content ?? [];
-    return content.map((dto: any) => OfferService.mapOfferDtoToOffer(dto));
+  private static mapPageToOffers(page: OfferPage): Offer[] {
+    return page.content.map((dto) => OfferService.mapOfferDtoToOffer(dto));
   }
 
   private static mapOfferDtoToOffer(dto: OfferDTO): Offer {
@@ -99,7 +98,7 @@ export class OfferService {
     const pageable: Pageable = {} as Pageable;
     return this.offersService.getAllOffers(pageable, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getAllOffers()')),
-      map((resp: Page) => ResponseHandlerService.handleGetOffersResponse(OfferService.mapPageToOffers(resp)))
+      map((resp: OfferPage) => ResponseHandlerService.handleGetOffersResponse(OfferService.mapPageToOffers(resp)))
     );
   }
 
@@ -107,7 +106,7 @@ export class OfferService {
     const pageable: Pageable = {} as Pageable;
     return this.ownerOffersService.getOwnedOffers(pageable, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'getUserOffers()')),
-      map((resp: Page) => ResponseHandlerService.handleGetOffersResponse(OfferService.mapPageToOffers(resp)))
+      map((resp: OfferPage) => ResponseHandlerService.handleGetOffersResponse(OfferService.mapPageToOffers(resp)))
     );
   }
 
@@ -135,9 +134,9 @@ export class OfferService {
 
   public searchOffer(searched: string) {
     const pageable: Pageable = {} as Pageable;
-    return this.offersService.search(pageable, searched, 'body', false).pipe(
+    return this.offersService.search(searched, pageable, 'body', false).pipe(
       catchError((err) => ResponseHandlerService.handleError(err, 'searchOffer()')),
-      map((resp: Page) => ResponseHandlerService.handleGetOffersResponse(OfferService.mapPageToOffers(resp)))
+      map((resp: OfferPage) => ResponseHandlerService.handleGetOffersResponse(OfferService.mapPageToOffers(resp)))
     );
   }
 
