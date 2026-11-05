@@ -14,7 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -101,26 +100,22 @@ class OfferPhotoUploadApiControllerTest {
     @MockitoBean
     private OfferService offerService;
 
-    private final String API_PREFIX;
-
-    OfferPhotoUploadApiControllerTest(@Value("${sky.apiPrefix}") String apiPrefix) {
-        this.API_PREFIX = apiPrefix;
-    }
+    private static final String API_PREFIX = "/api/v1";
 
     private MockHttpServletRequestBuilder get(String uri) {
-        return MockMvcRequestBuilders.get("/" + API_PREFIX + uri);
+        return MockMvcRequestBuilders.get(API_PREFIX + uri);
     }
 
     private MockHttpServletRequestBuilder post(String uri) {
-        return MockMvcRequestBuilders.post("/" + API_PREFIX + uri);
+        return MockMvcRequestBuilders.post(API_PREFIX + uri);
     }
 
     private MockHttpServletRequestBuilder put(String uri) {
-        return MockMvcRequestBuilders.put("/" + API_PREFIX + uri);
+        return MockMvcRequestBuilders.put(API_PREFIX + uri);
     }
 
     private MockHttpServletRequestBuilder delete(String uri) {
-        return MockMvcRequestBuilders.delete("/" + API_PREFIX + uri);
+        return MockMvcRequestBuilders.delete(API_PREFIX + uri);
     }
 
     @Test
@@ -143,7 +138,7 @@ class OfferPhotoUploadApiControllerTest {
 
         // when / then
         mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                        MockMvcRequestBuilders.multipart(API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
@@ -172,7 +167,7 @@ class OfferPhotoUploadApiControllerTest {
 
         // when / then
         mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                        MockMvcRequestBuilders.multipart(API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
@@ -191,7 +186,7 @@ class OfferPhotoUploadApiControllerTest {
 
         // when
         MvcResult result = mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                        MockMvcRequestBuilders.multipart(API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
@@ -215,7 +210,7 @@ class OfferPhotoUploadApiControllerTest {
 
         // when
         MvcResult result = mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                        MockMvcRequestBuilders.multipart(API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
@@ -236,7 +231,7 @@ class OfferPhotoUploadApiControllerTest {
 
         // when
         MvcResult result = mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                        MockMvcRequestBuilders.multipart(API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
@@ -257,7 +252,7 @@ class OfferPhotoUploadApiControllerTest {
 
         // when
         MvcResult result = mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                        MockMvcRequestBuilders.multipart(API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
@@ -279,7 +274,7 @@ class OfferPhotoUploadApiControllerTest {
 
         // when
         MvcResult result = mvc.perform(
-                        MockMvcRequestBuilders.multipart("/" + API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
+                        MockMvcRequestBuilders.multipart(API_PREFIX + "/owner/offers/" + TEST_DEFAULT_OFFER_ID + "/photo")
                                 .file(file)
                                 .with(jwt().jwt(j -> j.claim("email", TEST_OWNER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )

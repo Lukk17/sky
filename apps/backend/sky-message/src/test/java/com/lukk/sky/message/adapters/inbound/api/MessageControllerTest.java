@@ -11,7 +11,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -61,22 +60,18 @@ class MessageControllerTest {
     @MockitoBean
     private MessageService messageService;
 
-    private final String apiPrefix;
-
-    MessageControllerTest(@Value("${sky.apiPrefix}") String apiPrefix) {
-        this.apiPrefix = apiPrefix;
-    }
+    private static final String API_PREFIX = "/api/v1";
 
     private MockHttpServletRequestBuilder get(String uri) {
-        return MockMvcRequestBuilders.get(apiPrefix + uri);
+        return MockMvcRequestBuilders.get(API_PREFIX + uri);
     }
 
     private MockHttpServletRequestBuilder post(String uri) {
-        return MockMvcRequestBuilders.post(apiPrefix + uri);
+        return MockMvcRequestBuilders.post(API_PREFIX + uri);
     }
 
     private MockHttpServletRequestBuilder delete(String uri) {
-        return MockMvcRequestBuilders.delete(apiPrefix + uri);
+        return MockMvcRequestBuilders.delete(API_PREFIX + uri);
     }
 
     private MessageView storedMessage() {

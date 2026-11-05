@@ -1,5 +1,4 @@
 sky:
-  apiPrefix: /api/v1
   offerServiceHostname: ${OFFER_SERVICE_HOSTNAME:sky-offer-service}
   offerServiceHostPort: ${OFFER_SERVICE_HOST_PORT:}
   offerOwnerEndpoint: api/v1/offers

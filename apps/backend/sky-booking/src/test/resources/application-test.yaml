@@ -1,5 +1,4 @@
 sky:
-  apiPrefix: api/v1
   offerServiceHostname: http://localhost
   offerServiceHostPort: 80
 

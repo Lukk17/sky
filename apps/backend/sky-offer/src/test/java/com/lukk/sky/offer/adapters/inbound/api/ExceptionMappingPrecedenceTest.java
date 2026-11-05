@@ -16,7 +16,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -69,11 +68,7 @@ class ExceptionMappingPrecedenceTest {
     @MockitoBean
     private OfferService offerService;
 
-    private final String apiPrefix;
-
-    ExceptionMappingPrecedenceTest(@Value("${sky.apiPrefix}") String apiPrefix) {
-        this.apiPrefix = apiPrefix;
-    }
+    private static final String API_PREFIX = "/api/v1";
 
     static Stream<Arguments> mappedFailures() {
         return Stream.of(
@@ -151,7 +146,7 @@ class ExceptionMappingPrecedenceTest {
     @DisplayName("validationFailure_staysWithTheSharedHandlerAndKeepsItsFieldErrors")
     void validationFailure_staysWithTheSharedHandlerAndKeepsItsFieldErrors() throws Exception {
         // when / then
-        mvc.perform(MockMvcRequestBuilders.post("/" + apiPrefix + "/owner/offers")
+        mvc.perform(MockMvcRequestBuilders.post(API_PREFIX + "/owner/offers")
                         .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -174,7 +169,7 @@ class ExceptionMappingPrecedenceTest {
                 .andExpect(header().doesNotExist(HttpHeaders.RETRY_AFTER))
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.title").value("Internal Server Error"))
-                .andExpect(jsonPath("$.instance").value("/" + apiPrefix + "/owner/offers/" + OFFER_ID))
+                .andExpect(jsonPath("$.instance").value(API_PREFIX + "/owner/offers/" + OFFER_ID))
                 .andExpect(jsonPath("$.timestamp").doesNotExist())
                 .andExpect(jsonPath("$.error").doesNotExist())
                 .andExpect(jsonPath("$.path").doesNotExist());
@@ -203,7 +198,7 @@ class ExceptionMappingPrecedenceTest {
     }
 
     private MockHttpServletRequestBuilder delete(String uri) {
-        return MockMvcRequestBuilders.delete("/" + apiPrefix + uri);
+        return MockMvcRequestBuilders.delete(API_PREFIX + uri);
     }
 
     private static RequestPostProcessor ownerJwt() {
