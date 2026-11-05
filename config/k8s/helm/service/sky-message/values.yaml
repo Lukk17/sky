@@ -36,7 +36,6 @@ service:
   name: "sky-message-service"
   type: "ClusterIP"
   port: "5553"
-  apiPrefix: "/api/v1"
 
 ingress:
   tls:

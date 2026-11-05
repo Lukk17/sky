@@ -136,10 +136,8 @@ services:
   sky-booking:
     container_name: sky-booking
     build:
-      dockerfile: sky-booking/docker/Dockerfile
-      context: ../../apps/backend
-      secrets:
-        - contract
+      dockerfile: apps/backend/sky-booking/docker/Dockerfile
+      context: ../../
       tags:
         - "sky-booking:${SKY_VERSION:-2.0.0}"
     image: sky-booking:latest
@@ -179,10 +177,8 @@ services:
   sky-offer:
     container_name: sky-offer
     build:
-      dockerfile: sky-offer/docker/Dockerfile
-      context: ../../apps/backend
-      secrets:
-        - contract
+      dockerfile: apps/backend/sky-offer/docker/Dockerfile
+      context: ../../
       tags:
         - "sky-offer:${SKY_VERSION:-2.0.0}"
     image: sky-offer:latest
@@ -228,10 +224,8 @@ services:
     <<: *sky-common
     container_name: sky-message
     build:
-      dockerfile: sky-message/docker/Dockerfile
-      context: ../../apps/backend
-      secrets:
-        - contract
+      dockerfile: apps/backend/sky-message/docker/Dockerfile
+      context: ../../
       tags:
         - "sky-message:${SKY_VERSION:-2.0.0}"
     image: sky-message:latest
@@ -257,8 +251,8 @@ services:
   sky-notify:
     container_name: sky-notify
     build:
-      dockerfile: sky-notify/docker/Dockerfile
-      context: ../../apps/backend
+      dockerfile: apps/backend/sky-notify/docker/Dockerfile
+      context: ../../
       tags:
         - "sky-notify:${SKY_VERSION:-2.0.0}"
     image: sky-notify:latest
@@ -289,8 +283,8 @@ services:
   sky-gateway:
     container_name: sky-gateway
     build:
-      dockerfile: sky-gateway/docker/Dockerfile
-      context: ../../apps/backend
+      dockerfile: apps/backend/sky-gateway/docker/Dockerfile
+      context: ../../
       tags:
         - "sky-gateway:${SKY_VERSION:-2.0.0}"
     image: sky-gateway:latest
@@ -479,10 +473,6 @@ services:
       timeout: 5s
       retries: 8
       start_period: 30s
-
-secrets:
-  contract:
-    file: ../../docs/api/contract/openapi.yaml
 
 volumes:
   kafka_data:

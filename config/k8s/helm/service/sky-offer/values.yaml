@@ -36,7 +36,6 @@ service:
   name: "sky-offer-service"
   type: "ClusterIP"
   port: "5552"
-  apiPrefix: "/api/v1"
 
 ingress:
   tls:

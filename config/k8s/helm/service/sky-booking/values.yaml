@@ -36,7 +36,6 @@ service:
   name: "sky-booking-service"
   type: "ClusterIP"
   port: "5555"
-  apiPrefix: "/api/v1"
 
 ingress:
   tls:

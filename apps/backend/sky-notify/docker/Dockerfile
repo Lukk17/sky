@@ -1,18 +1,19 @@
 # syntax=docker/dockerfile:1.7
 
-# Build from the backend root (apps/backend):
-#   docker build -f sky-notify/docker/Dockerfile -t sky-notify:latest .
+# Build from the repository root:
+#   docker build -f apps/backend/sky-notify/docker/Dockerfile -t sky-notify:latest .
 
 # Single shared pin: override with --build-arg RUNTIME_IMAGE=<image> to move all services at once.
 ARG RUNTIME_IMAGE=eclipse-temurin:25-jre-alpine
 # ===============> BUILD STAGE <===============
 FROM gradle:9-jdk25 AS build
 WORKDIR /workspace
-COPY settings.gradle.kts build.gradle.kts ./
-COPY gradle ./gradle
-COPY buildSrc ./buildSrc
-COPY sky-common ./sky-common
-COPY sky-notify ./sky-notify
+COPY apps/backend/settings.gradle.kts apps/backend/build.gradle.kts ./apps/backend/
+COPY apps/backend/gradle ./apps/backend/gradle
+COPY apps/backend/buildSrc ./apps/backend/buildSrc
+COPY apps/backend/sky-common ./apps/backend/sky-common
+COPY apps/backend/sky-notify ./apps/backend/sky-notify
+WORKDIR /workspace/apps/backend
 RUN --mount=type=cache,id=gradle-sky-notify,target=/home/gradle/.gradle gradle :sky-notify:bootJar --no-daemon -x test \
  && java -Djarmode=tools -jar sky-notify/build/libs/sky-notify.jar \
         extract --layers --launcher --destination sky-notify/build/extracted
@@ -31,10 +32,10 @@ RUN keytool -importcert -noprompt \
 RUN addgroup -S -g 1000 sky && adduser -S -u 1000 sky -G sky
 USER sky
 WORKDIR /app
-COPY --from=build --chown=sky:sky /workspace/sky-notify/build/extracted/dependencies/ ./
-COPY --from=build --chown=sky:sky /workspace/sky-notify/build/extracted/spring-boot-loader/ ./
-COPY --from=build --chown=sky:sky /workspace/sky-notify/build/extracted/snapshot-dependencies/ ./
-COPY --from=build --chown=sky:sky /workspace/sky-notify/build/extracted/application/ ./
+COPY --from=build --chown=sky:sky /workspace/apps/backend/sky-notify/build/extracted/dependencies/ ./
+COPY --from=build --chown=sky:sky /workspace/apps/backend/sky-notify/build/extracted/spring-boot-loader/ ./
+COPY --from=build --chown=sky:sky /workspace/apps/backend/sky-notify/build/extracted/snapshot-dependencies/ ./
+COPY --from=build --chown=sky:sky /workspace/apps/backend/sky-notify/build/extracted/application/ ./
 EXPOSE 5554
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

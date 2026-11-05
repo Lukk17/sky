@@ -151,12 +151,12 @@ jobs:
           MATRIX_INCLUDE="[]"
 
           add_to_matrix() {
-            local service="$1" path="$2" version="$3" image_name="$4" dockerfile="$5" contract="$6"
-            MATRIX_INCLUDE=$(echo "$MATRIX_INCLUDE" | python3 -c "import sys,json; a=json.load(sys.stdin); a.append({'service':'${service}','path':'${path}','version':'${version}','image_name':'${image_name}','dockerfile':'${dockerfile}','contract':'${contract}' == 'true'}); print(json.dumps(a))")
+            local service="$1" path="$2" version="$3" image_name="$4" dockerfile="$5"
+            MATRIX_INCLUDE=$(echo "$MATRIX_INCLUDE" | python3 -c "import sys,json; a=json.load(sys.stdin); a.append({'service':'${service}','path':'${path}','version':'${version}','image_name':'${image_name}','dockerfile':'${dockerfile}'}); print(json.dumps(a))")
           }
 
           check_and_add() {
-            local selected="$1" service="$2" path="$3" changelog="$4" dockerfile="$5" contract="$6"
+            local selected="$1" service="$2" path="$3" changelog="$4" dockerfile="$5"
 
             if [ "$selected" != "true" ]; then
               return
@@ -170,14 +170,14 @@ jobs:
 
             local image_name="${service}"
             echo "${service}: ${CUR_VERSION}"
-            add_to_matrix "$service" "$path" "$CUR_VERSION" "$image_name" "$dockerfile" "$contract"
+            add_to_matrix "$service" "$path" "$CUR_VERSION" "$image_name" "$dockerfile"
           }
 
-          check_and_add "$SEL_SKY_BOOKING" "sky-booking" "apps/backend" "apps/backend/sky-booking/CHANGELOG.md" "apps/backend/sky-booking/docker/Dockerfile" "true"
-          check_and_add "$SEL_SKY_OFFER" "sky-offer" "apps/backend" "apps/backend/sky-offer/CHANGELOG.md" "apps/backend/sky-offer/docker/Dockerfile" "true"
-          check_and_add "$SEL_SKY_MESSAGE" "sky-message" "apps/backend" "apps/backend/sky-message/CHANGELOG.md" "apps/backend/sky-message/docker/Dockerfile" "true"
-          check_and_add "$SEL_SKY_NOTIFY" "sky-notify" "apps/backend" "apps/backend/sky-notify/CHANGELOG.md" "apps/backend/sky-notify/docker/Dockerfile" "false"
-          check_and_add "$SEL_SKY_GATEWAY" "sky-gateway" "apps/backend" "apps/backend/sky-gateway/CHANGELOG.md" "apps/backend/sky-gateway/docker/Dockerfile" "false"
+          check_and_add "$SEL_SKY_BOOKING" "sky-booking" "." "apps/backend/sky-booking/CHANGELOG.md" "apps/backend/sky-booking/docker/Dockerfile"
+          check_and_add "$SEL_SKY_OFFER" "sky-offer" "." "apps/backend/sky-offer/CHANGELOG.md" "apps/backend/sky-offer/docker/Dockerfile"
+          check_and_add "$SEL_SKY_MESSAGE" "sky-message" "." "apps/backend/sky-message/CHANGELOG.md" "apps/backend/sky-message/docker/Dockerfile"
+          check_and_add "$SEL_SKY_NOTIFY" "sky-notify" "." "apps/backend/sky-notify/CHANGELOG.md" "apps/backend/sky-notify/docker/Dockerfile"
+          check_and_add "$SEL_SKY_GATEWAY" "sky-gateway" "." "apps/backend/sky-gateway/CHANGELOG.md" "apps/backend/sky-gateway/docker/Dockerfile"
 
           MATRIX="{\"include\":${MATRIX_INCLUDE}}"
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
@@ -283,7 +283,6 @@ jobs:
             lukk17/${{ matrix.image_name }}:latest
             ghcr.io/lukk17/${{ matrix.image_name }}:v${{ matrix.version }}
             ghcr.io/lukk17/${{ matrix.image_name }}:latest
-          secrets: ${{ matrix.contract && format('contract={0}/docs/api/contract/openapi.yaml', github.workspace) || '' }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 

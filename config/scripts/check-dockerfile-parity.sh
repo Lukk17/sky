@@ -40,7 +40,7 @@ check_service() {
   fi
 
   # 1. The Dockerfile must COPY its own module directory.
-  if ! grep -Eq "^COPY[[:space:]]+${service}[[:space:]]" "${dockerfile}"; then
+  if ! grep -Eq "^COPY[[:space:]]+(apps/backend/)?${service}[[:space:]]" "${dockerfile}"; then
     printf 'ERROR: %s Dockerfile does not COPY its own module directory (%s).\n' "${service}" "${service}" >&2
     service_failed=1
   fi
@@ -53,7 +53,7 @@ check_service() {
     local deps
     deps="$(grep -oP 'project\(":\K[^"]+' "${buildfile}" | sort -u || true)"
     for dep in ${deps}; do
-      if ! grep -Eq "^COPY[[:space:]]+${dep}[[:space:]]" "${dockerfile}"; then
+      if ! grep -Eq "^COPY[[:space:]]+(apps/backend/)?${dep}[[:space:]]" "${dockerfile}"; then
         printf 'ERROR: %s Dockerfile is missing COPY for Gradle project dependency ":%s" (from %s).\n' \
           "${service}" "${dep}" "${buildfile}" >&2
         service_failed=1
