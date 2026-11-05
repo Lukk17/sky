@@ -22,7 +22,9 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
   - `domain/service`: domain service implementations (`BookingServicePrimary`, `BookingPersister`,
     `EventSourceService`, `EventSourceServicePrimary`).
   - `adapters/inbound/api`: REST controllers and the contract mapper. `BookingController` implements
-    `com.lukk.sky.contract.api.BookingsApi` from `:sky-contract` and declares no method-level mappings;
+    `com.lukk.sky.contract.api.BookingsApi` from `:sky-contract`; it declares one method-level mapping, on
+    `removeBooking`, which repeats the DELETE path and adds the JSON produces types so an
+    `Accept: application/json` request gets its 204 instead of a 406;
     `BookingContractMapper` converts `BookingView` and Spring Data pages into the generated `BookingDTO` and
     `BookingPage`, parsing the stored date string with `DATE_FORMAT`. This service runs no OpenAPI Generator
     task of its own. `adapters/outbound/rest`: the outbound offer-service client, caller, and URI strategy;

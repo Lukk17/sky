@@ -187,6 +187,17 @@ class BookingControllerTest {
     }
 
     @Test
+    @DisplayName("deleteBooking returns 204 No Content when the request accepts JSON")
+    void deleteBooking_whenRequestAcceptsJson_thenReturn204() throws Exception {
+        // when / then
+        mvc.perform(delete(String.format("/bookings/%s", TEST_DEFAULT_BOOKED_ID))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(userJwt()))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+    }
+
+    @Test
     @DisplayName("bookOffer returns 400 when dateToBook is not a date, because the payload binds a LocalDate")
     void bookOffer_whenDateToBookIsNotADate_thenReturn400() throws Exception {
         // given

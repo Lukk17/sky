@@ -765,6 +765,13 @@ components:
           $ref: '#/components/schemas/SortObject'
         unpaged:
           type: boolean
+      required:
+        - offset
+        - pageNumber
+        - pageSize
+        - paged
+        - sort
+        - unpaged
     SortObject:
       type: object
       properties:
@@ -774,6 +781,10 @@ components:
           type: boolean
         unsorted:
           type: boolean
+      required:
+        - empty
+        - sorted
+        - unsorted
     OfferPage:
       type: object
       properties:
@@ -807,6 +818,18 @@ components:
         totalPages:
           type: integer
           format: int32
+      required:
+        - content
+        - empty
+        - first
+        - last
+        - number
+        - numberOfElements
+        - pageable
+        - size
+        - sort
+        - totalElements
+        - totalPages
     BookingPage:
       type: object
       properties:
@@ -840,6 +863,18 @@ components:
         totalPages:
           type: integer
           format: int32
+      required:
+        - content
+        - empty
+        - first
+        - last
+        - number
+        - numberOfElements
+        - pageable
+        - size
+        - sort
+        - totalElements
+        - totalPages
     MessagePage:
       type: object
       properties:
@@ -873,6 +908,18 @@ components:
         totalPages:
           type: integer
           format: int32
+      required:
+        - content
+        - empty
+        - first
+        - last
+        - number
+        - numberOfElements
+        - pageable
+        - size
+        - sort
+        - totalElements
+        - totalPages
     OfferDTO:
       type: object
       required:

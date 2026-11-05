@@ -14,13 +14,19 @@ import com.lukk.sky.contract.api.BookingsApi;
 import com.lukk.sky.contract.dto.BookingDTO;
 import com.lukk.sky.contract.dto.BookingPage;
 import com.lukk.sky.contract.dto.BookingPayload;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -35,6 +41,10 @@ public class BookingController implements BookingsApi {
 
     private final BookingService bookingService;
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Found user bookings",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingPage.class)))
     @IsUser
     @Override
     public ResponseEntity<BookingPage> getBookedOffers(@PageableDefault(size = 20) Pageable pageable) {
@@ -44,6 +54,16 @@ public class BookingController implements BookingsApi {
                 bookingService.getBookedOffersForUser(userEmail, pageable)));
     }
 
+    @ApiResponse(
+            responseCode = "201",
+            description = "Booking created",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "No offer with that id exists in sky-offer",
+            content = @Content(
+                    mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiConflictResponse
     @ApiUnsupportedMediaTypeResponse
     @ApiDependencyBadGatewayResponse
@@ -60,8 +80,18 @@ public class BookingController implements BookingsApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingContractMapper.toDto(bookingView));
     }
 
+    @ApiResponse(
+            responseCode = "404",
+            description = "Booking not found",
+            content = @Content(
+                    mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @IsUser
     @Override
+    @RequestMapping(
+            method = RequestMethod.DELETE,
+            value = BookingsApi.PATH_REMOVE_BOOKING,
+            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
     public ResponseEntity<Void> removeBooking(UUID bookingId) {
         String userEmail = SecurityUtils.currentUserEmail();
         log.info("Removing booking with ID: {} by user: {}", bookingId, userEmail);

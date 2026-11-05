@@ -10,7 +10,6 @@ openApiGenerate {
     generatorName.set("spring")
     inputSpec.set(contractFile.toURI().toString())
     outputDir.set(layout.buildDirectory.dir("generated/contract").get().asFile.absolutePath)
-    templateDir.set(rootDir.resolve("openapi-templates"))
     apiPackage.set("com.lukk.sky.contract.api")
     modelPackage.set("com.lukk.sky.contract.dto")
     globalProperties.set(
@@ -58,7 +57,6 @@ tasks.named("compileJava") {
 
 tasks.named("openApiGenerate") {
     inputs.file(contractFile)
-    inputs.dir(rootDir.resolve("openapi-templates"))
 }
 
 dependencies {

@@ -14,7 +14,6 @@ ENV SKY_CONTRACT_FILE=/workspace/docs/api/contract/openapi.yaml
 COPY settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle
 COPY buildSrc ./buildSrc
-COPY openapi-templates ./openapi-templates
 COPY sky-common ./sky-common
 COPY sky-message ./sky-message
 RUN mkdir -p /workspace/docs/api/contract
