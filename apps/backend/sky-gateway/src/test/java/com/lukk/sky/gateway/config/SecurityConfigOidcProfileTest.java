@@ -167,32 +167,15 @@ class SecurityConfigOidcProfileTest {
     }
 
     @Test
-    @DisplayName("anonymousSearch_whenNoCredentialsSupplied_thenPassesSecurityToRouting")
-    void anonymousSearch_whenNoCredentialsSupplied_thenPassesSecurityToRouting() {
-        // when / then
-        client.post().uri("/api/v1/search")
+    @DisplayName("anonymousSearchGet_whenNoCredentialsSupplied_thenPassesSecurityToRouting")
+    void anonymousSearchGet_whenNoCredentialsSupplied_thenPassesSecurityToRouting() {
+        // when / then: search is public by method and GET is a safe method, so the
+        // chain neither authenticates it nor runs the CSRF gate. The test upstream is
+        // a dead port, so reaching the route answers 5xx or 404; 401 and 403 would
+        // mean public search was rejected again.
+        client.get().uri("/api/v1/search?term=Paris")
                 .exchange()
-                .expectStatus().is5xxServerError();
-    }
-
-    @Test
-    @DisplayName("publicSearch_whenSessionCookieWithoutCsrfToken_thenNotRejectedByCsrfGate")
-    void publicSearch_whenSessionCookieWithoutCsrfToken_thenNotRejectedByCsrfGate() {
-        // given: a browser holds a session cookie obtained from the session endpoint
-        ResponseCookie sessionCookie = sessionCookie();
-
-        // when: a public, read-only search carries the cookie and no CSRF header
-        var result = client.post().uri("/api/v1/search")
-                .contentType(MediaType.TEXT_PLAIN)
-                .bodyValue("Paris")
-                .cookie("SESSION", sessionCookie.getValue())
-                .exchange()
-                .returnResult(String.class);
-
-        // then: the CSRF gate must not stop it. The test upstream is a dead port, so
-        // reaching the route answers 5xx; 403 would be the CSRF gate and 401 would
-        // mean the public path lost its anonymous access.
-        assertThat(result.getStatus().value()).isIn(404, 500, 502, 503);
+                .expectStatus().value(status -> assertThat(status).isIn(404, 500, 502, 503));
     }
 
     @Test
@@ -201,8 +184,8 @@ class SecurityConfigOidcProfileTest {
         // given: the same browser session cookie, with no CSRF header
         ResponseCookie sessionCookie = sessionCookie();
 
-        // when / then: the search exemption is narrow, so every other mutating API
-        // path still requires the session CSRF token.
+        // when / then: the chain has no search exemption, so every mutating API path
+        // with the session cookie still requires the session CSRF token.
         client.post().uri("/api/v1/offers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")

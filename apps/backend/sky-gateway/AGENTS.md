@@ -171,7 +171,9 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
     cross origin mutating requests, CORS for the frontend origin, and post-login return to the frontend origin.
     `SecurityPaths.probes()` from `sky-common` is
     permitted without a session, and so are the anonymous offer reads (`GET /api/v1/offers/**` and
-    `POST /api/v1/search`, mirroring sky-offer), so nothing else public regressed behind the login. An
+    `GET /api/v1/search`, mirroring sky-offer), so nothing else public regressed behind the login. Search is
+    public by method rather than exempt from CSRF: GET is a safe method, so the CSRF matcher never applies to it.
+    The only CSRF exemptions are the `/auth/` and `/s3/` prefixes; no POST or DELETE path is exempt. An
     unauthenticated `/api/**` call answers 401 with an empty body instead of a login redirect, so script driven
     callers never fetch login pages into their cookie jar, while any other path still redirects to
     `/oauth2/authorization/keycloak`. `/actuator/prometheus` therefore requires a session here. Requires
@@ -223,10 +225,9 @@ predicate claimed it, which is what lets one assertion carry both halves.
 - `SecurityConfigOidcProfileTest`, `test` only so the `!local` chain applies: unauthenticated `/actuator/prometheus`
   and the six documentation paths still redirect to `/oauth2/authorization/keycloak`, while health, liveness,
   readiness and info stay open, and unauthenticated `/api/**` calls answer 401 with an empty body instead. Anonymous
-  `GET /api/v1/offers` passes security to routing, and `POST /api/v1/search` is exempt from the CSRF gate because it
-  is a safe, idempotent public read: a caller that carries a `SESSION` cookie but no `X-XSRF-TOKEN` reaches routing
-  (the test upstreams are dead, so 5xx) instead of 403, which is the browser path the e2e exercises. The exemption
-  names the method and the exact path, so `POST /api/v1/offers` with the same cookie and no token still answers 403.
+  `GET /api/v1/offers` and `GET /api/v1/search` pass security to routing. Search is public by method and GET is a
+  safe method, so the CSRF matcher never applies to it and the chain carries no search exemption: a mutation that
+  carries a `SESSION` cookie but no `X-XSRF-TOKEN`, such as `POST /api/v1/offers`, still answers 403.
   That case cannot fail on a missing route, because the chain redirects every unauthenticated exchange whether
   a predicate claimed it or not, so the class also asserts the six documentation route ids are present in the
   `RouteLocator` under this profile. That is what stops the second YAML document drifting from the first, which is a

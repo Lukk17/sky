@@ -90,7 +90,7 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(SecurityPaths.probes().toArray(String[]::new)).permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/offers", "/api/v1/offers/**").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/v1/search").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/v1/search").permitAll()
                         .pathMatchers("/auth/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/s3/**").permitAll()
                         .anyExchange().authenticated()
@@ -130,10 +130,6 @@ public class SecurityConfig {
                             // presigned capability URLs): the gateway session token must
                             // not gate their browser form posts and photo fetches.
                             if (path.startsWith("/auth/") || path.startsWith("/s3/")) {
-                                return ServerWebExchangeMatcher.MatchResult.notMatch();
-                            }
-                            if (HttpMethod.POST.equals(exchange.getRequest().getMethod())
-                                    && "/api/v1/search".equals(path)) {
                                 return ServerWebExchangeMatcher.MatchResult.notMatch();
                             }
                             // /logout is a full-browser form POST and must always carry
