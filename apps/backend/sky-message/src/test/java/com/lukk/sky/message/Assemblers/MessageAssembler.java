@@ -1,7 +1,9 @@
 package com.lukk.sky.message.assemblers;
 
-import com.lukk.sky.message.adapters.dto.MessageDTO;
+import com.lukk.sky.contract.dto.MessageDTO;
 import com.lukk.sky.message.domain.model.Message;
+import com.lukk.sky.message.domain.ports.inbound.MessageView;
+import com.lukk.sky.message.domain.ports.inbound.SendMessageCommand;
 
 import java.time.Instant;
 import java.util.List;
@@ -19,18 +21,22 @@ public class MessageAssembler {
     public static final String TEXT = "messageText";
     public static final boolean IS_READ = false;
 
-    public static List<MessageDTO> getMessagesDTO() {
-        return List.of(getMessageDTO(), getMessageDTO());
+    public static SendMessageCommand getSendMessageCommand() {
+        return new SendMessageCommand(SENDER_EMAIL, RECEIVER_EMAIL, TEXT);
+    }
+
+    public static List<MessageView> getMessageViews() {
+        return List.of(getMessageView(TEST_MESSAGE_ID), getMessageView(TEST_MESSAGE_ID_2));
+    }
+
+    public static MessageView getMessageView(UUID id) {
+        return MessageView.from(getMessage(id));
     }
 
     public static MessageDTO getMessageDTO() {
-        return MessageDTO.builder()
-                .createdTime(DATE_TIME_FORMAT.format(CREATED))
-                .receiverEmail(RECEIVER_EMAIL)
-                .senderEmail(SENDER_EMAIL)
-                .text(TEXT)
-                .read(IS_READ)
-                .build();
+        MessageDTO messageDTO = getMessageDTO_withoutCreatedAndID();
+        messageDTO.setCreatedTime(DATE_TIME_FORMAT.format(CREATED));
+        return messageDTO;
     }
 
     public static List<MessageDTO> getMessagesDTO_withoutCreatedAndID() {
@@ -38,12 +44,12 @@ public class MessageAssembler {
     }
 
     public static MessageDTO getMessageDTO_withoutCreatedAndID() {
-        return MessageDTO.builder()
-                .receiverEmail(RECEIVER_EMAIL)
-                .senderEmail(SENDER_EMAIL)
-                .text(TEXT)
-                .read(IS_READ)
-                .build();
+        MessageDTO messageDTO = new MessageDTO();
+        messageDTO.setReceiverEmail(RECEIVER_EMAIL);
+        messageDTO.setSenderEmail(SENDER_EMAIL);
+        messageDTO.setText(TEXT);
+        messageDTO.setRead(IS_READ);
+        return messageDTO;
     }
 
     public static List<Message> getMessages() {

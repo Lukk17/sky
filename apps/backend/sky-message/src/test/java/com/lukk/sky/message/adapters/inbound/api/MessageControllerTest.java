@@ -1,11 +1,12 @@
 package com.lukk.sky.message.adapters.inbound.api;
 
+import com.lukk.sky.contract.dto.MessageDTO;
 import com.lukk.sky.message.TestSecurityConfig;
 import com.lukk.sky.message.TestcontainersConfiguration;
-import com.lukk.sky.message.adapters.dto.MessageDTO;
 import com.lukk.sky.message.assemblers.MessageAssembler;
 import com.lukk.sky.message.domain.exception.MessageException;
 import com.lukk.sky.message.domain.ports.inbound.MessageService;
+import com.lukk.sky.message.domain.ports.inbound.MessageView;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -78,12 +79,16 @@ class MessageControllerTest {
         return MockMvcRequestBuilders.delete(apiPrefix + uri);
     }
 
+    private MessageView storedMessage() {
+        return MessageAssembler.getMessageView(TEST_MESSAGE_ID);
+    }
+
     @Test
-    @DisplayName("POST /messages with valid payload and JWT returns 2xx and message body")
-    void sendMessage_whenValidMessage_thenReturn2xxWithMessageBody() throws Exception {
+    @DisplayName("POST /messages with valid payload and JWT returns 201 and message body")
+    void sendMessage_whenValidMessage_thenReturn201WithMessageBody() throws Exception {
         // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
-        when(messageService.send(any())).thenReturn(messageDTO);
+        when(messageService.send(any())).thenReturn(storedMessage());
         String expectedJson = objectMapper.writeValueAsString(messageDTO);
 
         // when
@@ -91,13 +96,13 @@ class MessageControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                         .content(expectedJson))
-                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().isCreated())
                 .andReturn();
 
         // then
         assertTrue(result.getResponse().getContentAsString().contains(messageDTO.getText()));
         assertTrue(result.getResponse().getContentAsString().contains(messageDTO.getReceiverEmail()));
-        assertTrue(result.getResponse().getContentAsString().contains(messageDTO.getSenderEmail()));
+        assertTrue(result.getResponse().getContentAsString().contains(SENDER_EMAIL));
     }
 
     @Test
@@ -105,7 +110,7 @@ class MessageControllerTest {
     void sendMessage_whenNoJwt_thenReturn401() throws Exception {
         // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
-        when(messageService.send(any())).thenReturn(messageDTO);
+        when(messageService.send(any())).thenReturn(storedMessage());
         String expectedJson = objectMapper.writeValueAsString(messageDTO);
 
         // when / then
@@ -122,7 +127,7 @@ class MessageControllerTest {
         // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
         messageDTO.setReceiverEmail(" ");
-        when(messageService.send(any())).thenReturn(messageDTO);
+        when(messageService.send(any())).thenReturn(storedMessage());
         String expectedJson = objectMapper.writeValueAsString(messageDTO);
 
         // when
@@ -140,19 +145,19 @@ class MessageControllerTest {
     }
 
     @Test
-    @DisplayName("GET /messages/received with valid JWT returns 2xx and paged received messages")
+    @DisplayName("GET /messages/received with valid JWT returns 200 and paged received messages")
     void getReceivedMessages_whenUserHasMessages_thenReturnPagedMessages() throws Exception {
         // given
-        List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
+        List<MessageView> messages = MessageAssembler.getMessageViews();
         Pageable pageable = PageRequest.of(0, 20);
         when(messageService.getReceivedMessages(eq(RECEIVER_EMAIL), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(messagesDTO, pageable, messagesDTO.size()));
+                .thenReturn(new PageImpl<>(messages, pageable, messages.size()));
 
         // when / then
         mvc.perform(get("/messages/received")
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(jwt().jwt(j -> j.claim("email", RECEIVER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].receiverEmail").value(RECEIVER_EMAIL))
                 .andExpect(jsonPath("$.totalElements").value(2));
@@ -168,19 +173,19 @@ class MessageControllerTest {
     }
 
     @Test
-    @DisplayName("GET /messages/sent with valid JWT returns 2xx and paged sent messages")
+    @DisplayName("GET /messages/sent with valid JWT returns 200 and paged sent messages")
     void getSentMessages_whenUserHasMessages_thenReturnPagedMessages() throws Exception {
         // given
-        List<MessageDTO> messagesDTO = MessageAssembler.getMessagesDTO_withoutCreatedAndID();
+        List<MessageView> messages = MessageAssembler.getMessageViews();
         Pageable pageable = PageRequest.of(0, 20);
         when(messageService.getSentMessages(eq(SENDER_EMAIL), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(messagesDTO, pageable, messagesDTO.size()));
+                .thenReturn(new PageImpl<>(messages, pageable, messages.size()));
 
         // when / then
         mvc.perform(get("/messages/sent")
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].senderEmail").value(SENDER_EMAIL))
                 .andExpect(jsonPath("$.totalElements").value(2));
@@ -196,44 +201,42 @@ class MessageControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /messages/{id} by receiver returns 2xx")
-    public void deleteMessage_whenCalledByReceiver_thenReturn2xx() throws Exception {
+    @DisplayName("DELETE /messages/{id} by receiver returns 204 with no body")
+    public void deleteMessage_whenCalledByReceiver_thenReturn204() throws Exception {
         // given
-        doNothing().when(messageService).remove(TEST_MESSAGE_ID, RECEIVER_EMAIL);
+        doNothing().when(messageService).deleteMessage(TEST_MESSAGE_ID, RECEIVER_EMAIL);
 
         // when / then
         mvc.perform(delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(jwt().jwt(j -> j.claim("email", RECEIVER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
     }
 
     @Test
-    @DisplayName("DELETE /messages/{id} by sender returns 2xx")
-    public void deleteMessage_whenCalledBySender_thenReturn2xx() throws Exception {
+    @DisplayName("DELETE /messages/{id} by sender returns 204 with no body")
+    public void deleteMessage_whenCalledBySender_thenReturn204() throws Exception {
         // given
-        doNothing().when(messageService).remove(TEST_MESSAGE_ID, SENDER_EMAIL);
-        String expectedJson = objectMapper.writeValueAsString(TEST_MESSAGE_ID);
+        doNothing().when(messageService).deleteMessage(TEST_MESSAGE_ID, SENDER_EMAIL);
 
         // when / then
         mvc.perform(delete(String.format("/messages/%s", TEST_MESSAGE_ID))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                        .content(expectedJson))
-                .andExpect(status().is2xxSuccessful());
+                        .with(jwt().jwt(j -> j.claim("email", SENDER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
     }
 
     @Test
     @DisplayName("DELETE /messages/{id} without JWT returns 401 Unauthorized")
     public void deleteMessage_whenNoJwt_thenReturn401() throws Exception {
         // given
-        doNothing().when(messageService).remove(TEST_MESSAGE_ID, SENDER_EMAIL);
-        String expectedJson = objectMapper.writeValueAsString(TEST_MESSAGE_ID);
+        doNothing().when(messageService).deleteMessage(TEST_MESSAGE_ID, SENDER_EMAIL);
 
         // when / then
         mvc.perform(delete(String.format("/messages/%s", TEST_MESSAGE_ID))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(expectedJson))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -242,7 +245,7 @@ class MessageControllerTest {
     void sendMessage_whenJwtHasNoRole_thenReturn403() throws Exception {
         // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
-        when(messageService.send(any())).thenReturn(messageDTO);
+        when(messageService.send(any())).thenReturn(storedMessage());
         String expectedJson = objectMapper.writeValueAsString(messageDTO);
 
         // when / then
@@ -260,7 +263,7 @@ class MessageControllerTest {
         // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
         messageDTO.setText("  ");
-        when(messageService.send(any())).thenReturn(messageDTO);
+        when(messageService.send(any())).thenReturn(storedMessage());
         String payload = objectMapper.writeValueAsString(messageDTO);
 
         // when
@@ -302,7 +305,7 @@ class MessageControllerTest {
         // given
         MessageDTO messageDTO = MessageAssembler.getMessageDTO_withoutCreatedAndID();
         messageDTO.setSenderEmail("not-an-email");
-        when(messageService.send(any())).thenReturn(messageDTO);
+        when(messageService.send(any())).thenReturn(storedMessage());
         String payload = objectMapper.writeValueAsString(messageDTO);
 
         // when / then

@@ -3,9 +3,10 @@ package com.lukk.sky.message.adapters.inbound.api;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.lukk.sky.message.AbstractIntegrationTest;
 import com.lukk.sky.message.TestSecurityConfig;
-import com.lukk.sky.message.adapters.dto.MessageDTO;
+import com.lukk.sky.contract.dto.MessageDTO;
 import com.lukk.sky.message.assemblers.MessageAssembler;
 import com.lukk.sky.message.domain.model.Message;
+import com.lukk.sky.message.domain.ports.inbound.MessageView;
 import com.lukk.sky.message.domain.ports.outbound.MessageRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -93,7 +94,7 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
         assertEquals(2, actual.getBody().totalElements());
 
         for (int i = 0; i < messages.size(); i++) {
-            assertMessageFields(MessageDTO.of(messages.get(i)), content.get(i));
+            assertMessageFields(MessageContractMapper.toDto(MessageView.from(messages.get(i))), content.get(i));
         }
     }
 
@@ -120,7 +121,7 @@ class MessageIntegrationTest extends AbstractIntegrationTest {
         assertEquals(2, actual.getBody().totalElements());
 
         for (int i = 0; i < messages.size(); i++) {
-            assertMessageFields(MessageDTO.of(messages.get(i)), content.get(i));
+            assertMessageFields(MessageContractMapper.toDto(MessageView.from(messages.get(i))), content.get(i));
         }
     }
 

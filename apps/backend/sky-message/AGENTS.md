@@ -13,19 +13,22 @@ the cosmetic `version` in `build.gradle.kts`.
 ## Architecture
 
 - Build plugin: `sky.spring-service-conventions` (Spring Boot app, fat `bootJar` named `sky-message.jar`, JaCoCo
-  report). Depends on `:sky-common`.
+  report). Depends on `:sky-common` and `:sky-contract`.
 - Hexagonal layout (`com.lukk.sky.message`):
   - `domain/model`, `domain/exception`: core model and domain exceptions.
-  - `domain/ports/inbound`: driving port interfaces called by controllers (`MessageService`).
+  - `domain/ports/inbound`: driving port interfaces called by controllers (`MessageService`) plus the
+    domain-owned `SendMessageCommand` and `MessageView` records, so the port carries no wire type.
   - `domain/ports/outbound`: driven port interfaces implemented by infrastructure adapters (`MessageRepository`).
-  - `domain/service`: domain service implementations (`MessageServicePrimary`).
-  - `adapters/inbound/api`: REST controllers; `MessageController` implements the generated `MessagesApi` in
-    `adapters/inbound/api/contract` and declares no method-level mappings, and `MessagePageMapper` converts a
-    Spring Data `Page` to the generated page model. `adapters/dto`: wire DTOs; `adapters/dto/contract`: generated
-    page models. The OpenAPI Generator plugin reads `docs/api/contract/openapi.yaml` into
-    `build/generated/contract` on the main source set, so `compileJava` depends on `openApiGenerate`. There is no
+  - `domain/service`: domain service implementations (`MessageServicePrimary`). It builds the entity, sets the
+    sender from the command, stamps `createdTime` from its injected `Clock` and stores `read=false`.
+  - `adapters/inbound/api`: REST controllers; `MessageController` implements the shared
+    `com.lukk.sky.contract.api.MessagesApi` and declares no method-level mappings apart from the delete override
+    that widens `produces` to JSON plus problem JSON. `MessageContractMapper` maps a `MessageView` and a Spring
+    Data `Page` to the generated `MessageDTO` and `MessagePage`. `sky-contract` is the only OpenAPI Generator in
+    the build: it produces `com.lukk.sky.contract.api` and `com.lukk.sky.contract.dto` from
+    `docs/api/contract/openapi.yaml`, and this module adds no generated source directory of its own. There is no
     `adapters/outbound` package: this service makes no outbound call of any kind.
-  - `config`, `config/propertyBind`: Spring wiring and bound properties.
+  - `config`: Spring wiring, including the `Clock` the send path stamps `createdTime` from.
 - MVC stack: plain Spring Web (`spring-boot-starter-web`).
 - No receiver validation runs, and that is deliberate. `POST /messages` accepts any `receiverEmail` that passes Bean
   Validation and stores the message. Nothing checks the address against an identity realm or against the `message`
@@ -108,9 +111,12 @@ module sits at 1.00 on both. A change here that ships without a test lowers that
   deliberate violation before it was trusted. No class under `adapters.inbound` may reach a Spring Data repository or
   a `Repository`-suffixed interface, so a controller cannot skip the domain service. Every class under `domain` may
   reach only the packages an allow list in that test names, which is the persistence and validation API the model
-  genuinely carries plus Lombok, SLF4J and a short set of Spring annotations, and nothing else. The one
+  genuinely carries plus Lombok, SLF4J and a short set of Spring annotations, and nothing else. That list does not
+  name `adapters` at all, and a dedicated rule forbids any dependency from `domain` to an adapter: the inbound port
+  carries `SendMessageCommand` and `MessageView`, and the controller maps them to the contract types. The one
   `@RestControllerAdvice` is carved out by annotation and bounded to that list plus `org.springframework.http`, the
   package `org.springframework.web` itself and `org.springframework.web.bind.annotation`, so it cannot reach an HTTP
-  client. Nothing may reach another service's classes. A new framework dependency in the domain therefore fails the
-  build: admit it in `openspec/specs/architecture/spec.md` through the change workflow first, and never by adding an
-  exclusion to the test.
+  client. Nothing may reach another service's classes; the shared `sky-contract` wire types are the one additional
+  monorepo module a service may import. A new framework dependency in the domain therefore fails the build: admit it
+  in `openspec/specs/architecture/spec.md` through the change workflow first, and never by adding an exclusion to the
+  test.

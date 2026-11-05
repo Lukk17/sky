@@ -1,3 +1,18 @@
+## [2.2.1] - 2026-11-05
+
+### Changed
+- Generate every message wire type from `sky-contract`. `sky-message` no longer runs its own
+  OpenAPI Generator: `MessageDTO`, `MessagePage`, `PageableObject` and `SortObject` come from
+  `com.lukk.sky.contract`, and `MessageController` implements the shared `MessagesApi`. The
+  generated document now publishes `MessagePage` with typed content and every page field, and
+  delete keeps its 204 with no body and a 404 that carries only `application/problem+json`.
+- Restore the hexagonal boundary in the domain. The inbound port now carries
+  `SendMessageCommand` and `MessageView`, so `MessageService` and `MessageServicePrimary` no
+  longer import an adapter DTO. `MessageServicePrimary` builds the entity, sets the sender,
+  stamps `createdTime` from its `Clock` and stores `read=false`; `MessageContractMapper` maps
+  the view to the contract types at the edge. The wire shape and the `/api/v1` paths are
+  unchanged.
+
 ## [2.2.0] - 2026-11-04
 
 ### Changed

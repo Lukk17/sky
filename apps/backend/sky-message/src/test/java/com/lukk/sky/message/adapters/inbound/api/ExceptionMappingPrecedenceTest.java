@@ -87,7 +87,7 @@ class ExceptionMappingPrecedenceTest {
             int expectedStatus,
             String expectedDetail) throws Exception {
 
-        doThrow(failure).when(messageService).remove(eq(MESSAGE_ID), any());
+        doThrow(failure).when(messageService).deleteMessage(eq(MESSAGE_ID), any());
 
         mvc.perform(delete("/messages/" + MESSAGE_ID).with(senderJwt()))
                 .andExpect(status().is(expectedStatus))
@@ -101,7 +101,7 @@ class ExceptionMappingPrecedenceTest {
     void noMappingCarriesRetryAfter_becauseThisServiceHasNoDependencyToWaitFor() throws Exception {
         // when / then
         doThrow(new MessageNotFoundException("No message with that id."))
-                .when(messageService).remove(eq(MESSAGE_ID), any());
+                .when(messageService).deleteMessage(eq(MESSAGE_ID), any());
 
         mvc.perform(delete("/messages/" + MESSAGE_ID).with(senderJwt()))
                 .andExpect(status().isNotFound())
@@ -113,7 +113,7 @@ class ExceptionMappingPrecedenceTest {
     void unmappedFailure_answersProblemDetail500_ratherThanTheFlatDefaultErrorBody() throws Exception {
         // when / then
         doThrow(new IllegalStateException("senderEmail was null"))
-                .when(messageService).remove(eq(MESSAGE_ID), any());
+                .when(messageService).deleteMessage(eq(MESSAGE_ID), any());
 
         mvc.perform(delete("/messages/" + MESSAGE_ID).with(senderJwt()))
                 .andExpect(status().isInternalServerError())
@@ -132,7 +132,7 @@ class ExceptionMappingPrecedenceTest {
     void unmappedFailure_namesNeitherTheExceptionTypeNorItsMessage() throws Exception {
         // given
         doThrow(new IllegalStateException("senderEmail was null"))
-                .when(messageService).remove(eq(MESSAGE_ID), any());
+                .when(messageService).deleteMessage(eq(MESSAGE_ID), any());
 
         // when
         String body = mvc.perform(delete("/messages/" + MESSAGE_ID).with(senderJwt()))

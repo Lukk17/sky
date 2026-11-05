@@ -1,6 +1,5 @@
 package com.lukk.sky.message.domain.ports.inbound;
 
-import com.lukk.sky.message.adapters.dto.MessageDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,19 +14,10 @@ public interface MessageService {
     /**
      * Sends a message.
      *
-     * @param messageDTO The message to be sent.
+     * @param command The command carrying the sender, receiver and text.
      * @return The sent message.
      */
-    MessageDTO send(MessageDTO messageDTO);
-
-    /**
-     * Removes a message.
-     *
-     * @param messageId The ID of the message to be removed.
-     * @param username  The username of the user making the request.
-     * @throws IllegalArgumentException if either {@code messageId} or {@code username} is {@code null}.
-     */
-    void remove(UUID messageId, String username);
+    MessageView send(SendMessageCommand command);
 
     /**
      * Retrieves a paginated view of the messages received by a user.
@@ -36,7 +26,7 @@ public interface MessageService {
      * @param pageable  Pagination and sort parameters.
      * @return A page of messages received by the user.
      */
-    Page<MessageDTO> getReceivedMessages(String userEmail, Pageable pageable);
+    Page<MessageView> getReceivedMessages(String userEmail, Pageable pageable);
 
     /**
      * Retrieves a paginated view of the messages sent by a user.
@@ -45,5 +35,14 @@ public interface MessageService {
      * @param pageable  Pagination and sort parameters.
      * @return A page of messages sent by the user.
      */
-    Page<MessageDTO> getSentMessages(String userEmail, Pageable pageable);
+    Page<MessageView> getSentMessages(String userEmail, Pageable pageable);
+
+    /**
+     * Removes a message.
+     *
+     * @param messageId The ID of the message to be removed.
+     * @param userEmail The email of the user making the request.
+     * @throws IllegalArgumentException if either {@code messageId} or {@code userEmail} is {@code null}.
+     */
+    void deleteMessage(UUID messageId, String userEmail);
 }

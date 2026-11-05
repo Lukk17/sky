@@ -24,11 +24,11 @@ class HexagonalArchitectureTest {
 
     private static final String[] OWN_MONOREPO_PACKAGES = {
             "com.lukk.sky.message..",
-            "com.lukk.sky.common.."};
+            "com.lukk.sky.common..",
+            "com.lukk.sky.contract.."};
 
     private static final String[] DOMAIN_ALLOWED_PACKAGES = {
             "com.lukk.sky.message.domain..",
-            "com.lukk.sky.message.adapters.dto..",
             "com.lukk.sky.common..",
             "java..",
             "jakarta.persistence..",
@@ -64,6 +64,18 @@ class HexagonalArchitectureTest {
         noClasses()
                 .that().resideInAPackage("..domain.model..")
                 .should().dependOnClassesThat().resideInAPackage("..adapters..")
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("Domain depends on no adapter type: the inbound port carries its own command and view")
+    void domainClasses_whenInspected_thenHaveNoDependencyOnAdapters() {
+        // when / then
+        noClasses()
+                .that().resideInAPackage("..domain..")
+                .should().dependOnClassesThat().resideInAPackage("..adapters..")
+                .because("the driving port speaks SendMessageCommand and MessageView, so the controller maps"
+                        + " those to the generated contract types and the domain never sees a wire type")
                 .check(classes);
     }
 
