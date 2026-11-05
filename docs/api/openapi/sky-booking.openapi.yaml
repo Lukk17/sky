@@ -201,7 +201,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Page"
+                $ref: "#/components/schemas/BookingPage"
           description: Found user bookings
         "400":
           content:
@@ -261,44 +261,36 @@ components:
         bookedDate:
           type: string
           format: date
-          minLength: 1
         bookingUser:
           type: string
           format: email
+          maxLength: 2147483647
           minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
         id:
           type: string
           format: uuid
+          readOnly: true
         offerId:
           type: string
           format: uuid
         ownerEmail:
           type: string
           format: email
+          readOnly: true
       required:
       - bookedDate
       - bookingUser
       - id
       - offerId
       - ownerEmail
-    BookingPayload:
-      type: object
-      properties:
-        dateToBook:
-          type: string
-          format: date
-        offerId:
-          type: string
-          format: uuid
-      required:
-      - dateToBook
-      - offerId
-    Page:
+    BookingPage:
       type: object
       properties:
         content:
           type: array
-          items: {}
+          items:
+            $ref: "#/components/schemas/BookingDTO"
         empty:
           type: boolean
         first:
@@ -324,6 +316,18 @@ components:
         totalPages:
           type: integer
           format: int32
+    BookingPayload:
+      type: object
+      properties:
+        dateToBook:
+          type: string
+          format: date
+        offerId:
+          type: string
+          format: uuid
+      required:
+      - dateToBook
+      - offerId
     Pageable:
       type: object
       properties:

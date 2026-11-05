@@ -1,10 +1,12 @@
-package com.lukk.sky.booking.adapters.dto;
+package com.lukk.sky.booking.adapters.inbound.api;
 
+import com.lukk.sky.contract.dto.BookingDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,6 +16,7 @@ class BookingDTOSerializationTest {
 
     private static final UUID BOOKING_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID OFFER_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
+    private static final LocalDate BOOKED_DATE = LocalDate.of(2201, 6, 20);
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -63,12 +66,12 @@ class BookingDTOSerializationTest {
     }
 
     private static BookingDTO booking(String ownerEmail) {
-        return BookingDTO.builder()
-                .id(BOOKING_ID)
-                .offerId(OFFER_ID)
-                .bookedDate("2201-06-20")
-                .bookingUser("testUser@user.com")
-                .ownerEmail(ownerEmail)
-                .build();
+        BookingDTO dto = new BookingDTO();
+        dto.setId(BOOKING_ID);
+        dto.setOfferId(OFFER_ID);
+        dto.setBookedDate(BOOKED_DATE);
+        dto.setBookingUser("testUser@user.com");
+        dto.setOwnerEmail(ownerEmail);
+        return dto;
     }
 }

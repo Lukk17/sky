@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.lukk.sky.booking.AbstractIntegrationTest;
 import com.lukk.sky.booking.assemblers.BookingAssembler;
 import com.lukk.sky.booking.TestSecurityConfig;
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
-import com.lukk.sky.booking.adapters.dto.BookingPayload;
 import com.lukk.sky.booking.config.WebClientTestConfig;
+import com.lukk.sky.contract.dto.BookingDTO;
+import com.lukk.sky.contract.dto.BookingPayload;
 import com.lukk.sky.booking.domain.model.Booking;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import okhttp3.mockwebserver.MockResponse;
@@ -127,7 +127,7 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
         assertBookingFields(bookingPayload, actual.getBody());
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals(String.format("/api/v1/offers/%s/owner", bookingPayload.offerId()), recordedRequest.getPath());
+        assertEquals(String.format("/api/v1/offers/%s/owner", bookingPayload.getOfferId()), recordedRequest.getPath());
     }
 
     @Test
@@ -263,8 +263,9 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("createBooking with a dateToBook in the past returns 400 and persists nothing")
     void createBooking_whenDateToBookIsInThePast_thenReturn400AndPersistNothing() {
         // given
-        BookingPayload bookingPayload =
-                new BookingPayload(BookingAssembler.TEST_DEFAULT_OFFER_ID, LocalDate.now().minusDays(1));
+        BookingPayload bookingPayload = new BookingPayload();
+        bookingPayload.setOfferId(BookingAssembler.TEST_DEFAULT_OFFER_ID);
+        bookingPayload.setDateToBook(LocalDate.now().minusDays(1));
         mockWebServer.enqueue(new MockResponse().setBody(TEST_OWNER_EMAIL_2).setResponseCode(200));
         HttpHeaders headers = createTestHttpHeaders(TEST_USER_EMAIL);
         HttpEntity<BookingPayload> request = new HttpEntity<>(bookingPayload, headers);
@@ -334,14 +335,14 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
     }
 
     private static void assertBookingFields(BookingPayload expected, BookingDTO actual) {
-        assertEquals(expected.dateToBook().toString(), actual.getBookedDate());
-        assertEquals(expected.offerId(), actual.getOfferId());
+        assertEquals(expected.getDateToBook().toString(), actual.getBookedDate().toString());
+        assertEquals(expected.getOfferId(), actual.getOfferId());
         assertEquals(TEST_OWNER_EMAIL_2, actual.getOwnerEmail());
         assertEquals(TEST_USER_EMAIL, actual.getBookingUser());
     }
 
     private static void assertBookingFields(Booking expected, BookingDTO actual) {
-        assertEquals(expected.getBookedDate().toString(), actual.getBookedDate());
+        assertEquals(expected.getBookedDate().toString(), actual.getBookedDate().toString());
         assertEquals(expected.getOfferId(), actual.getOfferId());
         assertEquals(expected.getOwnerEmail(), actual.getOwnerEmail());
         assertEquals(expected.getBookingUser(), actual.getBookingUser());
@@ -355,7 +356,7 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
         assertEquals(5, payload.size());
         assertEquals(expected.getId().toString(), payload.get("id").asString());
         assertEquals(expected.getOfferId().toString(), payload.get("offerId").asString());
-        assertEquals(expected.getBookedDate(), payload.get("bookedDate").asString());
+        assertEquals(expected.getBookedDate().toString(), payload.get("bookedDate").asString());
         assertEquals(expected.getBookingUser(), payload.get("bookingUser").asString());
         assertEquals(expected.getOwnerEmail(), payload.get("ownerEmail").asString());
     }

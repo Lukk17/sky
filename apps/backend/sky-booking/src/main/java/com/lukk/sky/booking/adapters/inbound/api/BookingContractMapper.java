@@ -1,22 +1,37 @@
 package com.lukk.sky.booking.adapters.inbound.api;
 
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
-import com.lukk.sky.booking.adapters.dto.contract.Page;
-import com.lukk.sky.booking.adapters.dto.contract.PageableObject;
-import com.lukk.sky.booking.adapters.dto.contract.SortObject;
+import com.lukk.sky.booking.domain.ports.inbound.BookingView;
+import com.lukk.sky.contract.dto.BookingDTO;
+import com.lukk.sky.contract.dto.BookingPage;
+import com.lukk.sky.contract.dto.PageableObject;
+import com.lukk.sky.contract.dto.SortObject;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import java.util.ArrayList;
+import java.time.LocalDate;
+import java.util.List;
 
-final class BookingPageMapper {
+import static com.lukk.sky.common.web.DateTimeConstants.DATE_FORMAT;
 
-    private BookingPageMapper() {
+final class BookingContractMapper {
+
+    private BookingContractMapper() {
     }
 
-    static Page toPage(org.springframework.data.domain.Page<BookingDTO> source) {
-        Page target = new Page();
-        target.setContent(new ArrayList<Object>(source.getContent()));
+    static BookingDTO toDto(BookingView view) {
+        BookingDTO target = new BookingDTO();
+        target.setId(view.id());
+        target.setOfferId(view.offerId());
+        target.setBookedDate(LocalDate.parse(view.bookedDate(), DATE_FORMAT));
+        target.setBookingUser(view.bookingUser());
+        target.setOwnerEmail(view.ownerEmail());
+        return target;
+    }
+
+    static BookingPage toPage(Page<BookingView> source) {
+        BookingPage target = new BookingPage();
+        target.setContent(toContent(source.getContent()));
         target.setEmpty(source.isEmpty());
         target.setFirst(source.isFirst());
         target.setLast(source.isLast());
@@ -28,6 +43,12 @@ final class BookingPageMapper {
         target.setTotalElements(source.getTotalElements());
         target.setTotalPages(source.getTotalPages());
         return target;
+    }
+
+    private static List<BookingDTO> toContent(List<BookingView> source) {
+        return source.stream()
+                .map(BookingContractMapper::toDto)
+                .toList();
     }
 
     private static PageableObject toPageableObject(Pageable source) {

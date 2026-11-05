@@ -1,3 +1,18 @@
+## [2.1.7] - 2026-11-05
+
+### Changed
+- Generate the booking wire types from the shared `:sky-contract` module instead of a second
+  OpenAPI Generator run inside this service. `BookingController` implements
+  `com.lukk.sky.contract.api.BookingsApi`, and its responses use the generated `BookingDTO`,
+  `BookingPayload` and `BookingPage`. `BookingContractMapper` converts a `BookingView` and a
+  Spring Data page into those shared types, parsing the stored date string with `DATE_FORMAT`.
+  The published paths, status codes and payload shapes are unchanged.
+
+### Removed
+- The `org.openapi.generator` plugin configuration, its generated source directory under
+  `build/generated/contract`, and the hand-written `adapters/dto` wire types with their local
+  `Page` mapper.
+
 ## [2.1.6] - 2026-11-04
 
 ### Changed

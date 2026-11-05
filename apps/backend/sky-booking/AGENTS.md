@@ -13,7 +13,7 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
 ## Architecture
 
 - Build plugin: `sky.spring-service-conventions` (Spring Boot app, fat `bootJar` named `sky-booking.jar`, JaCoCo
-  report). Depends on `:sky-common`.
+  report). Depends on `:sky-common` and the shared generated `:sky-contract`.
 - Hexagonal layout (`com.lukk.sky.booking`):
   - `domain/model`, `domain/exception`: core model and domain exceptions.
   - `domain/ports/inbound`: driving port interfaces called by controllers (`BookingService`).
@@ -21,15 +21,15 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
     `EventSourceRepository`, `BookingNotificationService`, `RestClient`, `RequestUriStrategy`).
   - `domain/service`: domain service implementations (`BookingServicePrimary`, `BookingPersister`,
     `EventSourceService`, `EventSourceServicePrimary`).
-  - `adapters/inbound/api`: REST controllers; `BookingController` implements the generated `BookingsApi` in
-    `adapters/inbound/api/contract` and declares no method-level mappings. The OpenAPI Generator plugin reads
-    `docs/api/contract/openapi.yaml` into `build/generated/contract` on the main source set, so `compileJava`
-    depends on `openApiGenerate`. `adapters/dto`: wire DTOs; `adapters/dto/contract`: generated page models;
-    `adapters/outbound/rest`: the outbound offer-service client, caller, and URI strategy;
+  - `adapters/inbound/api`: REST controllers and the contract mapper. `BookingController` implements
+    `com.lukk.sky.contract.api.BookingsApi` from `:sky-contract` and declares no method-level mappings;
+    `BookingContractMapper` converts `BookingView` and Spring Data pages into the generated `BookingDTO` and
+    `BookingPage`, parsing the stored date string with `DATE_FORMAT`. This service runs no OpenAPI Generator
+    task of its own. `adapters/outbound/rest`: the outbound offer-service client, caller, and URI strategy;
     `adapters/outbound/notification`: outbound notification.
   - `config`, `config/kafka`, `config/propertyBind`: Spring wiring and bound properties.
-- Synchronous stack: the WebFlux migration is done. `BookingService` returns plain types (`BookingDTO` and
-  `Page<BookingDTO>`, no `Mono`), and inter-service calls go through Spring's blocking `RestClient`, built in
+- Synchronous stack: the WebFlux migration is done. `BookingService` returns plain types (`BookingView` and
+  `Page<BookingView>`, no `Mono`), and inter-service calls go through Spring's blocking `RestClient`, built in
   `config/RestClientConfig` on a `JdkClientHttpRequestFactory` with a 2s connect and 3s read timeout. Do not
   reintroduce `WebClient` or `spring-boot-starter-webflux` here.
 - Resilience: `OfferServiceCaller` carries the Resilience4j `@Retry` and `@CircuitBreaker` annotations (instance
@@ -148,9 +148,9 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
   The error contract is the annotations. The 409, 415, 502 and 503 on `POST /bookings` come
   from `@ApiConflictResponse`, `@ApiUnsupportedMediaTypeResponse`, `@ApiDependencyBadGatewayResponse` and
   `@ApiDependencyUnavailableResponse` in sky-common, and the generated `BookingsApi` mirrors the same statuses
-  from the contract. `BookingDTO` marks `id` and `ownerEmail` required
-  through `@Schema` because neither carries a Bean Validation constraint that springdoc could read, though
-  both are always present on a response. A status this service answers and no annotation declares is simply
+  from the contract. `BookingDTO` comes from `:sky-contract`, where the contract schema marks `id` and
+  `ownerEmail` read-only and required, so springdoc reads those markers from the generated class rather than
+  from a hand-written `@Schema`. A status this service answers and no annotation declares is simply
   absent from the published document, so add the annotation in the same change as the exception mapping.
 
 ## Testing

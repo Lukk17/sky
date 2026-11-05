@@ -1,6 +1,5 @@
 package com.lukk.sky.booking.domain.service;
 
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.assemblers.BookingAssembler;
 import com.lukk.sky.booking.domain.exception.BookingAccessDeniedException;
 import com.lukk.sky.booking.domain.exception.BookingException;
@@ -10,6 +9,7 @@ import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 import com.lukk.sky.booking.domain.ports.outbound.BookingNotificationService;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import com.lukk.sky.booking.domain.ports.outbound.RestClient;
+import com.lukk.sky.contract.dto.BookingDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

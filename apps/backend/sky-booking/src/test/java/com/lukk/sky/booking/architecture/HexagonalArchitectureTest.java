@@ -69,7 +69,8 @@ class HexagonalArchitectureTest {
 
     private static final String[] OWN_MONOREPO_PACKAGES = {
             "com.lukk.sky.booking..",
-            "com.lukk.sky.common.."};
+            "com.lukk.sky.common..",
+            "com.lukk.sky.contract.."};
 
     private static JavaClasses classes;
 
@@ -133,13 +134,14 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    @DisplayName("Nothing imports another service: only sky-common is shared")
+    @DisplayName("Nothing imports another service: only sky-common and sky-contract are shared")
     void allClasses_whenInspected_thenImportNoOtherServiceModule() {
         // when / then
         noClasses()
                 .should().dependOnClassesThat(areOtherServiceModules())
-                .because("sky-common is the only module a service may share code through, and a second"
-                        + " project dependency in the build file is what makes the import compile in the first place")
+                .because("sky-common and the generated sky-contract are the only modules a service may"
+                        + " share code through, and a second project dependency in the build file is what"
+                        + " makes the import compile in the first place")
                 .check(classes);
     }
 

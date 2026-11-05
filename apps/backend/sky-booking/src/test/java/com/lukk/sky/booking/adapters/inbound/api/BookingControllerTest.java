@@ -1,7 +1,6 @@
 package com.lukk.sky.booking.adapters.inbound.api;
 
 import com.lukk.sky.booking.assemblers.BookingAssembler;
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
 import com.lukk.sky.booking.domain.exception.BookingDateAlreadyBookedException;
 import com.lukk.sky.booking.domain.exception.BookingException;
 import com.lukk.sky.booking.domain.exception.EventSequenceConflictException;
@@ -9,6 +8,7 @@ import com.lukk.sky.booking.domain.exception.OfferNotFoundException;
 import com.lukk.sky.booking.domain.exception.OfferServiceBadResponseException;
 import com.lukk.sky.booking.domain.exception.OfferServiceUnavailableException;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
+import com.lukk.sky.contract.dto.BookingDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -156,7 +156,7 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.offerId").value(expected.getOfferId().toString()))
                 .andExpect(jsonPath("$.bookingUser").value(expected.getBookingUser()))
                 .andExpect(jsonPath("$.ownerEmail").value(expected.getOwnerEmail()))
-                .andExpect(jsonPath("$.bookedDate").value(expected.getBookedDate()));
+                .andExpect(jsonPath("$.bookedDate").value(expected.getBookedDate().toString()));
     }
 
     @Test

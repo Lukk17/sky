@@ -1,9 +1,5 @@
 package com.lukk.sky.booking.adapters.inbound.api;
 
-import com.lukk.sky.booking.adapters.dto.BookingDTO;
-import com.lukk.sky.booking.adapters.dto.BookingPayload;
-import com.lukk.sky.booking.adapters.dto.contract.Page;
-import com.lukk.sky.booking.adapters.inbound.api.contract.BookingsApi;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
 import com.lukk.sky.booking.domain.ports.inbound.BookingView;
 import com.lukk.sky.common.openapi.ApiCommonErrorResponses;
@@ -14,6 +10,10 @@ import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
 import com.lukk.sky.common.openapi.ApiUnsupportedMediaTypeResponse;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
+import com.lukk.sky.contract.api.BookingsApi;
+import com.lukk.sky.contract.dto.BookingDTO;
+import com.lukk.sky.contract.dto.BookingPage;
+import com.lukk.sky.contract.dto.BookingPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -37,11 +37,11 @@ public class BookingController implements BookingsApi {
 
     @IsUser
     @Override
-    public ResponseEntity<Page> getBookedOffers(@PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<BookingPage> getBookedOffers(@PageableDefault(size = 20) Pageable pageable) {
         String userEmail = SecurityUtils.currentUserEmail();
 
-        return ResponseEntity.ok(BookingPageMapper.toPage(
-                bookingService.getBookedOffersForUser(userEmail, pageable).map(BookingController::toDto)));
+        return ResponseEntity.ok(BookingContractMapper.toPage(
+                bookingService.getBookedOffersForUser(userEmail, pageable)));
     }
 
     @ApiConflictResponse
@@ -54,10 +54,10 @@ public class BookingController implements BookingsApi {
         log.info("Starting to book offer with payload: {}", bookingPayload);
 
         String bookingUser = SecurityUtils.currentUserEmail();
-        BookingDTO bookingDTO = toDto(bookingService.bookOffer(
-                bookingPayload.offerId(), bookingPayload.dateToBook(), bookingUser));
+        BookingView bookingView = bookingService.bookOffer(
+                bookingPayload.getOfferId(), bookingPayload.getDateToBook(), bookingUser);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(bookingDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(BookingContractMapper.toDto(bookingView));
     }
 
     @IsUser
@@ -69,15 +69,5 @@ public class BookingController implements BookingsApi {
         bookingService.removeBooking(bookingId, userEmail);
 
         return ResponseEntity.noContent().build();
-    }
-
-    private static BookingDTO toDto(BookingView view) {
-        return BookingDTO.builder()
-                .id(view.id())
-                .offerId(view.offerId())
-                .bookedDate(view.bookedDate())
-                .bookingUser(view.bookingUser())
-                .ownerEmail(view.ownerEmail())
-                .build();
     }
 }
