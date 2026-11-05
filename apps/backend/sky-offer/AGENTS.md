@@ -21,8 +21,10 @@ independently-deployable services. The module version is not restated here: the 
     `EventSourceRepository`, `OfferNotificationService`, `PhotoStorage`).
   - `domain/service`: domain service implementations (`OfferServicePrimary`, `EventSourceService`,
     `EventSourceServicePrimary`).
-  - `adapters/inbound/api`: the REST controller; `OfferApiController` implements the shared
-    `com.lukk.sky.contract.api.OffersApi` and `OwnerOffersApi` and declares method-level mappings only on
+  - `adapters/inbound/api`: the REST controllers; `OfferQueryController` implements the shared
+    `com.lukk.sky.contract.api.OffersApi` for the public read paths, and `OwnerOfferController`
+    implements `OwnerOffersApi` for the owner operations. Splitting them keeps each generated
+    interface's `@Tag` on its own operations. `OwnerOfferController` declares method-level mappings only on
     `deleteOffer` and `deletePhoto`, which repeat the DELETE path and add the JSON produces types so an
     `Accept: application/json` request gets its 204 instead of a 406. `OfferContractMapper` converts
     `OfferView` and Spring Data `Page<OfferView>` into the generated `OfferDTO`, `OfferPage`, `PageableObject`
@@ -109,8 +111,8 @@ independently-deployable services. The module version is not restated here: the 
     an absolute URL. Closing it means a tri-state payload shape, which is a contract decision the owner has not
     taken: do not add one field-clearing convention on its own.
 - The domain service publishes the Kafka event, never the controller. `OfferServicePrimary` calls
-  `OfferNotificationService` at the end of `addOffer`, `editOffer` and `deleteOffer`, and `OfferApiController` injects
-  no outbound port at all. It used to inject one, build the `KafkaPayloadModel` itself, serialise the DTO and format
+  `OfferNotificationService` at the end of `addOffer`, `editOffer` and `deleteOffer`, and neither controller injects
+  an outbound port at all. It used to inject one, build the `KafkaPayloadModel` itself, serialise the DTO and format
   the delete sentence, which put the decision to announce an offer one layer above the rules that decide whether the
   offer changed. The driven port now names the event (`publishCreated`, `publishEdited`, `publishDeleted`) and the
   adapter owns the envelope, the timestamp, the serialisation and the `Offer with ID: %s was deleted.` sentence, so
@@ -206,11 +208,12 @@ independently-deployable services. The module version is not restated here: the 
   `SemanticApiVersionParser.parseVersion` calls `skipNonDigits` before it matches, so `"v1"` and `"1"` parse
   to the same version and the `addSupportedVersions("1")` and `setDefaultVersion("1")` calls in sky-common
   keep matching. Do not change it back.
-  `OffersApi` supplies the public browse and search operations, `OwnerOffersApi` the owner operations, and
-  `OfferApiController` implements both because the generated `OwnerOffersApi` cannot be split across two
-  beans. The gallery operations live in that same controller; there is no second gallery controller. The
-  paths, success statuses, summaries and the generated operation descriptions therefore come from the
-  contract, while the controller keeps the security and shared error annotations on top of them.
+  `OffersApi` supplies the public browse and search operations plus the owner lookup, and `OwnerOffersApi`
+  supplies the owner operations. `OfferQueryController` implements `OffersApi` and `OwnerOfferController`
+  implements `OwnerOffersApi`, so every operation publishes exactly one tag, the tag of the interface it is
+  declared on. The gallery operations live in `OwnerOfferController`; there is no second gallery controller.
+  The paths, success statuses, summaries and the generated operation descriptions therefore come from the
+  contract, while the controllers keep the security and shared error annotations on top of them.
   The error contract is the annotations and nothing else. The 409 on create, edit and delete, the 415 on
   every operation that takes a body, and the 503 on every operation that presigns a stored photo come from
   `@ApiConflictResponse`, `@ApiUnsupportedMediaTypeResponse` and `@ApiDependencyUnavailableResponse` in

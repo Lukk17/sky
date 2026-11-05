@@ -1,3 +1,18 @@
+## [2.3.1] - 2026-11-05
+
+### Changed
+- Split the offer REST adapter by generated interface. `OfferQueryController` implements `OffersApi`
+  (public list, detail, search and the owner lookup) and `OwnerOfferController` implements `OwnerOffersApi`
+  (owned list, create, edit, delete and the five gallery operations). Each generated interface carries its
+  own type-level `@Tag`, so splitting the adapter makes every operation publish exactly one tag instead of
+  both `Offers` and `Owner offers`. `OfferContractMapper` and `PhotoUploadSupport` stay shared.
+- Mark `OfferDTO.gallery` read-only and give `PhotoDTO` the required fields `id`, `main`, `position` and
+  `url`, with `id` and `url` read-only. The required non-null `main` and `position` fields now publish
+  `boolean` and `integer` rather than a nullable type array.
+
+### Removed
+- Delete `OfferApiController`, the single bean that implemented both generated interfaces.
+
 ## [2.3.0] - 2026-11-05
 
 ### Changed

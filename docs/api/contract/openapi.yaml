@@ -974,6 +974,7 @@ components:
         gallery:
           type: array
           default: []
+          readOnly: true
           items:
             $ref: '#/components/schemas/PhotoDTO'
         coverPhotoUrl:
@@ -1024,6 +1025,11 @@ components:
           maxLength: 1024
     PhotoDTO:
       type: object
+      required:
+        - id
+        - main
+        - position
+        - url
       properties:
         id:
           type: [string, 'null']
@@ -1036,6 +1042,7 @@ components:
           format: int32
         url:
           type: [string, 'null']
+          readOnly: true
     BookingPayload:
       type: object
       required:

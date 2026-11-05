@@ -71,28 +71,47 @@ def schemas(document: dict[str, Any]) -> dict[str, Any]:
     return document.get("components", {}).get("schemas", {})
 
 
-def type_signature(schema: Any) -> str:
+def normalize_type(schema: Any) -> tuple[str, bool]:
+    """Return the single non-null type and whether null is part of it."""
     if not isinstance(schema, dict):
-        return "any"
+        return "any", False
 
     reference = schema.get("$ref")
     if isinstance(reference, str):
-        return f"ref:{reference.rsplit('/', 1)[-1]}"
+        return f"ref:{reference.rsplit('/', 1)[-1]}", False
 
     declared = schema.get("type")
+    nullable = bool(schema.get("nullable", False))
+
+    if isinstance(declared, list):
+        non_null = [str(entry) for entry in declared if entry != "null"]
+        nullable = nullable or "null" in declared
+        if len(non_null) == 1:
+            declared = non_null[0]
+        elif not non_null:
+            declared = "null"
+        else:
+            declared = "|".join(sorted(non_null))
+
     if declared == "array":
-        return f"array<{type_signature(schema.get('items', {}))}>"
+        items_type, items_nullable = normalize_type(schema.get("items", {}))
+        return f"array<{type_signature(items_type, items_nullable)}>", nullable
     if isinstance(declared, str):
-        return declared
+        return declared, nullable
 
     for combinator in ("allOf", "oneOf", "anyOf"):
         if combinator in schema:
             parts = ",".join(
-                type_signature(part) for part in schema[combinator]
+                type_signature(*normalize_type(part))
+                for part in schema[combinator]
             )
-            return f"{combinator}<{parts}>"
+            return f"{combinator}<{parts}>", nullable
 
-    return "any"
+    return "any", nullable
+
+
+def type_signature(declared_type: str, nullable: bool) -> str:
+    return f"{declared_type}?" if nullable else declared_type
 
 
 def compare_schema(
@@ -135,8 +154,8 @@ def compare_schema(
         )
 
     for prop in sorted(set(contract_properties) & set(service_properties)):
-        contract_type = type_signature(contract_properties[prop])
-        service_type = type_signature(service_properties[prop])
+        contract_type = type_signature(*normalize_type(contract_properties[prop]))
+        service_type = type_signature(*normalize_type(service_properties[prop]))
         if contract_type != service_type:
             mismatches.append(
                 f"schema {name} ({service}): property '{prop}' has type "

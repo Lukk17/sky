@@ -189,6 +189,37 @@ class OfferApiDocumentTest {
     }
 
     @Test
+    @DisplayName("each operation publishes exactly one tag, from the interface it is declared on")
+    void everyOperation_hasExactlyOneTag() {
+        // given
+        int offersTagged = 0;
+        int ownerOffersTagged = 0;
+
+        for (JsonNode pathItem : document.get("paths")) {
+            for (JsonNode operation : pathItem) {
+                String operationId = operation.path("operationId").asString();
+                JsonNode tags = operation.path("tags");
+
+                // when / then
+                assertThat(tags.isArray()).as("%s publishes no tags array", operationId).isTrue();
+                assertThat(tags.size()).as("%s publishes %s", operationId, tags).isEqualTo(1);
+
+                String tag = tags.get(0).asString();
+                if ("Offers".equals(tag)) {
+                    offersTagged++;
+                } else if ("Owner offers".equals(tag)) {
+                    ownerOffersTagged++;
+                } else {
+                    fail("operation %s carries the unknown tag %s", operationId, tag);
+                }
+            }
+        }
+
+        assertThat(offersTagged).isEqualTo(4);
+        assertThat(ownerOffersTagged).isEqualTo(10);
+    }
+
+    @Test
     @DisplayName("search states the blank and length rules in its operation description, which is the only "
             + "place a caller can read them")
     void search_describesWhatMakesATermInvalid() {
