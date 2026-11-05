@@ -1,8 +1,8 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.lukk.sky.offer.assemblers.OfferAssembler;
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
-import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.contract.dto.OfferDTO;
+import com.lukk.sky.contract.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
 import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
@@ -244,6 +244,19 @@ class OfferEditDeleteApiControllerTest {
                                 .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
                 )
                 .andExpect(status().is2xxSuccessful());
+    }
+
+    @Test
+    @DisplayName("deleteOffer_whenRequestAcceptsJson_thenReturn204WithAnEmptyBody")
+    void deleteOffer_whenRequestAcceptsJson_thenReturn204WithAnEmptyBody() throws Exception {
+        // when / then
+        mvc.perform(
+                        delete(String.format("/owner/offers/%s", TEST_DEFAULT_OFFER_ID))
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(jwt().jwt(j -> j.claim("email", TEST_USER_EMAIL)).authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
     }
 
     @Test

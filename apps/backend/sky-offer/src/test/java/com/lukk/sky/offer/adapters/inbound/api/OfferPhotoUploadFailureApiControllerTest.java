@@ -1,8 +1,8 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.lukk.sky.offer.assemblers.OfferAssembler;
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
-import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.contract.dto.OfferDTO;
+import com.lukk.sky.contract.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
 import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;

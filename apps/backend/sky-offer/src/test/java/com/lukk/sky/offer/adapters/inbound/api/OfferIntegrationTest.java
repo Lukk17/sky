@@ -1,11 +1,11 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.lukk.sky.contract.dto.OfferDTO;
+import com.lukk.sky.contract.dto.OfferEditDTO;
 import com.lukk.sky.offer.AbstractIntegrationTest;
 import com.lukk.sky.offer.assemblers.OfferAssembler;
 import com.lukk.sky.offer.TestSecurityConfig;
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
-import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -98,7 +98,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("POST /api/v1/owner/offers creates the offer, returns 201, and publishes a Kafka event")
     void createOffer_whenOwnerPostsNewOffer_thenReturn201AndPublishKafkaEvent() {
         // given
-        OfferDTO offer = OfferDTO.of(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
+        OfferDTO offer = OfferAssembler.toOfferDTO(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
         offer.setId(null);
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
@@ -187,7 +187,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     void updateOffer_whenOwnerEditsOffer_thenReturn200AndPublishKafkaEvent() {
         // given
         UUID offerId = populateDatabase().getId();
-        OfferEditDTO updatedOffer = OfferEditDTO.of(OfferAssembler.getPopulatedOffer(offerId));
+        OfferEditDTO updatedOffer = OfferAssembler.toOfferEditDTO(OfferAssembler.getPopulatedOffer(offerId));
         updatedOffer.setHotelName(UPDATED_NAME);
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, headers);
@@ -211,10 +211,9 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     void updateOffer_whenPayloadIsPartialAndTheStoredRowIsSparse_thenReturn200AndKeepTheAbsentFieldsNull() {
         // given
         UUID offerId = populateSparseDatabase().getId();
-        OfferEditDTO partialEdit = OfferEditDTO.builder()
-                .id(offerId)
-                .hotelName(UPDATED_NAME)
-                .build();
+        OfferEditDTO partialEdit = new OfferEditDTO();
+        partialEdit.setId(offerId);
+        partialEdit.setHotelName(UPDATED_NAME);
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(partialEdit, createTestHttpHeaders());
 
         // when
@@ -305,7 +304,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     void createOffer_whenClientSuppliesAnId_thenIgnoreItAndAssignAServerGeneratedOne() {
         // given
         UUID clientChosenId = UUID.fromString("11111111-2222-3333-4444-555555555555");
-        OfferDTO offer = OfferDTO.of(OfferAssembler.getPopulatedOffer(clientChosenId));
+        OfferDTO offer = OfferAssembler.toOfferDTO(OfferAssembler.getPopulatedOffer(clientChosenId));
         HttpHeaders headers = createTestHttpHeaders();
         HttpEntity<OfferDTO> request = new HttpEntity<>(offer, headers);
 
@@ -323,7 +322,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("POST /api/v1/owner/offers with a garbage ownerEmail succeeds, because the server assigns it from the JWT")
     void createOffer_whenOwnerEmailIsGarbage_thenIgnoreItAndUseTheJwtEmail() {
         // given
-        OfferDTO offer = OfferDTO.of(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
+        OfferDTO offer = OfferAssembler.toOfferDTO(OfferAssembler.getPopulatedOffer(TEST_DEFAULT_OFFER_ID));
         offer.setId(null);
         offer.setOwnerEmail("not-an-email");
         HttpHeaders headers = createTestHttpHeaders();
@@ -493,7 +492,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
         String storedKey = "offers/" + stored.getId() + "/11111111-1111-4111-8111-111111111111-hotel.png";
         stored.setPhotoObjectKey(storedKey);
         offerRepository.save(stored);
-        OfferEditDTO updatedOffer = OfferEditDTO.of(stored);
+        OfferEditDTO updatedOffer = OfferAssembler.toOfferEditDTO(stored);
         updatedOffer.setHotelName(UPDATED_NAME);
         updatedOffer.setExternalPhotoUrl("https://images.example.com/somewhere-else.jpeg");
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, createTestHttpHeaders());
@@ -516,7 +515,7 @@ class OfferIntegrationTest extends AbstractIntegrationTest {
     void updateOffer_whenExternalPhotoUrlIsNotAbsolute_thenReturn400() {
         // given
         Offer stored = populateDatabase();
-        OfferEditDTO updatedOffer = OfferEditDTO.of(stored);
+        OfferEditDTO updatedOffer = OfferAssembler.toOfferEditDTO(stored);
         updatedOffer.setExternalPhotoUrl("/images/grand-hotel-paris-new.jpg");
         HttpEntity<OfferEditDTO> request = new HttpEntity<>(updatedOffer, createTestHttpHeaders());
 

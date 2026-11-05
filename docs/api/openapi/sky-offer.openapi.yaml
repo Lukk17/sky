@@ -30,7 +30,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Page"
+                $ref: "#/components/schemas/OfferPage"
           description: Found offers
         "400":
           content:
@@ -76,6 +76,7 @@ paths:
       security: []
       summary: Get all offers (paginated)
       tags:
+      - Owner offers
       - Offers
   /api/v1/offers/{offerId}:
     get:
@@ -114,6 +115,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer not found
         "500":
           content:
@@ -140,6 +145,7 @@ paths:
       security: []
       summary: Get one offer by id
       tags:
+      - Owner offers
       - Offers
   /api/v1/offers/{offerId}/owner:
     get:
@@ -194,6 +200,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer not found
         "500":
           content:
@@ -209,6 +219,7 @@ paths:
       - bearerAuth: []
       summary: Get the owner email for an offer
       tags:
+      - Owner offers
       - Offers
   /api/v1/owner/offers:
     get:
@@ -224,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Page"
+                $ref: "#/components/schemas/OfferPage"
           description: Found owned offers
         "400":
           content:
@@ -288,6 +299,7 @@ paths:
       summary: Get owned offers (paginated)
       tags:
       - Owner offers
+      - Offers
     post:
       operationId: addOffer
       requestBody:
@@ -371,6 +383,7 @@ paths:
       summary: Create new offer
       tags:
       - Owner offers
+      - Offers
     put:
       operationId: edit
       requestBody:
@@ -422,6 +435,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer not found
         "409":
           content:
@@ -468,6 +485,7 @@ paths:
       summary: Edit offer
       tags:
       - Owner offers
+      - Offers
   /api/v1/owner/offers/{offerId}:
     delete:
       operationId: deleteOffer
@@ -517,6 +535,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer not found
         "409":
           content:
@@ -544,6 +566,7 @@ paths:
       summary: Delete offer
       tags:
       - Owner offers
+      - Offers
   /api/v1/owner/offers/{offerId}/photo:
     delete:
       operationId: deletePhoto
@@ -593,6 +616,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer not found
         "500":
           content:
@@ -609,6 +636,7 @@ paths:
       summary: Delete the stored photo of an offer
       tags:
       - Owner offers
+      - Offers
     post:
       operationId: uploadPhoto
       parameters:
@@ -672,6 +700,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer not found
         "413":
           content:
@@ -723,6 +755,7 @@ paths:
       summary: Upload photo
       tags:
       - Owner offers
+      - Offers
   /api/v1/owner/offers/{offerId}/photos:
     post:
       description: "Appends a photo at the end of the gallery, which holds at most\
@@ -789,6 +822,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer not found
         "409":
           content:
@@ -851,6 +888,7 @@ paths:
       summary: Upload a photo to the offer gallery (owner only)
       tags:
       - Owner offers
+      - Offers
   /api/v1/owner/offers/{offerId}/photos/{photoId}:
     delete:
       operationId: deleteGalleryPhoto
@@ -910,6 +948,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer or photo not found
         "500":
           content:
@@ -926,6 +968,7 @@ paths:
       summary: Delete a gallery photo (owner only)
       tags:
       - Owner offers
+      - Offers
   /api/v1/owner/offers/{offerId}/photos/{photoId}/cover:
     put:
       operationId: setGalleryCover
@@ -985,6 +1028,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer or photo not found
         "500":
           content:
@@ -1001,6 +1048,7 @@ paths:
       summary: Set a gallery photo as cover (owner only)
       tags:
       - Owner offers
+      - Offers
   /api/v1/owner/offers/{offerId}/photos/{photoId}/position:
     put:
       operationId: reorderGalleryPhoto
@@ -1066,6 +1114,10 @@ paths:
                 type: string
               style: simple
         "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
           description: Offer or photo not found
         "500":
           content:
@@ -1082,33 +1134,35 @@ paths:
       summary: Reorder a gallery photo (owner only)
       tags:
       - Owner offers
+      - Offers
   /api/v1/search:
-    post:
-      description: "Searches the offer inventory for the term sent as the request\
-        \ body. The term must not be blank, and it must not be longer than 100 characters.\
-        \ A term that breaks either rule is answered with 400."
+    get:
+      description: "Searches the offer inventory for the term sent as the `term` query\
+        \ parameter. The term must not be blank, and it must not be longer than 100\
+        \ characters. A term that breaks either rule is answered with 400."
       operationId: search
       parameters:
+      - description: The term to search for; it must not be blank and is at most 100
+          characters.
+        in: query
+        name: term
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+          minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
       - in: query
         name: pageable
         required: true
         schema:
           $ref: "#/components/schemas/Pageable"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-          text/plain:
-            schema:
-              type: string
-        required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Page"
+                $ref: "#/components/schemas/OfferPage"
           description: Offers found
         "400":
           content:
@@ -1154,6 +1208,7 @@ paths:
       security: []
       summary: Search for offers (paginated)
       tags:
+      - Owner offers
       - Offers
 components:
   schemas:
@@ -1163,23 +1218,37 @@ components:
         city:
           type: string
           maxLength: 255
-          minLength: 0
+          minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
         comment:
-          type: string
+          type:
+          - string
+          - "null"
           maxLength: 1000
           minLength: 0
         country:
           type: string
           maxLength: 255
-          minLength: 0
+          minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
         coverPhotoUrl:
-          type: string
+          type:
+          - string
+          - "null"
+          readOnly: true
         description:
-          type: string
+          type:
+          - string
+          - "null"
           maxLength: 3000
           minLength: 0
         externalPhotoUrl:
-          type: string
+          type:
+          - string
+          - "null"
+          maxLength: 1024
+          minLength: 0
+          pattern: ^https?://\S+$
         gallery:
           type: array
           items:
@@ -1187,14 +1256,24 @@ components:
         hotelName:
           type: string
           maxLength: 255
-          minLength: 0
+          minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
         id:
-          type: string
+          type:
+          - string
+          - "null"
           format: uuid
+          readOnly: true
         ownerEmail:
-          type: string
+          type:
+          - string
+          - "null"
+          readOnly: true
         photoUrl:
-          type: string
+          type:
+          - string
+          - "null"
+          readOnly: true
         price:
           type: number
           minimum: 0
@@ -1212,47 +1291,73 @@ components:
       type: object
       properties:
         city:
-          type: string
+          type:
+          - string
+          - "null"
           maxLength: 255
-          minLength: 0
+          minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
         comment:
-          type: string
+          type:
+          - string
+          - "null"
           maxLength: 1000
           minLength: 0
         country:
-          type: string
+          type:
+          - string
+          - "null"
           maxLength: 255
-          minLength: 0
+          minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
         description:
-          type: string
+          type:
+          - string
+          - "null"
           maxLength: 3000
           minLength: 0
         externalPhotoUrl:
-          type: string
-        hotelName:
-          type: string
-          maxLength: 255
+          type:
+          - string
+          - "null"
+          maxLength: 1024
           minLength: 0
+          pattern: ^https?://\S+$
+        hotelName:
+          type:
+          - string
+          - "null"
+          maxLength: 255
+          minLength: 1
+          pattern: "[\\s\\S]*\\S[\\s\\S]*"
         id:
           type: string
           format: uuid
         ownerEmail:
-          type: string
+          type:
+          - string
+          - "null"
+          readOnly: true
         price:
-          type: number
+          type:
+          - number
+          - "null"
           minimum: 0
         roomCapacity:
-          type: integer
+          type:
+          - integer
+          - "null"
           format: int64
           minimum: 1
       required:
       - id
-    Page:
+    OfferPage:
       type: object
       properties:
         content:
           type: array
-          items: {}
+          items:
+            $ref: "#/components/schemas/OfferDTO"
         empty:
           type: boolean
         first:
@@ -1278,6 +1383,18 @@ components:
         totalPages:
           type: integer
           format: int32
+      required:
+      - content
+      - empty
+      - first
+      - last
+      - number
+      - numberOfElements
+      - pageable
+      - size
+      - sort
+      - totalElements
+      - totalPages
     Pageable:
       type: object
       properties:
@@ -1311,19 +1428,35 @@ components:
           $ref: "#/components/schemas/SortObject"
         unpaged:
           type: boolean
+      required:
+      - offset
+      - pageNumber
+      - pageSize
+      - paged
+      - sort
+      - unpaged
     PhotoDTO:
       type: object
       properties:
         id:
-          type: string
+          type:
+          - string
+          - "null"
           format: uuid
+          readOnly: true
         main:
-          type: boolean
+          type:
+          - boolean
+          - "null"
         position:
-          type: integer
+          type:
+          - integer
+          - "null"
           format: int32
         url:
-          type: string
+          type:
+          - string
+          - "null"
     ProblemDetail:
       type: object
       properties:
@@ -1352,6 +1485,10 @@ components:
           type: boolean
         unsorted:
           type: boolean
+      required:
+      - empty
+      - sorted
+      - unsorted
   securitySchemes:
     bearerAuth:
       bearerFormat: JWT

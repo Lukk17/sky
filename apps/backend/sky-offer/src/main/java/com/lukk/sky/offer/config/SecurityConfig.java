@@ -13,7 +13,7 @@ public class SecurityConfig {
         return () -> auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/v1/offers/*/owner").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/offers", "/api/v1/offers/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/search").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/search").permitAll()
                 .requestMatchers("/api/v1/owner/**").authenticated();
     }
 }

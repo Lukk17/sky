@@ -1,8 +1,8 @@
 package com.lukk.sky.offer.assemblers;
 
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
-import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
-import com.lukk.sky.offer.adapters.dto.PhotoDTO;
+import com.lukk.sky.contract.dto.OfferDTO;
+import com.lukk.sky.contract.dto.OfferEditDTO;
+import com.lukk.sky.contract.dto.PhotoDTO;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.inbound.CreateOfferCommand;
 import com.lukk.sky.offer.domain.ports.inbound.EditOfferCommand;
@@ -10,6 +10,7 @@ import com.lukk.sky.offer.domain.ports.inbound.GalleryPhotoView;
 import com.lukk.sky.offer.domain.ports.inbound.OfferView;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +57,6 @@ public class OfferAssembler {
     }
 
     public static List<OfferDTO> getPopulatedOffersDTO() {
-
         return List.of(
                 getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID),
                 getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID_2)
@@ -64,18 +64,18 @@ public class OfferAssembler {
     }
 
     public static OfferDTO getPopulatedOfferDTO(UUID id) {
-        return OfferDTO.builder()
-                .hotelName(TEST_HOTEL_NAME)
-                .city(TEST_CITY)
-                .country(TEST_COUNTRY)
-                .comment(TEST_COMMENT)
-                .description(TEST_DESCRIPTION)
-                .id(id)
-                .ownerEmail(TEST_OWNER_EMAIL)
-                .externalPhotoUrl(TEST_EXTERNAL_PHOTO_URL)
-                .price(TEST_PRICE)
-                .roomCapacity(TEST_ROOM_CAPACITY)
-                .build();
+        OfferDTO dto = new OfferDTO();
+        dto.setId(id);
+        dto.setHotelName(TEST_HOTEL_NAME);
+        dto.setDescription(TEST_DESCRIPTION);
+        dto.setComment(TEST_COMMENT);
+        dto.setPrice(TEST_PRICE);
+        dto.setOwnerEmail(TEST_OWNER_EMAIL);
+        dto.setRoomCapacity(TEST_ROOM_CAPACITY);
+        dto.setCity(TEST_CITY);
+        dto.setCountry(TEST_COUNTRY);
+        dto.setExternalPhotoUrl(TEST_EXTERNAL_PHOTO_URL);
+        return dto;
     }
 
     public static CreateOfferCommand toCreateCommand(OfferDTO dto) {
@@ -91,25 +91,51 @@ public class OfferAssembler {
     }
 
     public static OfferDTO toOfferDTO(OfferView view) {
-        return OfferDTO.builder()
-                .id(view.id())
-                .hotelName(view.hotelName())
-                .description(view.description())
-                .comment(view.comment())
-                .price(view.price())
-                .ownerEmail(view.ownerEmail())
-                .roomCapacity(view.roomCapacity())
-                .city(view.city())
-                .country(view.country())
-                .externalPhotoUrl(view.externalPhotoUrl())
-                .photoUrl(view.photoUrl())
-                .gallery(view.gallery() == null ? new java.util.ArrayList<>()
-                        : new java.util.ArrayList<>(view.gallery().stream()
-                                .map(photo -> PhotoDTO.builder().id(photo.id()).position(photo.position())
-                                        .url(photo.url()).main(photo.main()).build())
-                                .toList()))
-                .coverPhotoUrl(view.coverPhotoUrl())
-                .build();
+        OfferDTO dto = new OfferDTO();
+        dto.setId(view.id());
+        dto.setHotelName(view.hotelName());
+        dto.setDescription(view.description());
+        dto.setComment(view.comment());
+        dto.setPrice(view.price());
+        dto.setOwnerEmail(view.ownerEmail());
+        dto.setRoomCapacity(view.roomCapacity());
+        dto.setCity(view.city());
+        dto.setCountry(view.country());
+        dto.setExternalPhotoUrl(view.externalPhotoUrl());
+        dto.setPhotoUrl(view.photoUrl());
+        dto.setGallery(toPhotoDtos(view.gallery()));
+        dto.setCoverPhotoUrl(view.coverPhotoUrl());
+        return dto;
+    }
+
+    public static OfferDTO toOfferDTO(Offer offer) {
+        OfferDTO dto = new OfferDTO();
+        dto.setId(offer.getId());
+        dto.setHotelName(offer.getHotelName());
+        dto.setDescription(offer.getDescription());
+        dto.setComment(offer.getComment());
+        dto.setPrice(offer.getPrice());
+        dto.setOwnerEmail(offer.getOwnerEmail());
+        dto.setRoomCapacity(offer.getRoomCapacity());
+        dto.setCity(offer.getCity());
+        dto.setCountry(offer.getCountry());
+        dto.setExternalPhotoUrl(offer.getExternalPhotoUrl());
+        return dto;
+    }
+
+    public static OfferEditDTO toOfferEditDTO(Offer offer) {
+        OfferEditDTO dto = new OfferEditDTO();
+        dto.setId(offer.getId());
+        dto.setHotelName(offer.getHotelName());
+        dto.setDescription(offer.getDescription());
+        dto.setComment(offer.getComment());
+        dto.setPrice(offer.getPrice());
+        dto.setOwnerEmail(offer.getOwnerEmail());
+        dto.setRoomCapacity(offer.getRoomCapacity());
+        dto.setCity(offer.getCity());
+        dto.setCountry(offer.getCountry());
+        dto.setExternalPhotoUrl(offer.getExternalPhotoUrl());
+        return dto;
     }
 
     public static OfferView toOfferView(OfferDTO dto) {
@@ -118,7 +144,7 @@ public class OfferAssembler {
                 dto.getExternalPhotoUrl(), dto.getPhotoUrl(),
                 dto.getGallery() == null ? List.of() : dto.getGallery().stream()
                         .map(photo -> new GalleryPhotoView(photo.getId(), photo.getPosition(),
-                                photo.getUrl(), photo.isMain()))
+                                photo.getUrl(), Boolean.TRUE.equals(photo.getMain())))
                         .toList(),
                 dto.getCoverPhotoUrl());
     }
@@ -128,17 +154,34 @@ public class OfferAssembler {
     }
 
     public static OfferEditDTO getPopulatedOfferEditDTO(UUID id) {
-        return OfferEditDTO.builder()
-                .hotelName(TEST_HOTEL_NAME)
-                .city(TEST_CITY)
-                .country(TEST_COUNTRY)
-                .comment(TEST_COMMENT)
-                .description(TEST_DESCRIPTION)
-                .id(id)
-                .ownerEmail(TEST_OWNER_EMAIL)
-                .externalPhotoUrl(TEST_EXTERNAL_PHOTO_URL)
-                .price(TEST_PRICE)
-                .roomCapacity(TEST_ROOM_CAPACITY)
-                .build();
+        OfferEditDTO dto = new OfferEditDTO();
+        dto.setId(id);
+        dto.setHotelName(TEST_HOTEL_NAME);
+        dto.setDescription(TEST_DESCRIPTION);
+        dto.setComment(TEST_COMMENT);
+        dto.setPrice(TEST_PRICE);
+        dto.setOwnerEmail(TEST_OWNER_EMAIL);
+        dto.setRoomCapacity(TEST_ROOM_CAPACITY);
+        dto.setCity(TEST_CITY);
+        dto.setCountry(TEST_COUNTRY);
+        dto.setExternalPhotoUrl(TEST_EXTERNAL_PHOTO_URL);
+        return dto;
+    }
+
+    private static List<PhotoDTO> toPhotoDtos(List<GalleryPhotoView> photos) {
+        if (photos == null) {
+            return new ArrayList<>();
+        }
+
+        return photos.stream()
+                .map(photo -> {
+                    PhotoDTO dto = new PhotoDTO();
+                    dto.setId(photo.id());
+                    dto.setPosition(photo.position());
+                    dto.setUrl(photo.url());
+                    dto.setMain(photo.main());
+                    return dto;
+                })
+                .toList();
     }
 }

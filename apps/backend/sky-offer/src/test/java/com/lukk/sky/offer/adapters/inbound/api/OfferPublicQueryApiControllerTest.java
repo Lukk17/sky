@@ -1,8 +1,8 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.lukk.sky.offer.assemblers.OfferAssembler;
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
-import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.contract.dto.OfferDTO;
+import com.lukk.sky.contract.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
 import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
@@ -153,9 +153,8 @@ class OfferPublicQueryApiControllerTest {
 
         // when / then
         mvc.perform(
-                        post("/search")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(TEST_HOTEL_NAME)
+                        get("/search")
+                                .param("term", TEST_HOTEL_NAME)
                 )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.content").isArray())
@@ -167,9 +166,8 @@ class OfferPublicQueryApiControllerTest {
     void search_whenTermIsBlank_thenReturn400() throws Exception {
         // when / then
         mvc.perform(
-                        post("/search")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("   ")
+                        get("/search")
+                                .param("term", "   ")
                 )
                 .andExpect(status().isBadRequest());
     }
@@ -182,15 +180,14 @@ class OfferPublicQueryApiControllerTest {
 
         // when
         MvcResult result = mvc.perform(
-                        post("/search")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(tooLong)
+                        get("/search")
+                                .param("term", tooLong)
                 )
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
         // then
-        assertTrue(result.getResponse().getContentAsString().contains("Invalid request."));
+        assertTrue(result.getResponse().getContentAsString().contains("\"title\":\"Bad Request\""));
     }
 
     @Test
@@ -222,4 +219,5 @@ class OfferPublicQueryApiControllerTest {
                         get("/offers/" + TEST_DEFAULT_OFFER_ID)
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
-    }}
+    }
+}

@@ -105,6 +105,36 @@ class OfferApiDocumentTest {
     }
 
     @Test
+    @DisplayName("successful reads and writes declare application/json only, never problem json")
+    void successResponses_declareJsonOnly() {
+        // when / then
+        assertJsonOnly(responsesOf("getAllOffers").get("200"));
+        assertJsonOnly(responsesOf("getOfferById").get("200"));
+        assertJsonOnly(responsesOf("search").get("200"));
+        assertJsonOnly(responsesOf("addOffer").get("201"));
+    }
+
+    @Test
+    @DisplayName("a 404 is declared as an application/problem+json problem detail, which is what the handler produces")
+    void notFound_isDeclaredAsProblemJson() {
+        // when
+        JsonNode notFound = responsesOf("getOfferById").get("404");
+
+        // then
+        assertThat(notFound.get("content").has("application/problem+json")).isTrue();
+        assertThat(notFound.get("content").get("application/problem+json").path("schema").path("$ref").asString())
+                .endsWith("/ProblemDetail");
+    }
+
+    @Test
+    @DisplayName("the 204 responses carry no body")
+    void noContentResponses_carryNoBody() {
+        // when / then
+        assertThat(responsesOf("deleteOffer").get("204").has("content")).isFalse();
+        assertThat(responsesOf("deletePhoto").get("204").has("content")).isFalse();
+    }
+
+    @Test
     @DisplayName("every secured offer operation declares 403, because the role check can deny it")
     void securedOperations_declare403() {
         // when / then
@@ -228,6 +258,14 @@ class OfferApiDocumentTest {
         }
 
         return values;
+    }
+
+    private void assertJsonOnly(JsonNode response) {
+        JsonNode content = response.get("content");
+
+        assertThat(content.has("application/json")).isTrue();
+        assertThat(content.has("application/problem+json")).isFalse();
+        assertThat(content.size()).isEqualTo(1);
     }
 
     private JsonNode responsesOf(String operationId) {

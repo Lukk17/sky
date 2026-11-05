@@ -1,8 +1,8 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.lukk.sky.offer.assemblers.OfferAssembler;
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
-import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
+import com.lukk.sky.contract.dto.OfferDTO;
+import com.lukk.sky.contract.dto.OfferEditDTO;
 import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
 import com.lukk.sky.offer.domain.exception.OfferAccessDeniedException;
 import com.lukk.sky.offer.domain.exception.OfferNotFoundException;
@@ -153,9 +153,11 @@ class OfferGalleryApiControllerTest {
         // given
         java.util.UUID survivorId = java.util.UUID.randomUUID();
         OfferDTO response = OfferAssembler.getPopulatedOfferDTO(TEST_DEFAULT_OFFER_ID);
-        com.lukk.sky.offer.adapters.dto.PhotoDTO survivor =
-                com.lukk.sky.offer.adapters.dto.PhotoDTO.builder()
-                        .id(survivorId).position(0).url("https://cdn.example/next.png").main(true).build();
+        com.lukk.sky.contract.dto.PhotoDTO survivor = new com.lukk.sky.contract.dto.PhotoDTO();
+        survivor.setId(survivorId);
+        survivor.setPosition(0);
+        survivor.setUrl("https://cdn.example/next.png");
+        survivor.setMain(true);
         response.setGallery(java.util.List.of(survivor));
         response.setCoverPhotoUrl("https://cdn.example/next.png");
         java.util.UUID photoId = java.util.UUID.randomUUID();

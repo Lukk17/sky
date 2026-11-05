@@ -8,24 +8,27 @@ import com.lukk.sky.common.openapi.ApiSecuredErrorResponses;
 import com.lukk.sky.common.openapi.ApiUnsupportedMediaTypeResponse;
 import com.lukk.sky.common.security.IsUser;
 import com.lukk.sky.common.security.SecurityUtils;
-import com.lukk.sky.offer.adapters.dto.OfferDTO;
-import com.lukk.sky.offer.adapters.dto.OfferEditDTO;
-import com.lukk.sky.offer.adapters.dto.contract.Page;
-import com.lukk.sky.offer.adapters.inbound.api.contract.OffersApi;
-import com.lukk.sky.offer.adapters.inbound.api.contract.OwnerOffersApi;
+import com.lukk.sky.contract.api.OffersApi;
+import com.lukk.sky.contract.api.OwnerOffersApi;
+import com.lukk.sky.contract.dto.OfferDTO;
+import com.lukk.sky.contract.dto.OfferEditDTO;
+import com.lukk.sky.contract.dto.OfferPage;
 import com.lukk.sky.offer.domain.exception.OfferException;
-import com.lukk.sky.offer.domain.ports.inbound.CreateOfferCommand;
-import com.lukk.sky.offer.domain.ports.inbound.EditOfferCommand;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
-import com.lukk.sky.offer.domain.ports.inbound.OfferView;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,49 +48,72 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
 
     private final OfferService offerService;
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Found offers",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferPage.class)))
     @SecurityRequirements
     @ApiDependencyUnavailableResponse
     @Override
-    public ResponseEntity<Page> getAllOffers(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return ResponseEntity.ok(OfferPageMapper.toPage(
-                offerService.getAllOffers(pageable).map(OfferApiController::toDto)));
+    public ResponseEntity<OfferPage> getAllOffers(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return ResponseEntity.ok(OfferContractMapper.toPage(offerService.getAllOffers(pageable)));
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Offer found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @SecurityRequirements
     @ApiDependencyUnavailableResponse
     @Override
     public ResponseEntity<OfferDTO> getOfferById(UUID offerId) {
-        return ResponseEntity.ok(toDto(offerService.getOfferById(offerId)));
+        return ResponseEntity.ok(OfferContractMapper.toDto(offerService.getOfferById(offerId)));
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Offers found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferPage.class)))
     @SecurityRequirements
     @ApiDependencyUnavailableResponse
     @Override
-    public ResponseEntity<Page> search(@PageableDefault(size = 20, sort = "id") Pageable pageable, String body) {
-        if (body == null || body.isBlank()) {
+    public ResponseEntity<OfferPage> search(String term, @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        if (term == null || term.isBlank()) {
             throw new OfferException("Search term must not be blank.");
         }
 
-        if (body.length() > SEARCH_TERM_MAX_LENGTH) {
+        if (term.length() > SEARCH_TERM_MAX_LENGTH) {
             throw new OfferException(
                     "Search term must not exceed " + SEARCH_TERM_MAX_LENGTH + " characters.");
         }
 
-        return ResponseEntity.ok(OfferPageMapper.toPage(
-                offerService.searchOffers(body, pageable).map(OfferApiController::toDto)));
+        return ResponseEntity.ok(OfferContractMapper.toPage(offerService.searchOffers(term, pageable)));
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Found owned offers",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferPage.class)))
     @ApiSecuredErrorResponses
     @ApiDependencyUnavailableResponse
     @IsUser
     @Override
-    public ResponseEntity<Page> getOwnedOffers(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
+    public ResponseEntity<OfferPage> getOwnedOffers(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
         String ownerEmail = SecurityUtils.currentUserEmail();
 
-        return ResponseEntity.ok(OfferPageMapper.toPage(
-                offerService.getOwnedOffers(ownerEmail, pageable).map(OfferApiController::toDto)));
+        return ResponseEntity.ok(OfferContractMapper.toPage(offerService.getOwnedOffers(ownerEmail, pageable)));
     }
 
+    @ApiResponse(
+            responseCode = "201",
+            description = "Offer created",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
     @ApiSecuredErrorResponses
     @ApiConflictResponse
     @ApiUnsupportedMediaTypeResponse
@@ -97,12 +123,22 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Adding new offer.");
 
-        offer.setOwnerEmail(ownerEmail);
-        OfferDTO addedOffer = toDto(offerService.addOffer(toCreateCommand(offer)));
+        OfferDTO addedOffer = OfferContractMapper.toDto(
+                offerService.addOffer(OfferContractMapper.toCreateCommand(offer, ownerEmail)));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(addedOffer);
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Offer edited",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @ApiConflictResponse
     @ApiUnsupportedMediaTypeResponse
@@ -113,15 +149,26 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Editing offer with ID: {}", offer.getId());
 
-        OfferDTO edited = toDto(offerService.editOffer(toEditCommand(offer), ownerEmail));
+        OfferDTO edited = OfferContractMapper.toDto(
+                offerService.editOffer(OfferContractMapper.toEditCommand(offer), ownerEmail));
 
         return ResponseEntity.ok(edited);
     }
 
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @ApiConflictResponse
     @IsUser
     @Override
+    @RequestMapping(
+            method = RequestMethod.DELETE,
+            value = OwnerOffersApi.PATH_DELETE_OFFER,
+            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
     public ResponseEntity<Void> deleteOffer(UUID offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Deleting offer with ID: {}", offerId);
@@ -131,6 +178,16 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         return ResponseEntity.noContent().build();
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Owner email returned",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = String.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @IsUser
     @Override
@@ -141,6 +198,22 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         return ResponseEntity.ok(ownerEmail);
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Photo uploaded; updated offer returned with photoUrl",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(
+            responseCode = "413",
+            description = "Content Too Large: the upload exceeds the file or gallery limit",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @ApiUnsupportedMediaTypeResponse
     @ApiDependencyBadGatewayResponse
@@ -153,7 +226,7 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Uploading photo for offer ID: {}", offerId);
 
-        OfferDTO updated = toDto(offerService.uploadPhoto(
+        OfferDTO updated = OfferContractMapper.toDto(offerService.uploadPhoto(
                 offerId,
                 ownerEmail,
                 contentOf(file),
@@ -165,9 +238,19 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         return ResponseEntity.ok(updated);
     }
 
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @IsUser
     @Override
+    @RequestMapping(
+            method = RequestMethod.DELETE,
+            value = OwnerOffersApi.PATH_DELETE_PHOTO,
+            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
     public ResponseEntity<Void> deletePhoto(UUID offerId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Deleting photo of offer ID: {}", offerId);
@@ -177,6 +260,22 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         return ResponseEntity.noContent().build();
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Photo appended to gallery",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(
+            responseCode = "413",
+            description = "Content Too Large: the upload exceeds the file or gallery limit",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @ApiConflictResponse
     @ApiUnsupportedMediaTypeResponse
@@ -190,7 +289,7 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         String ownerEmail = SecurityUtils.currentUserEmail();
         log.info("Uploading gallery photo for offer ID: {}", offerId);
 
-        OfferDTO updated = toDto(offerService.uploadGalleryPhoto(
+        OfferDTO updated = OfferContractMapper.toDto(offerService.uploadGalleryPhoto(
                 offerId,
                 ownerEmail,
                 contentOf(file),
@@ -202,31 +301,64 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         return ResponseEntity.ok(updated);
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Photo removed",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer or photo not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @IsUser
     @Override
     public ResponseEntity<OfferDTO> deleteGalleryPhoto(UUID offerId, UUID photoId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
 
-        return ResponseEntity.ok(toDto(offerService.deleteGalleryPhoto(offerId, photoId, ownerEmail)));
+        return ResponseEntity.ok(
+                OfferContractMapper.toDto(offerService.deleteGalleryPhoto(offerId, photoId, ownerEmail)));
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Gallery reordered",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer or photo not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @IsUser
     @Override
     public ResponseEntity<OfferDTO> reorderGalleryPhoto(UUID offerId, UUID photoId, Integer position) {
         String ownerEmail = SecurityUtils.currentUserEmail();
 
-        return ResponseEntity.ok(toDto(offerService.reorderGalleryPhoto(offerId, photoId, position, ownerEmail)));
+        return ResponseEntity.ok(
+                OfferContractMapper.toDto(offerService.reorderGalleryPhoto(offerId, photoId, position, ownerEmail)));
     }
 
+    @ApiResponse(
+            responseCode = "200",
+            description = "Cover updated",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OfferDTO.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Offer or photo not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiSecuredErrorResponses
     @IsUser
     @Override
     public ResponseEntity<OfferDTO> setGalleryCover(UUID offerId, UUID photoId) {
         String ownerEmail = SecurityUtils.currentUserEmail();
 
-        return ResponseEntity.ok(toDto(offerService.setGalleryCover(offerId, photoId, ownerEmail)));
+        return ResponseEntity.ok(
+                OfferContractMapper.toDto(offerService.setGalleryCover(offerId, photoId, ownerEmail)));
     }
 
     private static String validatedContentTypeOf(MultipartFile file) {
@@ -248,21 +380,5 @@ public class OfferApiController implements OffersApi, OwnerOffersApi {
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to read the uploaded file.", ex);
         }
-    }
-
-    private static CreateOfferCommand toCreateCommand(OfferDTO offer) {
-        return new CreateOfferCommand(offer.getHotelName(), offer.getDescription(), offer.getComment(),
-                offer.getPrice(), offer.getOwnerEmail(), offer.getRoomCapacity(),
-                offer.getCity(), offer.getCountry(), offer.getExternalPhotoUrl());
-    }
-
-    private static EditOfferCommand toEditCommand(OfferEditDTO offer) {
-        return new EditOfferCommand(offer.getId(), offer.getHotelName(), offer.getCity(), offer.getCountry(),
-                offer.getDescription(), offer.getComment(), offer.getPrice(),
-                offer.getRoomCapacity(), offer.getExternalPhotoUrl());
-    }
-
-    private static OfferDTO toDto(OfferView view) {
-        return OfferDtoMapper.toDto(view);
     }
 }

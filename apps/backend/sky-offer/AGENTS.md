@@ -13,7 +13,7 @@ independently-deployable services. The module version is not restated here: the 
 ## Architecture
 
 - Build plugin: `sky.spring-service-conventions` (Spring Boot app, fat `bootJar` named `sky-offer.jar`, JaCoCo
-  report). Depends on `:sky-common`.
+  report). Depends on `:sky-common` and the shared generated `:sky-contract`.
 - Hexagonal layout (`com.lukk.sky.offer`):
   - `domain/model`, `domain/exception`: core model and domain exceptions.
   - `domain/ports/inbound`: driving port interfaces called by controllers (`OfferService`).
@@ -21,12 +21,14 @@ independently-deployable services. The module version is not restated here: the 
     `EventSourceRepository`, `OfferNotificationService`, `PhotoStorage`).
   - `domain/service`: domain service implementations (`OfferServicePrimary`, `EventSourceService`,
     `EventSourceServicePrimary`).
-  - `adapters/inbound/api`: the REST controller; `OfferApiController` implements the generated `OffersApi`
-    and `OwnerOffersApi` in `adapters/inbound/api/contract` and declares no method-level mappings, and
-    `OfferPageMapper` converts a Spring Data `Page` to the generated page model. The OpenAPI Generator plugin
-    reads `docs/api/contract/openapi.yaml` into `build/generated/contract` on the main source set, so
-    `compileJava` depends on `openApiGenerate`. `adapters/dto`: wire DTOs and the `@NullOrNotBlank` and
-    `@ExternalPhotoUrl` constraints; `adapters/dto/contract`: generated page models;
+  - `adapters/inbound/api`: the REST controller; `OfferApiController` implements the shared
+    `com.lukk.sky.contract.api.OffersApi` and `OwnerOffersApi` and declares method-level mappings only on
+    `deleteOffer` and `deletePhoto`, which repeat the DELETE path and add the JSON produces types so an
+    `Accept: application/json` request gets its 204 instead of a 406. `OfferContractMapper` converts
+    `OfferView` and Spring Data `Page<OfferView>` into the generated `OfferDTO`, `OfferPage`, `PageableObject`
+    and `SortObject`, and maps the generated request DTOs to the inbound commands. `sky-contract` is the only
+    OpenAPI Generator in the build: it produces `com.lukk.sky.contract.api` and `com.lukk.sky.contract.dto`
+    from `docs/api/contract/openapi.yaml`, and this module adds no generated source directory of its own.
     `adapters/outbound/notification`: outbound notification; `adapters/outbound/storage`: the S3 photo storage
     adapter.
   - `config`, `config/kafka`, `config/propertyBind`: Spring wiring and bound properties.
@@ -214,7 +216,7 @@ independently-deployable services. The module version is not restated here: the 
   `@ApiConflictResponse`, `@ApiUnsupportedMediaTypeResponse` and `@ApiDependencyUnavailableResponse` in
   sky-common, with `@ApiDependencyBadGatewayResponse` beside them on the photo upload, the one operation
   that can be refused by a store that answered. The 413 stays inline here, because the 5 MB file and 6 MB
-  request limits are this module's own. `GET /offers` and `POST /search` each carry `@SecurityRequirements`
+  request limits are this module's own. `GET /offers` and `GET /search` each carry `@SecurityRequirements`
   with no value, which is what makes springdoc publish `security: []` on them: the document-level bearer
   requirement from sky-common would otherwise mark two anonymous endpoints as needing a token. They still
   publish a 401, from the class-level `@ApiCommonErrorResponses`, because the resource-server filter chain
@@ -223,18 +225,12 @@ independently-deployable services. The module version is not restated here: the 
   token. All 14 operations publish that one shared 401 description, and no method here declares a 401 of its
   own: springdoc applies the class-level `@ApiResponses` over a method-level one for the same status, so an
   inline entry for a status a class-level annotation already declares contributes nothing. `getOfferOwner`
-  carried one until it was removed, and removing it left the generated document byte identical. `POST /search`
+  carried one until it was removed, and removing it left the generated document byte identical. `GET /search`
   carried a dead inline 400 for the same reason, naming the blank and length rules its body really enforces,
   and no caller ever read them: the shared 400 won and published only its generic sentence. Those rules now
   live in the operation `description`, built from `SEARCH_TERM_MAX_LENGTH` so the published text and the
   runtime message move together. A per-endpoint refinement of a shared status belongs there, because a
-  response entry for that status cannot win. `OfferApiDocumentTest` pins both halves. Tags are declared per
-  method rather than on the controller, because springdoc unions the class tag with the method tag and a
-  class-level `@Tag` would put every operation under both `Offers` and `Owner offers`. The generated
-  interfaces carry a type-level `@Tag` each, and because one controller implements both, springdoc would find
-  both tags on every handler. `sky-offer` therefore sets the template option `omitTypeLevelTags` in
-  `build.gradle.kts`; `api.mustache` then emits the tag on each generated operation instead, which keeps the
-  per-operation tag and the top-level tag descriptions from the contract without the union.
+  response entry for that status cannot win. `OfferApiDocumentTest` pins both halves.
 
 ## Testing
 

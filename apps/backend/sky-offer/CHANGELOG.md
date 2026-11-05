@@ -1,3 +1,27 @@
+## [2.3.0] - 2026-11-05
+
+### Changed
+- Generate every offer wire type from the shared `:sky-contract` module instead of a second
+  OpenAPI Generator run inside this service. `sky-offer` no longer runs `openApiGenerate` and
+  adds no generated source directory of its own: `OfferDTO`, `OfferEditDTO`, `PhotoDTO`,
+  `OfferPage`, `PageableObject` and `SortObject` come from `com.lukk.sky.contract.dto`, and
+  `OfferApiController` implements the shared `OffersApi` and `OwnerOffersApi`.
+  `OfferContractMapper` maps an `OfferView` and a Spring Data page to those shared types, builds
+  `CreateOfferCommand` from the authenticated owner rather than the read-only `ownerEmail`, and
+  preserves nulls when mapping `OfferEditDTO` so a partial update still means keep.
+- Search is now `GET /api/v1/search?term=...`, matching the shared contract, instead of a POST
+  body. The controller keeps the blank and 100-character checks.
+- The two 204 operations repeat the DELETE mapping with JSON produces types, so an
+  `Accept: application/json` request gets its 204 instead of a 406.
+- The generated document declares `application/json` on success, an
+  `application/problem+json` `ProblemDetail` on 404, and no body on 204.
+
+### Removed
+- The `org.openapi.generator` plugin configuration, the generated source directory under
+  `build/generated/contract`, the hand-written `OfferDTO`, `OfferEditDTO` and `PhotoDTO` wire
+  types, and their `OfferDtoMapper` and `OfferPageMapper`. The generated DTO validation
+  annotations replace the local `@NullOrNotBlank` and `@ExternalPhotoUrl` constraints.
+
 ## [2.2.0] - 2026-11-04
 
 ### Changed
