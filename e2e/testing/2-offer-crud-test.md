@@ -6,7 +6,7 @@
   `lukk@sky.dev`, and the submitted `hotelName`, `city`, `country`, `price`, and `roomCapacity` echoed.
 - GET `/api/v1/offers` (public) returns HTTP 200 with a paginated body (`content` array and numeric
   `totalElements`).
-- POST `/api/v1/search` with the canary token returns HTTP 200 and the created offer appears in `content`
+- GET `/api/v1/search?term=...` with the canary token returns HTTP 200 and the created offer appears in `content`
   (retrieval by `hotelName` LIKE).
 - GET `/api/v1/owner/offers` returns HTTP 200 and the created offer appears in the owner's page.
 - GET `/api/v1/offers/{id}/owner` returns HTTP 200 with body `lukk@sky.dev`.
