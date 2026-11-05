@@ -50,6 +50,27 @@ spec here runs it with `--env local`, which is the environment file name. Bruno 
 the `name:` field inside the file, so `--env sky-local` fails even though `sky-local` is what the desktop app shows.
 [../docs/api/README.md](../docs/api/README.md) has the full environment table.
 
+## Running the suite
+
+The primary e2e run is the Bruno CLI against the local environment:
+
+```bash
+bru run -r --env local
+```
+
+The wrapper `bash config/scripts/run-e2e.sh` builds and starts the compose stack from
+`config/docker/docker-compose.yaml`, waits for the gateway health endpoint, seeds the dataset, runs the collection
+from `docs/api/request/`, and returns the Bruno exit code.
+
+The wrapper always removes the compose test containers on exit, including on INT and TERM. Named volumes are kept, so
+database and object store data survives between runs.
+
+Testcontainers removes its own PostgreSQL and Kafka containers through Ryuk when the JVM exits, so the Java
+integration tests need no extra cleanup configuration.
+
+Do not run a global Docker prune as part of e2e cleanup. It deletes images and build cache that the next run has to
+build again.
+
 ## Prerequisites before any test
 
 Each individual spec lists its own concrete prerequisite checks. Common to all:
