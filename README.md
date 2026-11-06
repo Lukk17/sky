@@ -75,7 +75,7 @@ $env:TLS_INSECURE=1; node config/seed/seed.mjs
 ```mermaid
 graph TB
     accTitle: Sky system architecture
-    accDescr: Angular frontend, nginx-ingress, oauth2-proxy, four backend services, Kafka, PostgreSQL and the floci object store in a Kubernetes cluster, plus the local-development gateway
+    accDescr: Angular frontend, nginx-ingress, oauth2-proxy, four backend services, Kafka, PostgreSQL and the floci object store in a Kubernetes cluster, plus the local-development gateway and the generated contract library
 
     FE["Sky-View
     (Angular frontend)"]
@@ -86,7 +86,7 @@ graph TB
         GW["oauth2-proxy
         (OIDC session proxy)"]
         NGINX["nginx-ingress
-        (TLS, path rewriting)"]
+        (TLS, path matching)"]
 
         subgraph Services["Services"]
             OFFER["sky-offer
@@ -109,6 +109,9 @@ graph TB
     LOCAL["sky-gateway
     :5777
     (local dev only)"]
+
+    CONTRACT["sky-contract
+    (generated library)"]
 
     FE -- "HTTPS REST" --> NGINX
     NGINX -- "authenticated paths" --> GW
@@ -135,6 +138,10 @@ graph TB
     LOCAL --> BOOKING
     LOCAL --> MESSAGE
     LOCAL --> NOTIFY
+
+    CONTRACT -. "generated DTOs and interfaces" .-> OFFER
+    CONTRACT -. "generated DTOs and interfaces" .-> BOOKING
+    CONTRACT -. "generated DTOs and interfaces" .-> MESSAGE
 ```
 
 The ingress layer handles TLS and path-based routing. Authenticated routes go through `oauth2-proxy`, which validates the OIDC session against Keycloak and forwards the caller's identity in the `x-auth-request-email`, `x-auth-request-access-token`, and `authorization` headers. The services do not trust those identity headers: each one validates the bearer token itself as an OAuth2 resource server using `OAUTH2_ISSUER_URI`, and reads the caller from the token's `email` claim through `SecurityUtils.currentUserEmail()` in `sky-common`. Setting `OAUTH2_AUDIENCE=sky-backend` additionally enforces the audience claim that the realm's mapper writes.
@@ -149,7 +156,9 @@ The three stateful services share one PostgreSQL database named `sky`, each with
 
 Every service uses hexagonal (ports and adapters) architecture. `domain/model`, `domain/ports/inbound`, and `domain/ports/outbound` hold the core, `adapters/inbound` and `adapters/outbound` hold the I/O, and `domain/service` holds the implementations. ArchUnit tests enforce the dependency direction and fail the build when an adapter reaches into `domain/service`.
 
-For local development, `sky-gateway` (Spring Cloud Gateway on WebFlux and Netty) runs on port 5777 and mirrors the production nginx rewrite rules, so you never call a service port directly. It is also the only module left on the reactive stack. No Helm chart deploys it and no cluster runs it, but the release pipeline still publishes `lukk17/sky-gateway` alongside the four service images, so a Compose stack on any host can pull it rather than build it.
+The contract at [docs/api/contract/openapi.yaml](docs/api/contract/openapi.yaml) is the single source for the backend DTOs and API interfaces and for the Angular client. The `sky-contract` library runs OpenAPI Generator once during the build and produces `com.lukk.sky.contract.api` and `com.lukk.sky.contract.dto`. `sky-offer`, `sky-booking` and `sky-message` implement those interfaces and map their domain views to those DTOs, while `sky-notify` keeps its own `adapters/dto` package because it has no REST contract. Validation lives in the contract: required fields, lengths, patterns and email formats become Jakarta Bean Validation annotations on the generated classes, so a rule is changed in the contract and nowhere else. Search is `GET /api/v1/search?term=...`, with a required term of 1 to 100 characters, and the frontend calls the committed TypeScript client generated from the same file. The generation and freshness checks are described in [docs/api/contract/README.md](docs/api/contract/README.md).
+
+For local development, `sky-gateway` (Spring Cloud Gateway on WebFlux and Netty) runs on port 5777 and mirrors the production ingress path matching, so you never call a service port directly. It is also the only module left on the reactive stack. No Helm chart deploys it and no cluster runs it, but the release pipeline still publishes `lukk17/sky-gateway` alongside the four service images, so a Compose stack on any host can pull it rather than build it.
 
 ---
 
@@ -194,10 +203,11 @@ sequenceDiagram
 | [sky-message](apps/backend/sky-message/) | 5553 | User-to-user messaging: send, receive, delete |
 | [sky-notify](apps/backend/sky-notify/) | 5554 | Push notifications: consumes Kafka events, pushes over WebSocket |
 | [sky-booking](apps/backend/sky-booking/) | 5555 | Booking lifecycle: create, list, delete bookings against offers |
-| [sky-gateway](apps/backend/sky-gateway/) | 5777 | Local-development edge proxy: path rewriting, Keycloak token relay outside the `local` profile |
+| [sky-gateway](apps/backend/sky-gateway/) | 5777 | Local-development edge proxy: route matching without path rewriting, Keycloak token relay outside the `local` profile |
 | [sky-common](apps/backend/sky-common/) | none | Shared library: wire types, security and web auto-configurations |
+| [sky-contract](apps/backend/sky-contract/) | none | Generated contract library: API interfaces and DTOs from [docs/api/contract/openapi.yaml](docs/api/contract/openapi.yaml) |
 
-Each module has a README with its endpoints, environment variables, and architecture, and an AGENTS.md with its coding conventions.
+Each service has a README with its endpoints, environment variables, and architecture. Each module has an AGENTS.md with its coding conventions.
 
 ---
 
@@ -234,7 +244,7 @@ Each module has a README with its endpoints, environment variables, and architec
 - Realm as code: one committed Keycloak realm file, imported identically by the local container and the cluster chart.
 - Demo seed data applied by a Flyway repeatable migration on the `local` profile, matching the realm's demo users.
 - One composite Gradle build: a single `./apps/backend/gradlew` command covers every module.
-- Bruno API collection that mints its own token and chains ids, plus OpenAPI 3.1 specs for code generation.
+- Bruno API collection that mints its own token and chains ids, plus one OpenAPI 3.1 contract that generates the backend interfaces and DTOs and the Angular client.
 
 ---
 
@@ -385,6 +395,7 @@ Platform documentation:
 | [config/k8s/k8s_README.md](config/k8s/k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](config/keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [docs/api/README.md](docs/api/README.md) | Bruno collection, token minting, gateway routing, API contract |
+| [docs/api/contract/README.md](docs/api/contract/README.md) | The shared OpenAPI contract, backend and frontend generation, validation rules |
 | [e2e/README.md](e2e/README.md) | End-to-end capability suite and how a run is recorded |
 
 Per-module documentation:
@@ -397,6 +408,7 @@ Per-module documentation:
 | [sky-notify/README.md](apps/backend/sky-notify/README.md) | Kafka topics, the WebSocket contract, JWT validation |
 | [sky-gateway/README.md](apps/backend/sky-gateway/README.md) | Gateway route table, the two security profiles, image build |
 | [sky-common/README.md](apps/backend/sky-common/README.md) | What the shared library exports and its dependency rules |
+| [sky-contract/AGENTS.md](apps/backend/sky-contract/AGENTS.md) | Generated contract module: packages, build inputs, generation guard, dependants |
 
 Agent and tooling documentation:
 

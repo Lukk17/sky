@@ -61,7 +61,13 @@ Build them with Compose rather than by hand. [config/docker/docker-compose.yaml]
 docker compose -f config/docker/docker-compose.yaml build sky-offer sky-booking sky-message sky-notify
 ```
 
-Building by hand works too and is documented in [config/local-dev/local_README.md](../local-dev/local_README.md). It means repeating both tags for each service, which is how this page drifted onto a tag nothing produced.
+Building by hand works too, and it must run from the repository root with the repository root as the Docker context, because the Dockerfiles copy `apps/backend` and, for the three contract services, `docs/api/contract`. One example:
+
+```bash
+docker build . -f apps/backend/sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
+```
+
+The full set, including the booking, message, notify and gateway images, is in [config/local-dev/local_README.md](../local-dev/local_README.md).
 
 ---
 
@@ -416,6 +422,20 @@ A green run is worth more than a row of 200s, because three of its checks reach 
 - The object really goes. The photo replace, the photo delete, and the offer delete each refetch the address they just invalidated and require a 404, so a leaked object fails the run rather than passing quietly.
 
 The collection and its environments are documented in [docs/api/README.md](../../docs/api/README.md).
+
+---
+
+### Compose end-to-end check
+
+The k3d path above is the cluster check. For a check that needs no cluster, [config/scripts/run-e2e.sh](../scripts/run-e2e.sh) builds and starts the Compose stack, waits for the gateway, loads the seed dataset, runs the Bruno collection with `--env local`, and always stops the stack on exit. It keeps named volumes and never runs a global prune, so images, build cache and unrelated volumes are left alone.
+
+```bash
+bash config/scripts/run-e2e.sh
+```
+
+The seed loads 4 users, 12 offers, 21 bookings and 24 messages, plus one photo per owned offer.
+
+The unit and integration suites use Testcontainers for PostgreSQL and Kafka. Testcontainers Ryuk removes those test containers when the JVM exits, including after a failed run. The Compose runner is a separate path and does not use Testcontainers.
 
 ---
 

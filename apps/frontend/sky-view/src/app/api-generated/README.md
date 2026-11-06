@@ -1,6 +1,6 @@
-# @
+# sky-api-client@v1
 
-Contract for the sky API. This file is the single source of truth for the API surface and is linted with the redocly configuration beside it. The per-service documents under docs/api/openapi are generated from service annotations and are a different artefact. 
+Contract for the sky API. This file is the only published API document and the single source of truth for the API surface. It is linted with the redocly configuration beside it and generates the backend interfaces and DTOs and the Angular client. Each service still serves a springdoc document at runtime for Swagger UI, but that document is not committed.
 
 The version of the OpenAPI document: v1
 
@@ -24,7 +24,7 @@ Navigate to the folder of your consuming project and run one of next commands.
 _published:_
 
 ```console
-npm install @ --save
+npm install sky-api-client@v1 --save
 ```
 
 _without publishing (not recommended):_
@@ -46,7 +46,7 @@ npm link
 In your project:
 
 ```console
-npm link 
+npm link sky-api-client
 ```
 
 __Note for Windows users:__ The Angular CLI has troubles to use linked npm packages.
@@ -61,7 +61,7 @@ In your Angular project:
 
 import { ApplicationConfig } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
-import { provideApi } from '';
+import { provideApi } from 'sky-api-client';
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -75,7 +75,7 @@ export const appConfig: ApplicationConfig = {
 **NOTE**
 If you're still using `AppModule` and haven't [migrated](https://angular.dev/reference/migrations/standalone) yet, you can still import an Angular module:
 ```typescript
-import { ApiModule } from '';
+import { ApiModule } from 'sky-api-client';
 ```
 
 If different from the generated base path, during app bootstrap, you can provide the base path to your service.
@@ -83,7 +83,7 @@ If different from the generated base path, during app bootstrap, you can provide
 ```typescript
 import { ApplicationConfig } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
-import { provideApi } from '';
+import { provideApi } from 'sky-api-client';
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -98,7 +98,7 @@ export const appConfig: ApplicationConfig = {
 // with a custom configuration
 import { ApplicationConfig } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
-import { provideApi } from '';
+import { provideApi } from 'sky-api-client';
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -117,7 +117,7 @@ export const appConfig: ApplicationConfig = {
 // with factory building a custom configuration
 import { ApplicationConfig } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
-import { provideApi, SkyApiConfiguration } from '';
+import { provideApi, SkyApiConfiguration } from 'sky-api-client';
 
 export const appConfig: ApplicationConfig = {
     providers: [

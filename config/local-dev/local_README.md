@@ -97,7 +97,7 @@ docker exec sky-postgres pg_isready -U postgres -d sky
 
 ### 3. Start the object store
 
-`sky-offer` stores offer photos here. The only requirement is an S3-compatible endpoint on port 9070. The bucket is created on startup by [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](..\..\apps/backend/sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), so no bucket-init step is needed.
+`sky-offer` stores offer photos here. The only requirement is an S3-compatible endpoint on port 9070. The bucket is created on startup by [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../apps/backend/sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), so no bucket-init step is needed.
 
 Two implementations both satisfy it, and the application cannot tell them apart:
 
@@ -213,28 +213,42 @@ docker compose -f config/docker/docker-compose.yaml up -d kafka
 
 ---
 
+### Run the end-to-end suite
+
+[config/scripts/run-e2e.sh](../scripts/run-e2e.sh) runs the Bruno collection against a freshly built Compose stack. It stops any existing stack, builds and starts the services, waits for the gateway health endpoint, loads the seed dataset, runs `bru run -r --env local`, and always stops the stack on exit. It keeps named volumes and never runs a global prune, so images, build cache and unrelated volumes stay put.
+
+```bash
+bash config/scripts/run-e2e.sh
+```
+
+The seed loads 4 users, 12 offers, 21 bookings and 24 messages, plus one photo per owned offer.
+
+The unit and integration suites use Testcontainers for PostgreSQL and Kafka. Testcontainers Ryuk removes those test containers when the JVM exits, including after a failed run, so no test database or broker survives the suite. The e2e runner is a separate path and does not use Testcontainers.
+
+---
+
 ### Building the images by hand
 
-Compose builds the images for you and tags each one twice from a single build. Build one on its own when you want to push it or import it into a cluster, and carry both tags by hand too: the version tag records what is inside, and `latest` is what the Compose stack runs and what the local Helm overlays expect on a cluster node. A local tag carries no leading `v`, unlike a published one, and `SKY_VERSION` overrides the version Compose uses. Every build runs from the repository root, not from the module directory, because the Dockerfile copies `settings.gradle.kts`, `buildSrc`, and `sky-common` alongside the service.
+Compose builds the images for you and tags each one twice from a single build. Build one on its own when you want to push it or import it into a cluster, and carry both tags by hand too: the version tag records what is inside, and `latest` is what the Compose stack runs and what the local Helm overlays expect on a cluster node. A local tag carries no leading `v`, unlike a published one, and `SKY_VERSION` overrides the version Compose uses. Every build runs from the repository root and uses the repository root as the Docker context, not `apps/backend`, because the Dockerfiles copy `apps/backend` and, for `sky-offer`, `sky-booking` and `sky-message`, `docs/api/contract`. `sky-notify` and `sky-gateway` copy only `apps/backend`.
 
 ```bash
-docker build ./apps/backend -f apps/backend/sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
+docker build . -f apps/backend/sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
 ```
 
 ```bash
-docker build ./apps/backend -f apps/backend/sky-booking/docker/Dockerfile -t sky-booking:2.0.0 -t sky-booking:latest
+docker build . -f apps/backend/sky-booking/docker/Dockerfile -t sky-booking:2.0.0 -t sky-booking:latest
 ```
 
 ```bash
-docker build ./apps/backend -f apps/backend/sky-message/docker/Dockerfile -t sky-message:2.0.0 -t sky-message:latest
+docker build . -f apps/backend/sky-message/docker/Dockerfile -t sky-message:2.0.0 -t sky-message:latest
 ```
 
 ```bash
-docker build ./apps/backend -f apps/backend/sky-notify/docker/Dockerfile -t sky-notify:2.0.0 -t sky-notify:latest
+docker build . -f apps/backend/sky-notify/docker/Dockerfile -t sky-notify:2.0.0 -t sky-notify:latest
 ```
 
 ```bash
-docker build ./apps/backend -f apps/backend/sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gateway:latest
+docker build . -f apps/backend/sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gateway:latest
 ```
 
 To run them outside compose, put them on one network so they can resolve each other by container name:

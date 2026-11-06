@@ -26,7 +26,10 @@ model/pageableObject.ts
 model/photoDTO.ts
 model/problemDetail.ts
 model/sortObject.ts
+ng-package.json
+package.json
 param.ts
 provide-api.ts
 query.params.ts
+tsconfig.json
 variables.ts

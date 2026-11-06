@@ -198,7 +198,7 @@ drives the WebSocket handshake.
 sky-offer has two public endpoints that work without a bearer token:
 
 - `GET {{offerUrl}}/api/v1/offers`, list all offers
-- `POST {{offerUrl}}/api/v1/search`, keyword search
+- `GET {{offerUrl}}/api/v1/search?term=...`, keyword search with a required term of 1 to 100 characters
 
 Every other endpoint across all three services requires `Authorization: Bearer <token>`.
 The sky-booking and sky-message services have no public endpoints at all.

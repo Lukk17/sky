@@ -14,7 +14,7 @@ npx --yes @openapitools/openapi-generator-cli@2.42.0 generate \
   -g typescript-angular \
   -o "$TMP_DIR/api-generated" \
   --skip-validate-spec \
-  --additional-properties=ngVersion=22.1.0,configurationPrefix=SkyApi,providedInRoot=false
+  --additional-properties=ngVersion=22.1.0,configurationPrefix=SkyApi,providedInRoot=false,npmName=sky-api-client
 
 diff -r "${CLIENT_DIR}/api" "$TMP_DIR/api-generated/api"
 diff -r "${CLIENT_DIR}/model" "$TMP_DIR/api-generated/model"
