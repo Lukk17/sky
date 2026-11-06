@@ -1,9 +1,11 @@
 package com.lukk.sky.gateway.config;
 
+import com.lukk.sky.common.security.ActiveProfileGuard;
 import com.lukk.sky.common.security.SecurityPaths;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -34,6 +36,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Configuration
 @EnableWebFluxSecurity
+@Import(ActiveProfileGuard.class)
 public class SecurityConfig {
 
     @Value("${sky-gateway.frontend-url:http://localhost:4200}")
