@@ -148,3 +148,9 @@ Each module carries its own `AGENTS.md` with its port, dependencies, data story,
 - [sky-notify/AGENTS.md](apps/backend/sky-notify/AGENTS.md): notifications service (port 5554)
 - [sky-gateway/AGENTS.md](apps/backend/sky-gateway/AGENTS.md): local-development edge proxy (port 5777)
 
+## Architecture decisions
+
+Architecture decision records live in [docs/adr/](docs/adr/):
+
+- [ADR-0001](docs/adr/0001-profile-scoped-security-chains.md): profile-scoped security chains
+
