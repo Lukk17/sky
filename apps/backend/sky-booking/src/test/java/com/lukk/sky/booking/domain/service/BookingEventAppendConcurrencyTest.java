@@ -3,7 +3,6 @@ package com.lukk.sky.booking.domain.service;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.lukk.sky.booking.TestSecurityConfig;
 import com.lukk.sky.booking.TestcontainersConfiguration;
 import com.lukk.sky.booking.adapters.outbound.persistence.EventSpecifications;
 import com.lukk.sky.booking.domain.model.Booking;
@@ -12,6 +11,7 @@ import com.lukk.sky.booking.domain.model.EventType;
 import com.lukk.sky.booking.domain.ports.outbound.BookingEventStore;
 import com.lukk.sky.booking.domain.ports.outbound.BookingRepository;
 import com.lukk.sky.booking.domain.ports.outbound.EventSourceRepository;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.doAnswer;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import({TestSecurityConfig.class, BookingEventAppendConcurrencyTest.IsolatedContainers.class})
+@Import({SharedTestSecurityConfig.class, BookingEventAppendConcurrencyTest.IsolatedContainers.class})
 @DisplayName("Appending booking events concurrently: every sequence number is used exactly once")
 class BookingEventAppendConcurrencyTest {
 

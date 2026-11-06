@@ -1,6 +1,6 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
-import com.lukk.sky.offer.TestSecurityConfig;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.offer.TestS3Config;
 import com.lukk.sky.offer.TestcontainersConfiguration;
 import com.lukk.sky.offer.domain.exception.EventSequenceConflictException;
@@ -55,7 +55,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({TestSecurityConfig.class, TestcontainersConfiguration.class, TestS3Config.class})
+@Import({SharedTestSecurityConfig.class, TestcontainersConfiguration.class, TestS3Config.class})
 class ExceptionMappingPrecedenceTest {
 
     private static final UUID OFFER_ID = UUID.fromString("11111111-2222-3333-4444-555555555555");

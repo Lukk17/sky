@@ -46,7 +46,9 @@ dependencies {
     compileOnly("org.springframework.boot:spring-boot-jdbc")
 
     testFixturesImplementation("org.springframework:spring-web")
+    testFixturesImplementation("org.springframework.boot:spring-boot-test")
     testFixturesImplementation(libs.spring.boot.starter.oauth2.resource.server)
+    testFixturesImplementation(libs.spring.security.test)
     testImplementation("org.springframework:spring-web")
     testImplementation("org.springframework:spring-webmvc")
     testImplementation("jakarta.servlet:jakarta.servlet-api")

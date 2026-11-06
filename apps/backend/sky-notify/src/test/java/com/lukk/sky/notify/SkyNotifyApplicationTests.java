@@ -1,11 +1,12 @@
 package com.lukk.sky.notify;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
 @DisplayName("SkyNotify application context smoke test")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class SkyNotifyApplicationTests extends AbstractIntegrationTest {
 
     @Test

@@ -4,9 +4,9 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import com.lukk.sky.common.kafka.KafkaPayloadModel;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.common.web.CorrelationId;
 import com.lukk.sky.notify.AbstractIntegrationTest;
-import com.lukk.sky.notify.TestSecurityConfig;
 import com.lukk.sky.notify.domain.service.NotificationTransmissionServicePrimary;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.AfterEach;
@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * logging context of the consumer, so producer and consumer log lines share one trace.
  */
 @DisplayName("Kafka correlation id propagation: full-stack integration test")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class KafkaCorrelationIdIntegrationTest extends AbstractIntegrationTest {
 
     private static final String CORRELATION_ID = "corr-notify-integration";

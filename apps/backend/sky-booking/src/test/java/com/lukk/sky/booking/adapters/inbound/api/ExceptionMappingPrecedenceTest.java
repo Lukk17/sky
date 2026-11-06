@@ -1,6 +1,5 @@
 package com.lukk.sky.booking.adapters.inbound.api;
 
-import com.lukk.sky.booking.TestSecurityConfig;
 import com.lukk.sky.booking.TestcontainersConfiguration;
 import com.lukk.sky.booking.domain.exception.BookingAccessDeniedException;
 import com.lukk.sky.booking.domain.exception.BookingDateAlreadyBookedException;
@@ -11,6 +10,7 @@ import com.lukk.sky.booking.domain.exception.OfferNotFoundException;
 import com.lukk.sky.booking.domain.exception.OfferServiceBadResponseException;
 import com.lukk.sky.booking.domain.exception.OfferServiceUnavailableException;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,7 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({TestSecurityConfig.class, TestcontainersConfiguration.class})
+@Import({SharedTestSecurityConfig.class, TestcontainersConfiguration.class})
 class ExceptionMappingPrecedenceTest {
 
     private static final UUID BOOKING_ID = UUID.fromString("11111111-2222-3333-4444-555555555555");

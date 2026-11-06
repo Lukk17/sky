@@ -1,8 +1,8 @@
 package com.lukk.sky.message.adapters.inbound.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.message.AbstractIntegrationTest;
-import com.lukk.sky.message.TestSecurityConfig;
 import com.lukk.sky.contract.dto.MessageDTO;
 import com.lukk.sky.message.assemblers.MessageAssembler;
 import com.lukk.sky.message.domain.model.Message;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Message API: full-stack integration tests")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class MessageIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)

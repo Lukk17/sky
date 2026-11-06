@@ -3,8 +3,8 @@ package com.lukk.sky.offer.domain.service;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.offer.TestS3Config;
-import com.lukk.sky.offer.TestSecurityConfig;
 import com.lukk.sky.offer.TestcontainersConfiguration;
 import com.lukk.sky.offer.adapters.outbound.persistence.EventSpecifications;
 import com.lukk.sky.offer.domain.model.Event;
@@ -53,7 +53,7 @@ import static org.mockito.Mockito.doAnswer;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import({TestSecurityConfig.class, TestS3Config.class, OfferEventAppendConcurrencyTest.IsolatedContainers.class})
+@Import({SharedTestSecurityConfig.class, TestS3Config.class, OfferEventAppendConcurrencyTest.IsolatedContainers.class})
 @DisplayName("Appending offer events concurrently: every sequence number is used exactly once")
 class OfferEventAppendConcurrencyTest {
 

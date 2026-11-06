@@ -23,6 +23,7 @@ dependencies {
 
     compileOnly("org.jspecify:jspecify")
 
+    testImplementation(testFixtures(project(":sky-common")))
     testImplementation("org.jspecify:jspecify")
     testImplementation(libs.testcontainers.kafka)
 }

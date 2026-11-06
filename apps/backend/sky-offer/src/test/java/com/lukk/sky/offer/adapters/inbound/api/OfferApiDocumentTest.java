@@ -1,5 +1,6 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.offer.domain.ports.inbound.OfferService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({com.lukk.sky.offer.TestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class,
+@Import({SharedTestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class,
         com.lukk.sky.offer.TestS3Config.class})
 class OfferApiDocumentTest {
 

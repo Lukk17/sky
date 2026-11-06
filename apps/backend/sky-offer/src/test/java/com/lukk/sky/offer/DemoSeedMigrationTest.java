@@ -1,5 +1,6 @@
 package com.lukk.sky.offer;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.offer.domain.model.Event;
 import com.lukk.sky.offer.domain.model.EventType;
 import com.lukk.sky.offer.domain.model.Offer;
@@ -25,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ActiveProfiles("test")
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({TestSecurityConfig.class, TestcontainersConfiguration.class, TestS3Config.class})
+@Import({SharedTestSecurityConfig.class, TestcontainersConfiguration.class, TestS3Config.class})
 @TestPropertySource(properties = "spring.flyway.locations=classpath:db/migration,classpath:db/demo")
 @DisplayName("R__demo_seed: the local demo seed applies cleanly and its rows are coherent")
 class DemoSeedMigrationTest {

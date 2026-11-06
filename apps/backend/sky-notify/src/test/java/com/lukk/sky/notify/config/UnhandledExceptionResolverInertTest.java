@@ -1,8 +1,8 @@
 package com.lukk.sky.notify.config;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.common.web.UnhandledExceptionResolver;
 import com.lukk.sky.notify.AbstractIntegrationTest;
-import com.lukk.sky.notify.TestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * as it did.
  */
 @DisplayName("sky-notify is unaffected by the shared last-resort resolver")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class UnhandledExceptionResolverInertTest extends AbstractIntegrationTest {
 
     @Autowired

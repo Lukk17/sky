@@ -1,5 +1,6 @@
 package com.lukk.sky.booking;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +15,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({TestSecurityConfig.class, TestcontainersConfiguration.class})
+@Import({SharedTestSecurityConfig.class, TestcontainersConfiguration.class})
 class SkyBookingApplicationTests {
 
     @Test

@@ -8,6 +8,7 @@ import com.lukk.sky.booking.domain.exception.OfferNotFoundException;
 import com.lukk.sky.booking.domain.exception.OfferServiceBadResponseException;
 import com.lukk.sky.booking.domain.exception.OfferServiceUnavailableException;
 import com.lukk.sky.booking.domain.ports.inbound.BookingService;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.contract.dto.BookingDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({com.lukk.sky.booking.TestSecurityConfig.class, com.lukk.sky.booking.TestcontainersConfiguration.class})
+@Import({SharedTestSecurityConfig.class, com.lukk.sky.booking.TestcontainersConfiguration.class})
 class BookingControllerTest {
 
     @Autowired

@@ -1,5 +1,6 @@
 package com.lukk.sky.offer;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -13,13 +14,13 @@ import org.testcontainers.utility.DockerImageName;
  * Base for sky-offer integration tests. See {@code com.lukk.sky.booking.
  * AbstractIntegrationTest} for the rationale: same containers, same auto-wiring.
  *
- * <p>{@link TestSecurityConfig} provides a stub {@link org.springframework.security.oauth2.jwt.JwtDecoder}
+ * <p>{@link SharedTestSecurityConfig} provides a stub {@link org.springframework.security.oauth2.jwt.JwtDecoder}
  * that treats the bearer token value as the {@code email} claim.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
 @ActiveProfiles("test")
-@Import({TestSecurityConfig.class, TestS3Config.class})
+@Import({SharedTestSecurityConfig.class, TestS3Config.class})
 public abstract class AbstractIntegrationTest {
 
     @ServiceConnection

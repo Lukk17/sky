@@ -1,7 +1,7 @@
 package com.lukk.sky.notify.config;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.notify.AbstractIntegrationTest;
-import com.lukk.sky.notify.TestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -16,7 +16,7 @@ import java.net.http.HttpResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Notify security filter chain: full-stack integration tests")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class NotifySecurityIntegrationTest extends AbstractIntegrationTest {
 
     private static final String BEARER_TOKEN = "integration-test-token";

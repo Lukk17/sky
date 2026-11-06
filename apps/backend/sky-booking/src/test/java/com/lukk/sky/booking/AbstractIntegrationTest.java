@@ -1,5 +1,6 @@
 package com.lukk.sky.booking;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -17,7 +18,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * {@code spring.kafka.bootstrap-servers} so subclasses do not need
  * {@code @DynamicPropertySource}.
  *
- * <p>{@link TestSecurityConfig} provides a stub {@link org.springframework.security.oauth2.jwt.JwtDecoder}
+ * <p>{@link SharedTestSecurityConfig} provides a stub {@link org.springframework.security.oauth2.jwt.JwtDecoder}
  * that treats the bearer token value as the {@code email} claim, so integration tests can
  * authenticate by calling {@code headers.setBearerAuth(email)}.
  */
@@ -25,7 +26,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @AutoConfigureTestRestTemplate
 @Testcontainers
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 public abstract class AbstractIntegrationTest {
 
     @Container

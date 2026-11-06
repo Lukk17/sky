@@ -1,7 +1,7 @@
 package com.lukk.sky.message.adapters.inbound.api;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.contract.dto.MessageDTO;
-import com.lukk.sky.message.TestSecurityConfig;
 import com.lukk.sky.message.TestcontainersConfiguration;
 import com.lukk.sky.message.assemblers.MessageAssembler;
 import com.lukk.sky.message.domain.exception.MessageException;
@@ -47,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({TestSecurityConfig.class, TestcontainersConfiguration.class})
+@Import({SharedTestSecurityConfig.class, TestcontainersConfiguration.class})
 @DisplayName("MessageController: HTTP adapter tests")
 class MessageControllerTest {
 

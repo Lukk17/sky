@@ -1,7 +1,7 @@
 package com.lukk.sky.notify.config.kafka;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.notify.AbstractIntegrationTest;
-import com.lukk.sky.notify.TestSecurityConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -23,7 +23,7 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
  * accepts them together. The identical assertions live in sky-booking and sky-offer.
  */
 @DisplayName("sky-notify dead-letter producer: delivery-guarantee configuration")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class DltKafkaProducerDeliveryGuaranteeTest extends AbstractIntegrationTest {
 
     private static final String EXPECTED_ACKS = "all";

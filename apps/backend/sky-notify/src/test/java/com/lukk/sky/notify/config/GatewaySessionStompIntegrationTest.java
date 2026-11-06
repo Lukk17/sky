@@ -1,7 +1,7 @@
 package com.lukk.sky.notify.config;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.notify.AbstractIntegrationTest;
-import com.lukk.sky.notify.TestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ import static com.lukk.sky.common.kafka.SkyTopics.BOOKING_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Gateway session STOMP flow: full-stack integration tests")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class GatewaySessionStompIntegrationTest extends AbstractIntegrationTest {
 
     private static final String GATEWAY_USER = "e2e-user@test.com";

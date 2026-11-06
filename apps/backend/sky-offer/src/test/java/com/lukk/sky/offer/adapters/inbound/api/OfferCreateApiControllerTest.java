@@ -1,5 +1,6 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.offer.assemblers.OfferAssembler;
 import com.lukk.sky.contract.dto.OfferDTO;
 import com.lukk.sky.contract.dto.OfferEditDTO;
@@ -63,7 +64,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = {"offerTopic-1"})
-@Import({com.lukk.sky.offer.TestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class, com.lukk.sky.offer.TestS3Config.class})
+@Import({SharedTestSecurityConfig.class, com.lukk.sky.offer.TestcontainersConfiguration.class, com.lukk.sky.offer.TestS3Config.class})
 class OfferCreateApiControllerTest {
 
     private static final byte[] VALID_JPEG_BYTES = {

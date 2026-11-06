@@ -92,7 +92,7 @@ the repo root, e.g. `./apps/backend/gradlew :sky-message:test`.
 
 Nothing here needs a live identity provider. The `test` profile carries no profile-specific file at all: there is no
 `src/test/resources`, because the only thing it ever held was the directory client secret the removed startup check
-demanded. `TestSecurityConfig` supplies a stub `JwtDecoder` that reads the bearer token value as the `email` claim, so
+demanded. `SharedTestSecurityConfig` in `sky-common` supplies a stub `JwtDecoder` that reads the bearer token value as the `email` claim, so
 a context-loading test needs no reachable issuer and no environment variable.
 
 `jacocoTestCoverageVerification` runs as part of `check` at 0.90 line and 0.90 branch over the measured set, and the

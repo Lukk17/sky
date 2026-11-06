@@ -1,11 +1,11 @@
 package com.lukk.sky.offer.adapters.inbound.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.contract.dto.OfferDTO;
 import com.lukk.sky.contract.dto.OfferEditDTO;
 import com.lukk.sky.offer.AbstractIntegrationTest;
 import com.lukk.sky.offer.assemblers.OfferAssembler;
-import com.lukk.sky.offer.TestSecurityConfig;
 import com.lukk.sky.offer.domain.model.Offer;
 import com.lukk.sky.offer.domain.ports.outbound.OfferRepository;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Offer Integration Tests: full HTTP stack with Testcontainers Kafka and PostgreSQL")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 class OfferIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)

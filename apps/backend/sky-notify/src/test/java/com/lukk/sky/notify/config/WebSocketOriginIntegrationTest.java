@@ -1,7 +1,7 @@
 package com.lukk.sky.notify.config;
 
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.notify.AbstractIntegrationTest;
-import com.lukk.sky.notify.TestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 @DisplayName("WebSocket handshake origin check: full-stack integration tests")
-@Import(TestSecurityConfig.class)
+@Import(SharedTestSecurityConfig.class)
 @TestPropertySource(properties =
         "sky.crossOrigin.allowed=" + WebSocketOriginIntegrationTest.CONFIGURED_ORIGINS)
 class WebSocketOriginIntegrationTest extends AbstractIntegrationTest {

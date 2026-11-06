@@ -3,8 +3,8 @@ package com.lukk.sky.booking.adapters.inbound.api;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.lukk.sky.booking.AbstractIntegrationTest;
 import com.lukk.sky.booking.assemblers.BookingAssembler;
-import com.lukk.sky.booking.TestSecurityConfig;
 import com.lukk.sky.booking.config.WebClientTestConfig;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.contract.dto.BookingDTO;
 import com.lukk.sky.contract.dto.BookingPayload;
 import com.lukk.sky.booking.domain.model.Booking;
@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Booking API integration tests")
-@Import({WebClientTestConfig.class, TestSecurityConfig.class})
+@Import({WebClientTestConfig.class, SharedTestSecurityConfig.class})
 class BookingIntegrationTest extends AbstractIntegrationTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)

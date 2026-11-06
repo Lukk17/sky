@@ -1,6 +1,6 @@
 package com.lukk.sky.message.adapters.inbound.api;
 
-import com.lukk.sky.message.TestSecurityConfig;
+import com.lukk.sky.common.test.SharedTestSecurityConfig;
 import com.lukk.sky.message.TestcontainersConfiguration;
 import com.lukk.sky.message.domain.exception.MessageAccessDeniedException;
 import com.lukk.sky.message.domain.exception.MessageException;
@@ -47,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({TestSecurityConfig.class, TestcontainersConfiguration.class})
+@Import({SharedTestSecurityConfig.class, TestcontainersConfiguration.class})
 class ExceptionMappingPrecedenceTest {
 
     private static final UUID MESSAGE_ID = UUID.fromString("11111111-2222-3333-4444-555555555555");
