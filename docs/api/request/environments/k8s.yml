@@ -6,6 +6,10 @@ variables:
     value: http://localhost:5777
   - name: messageUrl
     value: http://localhost:5777
+  - name: gatewayUrl
+    value: http://localhost:5777
+  - name: gatewayDeployed
+    value: "false"
   - name: mintToken
     value: "true"
   - name: keycloakUrl

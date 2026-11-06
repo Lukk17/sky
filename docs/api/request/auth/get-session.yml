@@ -13,6 +13,12 @@ http:
       value: application/json
 
 runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        if (bru.getEnvVar("gatewayDeployed") !== "true") {
+          bru.runner.skipRequest();
+        }
   assertions:
     - expression: res.status
       operator: eq
