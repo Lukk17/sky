@@ -8,6 +8,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnClass(EnableMethodSecurity.class)
-@EnableMethodSecurity
+@EnableMethodSecurity(proxyTargetClass = true)
 public class MethodSecurityAutoConfiguration {
 }

@@ -41,7 +41,10 @@ the cosmetic `version` in `build.gradle.kts`.
     service fills from `OAUTH2_ISSUER_URI`. A test asserts the absence, so do not add one),
     `LocalSecurityAutoConfiguration` with `UnverifiedJwtDecoder` (`@Profile("local")` only, accepts any well-formed
     token so a local run needs no reachable IdP, and logs a warning saying so), `KeycloakRealmRoleConverter`,
-    `MethodSecurityAutoConfiguration` with the `@IsUser` meta-annotation, and `SecurityUtils.currentUserEmail()`.
+    `MethodSecurityAutoConfiguration` with the `@IsUser` meta-annotation and the single
+    `@EnableMethodSecurity(proxyTargetClass = true)` in the project, which proxies bean classes rather than JDK
+    interfaces so a `@PreAuthorize` on an implementation method still applies when the class implements an
+    interface, and `SecurityUtils.currentUserEmail()`.
   - `common.web`: `SkyRestExceptionHandler` and `RestExceptionHandlerAutoConfiguration` (RFC 9457 problem details for
     every service. There is no exception-handler base class to extend, the handler is auto-configured),
     `UnhandledExceptionResolver` (the last-resort 500, covered in its own section below),

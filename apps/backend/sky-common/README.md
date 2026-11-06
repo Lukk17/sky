@@ -25,7 +25,7 @@ It builds with the `sky.java-library-conventions` plugin rather than `sky.spring
 - `SecurityUtils.currentUserEmail()`, the one way a controller learns who is calling. It reads the `email` claim from the validated JWT, so no service parses an identity header.
 - `ResourceServerJwtAutoConfiguration`, which registers the role converter and, when `OAUTH2_AUDIENCE` is set, an `AudienceValidator` on top of the default issuer and expiry checks. It deliberately registers no `JwtDecoder`: Spring Boot builds that itself from `spring.security.oauth2.resourceserver.jwt.issuer-uri`, which each service's `application.yaml` fills from `OAUTH2_ISSUER_URI`. `ResourceServerJwtAutoConfigurationTest` asserts the absent decoder, so a future change that adds one will fail rather than quietly shadow Boot's.
 - `KeycloakRealmRoleConverter`, which turns Keycloak's `realm_access.roles` into Spring authorities.
-- `MethodSecurityAutoConfiguration` and the `@IsUser` meta-annotation for method-level checks.
+- `MethodSecurityAutoConfiguration` and the `@IsUser` meta-annotation for method-level checks. Method security is configured once here with `@EnableMethodSecurity(proxyTargetClass = true)`, so it proxies the bean class rather than a JDK interface proxy and a guard on an implementation method still applies when that class implements an interface.
 - `LocalSecurityAutoConfiguration` and `UnverifiedJwtDecoder`, registered only under the `local` Spring profile. The decoder reads a token without verifying its signature, issuer, or expiry, so local runs need no reachable identity provider.
 - `SecurityPaths` and `SkySecurityDefaults`, the shared permit-list and defaults.
 

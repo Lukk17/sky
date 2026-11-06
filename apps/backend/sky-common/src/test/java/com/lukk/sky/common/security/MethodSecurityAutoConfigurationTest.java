@@ -86,6 +86,36 @@ class MethodSecurityAutoConfigurationTest {
     }
 
     @Test
+    @DisplayName("guardedMethod_onAnInterfaceBackedBean_isDenied_whenTheCallerHoldsAnotherRole")
+    void guardedMethod_onAnInterfaceBackedBean_isDenied_whenTheCallerHoldsAnotherRole() {
+        // given
+        runner.run(context -> {
+            givenAuthority("ROLE_SERVICE");
+            OfferReader reader = context.getBean(OfferReader.class);
+
+            // when / then
+            assertThat(reader)
+                    .as("the proxy must be a class proxy, or a JDK proxy would hide @PreAuthorize on the implementation")
+                    .isInstanceOf(InterfaceBackedGuardedService.class);
+            assertThatThrownBy(reader::readOffer)
+                    .as("the guard on the implementation method must still apply through the interface")
+                    .isInstanceOf(AccessDeniedException.class);
+        });
+    }
+
+    @Test
+    @DisplayName("guardedMethod_onAnInterfaceBackedBean_runs_whenTheCallerHoldsTheUserRole")
+    void guardedMethod_onAnInterfaceBackedBean_runs_whenTheCallerHoldsTheUserRole() {
+        // given
+        runner.run(context -> {
+            givenAuthority("ROLE_USER");
+
+            // when / then
+            assertThat(context.getBean(OfferReader.class).readOffer()).isEqualTo(GUARDED_RESULT);
+        });
+    }
+
+    @Test
     @DisplayName("unguardedMethod_runs_whenThereIsNoAuthentication")
     void unguardedMethod_runs_whenThereIsNoAuthentication() {
         // when / then
@@ -128,6 +158,25 @@ class MethodSecurityAutoConfigurationTest {
         @Bean
         GuardedService guardedService() {
             return new GuardedService();
+        }
+
+        @Bean
+        OfferReader interfaceBackedGuardedService() {
+            return new InterfaceBackedGuardedService();
+        }
+    }
+
+    interface OfferReader {
+
+        String readOffer();
+    }
+
+    static class InterfaceBackedGuardedService implements OfferReader {
+
+        @IsUser
+        @Override
+        public String readOffer() {
+            return GUARDED_RESULT;
         }
     }
 
