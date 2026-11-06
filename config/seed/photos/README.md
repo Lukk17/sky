@@ -2,10 +2,8 @@
 
 Layout:
 
-- `hotels/<offer-slug>-exterior.jpg`: live photo. One per offer in `config/seed/offers.json`. The `photoFile` value points here. The backend has a single photo slot per offer, so this is the only image uploaded by `config/seed/seed.mjs`.
-- `rooms/<offer-slug>-room.jpg`: room view, kept for the future. Rooms have nowhere to upload today. The backend accepts exactly one photo per offer, so these files are not referenced by any seed data or script.
-- `unused/`: spare exterior images, never referenced by seed data or scripts.
+- `hotels/<offer-slug>-exterior.png`: the cover photo. `photoFile` points here, and `config/seed/seed.mjs` uploads it to the single-photo slot and to the gallery, where it is the main photo.
+- `hotels/<offer-slug>-interior.png`: the gallery photo. `photoFile2` points here, and the seed uploads it to the gallery.
+- `rooms/<offer-slug>-room.jpg`: legacy room views, not referenced by the current seed data or scripts.
 
-Gallery follow-up: add a multi-photo gallery to the backend and the seed script, then wire each `rooms/` file to its offer.
-
-Mapping note: all dropped exteriors show palm-style resort buildings, so city matching is by best fit, not by real look. Daylight pool views went to the three Miami offers. Night and dome views went to the Warsaw tower and residence offers. The remaining views went to Gdansk and Gorzow Wielkopolski.
+Every offer carries two photos. The seed skips an offer whose gallery already holds at least two photos, so a rerun is idempotent, and it fails when a referenced file is missing. Both PNG files come from `e2e/fixtures/offer-photo.png`, a neutral placeholder.

@@ -30,10 +30,11 @@ export async function req(method, url, { token, json, form, file } = {}) {
     body = new URLSearchParams(form).toString();
   } else if (file !== undefined) {
     const { bytes, filename } = file;
+    const contentType = filename.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
     const boundary = "seed" + Date.now().toString(16);
     headers["Content-Type"] = `multipart/form-data; boundary=${boundary}`;
     const head = Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: image/jpeg\r\n\r\n`,
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${contentType}\r\n\r\n`,
       "utf8",
     );
     const tail = Buffer.from(`\r\n--${boundary}--\r\n`, "utf8");

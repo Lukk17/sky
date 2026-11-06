@@ -1,6 +1,6 @@
 # config/seed
 
-Local demo dataset: 4 users, 12 offers, 21 bookings, 24 messages.
+Local demo dataset: 4 users, 12 offers, 21 bookings, 24 messages, and two photos per offer (an exterior cover and an interior gallery shot).
 
 All seed users share password `local`.
 

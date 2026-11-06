@@ -135,16 +135,62 @@ async function main() {
     else fail(`create offer ${o.hotelName}: ${r.status} ${JSON.stringify(r.data)}`);
   }
 
+  const photoOffers = await listOffers(tokens[users[0].email]);
+  const photoByHotel = new Map(photoOffers.map((o) => [o.hotelName, o]));
+
   for (const o of offers) {
-    const photoPath = join(HERE, "photos", o.photoFile);
-    if (!existsSync(photoPath)) { console.log(`SKIP photo missing file, kept externalPhotoUrl: ${o.hotelName}`); continue; }
-    if (!offerIds[o.slug]) continue;
-    const bytes = readFileSync(photoPath);
-    const r = await req("POST", `${EDGE}/api/v1/owner/offers/${offerIds[o.slug]}/photo`, {
-      token: tokens[o.ownerEmail], file: { bytes, filename: basename(photoPath) },
+    const offerId = offerIds[o.slug];
+    if (!offerId) continue;
+
+    const exteriorPath = join(HERE, "..", "photos", o.photoFile);
+    const interiorPath = join(HERE, "..", "photos", o.photoFile2);
+    if (!existsSync(exteriorPath)) { fail(`missing photo file: ${o.photoFile}`); continue; }
+    if (!existsSync(interiorPath)) { fail(`missing photo file: ${o.photoFile2}`); continue; }
+
+    const token = tokens[o.ownerEmail];
+    const gallery = photoByHotel.get(o.hotelName)?.gallery ?? [];
+    if (gallery.length >= 2) {
+      const mains = gallery.filter((p) => p.main === true);
+      const exterior = gallery.find((p) => String(p.url ?? "").includes("exterior"));
+      if (mains.length !== 1 || !String(mains[0]?.url ?? "").includes("exterior")) {
+        if (exterior) {
+          const cover = await req("PUT", `${EDGE}/api/v1/owner/offers/${offerId}/photos/${exterior.id}/cover`, { token });
+          if (!ok(cover.status)) fail(`set cover ${o.hotelName}: ${cover.status} ${JSON.stringify(cover.data)}`);
+        } else {
+          fail(`gallery ${o.hotelName} has ${gallery.length} photos but no exterior`);
+        }
+      }
+      console.log(`SKIP gallery complete: ${o.hotelName} (${gallery.length} photos)`);
+      continue;
+    }
+
+    const exteriorBytes = readFileSync(exteriorPath);
+    const interiorBytes = readFileSync(interiorPath);
+
+    const main = await req("POST", `${EDGE}/api/v1/owner/offers/${offerId}/photo`, {
+      token, file: { bytes: exteriorBytes, filename: basename(exteriorPath) },
     });
-    if (ok(r.status)) console.log(`UPLOAD photo: ${o.hotelName}`);
-    else fail(`upload photo ${o.hotelName}: ${r.status} ${JSON.stringify(r.data)}`);
+    if (!ok(main.status)) { fail(`upload main photo ${o.hotelName}: ${main.status} ${JSON.stringify(main.data)}`); continue; }
+    console.log(`UPLOAD main photo: ${o.hotelName} ${basename(exteriorPath)}`);
+
+    const exteriorGallery = await req("POST", `${EDGE}/api/v1/owner/offers/${offerId}/photos`, {
+      token, file: { bytes: exteriorBytes, filename: basename(exteriorPath) },
+    });
+    if (!ok(exteriorGallery.status)) { fail(`upload gallery photo ${o.hotelName}: ${exteriorGallery.status} ${JSON.stringify(exteriorGallery.data)}`); continue; }
+    console.log(`UPLOAD gallery photo: ${o.hotelName} ${basename(exteriorPath)}`);
+
+    const interiorGallery = await req("POST", `${EDGE}/api/v1/owner/offers/${offerId}/photos`, {
+      token, file: { bytes: interiorBytes, filename: basename(interiorPath) },
+    });
+    if (!ok(interiorGallery.status)) { fail(`upload gallery photo ${o.hotelName}: ${interiorGallery.status} ${JSON.stringify(interiorGallery.data)}`); continue; }
+    console.log(`UPLOAD gallery photo: ${o.hotelName} ${basename(interiorPath)}`);
+
+    const current = await listOffers(tokens[users[0].email]);
+    const exteriorPhoto = (current.find((x) => x.id === offerId)?.gallery ?? [])
+      .find((p) => String(p.url ?? "").includes("exterior"));
+    if (!exteriorPhoto) { fail(`gallery ${o.hotelName} has no exterior photo after upload`); continue; }
+    const cover = await req("PUT", `${EDGE}/api/v1/owner/offers/${offerId}/photos/${exteriorPhoto.id}/cover`, { token });
+    if (!ok(cover.status)) fail(`set cover ${o.hotelName}: ${cover.status} ${JSON.stringify(cover.data)}`);
   }
 
   for (const b of bookings) {
@@ -178,6 +224,17 @@ async function main() {
   const liveOffers = await listOffers(tokens[users[0].email]).catch(() => null);
   if (!liveOffers) mismatches.push(`offers: unable to list (expected ${offers.length})`);
   else if (liveOffers.length < offers.length) mismatches.push(`offers: found ${liveOffers.length}, expected ${offers.length}`);
+  if (liveOffers) {
+    for (const o of offers) {
+      const live = liveOffers.find((x) => x.hotelName === o.hotelName);
+      if (!live) continue;
+      const gallery = live.gallery ?? [];
+      if (gallery.length < 2) mismatches.push(`${o.hotelName}: gallery ${gallery.length}, expected at least 2`);
+      const mains = gallery.filter((p) => p.main === true);
+      if (mains.length !== 1) mismatches.push(`${o.hotelName}: ${mains.length} main photos, expected exactly 1`);
+      else if (!String(mains[0].url ?? "").includes("exterior")) mismatches.push(`${o.hotelName}: main photo is not the exterior`);
+    }
+  }
   const expectedBookings = new Map();
   for (const b of bookings) expectedBookings.set(b.bookerEmail, (expectedBookings.get(b.bookerEmail) ?? 0) + 1);
   for (const [email, expected] of expectedBookings) {
@@ -196,7 +253,9 @@ async function main() {
     for (const m of mismatches) fail(`verify: ${m}`);
     throw new Error(`SEED MISMATCH: ${mismatches.join("; ")}`);
   }
-  console.log(`SEED VERIFIED: ${offers.length} offers, ${bookings.length} bookings, ${messages.length} messages`);
+  const galleryPhotoCount = offers.reduce(
+    (count, o) => count + (liveOffers.find((x) => x.hotelName === o.hotelName)?.gallery?.length ?? 0), 0);
+  console.log(`SEED VERIFIED: ${offers.length} offers, ${galleryPhotoCount} gallery photos, ${bookings.length} bookings, ${messages.length} messages`);
   console.log("SEED OK");
 }
 
