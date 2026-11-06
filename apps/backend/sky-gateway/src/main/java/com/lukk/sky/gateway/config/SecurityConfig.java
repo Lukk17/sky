@@ -83,7 +83,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile("!local")
+    @Profile({"default", "prod"})
     public SecurityWebFilterChain oidcSecurityWebFilterChain(
             ServerHttpSecurity http,
             ReactiveClientRegistrationRepository clientRegistrationRepository,

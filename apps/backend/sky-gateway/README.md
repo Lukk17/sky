@@ -61,7 +61,7 @@ PowerShell:
 .\apps/backend\gradlew.bat :sky-gateway:bootRun --args='--spring.profiles.active=local'
 ```
 
-Any profile other than `local`, including no profile at all, turns on the Keycloak OIDC login flow and the `TokenRelay` filter, so the gateway obtains the token and forwards it downstream. It needs `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID`, and `KEYCLOAK_CLIENT_SECRET`.
+The `default` and `prod` profiles turn on the Keycloak OIDC login flow and the `TokenRelay` filter, so the gateway obtains the token and forwards it downstream. No profile at all also does, because the implicit `default` profile is then active. This chain needs `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID`, and `KEYCLOAK_CLIENT_SECRET`. The `local` profile is the permit-all chain and needs none of them.
 
 Unix shell:
 
@@ -81,7 +81,7 @@ With the whole stack in Docker Compose:
 docker compose -f config/docker/docker-compose.yaml up --build -d
 ```
 
-[config/docker/docker-compose.yaml](../../../config/docker/docker-compose.yaml) sets `SPRING_PROFILES_ACTIVE=local` on this service, so the compose gateway runs the permit-all chain and needs no Keycloak variables. The gateway listens on 5777, and the individual service ports stay published for direct calls.
+[config/docker/docker-compose.yaml](../../../config/docker/docker-compose.yaml) sets `SPRING_PROFILES_ACTIVE=default` on this service, so the compose gateway runs the OIDC chain and reads the Keycloak variables that file supplies. To run the permit-all `local` chain instead, override that variable with `local`. The gateway listens on 5777, and the individual service ports stay published for direct calls.
 
 ---
 
@@ -97,7 +97,7 @@ docker build . -f sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gate
 
 ### Configuration
 
-Everything tuneable is in [src/main/resources/application.yaml](src/main/resources/application.yaml). The OIDC client registration and the token-relay copies of the four routes live in a second document below the `---` separator at the bottom of that file, selected by `spring.config.activate.on-profile: "!local"`, so they apply under every profile except `local`.
+Everything tuneable is in [src/main/resources/application.yaml](src/main/resources/application.yaml). The OIDC client registration and the token-relay copies of the four routes live in a second document below the `---` separator at the bottom of that file, selected by `spring.config.activate.on-profile: "default,prod"`, so they apply under `default` and `prod`. The `local` profile is the permit-all chain and uses neither the OIDC registration nor the token-relay routes.
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -107,9 +107,9 @@ Everything tuneable is in [src/main/resources/application.yaml](src/main/resourc
 | `MESSAGE_URI` | `http://localhost:5553` | sky-message upstream |
 | `NOTIFY_URI` | `http://localhost:5554` | sky-notify upstream |
 | `GATEWAY_DEBUG` | `INFO` | Log level for the gateway's own routing logs |
-| `KEYCLOAK_ISSUER_URI` | none | Required under every profile except `local` |
-| `KEYCLOAK_CLIENT_ID` | none | Required under every profile except `local` |
-| `KEYCLOAK_CLIENT_SECRET` | none | Required under every profile except `local` |
+| `KEYCLOAK_ISSUER_URI` | none | Required under `default` and `prod` |
+| `KEYCLOAK_CLIENT_ID` | none | Required under `default` and `prod` |
+| `KEYCLOAK_CLIENT_SECRET` | none | Required under `default` and `prod` |
 
 ---
 

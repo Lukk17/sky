@@ -124,18 +124,18 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
   on that while answering 200 on `/v3/api-docs`. The gateway keeps the separator inside the capture instead, so the
   bare path arrives as `/v3/api-docs` and returns the document. Everything the Swagger UI page itself requests has a
   remainder and so is unaffected either way, which is why the cluster has not noticed.
-- Documentation paths are authenticated under `!local`, and that is the cluster's answer rather than a local
-  preference. All six swagger and api-docs ingresses carry `nginx.ingress.kubernetes.io/auth-url` and
+- Documentation paths are authenticated under the `default` and `prod` chains, and that is the cluster's answer
+  rather than a local preference. All six swagger and api-docs ingresses carry `nginx.ingress.kubernetes.io/auth-url` and
   `auth-signin` in `values-prod.yaml`, so a browser reaching `/offer/swagger-ui/index.html` in the cluster goes
   through oauth2-proxy first. The gateway needs no change to agree: `SecurityPaths.probes()` is the whole permit-list
-  on the `!local` chain, so a documentation path is already `authenticated()` and redirects to the Keycloak login
+  on the `default` and `prod` chains, so a documentation path is already `authenticated()` and redirects to the Keycloak login
   flow. Do not add a documentation path to that permit-list, and do not add one to `SecurityPaths`, which would open
   it in all four services as well as here.
 
   The owner row is one ingress in the cluster and no separate route here, and that asymmetry is deliberate. The
   split exists so the owner paths can carry the oauth2-proxy auth annotations the public ones must not, which is a
-  cluster concern the gateway has no equivalent of: under `local` it permits everything and under `!local` the
-  OIDC chain gates every route alike. So the offer route lists all three offer predicates and lets the ingress
+  cluster concern the gateway has no equivalent of: under `local` it permits everything and under `default` and
+  `prod` the OIDC chain gates every route alike. So the offer route lists all three offer predicates and lets the ingress
   make the distinction.
   The notify row has a cluster counterpart: `config/k8s/helm/service/sky-notify/values.yaml` declares an
   `ingress` block and `templates/ingress.yaml` renders it, serving `/notifyWebsocket` with `pathType: Prefix`, no
@@ -158,13 +158,15 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
   `OFFER_URI`, `MESSAGE_URI` and `NOTIFY_URI`. Compose sets them to the Docker service names, and runs this service on
   `default` with `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID` and `KEYCLOAK_CLIENT_SECRET` pointed at the development
   realm, so the compose gateway owns the browser session exactly like the cluster edge does.
-- Two security chains, both explicit in `SecurityConfig`, split on one profile rather than on a named pair.
+- Two security chains, both explicit in `SecurityConfig`, each listing the profiles it serves rather than using an
+  exclusion.
   Spring Boot's reactive auto-configuration secures every exchange when no `SecurityWebFilterChain` bean exists,
   which would make the proxy answer 401, so each branch registers its own chain rather than relying on the default:
   - `@Profile("local")`: every exchange permitted, CSRF, HTTP Basic and form login disabled. The inbound
     `Authorization` header is forwarded untouched and each service validates the token itself. This is the
-    opt-in branch, so `local` has to be active explicitly.
-  - `@Profile("!local")`: Keycloak OIDC login plus the `TokenRelay` filter on every route, an OIDC
+    opt-in branch, so `local` has to be active explicitly, and it serves `local` only.
+  - `@Profile({"default", "prod"})`: serves `default` and `prod`. Keycloak OIDC login plus the `TokenRelay` filter
+    on every route, an OIDC
     client-initiated logout handler, cookie-free CSRF (one shared
     `WebSessionServerCsrfTokenRepository` bean used by both the chain and `/api/session`, which reports the session
     token and generates and persists one when a bearer caller skipped the CSRF filter), an origin check rejecting
@@ -178,11 +180,11 @@ both point at `http://localhost:5777`. See [README.md](README.md) for the human-
     callers never fetch login pages into their cookie jar, while any other path still redirects to
     `/oauth2/authorization/keycloak`. `/actuator/prometheus` therefore requires a session here. Requires
     `KEYCLOAK_ISSUER_URI`, `KEYCLOAK_CLIENT_ID` and `KEYCLOAK_CLIENT_SECRET`. Its configuration is a second
-    document in the same `application.yaml`, selected by `spring.config.activate.on-profile: "!local"` below the
-    `---` separator. This branch is what a bare `bootRun` with no profile gets, and it fails at startup on the
+    document in the same `application.yaml`, selected by `spring.config.activate.on-profile: "default,prod"` below
+    the `---` separator. This branch is what a bare `bootRun` with no profile gets, and it fails at startup on the
     unresolved `KEYCLOAK_ISSUER_URI` placeholder unless those three variables are set.
 - Actuator: `health`, `info` and `prometheus` exposed, liveness and readiness probes enabled. Exposure is not
-  the same as access: under `!local` only the probe paths above are permitted anonymously, so `prometheus` is exposed
+  the same as access: under `default` and `prod` only the probe paths above are permitted anonymously, so `prometheus` is exposed
   and still requires a session. The Dockerfile health check polls `/actuator/health/liveness` and the compose health
   check polls `/actuator/health/readiness`.
 
@@ -222,7 +224,7 @@ predicate claimed it, which is what lets one assertion carry both halves.
   identity yields 401 instead of crashing.
 - `ServletExceptionHandlingAbsentTest`, which pins that `sky-common`'s servlet exception handling never loads in
   this reactive module.
-- `SecurityConfigOidcProfileTest`, `test` only so the `!local` chain applies: unauthenticated `/actuator/prometheus`
+- `SecurityConfigOidcProfileTest`, `default` and `test` so the `default` OIDC chain applies: unauthenticated `/actuator/prometheus`
   and the six documentation paths still redirect to `/oauth2/authorization/keycloak`, while health, liveness,
   readiness and info stay open, and unauthenticated `/api/**` calls answer 401 with an empty body instead. Anonymous
   `GET /api/v1/offers` and `GET /api/v1/search` pass security to routing. Search is public by method and GET is a

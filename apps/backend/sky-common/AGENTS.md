@@ -34,8 +34,10 @@ the cosmetic `version` in `build.gradle.kts`.
 - Package layout (`com.lukk.sky.common`), six packages:
   - `common.security`: the largest package. `SecurityPaths` (the shared permit-lists: `probes()` is
     `/actuator/health/**` plus `/actuator/info`, `apiDocs()` is the springdoc paths, plus `probesAndApiDocs()` and
-    `probesPlus(...)`), `SkySecurityDefaults.filterChain(...)` (the one servlet chain every service builds on: CSRF
-    off, permit-list open, JWT resource server on, everything else authenticated), `ResourceServerJwtAutoConfiguration`
+    `probesPlus(...)`), `SecurityAutoConfiguration` with `SkySecurityDefaults.filterChain(...)` (the one servlet chain
+    every service builds on: CSRF off, permit-list open, JWT resource server on, everything else authenticated),
+    registered under `default`, `local` and `prod` only, so the `test` profile receives no production chain and test
+    code imports `SharedTestSecurityConfig` from the test fixtures instead, `ResourceServerJwtAutoConfiguration`
     (the role converter, plus `AudienceValidator` when `OAUTH2_AUDIENCE` is set, and deliberately no `JwtDecoder`
     bean, because Spring Boot builds that from `spring.security.oauth2.resourceserver.jwt.issuer-uri`, which each
     service fills from `OAUTH2_ISSUER_URI`. A test asserts the absence, so do not add one),
@@ -313,6 +315,8 @@ deployed service, and the blast radius of a false positive is a deployment that 
   (`ApplicationContextRunner`-style slices for the auto-configurations, plain unit tests for the rest), so verify a
   change here and in at least one consuming service's tests, because the `compileOnly` split means a class can
   compile here and still be missing a runtime dependency downstream.
-- `LocalSecurityAutoConfiguration` is the one profile-sensitive class in this module: it is `@Profile("local")` and it
-  disables JWT signature, issuer and expiry checks. Never widen that profile condition, and never make the unverified
-  decoder the fallback for a missing issuer.
+- `SecurityAutoConfiguration` is the servlet chain shared by every service, and it is registered under `default`,
+  `local` and `prod` only. `test` deliberately receives no production chain: tests import
+  `SharedTestSecurityConfig` from this module's test fixtures. `LocalSecurityAutoConfiguration` is the one
+  `local`-only class: it is `@Profile("local")` and it disables JWT signature, issuer and expiry checks. Never widen
+  that profile condition, and never make the unverified decoder the fallback for a missing issuer.

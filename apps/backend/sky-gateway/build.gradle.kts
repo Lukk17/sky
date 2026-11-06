@@ -28,11 +28,11 @@ dependencies {
     // Core gateway: reactive HTTP proxy + route predicates + filters (WebFlux/Netty).
     implementation(libs.spring.cloud.starter.gateway.server.webflux)
 
-    // OAuth2 client: the `@Profile("!local")` chain in config/SecurityConfig wires Keycloak OIDC
-    // login and the TokenRelay filter. The `local` chain permits every exchange and uses neither.
+    // OAuth2 client: the `@Profile({"default", "prod"})` chain in config/SecurityConfig wires Keycloak
+    // OIDC login and the TokenRelay filter. The `local` chain permits every exchange and uses neither.
     implementation(libs.spring.boot.starter.oauth2.client)
 
-    // OAuth2 resource server: the same `!local` chain also validates bearer tokens itself, so
+    // OAuth2 resource server: the same default and prod chain also validates bearer tokens itself, so
     // non-browser API clients keep working without a session. The gateway only needs
     // `authenticated()`, so the default scope-based converter applies and realm roles stay
     // a service-side concern.

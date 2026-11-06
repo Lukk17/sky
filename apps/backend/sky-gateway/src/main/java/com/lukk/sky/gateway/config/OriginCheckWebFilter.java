@@ -24,7 +24,7 @@ import java.util.Set;
  * without an origin concept keep working.
  */
 @Component
-@Profile("!local")
+@Profile({"default", "prod"})
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class OriginCheckWebFilter implements WebFilter {
 

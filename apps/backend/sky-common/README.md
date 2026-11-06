@@ -27,7 +27,8 @@ It builds with the `sky.java-library-conventions` plugin rather than `sky.spring
 - `KeycloakRealmRoleConverter`, which turns Keycloak's `realm_access.roles` into Spring authorities.
 - `MethodSecurityAutoConfiguration` and the `@IsUser` meta-annotation for method-level checks. Method security is configured once here with `@EnableMethodSecurity(proxyTargetClass = true)`, so it proxies the bean class rather than a JDK interface proxy and a guard on an implementation method still applies when that class implements an interface.
 - `LocalSecurityAutoConfiguration` and `UnverifiedJwtDecoder`, registered only under the `local` Spring profile. The decoder reads a token without verifying its signature, issuer, or expiry, so local runs need no reachable identity provider.
-- `SecurityPaths` and `SkySecurityDefaults`, the shared permit-list and defaults.
+- `SecurityAutoConfiguration` and `SkySecurityDefaults`, the shared servlet chain and defaults, registered under `default`, `local` and `prod`. The `test` profile is not one of them: tests import `SharedTestSecurityConfig` from this module's test fixtures, so the production chain never runs under `test`.
+- `SecurityPaths`, the shared permit-list.
 
 `com.lukk.sky.common.web`
 

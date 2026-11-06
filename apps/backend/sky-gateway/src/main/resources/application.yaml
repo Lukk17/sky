@@ -156,7 +156,7 @@ server:
 spring:
   config:
     activate:
-      on-profile: "!local"
+      on-profile: "default,prod"
   security:
     oauth2:
       resourceserver:

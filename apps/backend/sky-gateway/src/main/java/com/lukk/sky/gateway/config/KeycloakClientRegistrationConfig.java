@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 
 /**
- * Static Keycloak client registration for the {@code !local} chain.
+ * Static Keycloak client registration for the {@code default} and {@code prod} chains.
  *
  * <p>Built by hand rather than from {@code issuer-uri} discovery on purpose.
  * Discovery fetches {@code {issuer}/.well-known/openid-configuration} eagerly at
@@ -29,7 +29,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
  */
 @Configuration
 @EnableWebFluxSecurity
-@Profile("!local")
+@Profile({"default", "prod"})
 public class KeycloakClientRegistrationConfig {
 
     @Bean
