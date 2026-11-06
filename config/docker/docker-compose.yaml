@@ -376,7 +376,7 @@ services:
       EDGE_BASE: http://sky-gateway:5777
       KEYCLOAK_BASE: http://keycloak:8080/auth
       TLS_INSECURE: "0"
-    command: ["sh", "-c", "node seed.mjs || true"]
+    command: ["node", "seed.mjs"]
 
   prometheus:
     image: prom/prometheus:v3.1.0
