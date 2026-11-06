@@ -304,4 +304,4 @@ docker images --filter "reference=sky-*:e2e" --format "{{.ID}}" | xargs -r docke
 | [config/local-dev/local_README.md](local_README.md) | The developer stack: host PostgreSQL, Keycloak and object store, Compose and Gradle |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: create, deploy the charts, verify, tear down |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection, its environments, and the OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection, its environments, and the API contract |

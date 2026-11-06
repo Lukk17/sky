@@ -10,7 +10,6 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-gradle-plugin:${libs.versions.spring.boot.get()}")
     implementation("io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:${libs.versions.spring.dependency.management.get()}")
-    implementation("org.springdoc:springdoc-openapi-gradle-plugin:${libs.versions.springdoc.gradle.plugin.get()}")
     implementation("org.openapi.generator:org.openapi.generator.gradle.plugin:${libs.versions.openapi.generator.get()}")
 
     // Make the version-catalog `libs` accessor available inside convention plugins

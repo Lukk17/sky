@@ -3,10 +3,11 @@ info:
   title: sky-api
   version: v1
   description: >
-    Contract for the sky API. This file is the single source of truth for the
-    API surface and is linted with the redocly configuration beside it. The
-    per-service documents under docs/api/openapi are generated from service
-    annotations and are a different artefact.
+    Contract for the sky API. This file is the only published API document and
+    the single source of truth for the API surface. It is linted with the
+    redocly configuration beside it and generates the backend interfaces and
+    DTOs and the Angular client. Each service still serves a springdoc document
+    at runtime for Swagger UI, but that document is not committed.
 servers:
   - description: "Local, through the gateway, one origin for the whole stack"
     url: http://localhost:5777

@@ -1,15 +1,10 @@
 plugins {
     id("sky.spring-service-conventions")
     id("sky.web-conventions")
-    id("sky.openapi-conventions")
 }
 
 version = "2.0.0"
 description = "sky-message"
-
-skyOpenApi {
-    docsPort.set(7973)
-}
 
 dependencies {
     implementation(project(":sky-common"))

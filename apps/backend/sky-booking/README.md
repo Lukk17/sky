@@ -172,4 +172,4 @@ Reactor or WebFlux import fails the build.
 | [AGENTS.md](AGENTS.md) | Module-local agent and coding conventions |
 | [src/main/resources/db/migration/](src/main/resources/db/migration/) | Flyway SQL migrations owned by this service |
 | [../../../config/local-dev/local_README.md](../../../config/local-dev/local_README.md) | Running the platform locally |
-| [../../../docs/api/README.md](../../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+| [../../../docs/api/README.md](../../../docs/api/README.md) | Bruno collection and the API contract |

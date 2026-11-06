@@ -587,5 +587,5 @@ k3d cluster delete sky
 | [config/k8s/helm/helm_README.md](helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
 | [config/k8s/k8s_README.md](k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and the API contract |
 | [e2e/README.md](../../e2e/README.md) | End-to-end capability suite and how a run is recorded |

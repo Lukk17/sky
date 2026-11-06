@@ -585,5 +585,5 @@ The environment variable name is deliberately provider-neutral, so pointing the 
 | [config/local-dev/e2e-stack_README.md](../local-dev/e2e-stack_README.md) | The self-contained Compose stack and the Bruno gate CI runs on it |
 | [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/k8s/helm/helm_README.md](../k8s/helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and the API contract |
 

@@ -247,4 +247,4 @@ kubectl exec -it <pod-name> -- /bin/sh
 | [config/k8s/local_README.md](local_README.md) | Local Kubernetes cluster on k3d: bring-up, verification, teardown |
 | [config/local-dev/local_README.md](../local-dev/local_README.md) | Running locally without Kubernetes: Gradle and Docker Compose |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and the API contract |
