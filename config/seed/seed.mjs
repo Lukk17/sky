@@ -72,20 +72,26 @@ async function ensureUser(at, u) {
   console.log(`CREATE user: ${u.email}`);
 }
 
+async function listAll(path, token) {
+  const collected = [];
+  for (let page = 0; ; page += 1) {
+    const r = await req("GET", `${EDGE}${path}?page=${page}&size=100`, { token });
+    if (!ok(r.status)) throw new Error(`list ${path}: ${r.status}`);
+    if (Array.isArray(r.data)) return r.data;
+    const content = Array.isArray(r.data?.content) ? r.data.content : [];
+    collected.push(...content);
+    if (r.data?.last === true || content.length === 0) return collected;
+    if (typeof r.data?.totalPages === "number" && page + 1 >= r.data.totalPages) return collected;
+  }
+}
 async function listOffers(token) {
-  const r = await req("GET", `${EDGE}/api/v1/offers`, { token });
-  if (!ok(r.status)) throw new Error(`list offers: ${r.status}`);
-  return Array.isArray(r.data) ? r.data : (r.data?.content ?? []);
+  return listAll("/api/v1/offers", token);
 }
 async function listBookings(token) {
-  const r = await req("GET", `${EDGE}/api/v1/user/bookings`, { token });
-  if (!ok(r.status)) throw new Error(`list bookings: ${r.status}`);
-  return Array.isArray(r.data) ? r.data : (r.data?.content ?? []);
+  return listAll("/api/v1/user/bookings", token);
 }
 async function listSent(token) {
-  const r = await req("GET", `${EDGE}/api/v1/messages/sent`, { token });
-  if (!ok(r.status)) return [];
-  return Array.isArray(r.data) ? r.data : (r.data?.content ?? []);
+  return listAll("/api/v1/messages/sent", token);
 }
 
 function datePlus(offset) {
@@ -156,7 +162,7 @@ async function main() {
   }
 
   for (const m of messages) {
-    const sent = await listSent(tokens[m.senderEmail]).catch(() => []);
+    const sent = await listSent(tokens[m.senderEmail]);
     if (sent.some((x) => x.receiverEmail === m.receiverEmail && x.text === m.text)) {
       console.log(`SKIP message exists: ${m.senderEmail} -> ${m.receiverEmail}`);
       continue;
