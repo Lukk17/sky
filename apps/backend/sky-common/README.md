@@ -74,7 +74,7 @@ Do not promote a `compileOnly` dependency to `implementation` without checking e
 Build it. Unix shell:
 
 ```bash
-./apps/backend/gradlew :sky-common:build
+./apps/backend/gradlew -p apps/backend :sky-common:build
 ```
 
 PowerShell:

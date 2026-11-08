@@ -88,7 +88,7 @@ the cosmetic `version` in `build.gradle.kts`.
 Inherits the convention test stack (Spring Boot Test, Spring Security Test, JUnit 5, ArchUnit). Integration and
 repository tests use Testcontainers PostgreSQL only (no Kafka container). `MessageRepositoryDataJpaTest` is a
 `@DataJpaTest` slice against that same container, enabled and passing: nothing in this module is `@Disabled`. Run from
-the repo root, e.g. `./apps/backend/gradlew :sky-message:test`.
+the repo root, e.g. `./apps/backend/gradlew -p apps/backend :sky-message:test`.
 
 Nothing here needs a live identity provider. The `test` profile carries no profile-specific file at all: there is no
 `src/test/resources`, because the only thing it ever held was the directory client secret the removed startup check

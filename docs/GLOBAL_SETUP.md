@@ -943,7 +943,7 @@ What counts as running a script:
   `cargo build`, `go run .`, `go generate`, `go test`, `dotnet build`, `mvn test`, `gradle build`, `just test`, or
   `rake`. `make --version`, `go version` and `dotnet --info` stay allowed.
 - A program called by a script file name, such as `.\deploy.ps1`, and any program whose path lands inside the
-  project, such as `./apps/backend/gradlew build` or `./bin/tool`.
+  project, such as `./apps/backend/gradlew -p apps/backend build` or `./bin/tool`.
 - A native program named by any other path, such as `/usr/local/bin/terraform apply`, unless it is a known read-only
   tool such as `/usr/bin/grep`.
 

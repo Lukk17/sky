@@ -4,12 +4,9 @@ plugins {
 }
 
 // JaCoCo coverage: one filtered class set, reported for visibility and gated in `check`.
-val coverageExcludes = listOf(
-    "**/dto/**",
-    "**/config/**",
-    "**/*Application.class",
-    "**/Constants.class"
-)
+// The list lives in CoverageFilters so the aggregate report and gate in the root build
+// measure exactly the same classes.
+val coverageExcludes = CoverageFilters.exclusions
 
 fun measuredClasses(classDirs: FileCollection): FileCollection =
     files(classDirs.files.map { dir -> fileTree(dir) { exclude(coverageExcludes) } })
@@ -30,7 +27,7 @@ tasks.jacocoTestReport {
 // JaCoCo 0.8.13 supports Java 25 class files. Older versions error on unknown class
 // file major version when the Spring Boot 4 / Java 25 toolchain bump lands.
 jacoco {
-    toolVersion = "0.8.13"
+    toolVersion = JacocoSettings.TOOL_VERSION
 }
 
 // A module whose measured set is empty opts itself out in its own build file, by

@@ -95,7 +95,7 @@ Uses hexagonal (ports-and-adapters):
 Run from the repo root:
 
 ```bash
-./apps/backend/gradlew :sky-notify:test
+./apps/backend/gradlew -p apps/backend :sky-notify:test
 ```
 
 Integration tests use a Testcontainers Kafka container only, wired through `@ServiceConnection`. There is no database container, this service has no datastore. Docker must be running.

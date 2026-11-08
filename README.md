@@ -25,7 +25,7 @@ Prerequisites: JDK 25 for the Gradle daemon (the compile toolchain is downloaded
 Build and test every module. Unix shell:
 
 ```bash
-./apps/backend/gradlew build
+./apps/backend/gradlew -p apps/backend build
 ```
 
 PowerShell:
@@ -45,7 +45,7 @@ The gateway then answers at `http://localhost:5777`, and that is the only sky po
 Run one service against the local stack instead. Unix shell:
 
 ```bash
-./apps/backend/gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
+./apps/backend/gradlew -p apps/backend :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 PowerShell:
@@ -243,7 +243,7 @@ Each service has a README with its endpoints, environment variables, and archite
 - Hexagonal architecture enforced at build time by ArchUnit, so a layering mistake fails the build rather than a review.
 - Realm as code: one committed Keycloak realm file, imported identically by the local container and the cluster chart.
 - Demo seed data applied by a Flyway repeatable migration on the `local` profile, matching the realm's demo users.
-- One composite Gradle build: a single `./apps/backend/gradlew` command covers every module.
+- One composite Gradle build: a single `./apps/backend/gradlew -p apps/backend` command covers every module.
 - Bruno API collection that mints its own token and chains ids, plus one OpenAPI 3.1 contract that generates the backend interfaces and DTOs and the Angular client.
 
 ---
@@ -324,7 +324,7 @@ Two things catch people out on a first run:
 Run every test from the repository root. Unix shell:
 
 ```bash
-./apps/backend/gradlew test
+./apps/backend/gradlew -p apps/backend test
 ```
 
 PowerShell:
@@ -336,7 +336,7 @@ PowerShell:
 One module only. Unix shell:
 
 ```bash
-./apps/backend/gradlew :sky-booking:test
+./apps/backend/gradlew -p apps/backend :sky-booking:test
 ```
 
 PowerShell:
@@ -352,7 +352,7 @@ The test stack per service:
 - Architecture tests on ArchUnit, enforcing the hexagonal layer direction in every module.
 - End-to-end runbooks under [e2e/](e2e/), driven through the Bruno collection in [docs/api/request/](docs/api/request/).
 
-JaCoCo HTML coverage reports land in `build/reports/jacoco/test/html/` per module after each run, and the gate reads the same class set the report does: `jacocoTestCoverageVerification` is wired into `check`, so `./apps/backend/gradlew build` fails when a module drops below 0.90 line or 0.90 branch coverage. Five modules are gated: the four services plus the `sky-common` library, which reaches the same convention plugin through `sky.java-conventions`. `sky-gateway` is the one exemption and it opts itself out in its own `build.gradle.kts` rather than being named in the shared plugin, because the measured set excludes `**/dto/**`, `**/config/**`, the application class and `Constants`, which is that module's whole main source set: a rule over an empty counter passes and reports a green tick for nothing measured. Its two filter chains are covered by their own tests instead.
+JaCoCo HTML coverage reports land in `build/reports/jacoco/test/html/` per module after each run, and the gate reads the same class set the report does: `jacocoTestCoverageVerification` is wired into `check`, so `./apps/backend/gradlew -p apps/backend build` fails when a module drops below 0.90 line or 0.90 branch coverage. Five modules are gated: the four services plus the `sky-common` library, which reaches the same convention plugin through `sky.java-conventions`. `sky-gateway` is the one exemption and it opts itself out in its own `build.gradle.kts` rather than being named in the shared plugin, because the measured set excludes `**/dto/**`, `**/config/**`, the application class and `Constants`, which is that module's whole main source set: a rule over an empty counter passes and reports a green tick for nothing measured. Its two filter chains are covered by their own tests instead.
 
 ---
 

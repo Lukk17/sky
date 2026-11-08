@@ -234,7 +234,7 @@ The service boots even when the object store is unreachable. [src/main/java/com/
 Run from the repo root:
 
 ```bash
-./apps/backend/gradlew :sky-offer:test
+./apps/backend/gradlew -p apps/backend :sky-offer:test
 ```
 
 Integration and repository tests use Testcontainers `postgres:17-alpine` and Kafka containers, wired through `@ServiceConnection`. Docker must be running: there is no in-memory fallback, because H2 is gone from this module and from the version catalogue.

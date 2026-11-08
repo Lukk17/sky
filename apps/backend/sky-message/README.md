@@ -102,7 +102,7 @@ service never acts as an OAuth2 client, it only validates the tokens it is hande
 Run from the repo root:
 
 ```bash
-./apps/backend/gradlew :sky-message:test
+./apps/backend/gradlew -p apps/backend :sky-message:test
 ```
 
 Integration and repository tests use a Testcontainers `postgres:17-alpine` container, wired through `@ServiceConnection`. There is no Kafka container, this service has no broker. Docker must be running: there is no in-memory fallback, because H2 is gone from this module and from the version catalogue.

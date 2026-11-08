@@ -18,7 +18,7 @@ The repository MUST use a Gradle version catalog at `apps/backend/gradle/libs.ve
 The repository MUST be a single Gradle multi-project rooted at the backend root, with one `gradlew` wrapper, one `settings.gradle.kts` listing every service module, and shared configuration delivered via convention plugins under `apps/backend/buildSrc/`.
 
 #### Scenario: Building all services from the root
-- **WHEN** a contributor runs `./apps/backend/gradlew build` from the repository root
+- **WHEN** a contributor runs `./apps/backend/gradlew -p apps/backend build` from the repository root
 - **THEN** every service (`sky-booking`, `sky-offer`, `sky-message`, `sky-notify`, and `sky-common`) builds and its tests run
 
 #### Scenario: One wrapper exists

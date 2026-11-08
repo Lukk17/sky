@@ -237,7 +237,7 @@ independently-deployable services. The module version is not restated here: the 
 
 Inherits the convention test stack (Spring Boot Test, Spring Security Test, JUnit 5, ArchUnit). Integration and
 repository tests use Testcontainers PostgreSQL + Kafka (`@ServiceConnection`). Run from the repo root, e.g.
-`./apps/backend/gradlew :sky-offer:test`.
+`./apps/backend/gradlew -p apps/backend :sky-offer:test`.
 
 `jacocoTestCoverageVerification` runs as part of `check` at 0.90 line and 0.90 branch, and the module sits at 1.00
 line and 0.99 branch over the measured set. The Bruno collection under `docs/api/request/offer` is part of the photo

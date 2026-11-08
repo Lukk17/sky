@@ -13,12 +13,15 @@ name: Release
 # untouched. The workflow produces zero commits. The only refs created are the
 # git tag and the GitHub Release.
 #
-# Three jobs, in order:
+# Four jobs, in order:
 #   prepare       validates inputs, checks the stack tag, reads each selected
 #                 service's version from its CHANGELOG.md into a matrix
+#   test          calls ci.yaml, so a release only publishes an image the full CI
+#                 gate (composite build, OWASP scan, e2e collection) has passed
 #   build-and-push for each selected service, runs the per-registry bump guard,
 #                 builds a multi-arch image once, pushes v<version> plus latest
-#                 to Docker Hub and GHCR
+#                 to Docker Hub and GHCR. The `release` environment is the
+#                 approval gate, so no image is pushed until it is approved
 #   release       skipped when create_github_release is unticked. Otherwise
 #                 composes a body listing every service and cuts the tag
 #                 sky_<stack_version> plus a GitHub Release.
@@ -182,11 +185,25 @@ jobs:
           MATRIX="{\"include\":${MATRIX_INCLUDE}}"
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
+  # The release gate. ci.yaml already declares workflow_call, so this reuses the
+  # exact pipeline a pull request has to pass rather than a release-only subset.
+  # secrets: inherit is required because the called workflow runs in this
+  # repository's context and may need the same secrets.
+  test:
+    name: CI gate
+    uses: ./.github/workflows/ci.yaml
+    secrets: inherit
+
   build-and-push:
     name: Build and push ${{ matrix.service }} v${{ matrix.version }}
-    needs: prepare
+    needs: [prepare, test]
     if: ${{ fromJSON(needs.prepare.outputs.matrix).include[0] != null }}
     runs-on: ubuntu-latest
+    # The approval gate. Until the `release` environment approves this job, no
+    # image is pushed and the `release` job below cannot run. The environment
+    # must carry a required-reviewer protection rule in repository settings for
+    # the gate to mean anything.
+    environment: release
     permissions:
       contents: read
       packages: write

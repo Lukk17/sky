@@ -29,7 +29,7 @@ The object-store password is `localdev` rather than `local` because MinIO refuse
 HINT: MINIO_ROOT_USER length should be at least 3, and MINIO_ROOT_PASSWORD length at least 8 characters
 ```
 
-`keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows). The four services default to `OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky`, so a bare `./apps/backend/gradlew :sky-offer:bootRun` works without exporting anything.
+`keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows). The four services default to `OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky`, so a bare `./apps/backend/gradlew -p apps/backend :sky-offer:bootRun` works without exporting anything.
 
 ---
 
@@ -144,7 +144,7 @@ The health path differs between the two, so do not reach for `/minio/health/live
 
 The OAuth2 resource server fetches the JWKS over HTTPS, and the JVM rejects the certificate with a PKIX path validation error until the authority that issued it is trusted. Never disable TLS validation in committed code.
 
-Every image in this repository already trusts it, the gateway included: each `docker/Dockerfile` imports [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt) under the alias `local-dev-ca` into the JRE `cacerts` store at build time, next to the public certificate authorities rather than instead of them. Trusting the authority rather than the leaf means a reissued leaf needs no image rebuild. So the whole Docker Compose stack needs nothing extra, and this step is only for a service you start with `./apps/backend/gradlew bootRun` on the host, which uses your own JDK's trust store.
+Every image in this repository already trusts it, the gateway included: each `docker/Dockerfile` imports [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt) under the alias `local-dev-ca` into the JRE `cacerts` store at build time, next to the public certificate authorities rather than instead of them. Trusting the authority rather than the leaf means a reissued leaf needs no image rebuild. So the whole Docker Compose stack needs nothing extra, and this step is only for a service you start with `./apps/backend/gradlew -p apps/backend bootRun` on the host, which uses your own JDK's trust store.
 
 The full procedure, with PowerShell and Unix variants for `openssl` and `keytool`, is in [config/keycloak/SETUP.md](../keycloak/SETUP.md).
 
@@ -187,7 +187,7 @@ Useful when you are changing one service and want a fast edit-run loop.
 Unix shell:
 
 ```bash
-./apps/backend/gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
+./apps/backend/gradlew -p apps/backend :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 PowerShell:

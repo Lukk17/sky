@@ -153,7 +153,7 @@ the conflict means another writer advanced the sequence and repeating the same w
 Run from the repo root:
 
 ```bash
-./apps/backend/gradlew :sky-booking:test
+./apps/backend/gradlew -p apps/backend :sky-booking:test
 ```
 
 Integration and repository tests use Testcontainers `postgres:17-alpine` and Kafka containers, wired through

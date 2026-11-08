@@ -9,7 +9,7 @@ Pins the framework and language level every service runs on, and keeps that pin 
 Every module MUST compile and run on Spring Boot 4 (Spring Framework 7) and Java 25, currently pinned as `spring-boot = "4.0.7"` and `java = "25"` in `apps/backend/gradle/libs.versions.toml`. No module may pin its own framework version or its own language level: the Java toolchain is resolved once from the catalogue's `java` entry in the shared convention plugin, so a module cannot drift onto a different language level without editing the catalogue. The Spring Boot 3 test annotation `@MockBean` MUST NOT appear in any source file, and a test that overrides a bean MUST use `@MockitoBean` instead.
 
 #### Scenario: Starting a service
-- **WHEN** a developer runs `./apps/backend/gradlew :sky-booking:bootRun`
+- **WHEN** a developer runs `./apps/backend/gradlew -p apps/backend :sky-booking:bootRun`
 - **THEN** the Spring Boot banner prints a 4.x version and the JVM running the service reports a Java 25 runtime
 
 #### Scenario: Test compilation

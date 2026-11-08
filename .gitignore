@@ -1,7 +1,8 @@
 
-./config/k8s/secret/docker-cred.yaml
-./config/k8s/secret/secrets.yaml
-./config/k8s/secret/sealed-private.key
+config/k8s/secret/docker-cred.yaml
+config/k8s/secret/secrets.yaml
+config/k8s/secret/sealed-private.key
+config/k8s/secret/sealed/sealed-secrets.yaml
 
 
 /target/

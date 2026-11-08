@@ -54,6 +54,7 @@ jobs:
       gateway: ${{ steps.filter.outputs.gateway }}
       common: ${{ steps.filter.outputs.common }}
       shared: ${{ steps.filter.outputs.shared }}
+      contract: ${{ steps.filter.outputs.contract }}
       contracts: ${{ steps.filter.outputs.contracts }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
@@ -86,6 +87,9 @@ jobs:
             docker:
               - 'apps/backend/**/docker/Dockerfile'
               - 'config/docker/**'
+            contract:
+              - 'apps/backend/sky-contract/**'
+              - 'docs/api/contract/**'
             contracts:
               - 'docs/api/contract/**'
               - 'config/scripts/**'
@@ -105,6 +109,7 @@ jobs:
           GATEWAY: ${{ steps.filter.outputs.gateway }}
           COMMON: ${{ steps.filter.outputs.common }}
           SHARED: ${{ steps.filter.outputs.shared }}
+          CONTRACT: ${{ steps.filter.outputs.contract }}
           CONTRACTS: ${{ steps.filter.outputs.contracts }}
           FRONTEND: ${{ steps.filter.outputs.frontend }}
           WORKFLOWS: ${{ steps.filter.outputs.workflows }}
@@ -117,7 +122,9 @@ jobs:
             exit 0
           fi
           backend="false"
-          for v in "${BOOKING}" "${OFFER}" "${MESSAGE}" "${NOTIFY}" "${GATEWAY}" "${COMMON}" "${SHARED}"; do
+          # A contract change rebuilds the generated contract types, which sky-booking,
+          # sky-offer and sky-message compile against, so it is a backend change too.
+          for v in "${BOOKING}" "${OFFER}" "${MESSAGE}" "${NOTIFY}" "${GATEWAY}" "${COMMON}" "${SHARED}" "${CONTRACT}"; do
             if [ "${v}" = "true" ]; then
               backend="true"
               break
@@ -130,8 +137,8 @@ jobs:
             docs_only="true"
           fi
           printf 'docs-only=%s\n' "${docs_only}" >> "${GITHUB_OUTPUT}"
-          printf 'backend=%s docs-only=%s (booking=%s offer=%s message=%s notify=%s gateway=%s common=%s shared=%s contracts=%s frontend=%s workflows=%s)\n' \
-            "${backend}" "${docs_only}" "${BOOKING}" "${OFFER}" "${MESSAGE}" "${NOTIFY}" "${GATEWAY}" "${COMMON}" "${SHARED}" "${CONTRACTS}" "${FRONTEND}" "${WORKFLOWS}"
+          printf 'backend=%s docs-only=%s (booking=%s offer=%s message=%s notify=%s gateway=%s common=%s shared=%s contract=%s contracts=%s frontend=%s workflows=%s)\n' \
+            "${backend}" "${docs_only}" "${BOOKING}" "${OFFER}" "${MESSAGE}" "${NOTIFY}" "${GATEWAY}" "${COMMON}" "${SHARED}" "${CONTRACT}" "${CONTRACTS}" "${FRONTEND}" "${WORKFLOWS}"
 
   # Dockerfile parity runs on every trigger and takes seconds: it is the fast
   # gate that fails when a Gradle module is missing from a Dockerfile COPY
@@ -227,6 +234,15 @@ jobs:
               apps/backend/sky-common/*)
                 mark sky-common
                 mark_every_service
+                ;;
+              # The contract library is compiled into the three services that implement
+              # its generated interfaces, so a change to it, or to the published contract
+              # it generates from, changes all three artefacts and needs a new version of
+              # each. sky-notify and sky-gateway do not depend on it.
+              apps/backend/sky-contract/*|docs/api/contract/*)
+                mark sky-booking
+                mark sky-offer
+                mark sky-message
                 ;;
               apps/backend/sky-booking/*) mark sky-booking ;;
               apps/backend/sky-offer/*) mark sky-offer ;;
@@ -419,13 +435,14 @@ jobs:
           GATEWAY: ${{ needs.detect-changes.outputs.gateway }}
           COMMON: ${{ needs.detect-changes.outputs.common }}
           SHARED: ${{ needs.detect-changes.outputs.shared }}
+          CONTRACT: ${{ needs.detect-changes.outputs.contract }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           tasks=""
-          if [ "${EVENT_NAME}" != "pull_request" ] || [ "${COMMON}" = "true" ] || [ "${SHARED}" = "true" ]; then
+          if [ "${EVENT_NAME}" != "pull_request" ] || [ "${COMMON}" = "true" ] || [ "${SHARED}" = "true" ] || [ "${CONTRACT}" = "true" ]; then
             tasks="build"
-            printf 'Shared or non-PR trigger: running the full composite build.\n'
+            printf 'Shared, contract or non-PR trigger: running the full composite build.\n'
           else
             for pair in "booking:sky-booking" "offer:sky-offer" "message:sky-message" "notify:sky-notify" "gateway:sky-gateway"; do
               flag="${pair%%:*}"
@@ -451,11 +468,11 @@ jobs:
           printf 'tasks=%s\n' "${tasks}" >> "${GITHUB_OUTPUT}"
 
       - name: Build and test affected modules
-        run: ./apps/backend/gradlew ${{ steps.tasks.outputs.tasks }} --console=plain
+        run: ./apps/backend/gradlew -p apps/backend ${{ steps.tasks.outputs.tasks }} --console=plain
 
       - name: Upload test reports on failure
         if: failure()
-        uses: actions/upload-artifact@65c4c4a6d8253fbae7f064a9fdc0b2133780d994 # v4.6.0
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: test-reports-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -551,11 +568,11 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: runner.os-gradle-hash
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
           restore-keys: |
-            runner.os-gradle-
+            ${{ runner.os }}-gradle-
       - name: Run OWASP Dependency Check
-        run: ./apps/backend/gradlew --console=plain -p apps/backend dependencyCheckAggregate
+        run: ./apps/backend/gradlew -p apps/backend --console=plain dependencyCheckAggregate
 
   # Lints the hand-written API contract at docs/api/contract/openapi.yaml.
   # It is the only published API document, so the gate is the lint result

@@ -158,7 +158,7 @@ the current one, and it wins over the cosmetic `version` in `build.gradle.kts`.
 Inherits the convention test stack (Spring Boot Test, Spring Security Test, JUnit 5, ArchUnit). Integration and
 repository tests use Testcontainers PostgreSQL + Kafka (`@ServiceConnection`, no `@DynamicPropertySource`).
 `spring-kafka-test` and `okhttp3 mockwebserver` cover messaging and outbound HTTP. Run from the repo root with the
-single composite `./apps/backend/gradlew`, e.g. `./apps/backend/gradlew :sky-booking:test`.
+single composite `./apps/backend/gradlew -p apps/backend`, e.g. `./apps/backend/gradlew -p apps/backend :sky-booking:test`.
 
 ## Conventions
 

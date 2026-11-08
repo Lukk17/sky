@@ -52,7 +52,7 @@ The session responder returns the session token inside JSON; callers must keep a
 Unix shell:
 
 ```bash
-./apps/backend/gradlew :sky-gateway:bootRun --args='--spring.profiles.active=local'
+./apps/backend/gradlew -p apps/backend :sky-gateway:bootRun --args='--spring.profiles.active=local'
 ```
 
 PowerShell:
@@ -66,7 +66,7 @@ The `default` and `prod` profiles turn on the Keycloak OIDC login flow and the `
 Unix shell:
 
 ```bash
-./apps/backend/gradlew :sky-gateway:bootRun
+./apps/backend/gradlew -p apps/backend :sky-gateway:bootRun
 ```
 
 PowerShell:

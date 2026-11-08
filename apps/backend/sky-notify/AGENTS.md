@@ -92,7 +92,7 @@ independently-deployable services. The module version is not restated here: the 
 
 Inherits the convention test stack (Spring Boot Test, Spring Security Test, JUnit 5, ArchUnit). No H2 and no database
 container: this module has no datastore, and H2 is gone from the whole repository including the version catalogue.
-Integration tests use Testcontainers Kafka only. Run from the repo root, e.g. `./apps/backend/gradlew :sky-notify:test`.
+Integration tests use Testcontainers Kafka only. Run from the repo root, e.g. `./apps/backend/gradlew -p apps/backend :sky-notify:test`.
 
 > Coverage note: the backfill landed. This module now carries a test class per production class, and the JaCoCo report
 > shows no missed lines and no missed branches across the four classes it measures (`KafkaListeners`,
