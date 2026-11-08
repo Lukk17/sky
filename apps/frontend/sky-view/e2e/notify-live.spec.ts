@@ -32,6 +32,7 @@ test('live notify: banner, badge and chat update across two sessions without ref
 
     await expect(bob.page.getByTestId('notify-banner')).toContainText(receiverText, { timeout: 30000 });
     await expect(bob.page.getByTestId('notify-badge')).toBeVisible({ timeout: 30000 });
+    await bob.page.getByTestId('thread-lukk@sky.dev').click();
     await expect(bob.page.getByTestId('conversation')).toContainText(receiverText, { timeout: 30000 });
   } finally {
     await alice.close();

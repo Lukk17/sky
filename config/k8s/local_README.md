@@ -61,7 +61,29 @@ Build them with Compose rather than by hand. [config/docker/docker-compose.yaml]
 docker compose -f config/docker/docker-compose.yaml build sky-offer sky-booking sky-message sky-notify
 ```
 
-Building by hand works too and is documented in [config/local-dev/local_README.md](../local-dev/local_README.md). It means repeating both tags for each service, which is how this page drifted onto a tag nothing produced.
+Building by hand works too, and it must run from the repository root with the repository root as the Docker context, because the Dockerfiles copy `apps/backend` and, for the three contract services, `docs/api/contract`. One example:
+
+```bash
+docker build . -f apps/backend/sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
+```
+
+The full set, including the booking, message, notify and gateway images, is in [config/local-dev/local_README.md](../local-dev/local_README.md).
+
+---
+
+### 0. Verify host DNS
+
+Run first, before creating anything. It checks `localhost`, wildcard `*.localhost` subdomains and `keycloak.test` resolve to loopback, and reports whether the gateway edge answers:
+
+```bash
+bash config/scripts/verify-host-dns.sh
+```
+
+A DNS failure exits 1 and names the fix, usually a hosts-file entry. Gateway ports are reported without failing in this mode. After the stack is up, rerun with the strict flag before the Bruno gate:
+
+```bash
+bash config/scripts/verify-host-dns.sh --require-gateway
+```
 
 ---
 
@@ -289,6 +311,22 @@ That last selector is the odd one out because the Kafka chart labels its pod `ap
 
 ### 8. Deploy the service charts
 
+The `sky-offer`, `sky-booking` and `sky-message` charts declare the local `sky-common` library chart as a dependency, and Helm needs that dependency built into each chart's `charts/` directory before the install. `sky-notify` declares no dependency. Build all three first:
+
+```bash
+helm dependency build config/k8s/helm/service/sky-offer
+```
+
+```bash
+helm dependency build config/k8s/helm/service/sky-booking
+```
+
+```bash
+helm dependency build config/k8s/helm/service/sky-message
+```
+
+Then install the four charts:
+
 ```bash
 helm upgrade --install sky-offer config/k8s/helm/service/sky-offer -f config/k8s/helm/service/sky-offer/values-local.yaml -n default
 ```
@@ -387,6 +425,20 @@ The collection and its environments are documented in [docs/api/README.md](../..
 
 ---
 
+### Compose end-to-end check
+
+The k3d path above is the cluster check. For a check that needs no cluster, [config/scripts/run-e2e.sh](../scripts/run-e2e.sh) builds and starts the Compose stack, waits for the gateway, loads the seed dataset, runs the Bruno collection with `--env local`, and always stops the stack on exit. It keeps named volumes and never runs a global prune, so images, build cache and unrelated volumes are left alone.
+
+```bash
+bash config/scripts/run-e2e.sh
+```
+
+The seed loads 4 users, 12 offers, 21 bookings and 24 messages, plus one photo per owned offer.
+
+The unit and integration suites use Testcontainers for PostgreSQL and Kafka. Testcontainers Ryuk removes those test containers when the JVM exits, including after a failed run. The Compose runner is a separate path and does not use Testcontainers.
+
+---
+
 ### Bruno k8s environment
 
 The environment file is [docs/api/request/environments/k8s.yml](../../docs/api/request/environments/k8s.yml). It is named `k8s` rather than `k3d` because the same environment works against any Kubernetes distro (k3d, minikube, kind) as long as that distro's ingress is exposed at `localhost:5777` and its Keycloak issues the same nip.io issuer. The values are:
@@ -410,7 +462,7 @@ The environment file is [docs/api/request/environments/k8s.yml](../../docs/api/r
 
 No credential is committed. The realm file at [config/k8s/helm/infra/keycloak/files/sky-realm.json](helm/infra/keycloak/files/sky-realm.json) carries only usernames, emails and realm roles. Passwords and the client secret are sourced at deploy time:
 
-- User passwords are set by the seed script through the Keycloak admin API (`reset-password` per user in `seed/seed.mjs`, lines 79 and 98), so local login keeps working with no password stored in the repo. Proof: `ensureUser` calls `PUT /admin/realms/sky/users/{id}/reset-password` with the password from `seed/users.json` on both the update and the create path, then mints a token per user with it. All seed users share password `local` (see [seed/README.md](../../seed/README.md)).
+- User passwords are set by the seed script through the Keycloak admin API (`reset-password` per user in `config/seed/seed.mjs`, lines 79 and 98), so local login keeps working with no password stored in the repo. Proof: `ensureUser` calls `PUT /admin/realms/sky/users/{id}/reset-password` with the password from `config/seed/users.json` on both the update and the create path, then mints a token per user with it. All seed users share password `local` (see [config/seed/README.md](../../config/seed/README.md)).
 - The `sky-backend` client secret is generated per deploy (for example `openssl rand -hex 32`), stored in the `keycloak-client-secret` entry of your `sky-secrets-local.yaml` (step 4), and set on the imported client once Keycloak is up:
 
 ```bash
@@ -439,7 +491,7 @@ The redirect URIs and post-logout URIs stay localhost-only by direction: this st
 
 The last row is still needed and the list of who needs it has shrunk, which is worth saying so nobody puts it back where it no longer belongs. `oauth2-proxy` reads the secret to run its OIDC session flow, and [docs/api/request/auth/get-token.yml](../../docs/api/request/auth/get-token.yml) reads it to run the password grant that mints the caller's token, which is also why `sky-backend` is the `keycloakClientId` in the table above. No sky service reads it any more: `sky-message` used to fetch a service-account token with it for a receiver lookup against the Keycloak administration interface, and both the lookup and its `USER_DIRECTORY_CLIENT_SECRET` are gone. Validating a JWT needs no client secret, so a service environment block should never carry one.
 
-Do not read the S3 row as a control. floci, the object store the cluster now runs, authenticates nobody: it accepts any credentials, verifies no signature, and serves an unsigned GET of any object it holds. The two keys exist only because the AWS SDK refuses to build a client without them, in [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), which hands them to `AwsBasicCredentials.create`. The values are kept at a length MinIO would also accept, because [config/local-dev/local_README.md](../local-dev/local_README.md) still offers MinIO as the local alternative for when you do want the credential and signature checks exercised.
+Do not read the S3 row as a control. floci, the object store the cluster now runs, authenticates nobody: it accepts any credentials, verifies no signature, and serves an unsigned GET of any object it holds. The two keys exist only because the AWS SDK refuses to build a client without them, in [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../apps/backend/sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), which hands them to `AwsBasicCredentials.create`. The values are kept at a length MinIO would also accept, because [config/local-dev/local_README.md](../local-dev/local_README.md) still offers MinIO as the local alternative for when you do want the credential and signature checks exercised.
 
 ---
 
@@ -555,5 +607,5 @@ k3d cluster delete sky
 | [config/k8s/helm/helm_README.md](helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
 | [config/k8s/k8s_README.md](k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and the API contract |
 | [e2e/README.md](../../e2e/README.md) | End-to-end capability suite and how a run is recorded |

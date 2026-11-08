@@ -1,0 +1,60 @@
+// Sky local log pipeline: Docker stdout (plain text with [correlationId]) -> Loki.
+// Log format stays text in every service (logback-spring.xml renders
+// [%X{correlationId}]); Alloy parses the correlation id here so no service
+// pays the cost of JSON logging.
+
+discovery.docker "sky" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+discovery.relabel "sky" {
+  targets = discovery.docker.sky.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/sky-(.+)"
+    action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.+)"
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "sky" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.sky.output
+  forward_to = [loki.process.sky.receiver]
+}
+
+loki.process "sky" {
+  // Example line: 12:34:56.789 INFO  [3f9a-...] [http-nio-5555-1] c.l.s.b.BookingService - bookOffer ...
+  // Gateway lines carry the same header value because CorrelationIdWebFilter
+  // mints or forwards X-Correlation-Id on every exchange.
+  stage.regex {
+    expression = "^(?P<time>\\S+)\\s+(?P<level>[A-Z]+)\\s+\\[(?P<correlation_id>[^\\]]*)\\]"
+  }
+
+  stage.labels {
+    values = {
+      level = "",
+    }
+  }
+
+  stage.structured_metadata {
+    values = {
+      correlation_id = "",
+    }
+  }
+
+  forward_to = [loki.write.sky.receiver]
+}
+
+loki.write "sky" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

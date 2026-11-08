@@ -33,6 +33,129 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Path-filtered change detection so untouched modules skip their build and
+  # test. A docs-only pull request (only markdown, docs/, openspec/, e2e
+  # runbooks) sets backend=false, which skips build-and-test and, through it,
+  # e2e-collection and the OWASP scan, so the run finishes in under two
+  # minutes. A non-pull_request trigger (workflow_dispatch, workflow_call from
+  # release.yaml) always reports backend=true so a release never skips.
+  detect-changes:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      backend: ${{ steps.combine.outputs.backend }}
+      docs-only: ${{ steps.combine.outputs.docs-only }}
+      booking: ${{ steps.filter.outputs.booking }}
+      offer: ${{ steps.filter.outputs.offer }}
+      message: ${{ steps.filter.outputs.message }}
+      notify: ${{ steps.filter.outputs.notify }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      common: ${{ steps.filter.outputs.common }}
+      shared: ${{ steps.filter.outputs.shared }}
+      contract: ${{ steps.filter.outputs.contract }}
+      contracts: ${{ steps.filter.outputs.contracts }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            booking:
+              - 'apps/backend/sky-booking/**'
+            offer:
+              - 'apps/backend/sky-offer/**'
+            message:
+              - 'apps/backend/sky-message/**'
+            notify:
+              - 'apps/backend/sky-notify/**'
+            gateway:
+              - 'apps/backend/sky-gateway/**'
+            common:
+              - 'apps/backend/sky-common/**'
+            shared:
+              - 'apps/backend/buildSrc/**'
+              - 'apps/backend/gradle/**'
+              - 'apps/backend/*.kts'
+              - 'apps/backend/gradlew*'
+            docker:
+              - 'apps/backend/**/docker/Dockerfile'
+              - 'config/docker/**'
+            contract:
+              - 'apps/backend/sky-contract/**'
+              - 'docs/api/contract/**'
+            contracts:
+              - 'docs/api/contract/**'
+              - 'config/scripts/**'
+            frontend:
+              - 'apps/frontend/**'
+            workflows:
+              - '.github/workflows/**'
+
+      - name: Combine into backend and docs-only
+        id: combine
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BOOKING: ${{ steps.filter.outputs.booking }}
+          OFFER: ${{ steps.filter.outputs.offer }}
+          MESSAGE: ${{ steps.filter.outputs.message }}
+          NOTIFY: ${{ steps.filter.outputs.notify }}
+          GATEWAY: ${{ steps.filter.outputs.gateway }}
+          COMMON: ${{ steps.filter.outputs.common }}
+          SHARED: ${{ steps.filter.outputs.shared }}
+          CONTRACT: ${{ steps.filter.outputs.contract }}
+          CONTRACTS: ${{ steps.filter.outputs.contracts }}
+          FRONTEND: ${{ steps.filter.outputs.frontend }}
+          WORKFLOWS: ${{ steps.filter.outputs.workflows }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" != "pull_request" ]; then
+            printf 'backend=true\n' >> "${GITHUB_OUTPUT}"
+            printf 'docs-only=false\n' >> "${GITHUB_OUTPUT}"
+            printf 'Non-PR event (%s): running the full pipeline.\n' "${EVENT_NAME}"
+            exit 0
+          fi
+          backend="false"
+          # A contract change rebuilds the generated contract types, which sky-booking,
+          # sky-offer and sky-message compile against, so it is a backend change too.
+          for v in "${BOOKING}" "${OFFER}" "${MESSAGE}" "${NOTIFY}" "${GATEWAY}" "${COMMON}" "${SHARED}" "${CONTRACT}"; do
+            if [ "${v}" = "true" ]; then
+              backend="true"
+              break
+            fi
+          done
+          printf 'backend=%s\n' "${backend}" >> "${GITHUB_OUTPUT}"
+          docs_only="false"
+          if [ "${backend}" = "false" ] && [ "${CONTRACTS}" != "true" ] \
+             && [ "${FRONTEND}" != "true" ] && [ "${WORKFLOWS}" != "true" ]; then
+            docs_only="true"
+          fi
+          printf 'docs-only=%s\n' "${docs_only}" >> "${GITHUB_OUTPUT}"
+          printf 'backend=%s docs-only=%s (booking=%s offer=%s message=%s notify=%s gateway=%s common=%s shared=%s contract=%s contracts=%s frontend=%s workflows=%s)\n' \
+            "${backend}" "${docs_only}" "${BOOKING}" "${OFFER}" "${MESSAGE}" "${NOTIFY}" "${GATEWAY}" "${COMMON}" "${SHARED}" "${CONTRACT}" "${CONTRACTS}" "${FRONTEND}" "${WORKFLOWS}"
+
+  # Dockerfile parity runs on every trigger and takes seconds: it is the fast
+  # gate that fails when a Gradle module is missing from a Dockerfile COPY
+  # list, before any image is built.
+  dockerfile-parity:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check Dockerfile COPY lists match Gradle modules
+        run: |
+          set -euo pipefail
+          bash config/scripts/check-dockerfile-parity.sh
+
   # Each module carries its own CHANGELOG.md, and the topmost "## [x.y.z]" entry
   # in it is the version release.yaml publishes as that module's image tag. This
   # job is what stops a module change from merging without a new entry, because
@@ -108,21 +231,30 @@ jobs:
               # sky-common is a library with no image of its own. It is compiled
               # into all five service jars, so a change here changes all five
               # published artefacts and every one of them needs a new version.
-              sky-common/*)
+              apps/backend/sky-common/*)
                 mark sky-common
                 mark_every_service
                 ;;
-              sky-booking/*) mark sky-booking ;;
-              sky-offer/*) mark sky-offer ;;
-              sky-message/*) mark sky-message ;;
-              sky-notify/*) mark sky-notify ;;
-              sky-gateway/*) mark sky-gateway ;;
+              # The contract library is compiled into the three services that implement
+              # its generated interfaces, so a change to it, or to the published contract
+              # it generates from, changes all three artefacts and needs a new version of
+              # each. sky-notify and sky-gateway do not depend on it.
+              apps/backend/sky-contract/*|docs/api/contract/*)
+                mark sky-booking
+                mark sky-offer
+                mark sky-message
+                ;;
+              apps/backend/sky-booking/*) mark sky-booking ;;
+              apps/backend/sky-offer/*) mark sky-offer ;;
+              apps/backend/sky-message/*) mark sky-message ;;
+              apps/backend/sky-notify/*) mark sky-notify ;;
+              apps/backend/sky-gateway/*) mark sky-gateway ;;
               # The convention plugins, the version catalogue, the wrapper and the
               # root build files decide what every module compiles against, so a
               # change to any of them changes every artefact. A dependency bump in
               # gradle/libs.versions.toml is the common case and it is exactly the
               # kind of change that must not ship under an unchanged version.
-              buildSrc/*|gradle/*|build.gradle.kts|settings.gradle.kts|gradlew|gradlew.bat)
+              apps/backend/buildSrc/*|apps/backend/gradle/*|apps/backend/build.gradle.kts|apps/backend/settings.gradle.kts|apps/backend/gradlew|apps/backend/gradlew.bat)
                 mark_every_module
                 ;;
               # Everything else (config/, docs/, e2e/, openspec/, .github/, the
@@ -240,7 +372,7 @@ jobs:
           # request reports every missing bump in one run instead of one per push.
           failed=0
           for module in ${affected}; do
-            check_module "${module}" "${module}/CHANGELOG.md" || failed=1
+            check_module "${module}" "apps/backend/${module}/CHANGELOG.md" || failed=1
           done
 
           if [ "${failed}" -ne 0 ]; then
@@ -254,8 +386,13 @@ jobs:
     # workflow_call from release.yaml, and a skipped dependency would otherwise
     # skip this job too and hand release.yaml a green gate that never built
     # anything. Only an actual failure blocks the build.
-    needs: verify-changelog
-    if: ${{ !cancelled() && needs.verify-changelog.result != 'failure' }}
+    #
+    # Path filtering: a pull request that touches no backend file sets
+    # backend=false in detect-changes and skips this job entirely, which is
+    # what keeps a docs-only run under two minutes. A non-PR event always
+    # reports backend=true.
+    needs: [verify-changelog, detect-changes]
+    if: ${{ !cancelled() && needs.verify-changelog.result != 'failure' && needs.detect-changes.outputs.backend == 'true' }}
     runs-on: ubuntu-26.04
     # This job gates release.yaml, so a Testcontainers start that never returns
     # must not hold a release open for the 360-minute default. The composite
@@ -284,8 +421,66 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Build and test
-        run: ./gradlew build --console=plain
+      # Untouched modules skip their build and test. A shared change
+      # (sky-common, buildSrc, catalogue, wrapper) builds everything, because
+      # every artefact compiles against it. Otherwise only the changed
+      # services build, each as :<service>:build so its tests run.
+      - name: Select affected Gradle tasks
+        id: tasks
+        env:
+          BOOKING: ${{ needs.detect-changes.outputs.booking }}
+          OFFER: ${{ needs.detect-changes.outputs.offer }}
+          MESSAGE: ${{ needs.detect-changes.outputs.message }}
+          NOTIFY: ${{ needs.detect-changes.outputs.notify }}
+          GATEWAY: ${{ needs.detect-changes.outputs.gateway }}
+          COMMON: ${{ needs.detect-changes.outputs.common }}
+          SHARED: ${{ needs.detect-changes.outputs.shared }}
+          CONTRACT: ${{ needs.detect-changes.outputs.contract }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          tasks=""
+          if [ "${EVENT_NAME}" != "pull_request" ] || [ "${COMMON}" = "true" ] || [ "${SHARED}" = "true" ] || [ "${CONTRACT}" = "true" ]; then
+            tasks="build"
+            printf 'Shared, contract or non-PR trigger: running the full composite build.\n'
+          else
+            for pair in "booking:sky-booking" "offer:sky-offer" "message:sky-message" "notify:sky-notify" "gateway:sky-gateway"; do
+              flag="${pair%%:*}"
+              module="${pair##*:}"
+              value=""
+              case "${flag}" in
+                booking) value="${BOOKING}" ;;
+                offer) value="${OFFER}" ;;
+                message) value="${MESSAGE}" ;;
+                notify) value="${NOTIFY}" ;;
+                gateway) value="${GATEWAY}" ;;
+              esac
+              if [ "${value}" = "true" ]; then
+                tasks="${tasks}${tasks:+ }:${module}:build"
+              fi
+            done
+            if [ -z "${tasks}" ]; then
+              printf 'No service module changed; nothing to build.\n' >&2
+              exit 1
+            fi
+            printf 'Affected tasks: %s\n' "${tasks}"
+          fi
+          printf 'tasks=%s\n' "${tasks}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build and test affected modules
+        run: ./apps/backend/gradlew -p apps/backend ${{ steps.tasks.outputs.tasks }} --console=plain
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: test-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apps/backend/**/build/reports/tests/**
+            apps/backend/**/build/reports/jacoco/**
+            apps/backend/**/build/test-results/**
+          retention-days: 7
+          if-no-files-found: warn
 
   # The Bruno collection in docs/api/request, run against a stack this job builds from nothing.
   # It is a separate job on purpose: a red e2e-collection reads as "the running system is wrong",
@@ -352,3 +547,78 @@ jobs:
         if: always()
         run: |
           docker compose -p sky-e2e -f config/docker/docker-compose.ci.yaml down -v --remove-orphans --timeout 20
+
+  owasp-dependency-check:
+    if: ${{ github.event_name == 'pull_request' && needs.detect-changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    needs: [verify-changelog, detect-changes]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up JDK 25
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Cache Gradle packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Run OWASP Dependency Check
+        run: ./apps/backend/gradlew -p apps/backend --console=plain dependencyCheckAggregate
+
+  # Lints the hand-written API contract at docs/api/contract/openapi.yaml.
+  # It is the only published API document, so the gate is the lint result
+  # rather than a bundle diff. The relaxations the contract needs live in
+  # docs/api/contract/redocly.yaml.
+  #
+  # Node only. No JDK and no Gradle: the contract is hand-written.
+  #
+  # Path-filtered: skipped on a pull request that touches neither
+  # docs/api/contract/, config/scripts/ nor the workflow itself, which keeps
+  # a docs-only run under two minutes. A non-PR trigger (dispatch, release
+  # gate) always runs it.
+  validate-contract:
+    needs: [verify-changelog, detect-changes]
+    if: ${{ !cancelled() && needs.verify-changelog.result != 'failure' && (github.event_name != 'pull_request' || needs.detect-changes.outputs.contracts == 'true') }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: '26'
+
+      - name: Lint the API contract
+        run: |
+          set -euo pipefail
+          npx --yes @redocly/cli@2.73.0 lint docs/api/contract/openapi.yaml --config docs/api/contract/redocly.yaml
+
+  client-freshness:
+    needs: [verify-changelog, detect-changes]
+    if: ${{ !cancelled() && needs.verify-changelog.result != 'failure' && (github.event_name != 'pull_request' || needs.detect-changes.outputs.contracts == 'true' || needs.detect-changes.outputs.frontend == 'true') }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: '26'
+      - name: Check client freshness
+        run: |
+          set -euo pipefail
+          bash config/scripts/check-client-freshness.sh

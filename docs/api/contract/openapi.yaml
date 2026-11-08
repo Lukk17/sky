@@ -1,0 +1,1116 @@
+openapi: 3.1.0
+info:
+  title: sky-api
+  version: v1
+  description: >
+    Contract for the sky API. This file is the only published API document and
+    the single source of truth for the API surface. It is linted with the
+    redocly configuration beside it and generates the backend interfaces and
+    DTOs and the Angular client. Each service still serves a springdoc document
+    at runtime for Swagger UI, but that document is not committed.
+servers:
+  - description: "Local, through the gateway, one origin for the whole stack"
+    url: http://localhost:5777
+tags:
+  - name: Offers
+    description: Public browsing and search over the offer inventory.
+  - name: Owner offers
+    description: Create, edit, delete, and photograph the offers the caller owns.
+  - name: Bookings
+    description: "Booking lifecycle: create, list, and cancel bookings placed against offers."
+  - name: Messages
+    description: Messaging operations.
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/offers:
+    get:
+      operationId: getAllOffers
+      summary: Get all offers (paginated)
+      tags: [Offers]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Pageable'
+      responses:
+        '200':
+          description: Found offers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/offers/{offerId}:
+    get:
+      operationId: getOfferById
+      summary: Get one offer by id
+      tags: [Offers]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      responses:
+        '200':
+          description: Offer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Offer not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/offers/{offerId}/owner:
+    get:
+      operationId: getOfferOwner
+      summary: Get the owner email for an offer
+      tags: [Offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      responses:
+        '200':
+          description: Owner email returned
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/owner/offers:
+    get:
+      operationId: getOwnedOffers
+      summary: Get owned offers (paginated)
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/Pageable'
+      responses:
+        '200':
+          description: Found owned offers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    post:
+      operationId: addOffer
+      summary: Create new offer
+      tags: [Owner offers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfferDTO'
+      responses:
+        '201':
+          description: Offer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      operationId: edit
+      summary: Edit offer
+      tags: [Owner offers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfferEditDTO'
+      responses:
+        '200':
+          description: Offer edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer not found
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/owner/offers/{offerId}:
+    delete:
+      operationId: deleteOffer
+      summary: Delete offer
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      responses:
+        '204':
+          description: Offer deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer not found
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/owner/offers/{offerId}/photo:
+    delete:
+      operationId: deletePhoto
+      summary: Delete the stored photo of an offer
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      responses:
+        '204':
+          description: Photo removed from storage and cleared on the offer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      operationId: uploadPhoto
+      summary: Upload photo
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Photo uploaded; updated offer returned with photoUrl
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer not found
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/owner/offers/{offerId}/photos:
+    post:
+      operationId: uploadGalleryPhoto
+      summary: Upload a photo to the offer gallery (owner only)
+      description: >-
+        Appends a photo at the end of the gallery, which holds at most 10
+        photos. A concurrent cover change is answered with 409.
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Photo appended to gallery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer not found
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/owner/offers/{offerId}/photos/{photoId}:
+    delete:
+      operationId: deleteGalleryPhoto
+      summary: Delete a gallery photo (owner only)
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+        - $ref: '#/components/parameters/PhotoId'
+      responses:
+        '200':
+          description: Photo removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer or photo not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/owner/offers/{offerId}/photos/{photoId}/cover:
+    put:
+      operationId: setGalleryCover
+      summary: Set a gallery photo as cover (owner only)
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+        - $ref: '#/components/parameters/PhotoId'
+      responses:
+        '200':
+          description: Cover updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer or photo not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/owner/offers/{offerId}/photos/{photoId}/position:
+    put:
+      operationId: reorderGalleryPhoto
+      summary: Reorder a gallery photo (owner only)
+      tags: [Owner offers]
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+        - $ref: '#/components/parameters/PhotoId'
+        - in: query
+          name: position
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Gallery reordered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Offer or photo not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/search:
+    get:
+      operationId: search
+      summary: Search for offers (paginated)
+      description: >-
+        Searches the offer inventory for the term sent as the `term` query
+        parameter. The term must not be blank, and it must not be longer than
+        100 characters. A term that breaks either rule is answered with 400.
+      tags: [Offers]
+      security: []
+      parameters:
+        - in: query
+          name: term
+          required: true
+          description: The term to search for; it must not be blank and is at most 100 characters.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            pattern: '[\s\S]*\S[\s\S]*'
+        - $ref: '#/components/parameters/Pageable'
+      responses:
+        '200':
+          description: Offers found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/bookings:
+    post:
+      operationId: bookOffer
+      summary: Create new booking
+      tags: [Bookings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingPayload'
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No offer with that id exists in sky-offer
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/bookings/{bookingId}:
+    delete:
+      operationId: removeBooking
+      summary: Delete booking
+      tags: [Bookings]
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '204':
+          description: Booking deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Booking not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/user/bookings:
+    get:
+      operationId: getBookedOffers
+      summary: Get all user's bookings (paginated)
+      tags: [Bookings]
+      parameters:
+        - $ref: '#/components/parameters/Pageable'
+      responses:
+        '200':
+          description: Found user bookings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/messages:
+    post:
+      operationId: sendMessage
+      summary: Send message
+      tags: [Messages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageDTO'
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/messages/received:
+    get:
+      operationId: getReceivedMessages
+      summary: Get received messages (paginated)
+      tags: [Messages]
+      parameters:
+        - $ref: '#/components/parameters/Pageable'
+      responses:
+        '200':
+          description: Messages pulled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/messages/sent:
+    get:
+      operationId: getSentMessages
+      summary: Get sent messages (paginated)
+      tags: [Messages]
+      parameters:
+        - $ref: '#/components/parameters/Pageable'
+      responses:
+        '200':
+          description: Messages pulled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/messages/{messageId}:
+    delete:
+      operationId: deleteMessage
+      summary: Delete message
+      tags: [Messages]
+      parameters:
+        - $ref: '#/components/parameters/MessageId'
+      responses:
+        '204':
+          description: Message deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Message not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Paste a Keycloak access token obtained via the Authorization Code flow.
+  parameters:
+    OfferId:
+      in: path
+      name: offerId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PhotoId:
+      in: path
+      name: photoId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BookingId:
+      in: path
+      name: bookingId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MessageId:
+      in: path
+      name: messageId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Pageable:
+      in: query
+      name: pageable
+      required: true
+      schema:
+        $ref: '#/components/schemas/Pageable'
+  responses:
+    BadRequest:
+      description: 'Bad Request: invalid input or a rejected domain rule'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: 'Unauthorized: token missing or invalid'
+      headers:
+        WWW-Authenticate:
+          description: Bearer challenge
+          schema:
+            type: string
+          style: simple
+    Forbidden:
+      description: 'Forbidden: authenticated but not allowed'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+      headers:
+        WWW-Authenticate:
+          description: Bearer challenge with insufficient_scope
+          schema:
+            type: string
+          style: simple
+    Conflict:
+      description: 'Conflict: request lost a race'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnsupportedMediaType:
+      description: 'Unsupported Media Type'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ContentTooLarge:
+      description: 'Content Too Large: the upload exceeds the file or gallery limit'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: 'Internal Server Error'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    BadGateway:
+      description: 'Bad Gateway: dependency answered in an unusable way'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ServiceUnavailable:
+      description: 'Service Unavailable: dependency unavailable, retry after Retry-After'
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying; always 10.
+          schema:
+            type: integer
+            format: int32
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+  schemas:
+    ProblemDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        unpaged:
+          type: boolean
+      required:
+        - offset
+        - pageNumber
+        - pageSize
+        - paged
+        - sort
+        - unpaged
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+      required:
+        - empty
+        - sorted
+        - unsorted
+    OfferPage:
+      type: object
+      properties:
+        content:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/OfferDTO'
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+      required:
+        - content
+        - empty
+        - first
+        - last
+        - number
+        - numberOfElements
+        - pageable
+        - size
+        - sort
+        - totalElements
+        - totalPages
+    BookingPage:
+      type: object
+      properties:
+        content:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/BookingDTO'
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+      required:
+        - content
+        - empty
+        - first
+        - last
+        - number
+        - numberOfElements
+        - pageable
+        - size
+        - sort
+        - totalElements
+        - totalPages
+    MessagePage:
+      type: object
+      properties:
+        content:
+          type: array
+          default: []
+          items:
+            $ref: '#/components/schemas/MessageDTO'
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+      required:
+        - content
+        - empty
+        - first
+        - last
+        - number
+        - numberOfElements
+        - pageable
+        - size
+        - sort
+        - totalElements
+        - totalPages
+    OfferDTO:
+      type: object
+      required:
+        - city
+        - country
+        - hotelName
+        - price
+        - roomCapacity
+      properties:
+        id:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
+        hotelName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        description:
+          type: [string, 'null']
+          maxLength: 3000
+        comment:
+          type: [string, 'null']
+          maxLength: 1000
+        price:
+          type: number
+          minimum: 0
+        ownerEmail:
+          type: [string, 'null']
+          readOnly: true
+        roomCapacity:
+          type: integer
+          format: int64
+          minimum: 1
+        city:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        country:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        externalPhotoUrl:
+          type: [string, 'null']
+          pattern: '^https?://\S+$'
+          maxLength: 1024
+        photoUrl:
+          type: [string, 'null']
+          readOnly: true
+        gallery:
+          type: array
+          default: []
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/PhotoDTO'
+        coverPhotoUrl:
+          type: [string, 'null']
+          readOnly: true
+    OfferEditDTO:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+        hotelName:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        description:
+          type: [string, 'null']
+          maxLength: 3000
+        comment:
+          type: [string, 'null']
+          maxLength: 1000
+        price:
+          type: [number, 'null']
+          minimum: 0
+        ownerEmail:
+          type: [string, 'null']
+          readOnly: true
+        roomCapacity:
+          type: [integer, 'null']
+          format: int64
+          minimum: 1
+        city:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        country:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        externalPhotoUrl:
+          type: [string, 'null']
+          pattern: '^https?://\S+$'
+          maxLength: 1024
+    PhotoDTO:
+      type: object
+      required:
+        - id
+        - main
+        - position
+        - url
+      properties:
+        id:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
+        main:
+          type: boolean
+        position:
+          type: integer
+          format: int32
+        url:
+          type: [string, 'null']
+          readOnly: true
+    BookingPayload:
+      type: object
+      required:
+        - dateToBook
+        - offerId
+      properties:
+        dateToBook:
+          type: string
+          format: date
+        offerId:
+          type: string
+          format: uuid
+    BookingDTO:
+      type: object
+      required:
+        - bookedDate
+        - bookingUser
+        - id
+        - offerId
+        - ownerEmail
+      properties:
+        bookedDate:
+          type: string
+          format: date
+        bookingUser:
+          type: string
+          format: email
+          minLength: 1
+          pattern: '[\s\S]*\S[\s\S]*'
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        offerId:
+          type: string
+          format: uuid
+        ownerEmail:
+          type: string
+          format: email
+          readOnly: true
+    MessageDTO:
+      type: object
+      required:
+        - receiverEmail
+        - text
+      properties:
+        id:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
+        createdTime:
+          type: [string, 'null']
+          readOnly: true
+        read:
+          type: [boolean, 'null']
+          readOnly: true
+        receiverEmail:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 255
+          pattern: '[\s\S]*\S[\s\S]*'
+        senderEmail:
+          type: [string, 'null']
+          readOnly: true
+        text:
+          type: string
+          minLength: 1
+          maxLength: 65000
+          pattern: '[\s\S]*\S[\s\S]*'

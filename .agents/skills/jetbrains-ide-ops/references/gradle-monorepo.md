@@ -1,5 +1,15 @@
 # Gradle Monorepo Layout
 
+Contents:
+
+- [The root module shows the whole tree](#the-root-module-shows-the-whole-tree)
+- [Each build is linked separately](#each-build-is-linked-separately)
+- [Name the module and the project identically, in lowercase](#name-the-module-and-the-project-identically-in-lowercase)
+- [One module per Gradle project or one per source set](#one-module-per-gradle-project-or-one-per-source-set)
+- [What to check after switching](#what-to-check-after-switching)
+- [Three names describe one module](#three-names-describe-one-module)
+- [Reopen cold after editing .idea by hand](#reopen-cold-after-editing-idea-by-hand)
+
 How one IntelliJ project shows a whole repository that holds several independent Gradle builds, what decides the
 module names the IDE shows, and how to reopen the project after `.idea/` was edited outside the IDE. Load this file
 when linking a new build, when module names do not match the directories, or when the Gradle tool window shows a
@@ -19,7 +29,7 @@ the Project tree. The fix is one plain module whose content root is the reposito
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <excludeFolder url="file://$MODULE_DIR$/pha-client/build" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/mobile-client/build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -35,7 +45,7 @@ directory, which is what makes the content root the repository. It is the only e
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/pharmacy.iml" filepath="$PROJECT_DIR$/.idea/pharmacy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/monorepo.iml" filepath="$PROJECT_DIR$/.idea/monorepo.iml" />
     </modules>
   </component>
 </project>
@@ -55,11 +65,11 @@ open, so a fresh clone needs no hand step: the root module gives the tree, the l
 
 ```xml
 <GradleProjectSettings>
-  <option name="externalProjectPath" value="$PROJECT_DIR$/pha-cloud/gateway" />
+  <option name="externalProjectPath" value="$PROJECT_DIR$/apps/gateway" />
   <option name="resolveModulePerSourceSet" value="false" />
   <option name="modules">
     <set>
-      <option value="$PROJECT_DIR$/pha-cloud/gateway" />
+      <option value="$PROJECT_DIR$/apps/gateway" />
     </set>
   </option>
 </GradleProjectSettings>
@@ -74,7 +84,7 @@ here when a build joins the repository.
 
 `.idea/.name` holds the title the IDE shows in the window and in the recent projects list, and it overrides the
 checkout folder name whatever that folder is called. Name it in lowercase and give the root module the same name, so
-`.idea/.name` reads `pharmacy` and the module file is `.idea/pharmacy.iml`. A capitalised module beside a lowercase
+`.idea/.name` reads `monorepo` and the module file is `.idea/monorepo.iml`. A capitalised module beside a lowercase
 project name is two spellings of one thing, and on a case-insensitive filesystem it is also a trap, described in
 [windows-traps.md](windows-traps.md).
 
@@ -82,24 +92,20 @@ project name is two spellings of one thing, and on a case-insensitive filesystem
 
 ### One module per Gradle project or one per source set
 
-`resolveModulePerSourceSet` in each `GradleProjectSettings` block decides whether a Gradle project imports as one IDE
-module or as a `.main` and `.test` pair, plus one module per custom source set. The setting was removed from the UI
-in 2019.2 and is still honoured when written by hand into `.idea/gradle.xml`. JetBrains calls it deprecated and
-unmaintained: in [IDEA-222172](https://youtrack.jetbrains.com/issue/IDEA-222172), open, a JetBrains developer wrote
-on 2019-09-07:
+`resolveModulePerSourceSet` in each `GradleProjectSettings` block decides whether a Gradle project imports as one IDE module or as a `.main` and `.test` pair, plus one module per custom source set. The setting was removed from the UI in 2019.2 and is still honoured when written by hand into `.idea/gradle.xml`. JetBrains calls it deprecated and unmaintained: in [IDEA-222172](https://youtrack.jetbrains.com/issue/IDEA-222172), open, a JetBrains developer wrote:
 
 ```text
 Separate module per source set is the only supported option now. The previous option can be enabled but it will no longer be maintained
 ```
 
-and on 2020-12-31 in the same issue:
+and in the same issue:
 
 ```text
 the support for this option is no longer maintained and there are no plans to improve such set ups
 ```
 
-With `false` the IDE shows `pha-pharma.pha-pharma-drug` instead of `pha-pharma.pha-pharma-drug.main` and
-`pha-pharma.pha-pharma-drug.test`. The cost is that the main and test classpaths merge into one module, and a custom
+With `false` the IDE shows `backend.backend-orders` instead of `backend.backend-orders.main` and
+`backend.backend-orders.test`. The cost is that the main and test classpaths merge into one module, and a custom
 source set such as `testFixtures` loses its own dependencies, which is
 [IDEA-235646](https://youtrack.jetbrains.com/issue/IDEA-235646), answered and closed: a dependency declared only on
 a custom configuration is reported as an unresolved import while the Gradle build itself succeeds.
@@ -158,10 +164,7 @@ interpreter registry in [windows-traps.md](windows-traps.md). Walk this order in
    outside the IDE.
 2. Make the edit to `.idea/` and verify it with the check-ignore commands in
    [version-control.md](version-control.md).
-3. Delete `external_build_system` under the project's cache directory, so the reopen imports every Gradle module
-   fresh, exactly like a fresh clone. On Windows the path is
-   `%LOCALAPPDATA%\JetBrains\<IDE version>\projects\<name>.<hash>\external_build_system`, where `<IDE version>` is a
-   directory such as `IntelliJIdea2026.2` and `<name>.<hash>` is the lowercase project name followed by a short hash.
+3. Delete `external_build_system` under the project's cache directory, so the reopen imports every Gradle module fresh, exactly like a fresh clone. On Windows the path is `%LOCALAPPDATA%\JetBrains\<IDE version>\projects\<name>.<hash>\external_build_system`, where `<IDE version>` is a directory such as `IntelliJIdea<version>` and `<name>.<hash>` is the lowercase project name followed by a short hash.
 4. Reopen the project and read the module list back from the Project Structure dialog or from the Gradle tool
    window, and compare it against every `<module name="...">` in the run configurations.
 

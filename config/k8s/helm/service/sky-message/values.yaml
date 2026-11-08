@@ -12,7 +12,7 @@ deployment:
   image:
     repository: "lukk17/sky-message"
     pullPolicy: "IfNotPresent"
-    tag: "v2.0.0"
+    tag: "v2.1.4"
   container:
     name: "sky-message-container"
   env:
@@ -36,7 +36,6 @@ service:
   name: "sky-message-service"
   type: "ClusterIP"
   port: "5553"
-  apiPrefix: "/api/v1"
 
 ingress:
   tls:

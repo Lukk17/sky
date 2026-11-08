@@ -1,0 +1,65 @@
+info:
+  name: Set Gallery Cover
+  type: http
+  seq: 16
+
+http:
+  method: PUT
+  url: "{{offerUrl}}/api/v1/owner/offers/{{offerId}}/photos/{{galleryPhotoId2}}/cover"
+  headers:
+    - name: Authorization
+      value: "Bearer {{bearerToken}}"
+    - name: Accept
+      value: application/json
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("coverPhotoIsMain", "target photo is not main");
+        bru.setVar("coverOnlyOneMain", "more than one gallery photo is main");
+        if (res.status === 200 && res.body && res.body.gallery) {
+          let mainCount = 0;
+          let targetMain = false;
+          let targetUrl = null;
+          for (let i = 0; i < res.body.gallery.length; i++) {
+            const photo = res.body.gallery[i];
+            if (photo.main) {
+              mainCount++;
+            }
+            if (photo.id === bru.getVar("galleryPhotoId2")) {
+              targetMain = photo.main;
+              targetUrl = photo.url;
+            }
+          }
+          if (targetMain) {
+            bru.setVar("coverPhotoIsMain", "match");
+          }
+          if (mainCount === 1 && targetUrl && res.body.coverPhotoUrl === targetUrl) {
+            bru.setVar("coverOnlyOneMain", "match");
+          }
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.gallery
+      operator: isDefined
+    - expression: res.body.gallery[0].id
+      operator: eq
+      value: "{{galleryPhotoId2}}"
+    - expression: res.body.gallery[0].main
+      operator: eq
+      value: "true"
+    - expression: coverPhotoIsMain
+      operator: eq
+      value: "match"
+    - expression: coverOnlyOneMain
+      operator: eq
+      value: "match"
+    - expression: res.body.coverPhotoUrl
+      operator: contains
+      value: "X-Amz-Algorithm"
+    - expression: res.body.coverPhotoUrl
+      operator: contains
+      value: "offers/"

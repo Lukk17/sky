@@ -45,17 +45,17 @@ describe('MessageComponent session socket', () => {
   it('groups sent plus received by other party with newest thread first', () => {
     const { fixture } = setup(
       [
-        { id: 1, text: 'hi', senderEmail: 'a@test.local', receiverEmail: 'me@test.local', createdTime: '2026-01-01T10:00:00', read: true },
-        { id: 2, text: 'hey', senderEmail: 'b@test.local', receiverEmail: 'me@test.local', createdTime: '2026-02-01T10:00:00', read: false },
+        { id: 'm-1', text: 'hi', senderEmail: 'a@test.local', receiverEmail: 'me@test.local', createdTime: '2026-01-01T10:00:00', read: true },
+        { id: 'm-2', text: 'hey', senderEmail: 'b@test.local', receiverEmail: 'me@test.local', createdTime: '2026-02-01T10:00:00', read: false },
       ] as unknown as Message[],
       [
-        { id: 3, text: 'yo', senderEmail: 'me@test.local', receiverEmail: 'a@test.local', createdTime: '2026-03-01T10:00:00', read: true },
+        { id: 'm-3', text: 'yo', senderEmail: 'me@test.local', receiverEmail: 'a@test.local', createdTime: '2026-03-01T10:00:00', read: true },
       ] as unknown as Message[],
     );
     fixture.detectChanges();
     const cmp = fixture.componentInstance;
     expect(cmp.threads.map((t) => t.email)).toEqual(['a@test.local', 'b@test.local']);
-    expect(cmp.threads[0].messages.map((m) => m.id)).toEqual([1, 3]);
+    expect(cmp.threads[0].messages.map((m) => m.id)).toEqual(['m-1', 'm-3']);
     expect(cmp.unreadCount).toBe(1);
   });
 });

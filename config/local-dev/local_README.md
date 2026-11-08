@@ -29,7 +29,23 @@ The object-store password is `localdev` rather than `local` because MinIO refuse
 HINT: MINIO_ROOT_USER length should be at least 3, and MINIO_ROOT_PASSWORD length at least 8 characters
 ```
 
-`keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows). The four services default to `OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky`, so a bare `./gradlew :sky-offer:bootRun` works without exporting anything.
+`keycloak.test` must resolve to `127.0.0.1` in your hosts file (`/etc/hosts`, or `C:\Windows\System32\drivers\etc\hosts` on Windows). The four services default to `OAUTH2_ISSUER_URI=https://keycloak.test:9443/realms/sky`, so a bare `./apps/backend/gradlew -p apps/backend :sky-offer:bootRun` works without exporting anything.
+
+---
+
+### 0. Verify host DNS
+
+Run first, before starting anything. It checks `localhost`, wildcard `*.localhost` subdomains and `keycloak.test` resolve to loopback, and reports whether the gateway edge answers:
+
+```bash
+bash config/scripts/verify-host-dns.sh
+```
+
+A DNS failure exits 1 and names the fix, usually a hosts-file entry. Host-run services need `keycloak.test` for the default issuer `https://keycloak.test:9443/realms/sky`, while the Compose gateway stack itself needs no hosts entry. Gateway ports are reported without failing in this mode. After the stack is up, rerun with the strict flag:
+
+```bash
+bash config/scripts/verify-host-dns.sh --require-gateway
+```
 
 ---
 
@@ -81,7 +97,7 @@ docker exec sky-postgres pg_isready -U postgres -d sky
 
 ### 3. Start the object store
 
-`sky-offer` stores offer photos here. The only requirement is an S3-compatible endpoint on port 9070. The bucket is created on startup by [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), so no bucket-init step is needed.
+`sky-offer` stores offer photos here. The only requirement is an S3-compatible endpoint on port 9070. The bucket is created on startup by [sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java](../../apps/backend/sky-offer/src/main/java/com/lukk/sky/offer/config/S3Config.java), so no bucket-init step is needed.
 
 Two implementations both satisfy it, and the application cannot tell them apart:
 
@@ -128,7 +144,7 @@ The health path differs between the two, so do not reach for `/minio/health/live
 
 The OAuth2 resource server fetches the JWKS over HTTPS, and the JVM rejects the certificate with a PKIX path validation error until the authority that issued it is trusted. Never disable TLS validation in committed code.
 
-Every image in this repository already trusts it, the gateway included: each `docker/Dockerfile` imports [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt) under the alias `local-dev-ca` into the JRE `cacerts` store at build time, next to the public certificate authorities rather than instead of them. Trusting the authority rather than the leaf means a reissued leaf needs no image rebuild. So the whole Docker Compose stack needs nothing extra, and this step is only for a service you start with `./gradlew bootRun` on the host, which uses your own JDK's trust store.
+Every image in this repository already trusts it, the gateway included: each `docker/Dockerfile` imports [config/keycloak/certs/localhost-ca.crt](../keycloak/certs/localhost-ca.crt) under the alias `local-dev-ca` into the JRE `cacerts` store at build time, next to the public certificate authorities rather than instead of them. Trusting the authority rather than the leaf means a reissued leaf needs no image rebuild. So the whole Docker Compose stack needs nothing extra, and this step is only for a service you start with `./apps/backend/gradlew -p apps/backend bootRun` on the host, which uses your own JDK's trust store.
 
 The full procedure, with PowerShell and Unix variants for `openssl` and `keytool`, is in [config/keycloak/SETUP.md](../keycloak/SETUP.md).
 
@@ -136,7 +152,7 @@ The full procedure, with PowerShell and Unix variants for `openssl` and `keytool
 
 ### Option A, run everything in Docker Compose
 
-[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts the whole app with one command: PostgreSQL, Keycloak (realm `sky` imported, issuer `http://localhost:5777/auth/realms/sky`), the floci object store, Kafka, the four services, the gateway, the containerized frontend, and a one-shot seed job that loads the demo dataset from [seed/](../../seed/). Only the gateway (`5777`) and the frontend (`4200`) publish host ports; postgres, kafka, keycloak and floci are reachable only over the compose network, so this stack no longer collides with another local-dev compose stack holding those ports. Keycloak answers through the gateway at `http://localhost:5777/auth` and the object store at `http://localhost:5777/s3`, both plain HTTP, so there is no certificate to trust and no hosts file entry to add.
+[config/docker/docker-compose.yaml](../docker/docker-compose.yaml) starts the whole app with one command: PostgreSQL, Keycloak (realm `sky` imported, issuer `http://localhost:5777/auth/realms/sky`), the floci object store, Kafka, the four services, the gateway, the containerized frontend, and a one-shot seed job that loads the demo dataset from [config/seed/](../seed/). Only the gateway (`5777`) and the frontend (`4200`) publish host ports; postgres, kafka, keycloak and floci are reachable only over the compose network, so this stack no longer collides with another local-dev compose stack holding those ports. Keycloak answers through the gateway at `http://localhost:5777/auth` and the object store at `http://localhost:5777/s3`, both plain HTTP, so there is no certificate to trust and no hosts file entry to add.
 
 Start the stack:
 
@@ -171,13 +187,13 @@ Useful when you are changing one service and want a fast edit-run loop.
 Unix shell:
 
 ```bash
-./gradlew :sky-offer:bootRun --args='--spring.profiles.active=local'
+./apps/backend/gradlew -p apps/backend :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 PowerShell:
 
 ```powershell
-.\gradlew.bat :sky-offer:bootRun --args='--spring.profiles.active=local'
+.\apps/backend\gradlew.bat :sky-offer:bootRun --args='--spring.profiles.active=local'
 ```
 
 The `local` profile turns on the Flyway repeatable demo seed. The datasource, Kafka, S3, and issuer defaults live in each service's `application.yaml`, and the defaults already point at the host addresses in the table above, except for two:
@@ -197,28 +213,42 @@ docker compose -f config/docker/docker-compose.yaml up -d kafka
 
 ---
 
+### Run the end-to-end suite
+
+[config/scripts/run-e2e.sh](../scripts/run-e2e.sh) runs the Bruno collection against a freshly built Compose stack. It stops any existing stack, builds and starts the services, waits for the gateway health endpoint, loads the seed dataset, runs `bru run -r --env local`, and always stops the stack on exit. It keeps named volumes and never runs a global prune, so images, build cache and unrelated volumes stay put.
+
+```bash
+bash config/scripts/run-e2e.sh
+```
+
+The seed loads 4 users, 12 offers, 21 bookings and 24 messages, plus one photo per owned offer.
+
+The unit and integration suites use Testcontainers for PostgreSQL and Kafka. Testcontainers Ryuk removes those test containers when the JVM exits, including after a failed run, so no test database or broker survives the suite. The e2e runner is a separate path and does not use Testcontainers.
+
+---
+
 ### Building the images by hand
 
-Compose builds the images for you and tags each one twice from a single build. Build one on its own when you want to push it or import it into a cluster, and carry both tags by hand too: the version tag records what is inside, and `latest` is what the Compose stack runs and what the local Helm overlays expect on a cluster node. A local tag carries no leading `v`, unlike a published one, and `SKY_VERSION` overrides the version Compose uses. Every build runs from the repository root, not from the module directory, because the Dockerfile copies `settings.gradle.kts`, `buildSrc`, and `sky-common` alongside the service.
+Compose builds the images for you and tags each one twice from a single build. Build one on its own when you want to push it or import it into a cluster, and carry both tags by hand too: the version tag records what is inside, and `latest` is what the Compose stack runs and what the local Helm overlays expect on a cluster node. A local tag carries no leading `v`, unlike a published one, and `SKY_VERSION` overrides the version Compose uses. Every build runs from the repository root and uses the repository root as the Docker context, not `apps/backend`, because the Dockerfiles copy `apps/backend` and, for `sky-offer`, `sky-booking` and `sky-message`, `docs/api/contract`. `sky-notify` and `sky-gateway` copy only `apps/backend`.
 
 ```bash
-docker build . -f sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
+docker build . -f apps/backend/sky-offer/docker/Dockerfile -t sky-offer:2.0.0 -t sky-offer:latest
 ```
 
 ```bash
-docker build . -f sky-booking/docker/Dockerfile -t sky-booking:2.0.0 -t sky-booking:latest
+docker build . -f apps/backend/sky-booking/docker/Dockerfile -t sky-booking:2.0.0 -t sky-booking:latest
 ```
 
 ```bash
-docker build . -f sky-message/docker/Dockerfile -t sky-message:2.0.0 -t sky-message:latest
+docker build . -f apps/backend/sky-message/docker/Dockerfile -t sky-message:2.0.0 -t sky-message:latest
 ```
 
 ```bash
-docker build . -f sky-notify/docker/Dockerfile -t sky-notify:2.0.0 -t sky-notify:latest
+docker build . -f apps/backend/sky-notify/docker/Dockerfile -t sky-notify:2.0.0 -t sky-notify:latest
 ```
 
 ```bash
-docker build . -f sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gateway:latest
+docker build . -f apps/backend/sky-gateway/docker/Dockerfile -t sky-gateway:2.0.0 -t sky-gateway:latest
 ```
 
 To run them outside compose, put them on one network so they can resolve each other by container name:
@@ -289,4 +319,5 @@ docker images -a --filter "reference=sky-*" --format "{{.ID}}" | xargs -r docker
 | [config/k8s/helm/helm_README.md](../k8s/helm/helm_README.md) | Chart-by-chart reference, secret key inventory, upgrades |
 | [config/k8s/k8s_README.md](../k8s/k8s_README.md) | Operating a running cluster with kubectl |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection and the API contract |
+

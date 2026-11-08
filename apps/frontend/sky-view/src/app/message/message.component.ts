@@ -27,7 +27,7 @@ export class MessageComponent implements OnInit {
   replyText = '';
   ownEmail: string | null = null;
   private selectedFromUrl = false;
-  private sentIds = new Set<number>();
+  private sentIds = new Set<string>();
 
   get selected(): Thread | null {
     return this.threads.find((t) => t.email === this.selectedEmail) ?? null;
@@ -174,7 +174,7 @@ export class MessageComponent implements OnInit {
       }});
   }
 
-  deleteMessage(id: number) {
+  deleteMessage(id: string) {
     this.messageService.deleteMessage(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.refresh(),
       error: () => {

@@ -1,0 +1,10 @@
+extends:
+  - recommended
+
+rules:
+  # Bearer auth is defined once at document level, and the two anonymous offer
+  # reads opt out with security: [], so the rule has something real to check.
+  # The contract points at the local gateway on purpose, so the localhost server
+  # and the absent license stay warnings rather than errors.
+  info-license: warn
+  no-server-example.com: warn

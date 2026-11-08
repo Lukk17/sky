@@ -45,6 +45,14 @@ Login goes through the gateway (`/oauth2/authorization/keycloak`), not Keycloak 
 
 ----------
 
+## Generated API client
+
+The REST client in `src/app/api-generated` is generated from the shared contract at [docs/api/contract/openapi.yaml](../../../docs/api/contract/openapi.yaml) with OpenAPI Generator (generator `typescript-angular`, package name `sky-api-client`). It is committed, and [config/scripts/check-client-freshness.sh](../../../config/scripts/check-client-freshness.sh) regenerates it and fails when the committed copy differs.
+
+Pagination is typed: the services return `OfferPage`, `BookingPage` and `MessagePage` instead of a generic page. Search is `GET /api/v1/search` with a required `term` query parameter. Authentication and session handling are outside the contract: login, the gateway session cookie and CSRF are handled by the application's auth layer, not by the generated client.
+
+----------
+
 ## Compile prod app
 
 ```powershell
@@ -182,14 +190,14 @@ in `package.json` under `scripts` add:
 
 ## Seed data
 
-The backend seed lives in [../../../../seed/](../../../../seed/) at the repo root. It creates the four demo users, nine offers, fifteen bookings, twelve messages, and one photo per owned offer. Compose or k3d must be running first so Keycloak and the edge answer.
+The backend seed lives in [../../../config/seed/](../../../config/seed/) under config/. It creates the 4 demo users, 12 offers, 21 bookings, 24 messages, and one photo per owned offer. Compose or k3d must be running first so Keycloak and the edge answer.
 
 ```powershell
-$env:TLS_INSECURE=1; node ../../../../seed/seed.mjs
+$env:TLS_INSECURE=1; node ../../../config/seed/seed.mjs
 ```
 
 ```sh
-TLS_INSECURE=1 node ../../../../seed/seed.mjs
+TLS_INSECURE=1 node ../../../config/seed/seed.mjs
 ```
 
 ---------

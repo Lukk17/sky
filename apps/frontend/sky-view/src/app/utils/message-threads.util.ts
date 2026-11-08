@@ -1,5 +1,5 @@
 export interface ThreadSource {
-  id: number;
+  id: string;
   senderEmail?: string | null;
   receiverEmail?: string | null;
   createdTime: string;

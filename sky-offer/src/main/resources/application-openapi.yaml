@@ -1,7 +1,0 @@
-spring:
-  config:
-    import: classpath:openapi/application-openapi-shared.yaml
-sky:
-  s3:
-    endpoint: http://127.0.0.1:1
-    presign-endpoint: http://127.0.0.1:1

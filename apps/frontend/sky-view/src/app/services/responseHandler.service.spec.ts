@@ -3,8 +3,8 @@ import { Offer } from './offer.service';
 import { ResponseHandlerService } from './responseHandler.service';
 
 describe('ResponseHandlerService', () => {
-  it('maps an indexed payload to an offer list', () => {
-    const payload = { 0: { id: 1, hotelName: 'Harbor' } } as unknown as Offer[];
+  it('maps an offer array to a normalized offer list', () => {
+    const payload = [{ id: '1', hotelName: 'Harbor' } as unknown as Offer];
 
     const result = ResponseHandlerService.handleGetOffersResponse(payload);
 
@@ -13,7 +13,7 @@ describe('ResponseHandlerService', () => {
   });
 
   it('sorts gallery by position and derives cover from position 0', () => {
-    const payload = [{ id: 1, hotelName: 'H', gallery: [{ id: 'b', position: 1, url: 'u2', main: false }, { id: 'a', position: 0, url: 'u1', main: false }], coverPhotoUrl: null } as unknown as Offer];
+    const payload = [{ id: '1', hotelName: 'H', gallery: [{ id: 'b', position: 1, url: 'u2', main: false }, { id: 'a', position: 0, url: 'u1', main: false }], coverPhotoUrl: null } as unknown as Offer];
 
     const result = ResponseHandlerService.handleGetOffersResponse(payload);
 
@@ -22,7 +22,7 @@ describe('ResponseHandlerService', () => {
   });
 
   it('prefers the main-flagged photo for cover when it is not first', () => {
-    const payload = [{ id: 5, hotelName: 'M', gallery: [{ id: 'a', position: 0, url: 'u1', main: false }, { id: 'b', position: 1, url: 'u2', main: true }], coverPhotoUrl: null } as unknown as Offer];
+    const payload = [{ id: '5', hotelName: 'M', gallery: [{ id: 'a', position: 0, url: 'u1', main: false }, { id: 'b', position: 1, url: 'u2', main: true }], coverPhotoUrl: null } as unknown as Offer];
 
     const result = ResponseHandlerService.handleGetOffersResponse(payload);
 
@@ -31,7 +31,7 @@ describe('ResponseHandlerService', () => {
   });
 
   it('leaves an empty gallery with a null cover', () => {
-    const payload = [{ id: 2, hotelName: 'E' } as unknown as Offer];
+    const payload = [{ id: '2', hotelName: 'E' } as unknown as Offer];
 
     const result = ResponseHandlerService.handleGetOffersResponse(payload);
 
@@ -40,7 +40,7 @@ describe('ResponseHandlerService', () => {
   });
 
   it('falls back to legacy photoUrl when gallery is empty', () => {
-    const payload = [{ id: 3, hotelName: 'L', photoUrl: 'legacy' } as unknown as Offer];
+    const payload = [{ id: '3', hotelName: 'L', photoUrl: 'legacy' } as unknown as Offer];
 
     const result = ResponseHandlerService.handleGetOffersResponse(payload);
 

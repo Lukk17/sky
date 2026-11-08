@@ -1,9 +1,9 @@
 # Sky API docs
 
-Two sets of artefacts live here:
+One published API document, and one collection for calling it:
 
+- [contract/openapi.yaml](contract/openapi.yaml), the OpenAPI 3.1 contract and the only published API document
 - [request/](request/), the Bruno collection (OpenCollection YAML) for hands-on HTTP testing
-- [openapi/](openapi/), the OpenAPI 3.1 specs for code generation and formal reference
 
 ---
 
@@ -183,7 +183,7 @@ same mapping via nginx-ingress.
 | `/notifyWebsocket` | sky-notify | 5554 |
 
 The collection covers the three REST services. The fourth row is the WebSocket handshake, which Bruno does not drive,
-and it is listed so the route table here matches [sky-gateway/README.md](../../sky-gateway/README.md).
+and it is listed so the route table here matches [sky-gateway/README.md](../../apps/backend/sky-gateway/README.md).
 
 The Bruno collection uses `{{offerUrl}}/api/v1/...`, `{{bookingUrl}}/api/v1/...` and
 `{{messageUrl}}/api/v1/...`, so the same request works against the gateway, against the cluster ingress, and
@@ -198,7 +198,7 @@ drives the WebSocket handshake.
 sky-offer has two public endpoints that work without a bearer token:
 
 - `GET {{offerUrl}}/api/v1/offers`, list all offers
-- `POST {{offerUrl}}/api/v1/search`, keyword search
+- `GET {{offerUrl}}/api/v1/search?term=...`, keyword search with a required term of 1 to 100 characters
 
 Every other endpoint across all three services requires `Authorization: Bearer <token>`.
 The sky-booking and sky-message services have no public endpoints at all.
@@ -223,53 +223,13 @@ document from there.
 
 ---
 
-### OpenAPI specs
+### API contract
 
-The three specs in [openapi/](openapi/) are generated output. Never edit one by hand, the next build overwrites
-it. They are produced by the springdoc Gradle plugin, wired once in the
-[sky.openapi-conventions](../../buildSrc/src/main/kotlin/sky.openapi-conventions.gradle.kts) convention plugin and
-applied by the three REST service build files. Each spec carries the component schemas springdoc derives from the
-Java DTO fields, the Spring Data `Page<T>` envelope shape, and the problem-detail error shape the shared exception
-handler in `sky-common` produces, and nothing beyond what the annotations on the controllers declare.
+[contract/openapi.yaml](contract/openapi.yaml) is the only published API document and is hand-written. The
+`sky-contract` module generates the backend interfaces and DTOs from it during the build, and
+[config/scripts/check-client-freshness.sh](../../config/scripts/check-client-freshness.sh) regenerates the Angular
+client from it and diffs the result. CI lints the contract with [contract/redocly.yaml](contract/redocly.yaml).
+Change the contract and regenerate the outputs, never a generated class or client by hand.
 
-| Spec file | Service | Gradle task | Generation port |
-|---|---|---|---|
-| [openapi/sky-booking.openapi.yaml](openapi/sky-booking.openapi.yaml) | sky-booking (port 5555) | `:sky-booking:generateOpenApiDocs` | 7971 |
-| [openapi/sky-offer.openapi.yaml](openapi/sky-offer.openapi.yaml) | sky-offer (port 5552) | `:sky-offer:generateOpenApiDocs` | 7972 |
-| [openapi/sky-message.openapi.yaml](openapi/sky-message.openapi.yaml) | sky-message (port 5553) | `:sky-message:generateOpenApiDocs` | 7973 |
-
-Regenerate all three, from the repository root:
-
-```bash
-./gradlew generateOpenApiDocs
-```
-
-```powershell
-.\gradlew.bat generateOpenApiDocs
-```
-
-`build` depends on `generateOpenApiDocs` in each of the three services, so a full build refreshes the specs and a
-stale spec shows up as a dirty working tree. Skip generation when you do not want it:
-
-```bash
-./gradlew build -x generateOpenApiDocs
-```
-
-```powershell
-.\gradlew.bat build -x generateOpenApiDocs
-```
-
-Generation forks the service under the `local,openapi` profile pair on the port in the table above. The `openapi`
-profile in each service's `src/main/resources/application-openapi.yaml` is what makes that fork need nothing
-running: it points the datasource and the Kafka and object-store endpoints at a dead port, turns Flyway off, names
-the Hibernate dialect and switches off JDBC metadata access at boot, and tells HikariCP not to open a connection at
-startup. The `local` half supplies the unverified JWT decoder, so no Keycloak is needed either. That profile also
-moves the springdoc document path under `/v3/api-docs/generated`, because the shared permit-list in `sky-common`
-opens `/v3/api-docs/**` and the grouped YAML document otherwise answers on `/v3/api-docs.yaml/public`, which that
-pattern does not match.
-
-To generate a client from a spec:
-
-```bash
-openapi-generator-cli generate -i docs/api/openapi/sky-booking.openapi.yaml -g typescript-axios -o generated/sky-booking-client
-```
+The springdoc document each service serves under `/v3/api-docs`, and the Swagger UI above, is a runtime view built
+from the controller annotations. It is not committed and is not an input to code generation.

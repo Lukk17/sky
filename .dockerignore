@@ -8,5 +8,9 @@
 **/*.log
 config/docker/certs/
 openspec/
-docs/
+docs/*
+!docs/api/contract/
+apps/frontend/sky-view/node_modules/
+**/.angular/
+e2e/
 **/.DS_Store

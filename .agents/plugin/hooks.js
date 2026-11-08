@@ -1,31 +1,55 @@
-// Generic hook runner for OpenCode surfaces plus Kilo via the opencode.json
-// legacy file. A global copy stands down when the project ships its own
-// plugin: it returns no hooks so the project copy runs the gate exactly once.
-// Support matrix: OpenCode surfaces plus Kilo via opencode.json legacy file.
+// Generic hook runner for OpenCode 1.x, OpenCode 2.x and Kilo Code. A global
+// copy stands down when the project ships its own plugin: it registers no hooks
+// so the project copy runs the gate exactly once.
 //
-// Neither runtime can block a reply from completing, so every check rides the
-// only blocking channel they have: throwing from tool.execute.before aborts the
-// tool call and surfaces the message to the model.
+// One default export serves all three loaders: { id, server, setup }. OpenCode
+// 1.x and Kilo Code call `server` and read the hooks object it returns. OpenCode
+// 2.x calls `setup` with its own context and registers through
+// ctx.tool.hook("execute.before"). Declare the plugin by its directory, so
+// index.js beside this file is what a loader resolves.
+//
+// No runtime can block a reply from completing, so every check rides the only
+// blocking channel they have: throwing from the tool hook aborts the tool call
+// and surfaces the message to the model. OpenCode 2.x has no hook on a
+// finished reply at all, so there the formatting check sees the reply only
+// when the next tool call starts, and a reply with no tool call after it is
+// never checked.
 //
 // This file holds no rules. It discovers every hook in the project's own
-// .agents/hooks/, or in the user's ~/.agents/hooks/ when the project has none,
+// .agents/hooks/, or in the user's ~/.config/agents/hooks/ when the project has none,
 // runs them in declared order against one envelope, and turns the first exit
 // code 2 into a thrown Error. Adding a hook needs no edit here. The contract a
 // hook must follow is documented at
 // https://github.com/Lukk17/agent-standards/blob/master/docs/hooks-contract.md.
 //
-// It hands every
-// finished text part through experimental.text.complete to the hooks that declare
-// HOOK_TEXT_EVENT, so a hook can store a fixed version of it. That is the one
-// event whose stdout counts.
+// On OpenCode 1.x and Kilo Code it hands every finished text part through
+// experimental.text.complete to the hooks that declare HOOK_TEXT_EVENT, so a
+// hook can store a fixed version of it. That is the one event whose stdout
+// counts.
+//
+// Reply style is for the main thread only, on every runtime. A session placed
+// as a subagent, a child whose parentID is set, gets no text rewrite and hands
+// the hooks no assistant text, so no reply check can block it. A session that
+// could not be placed keeps both, and the gate runs for every session.
+//
+// Every session the plugin can place gets one per-prompt text, on every user
+// message (chat.message on 1.x and Kilo Code) and on every model request (the
+// session context hook on 2.x). A root session gets the main-thread reminder,
+// read from the REMINDER constant of copilot/prompt_reminder.py beside the
+// hooks this project runs, the same text Codex and Copilot inject on every
+// prompt. A child session gets SUBAGENT_TEXT, the same words Claude Code, Codex
+// and Copilot inject on their subagent-start events, and never the reminder,
+// which tells its reader to delegate. A session that could not be placed gets
+// neither.
 //
 // Imports nothing from @opencode-ai/plugin or @kilocode/plugin so one file
 // serves both runtimes.
 
 import { spawn } from "node:child_process"
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { randomBytes } from "node:crypto"
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs"
 import { homedir } from "node:os"
-import { join, resolve } from "node:path"
+import { isAbsolute, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 
 // Tried in this order, the way every other wiring resolves its interpreter:
@@ -38,13 +62,42 @@ const PROBE = ["-c", "import sys; sys.stdout.write('ok')"]
 // tool call. Every hook here is stdlib only, so neither flag costs it anything.
 const PYTHON_FLAGS = ["-S", "-E"]
 const HOOKS_DIR = join(".agents", "hooks")
+// Where the global install in docs/GLOBAL_SETUP.md keeps the hooks, under the
+// home directory.
+const GLOBAL_HOOKS_DIR = join(".config", "agents", "hooks")
+const PLUGIN_ID = "agent-standards.preflight"
+const REPLY_RULES = join(".agents", "instructions", "reply-rules.md")
 // A project that deliberately runs without the user's global hooks holds this
 // file. Only its presence counts, and it never switches off hooks the project
 // ships in its own .agents/hooks/.
 const OPT_OUT = join(".agents", "no-global-hooks")
 
+// The subagent text, word for word the SubagentStart text in
+// .claude/settings.json. tools/tests/test_reminder_plugin.py compares the two.
+const SUBAGENT_TEXT =
+  "PREFLIGHT for a subagent: you are a subagent, and the main thread delegated this task to you. " +
+  "Do the work yourself with your own tools and load the skills your definition names. " +
+  "The rules that the main thread must delegate and may not write files apply to the main thread only, " +
+  "so do not hand this task on and do not refuse it for that reason. " +
+  "The preflight gate still checks every tool call you make. " +
+  "Report back what you changed and how you verified it."
+
+// Where the main-thread reminder is read from, under the hooks directory, and
+// the shape its constant is written in: one parenthesised run of plain
+// double-quoted literals, one per sentence. Anything else yields no reminder.
+// tools/tests/test_reminder_plugin.py holds what this reads equal to the
+// constant Python loads.
+const REMINDER_HOOK = join("copilot", "prompt_reminder.py")
+const REMINDER_CONSTANT = /^REMINDER = \(\n((?:[ \t]+"[^"\\\n]*"\n)+)\)$/m
+const REMINDER_LITERAL = /"([^"\\\n]*)"/g
+
+const PART_PREFIX = "prt_"
+const PART_RANDOM_CHARS = 14
+const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
 const CONTRACT = 3
 const EVENT = "tool.execute.before"
+const MESSAGE_EVENT = "chat.message"
 const TEXT_EVENT = "experimental.text.complete"
 const TODO_EVENT = "todo.updated"
 
@@ -86,7 +139,7 @@ const isDirectory = (path) => {
 
 // The directory whose hooks serve this project. The project's own
 // .agents/hooks/ wins whenever it exists, even empty. Without one, the hooks the
-// global install in docs/GLOBAL_SETUP.md puts under ~/.agents/hooks/ serve it,
+// global install in docs/GLOBAL_SETUP.md puts under ~/.config/agents/hooks/ serve it,
 // unless the project opted out, which leaves it with none. Resolved on every call,
 // like the directory listing, so either change takes effect without a restart.
 const hooksDirectory = (root) => {
@@ -98,7 +151,7 @@ const hooksDirectory = (root) => {
   try {
     const home = homedir()
 
-    return home ? join(home, HOOKS_DIR) : null
+    return home ? join(home, GLOBAL_HOOKS_DIR) : null
   } catch {
     return null
   }
@@ -241,13 +294,16 @@ const rewrite = (result) => {
 
 // Only a hook that declares HOOK_TEXT_EVENT sees the text, so a finished part
 // costs no interpreter start for a hook that would ignore it. Each sees the text
-// the previous one left, in the same declared order as a tool call. No session
-// lookup is made, so the envelope names no agent and no caller, which every hook
-// already reads as unknown.
-const completeText = async (root, text) => {
+// the previous one left, in the same declared order as a tool call. The envelope
+// names no agent and no caller, which every hook already reads as unknown. A part
+// from a session placed as a subagent is left as written, because nobody reads
+// its reply style. `place` is asked only once a hook would run, so a project
+// with no text hook makes no session round trip.
+const completeText = async (root, text, place) => {
   const hooks = discover(root).filter((hook) => hook.text)
 
   if (hooks.length === 0) return text
+  if ((await place()) === true) return text
 
   const python = await resolvePython(root)
 
@@ -386,73 +442,205 @@ const freshAssistantText = (messages, seen, sessionID) => {
   return text
 }
 
-// `worktree` is the project root; `directory` is only the session's working
-// directory, which is a subdirectory whenever the runtime was started deeper in
-// the tree. Anchoring on the root is what keeps .agents/hooks/ findable. A hook
-// taken from the global directory still runs with the project root as its
-// working directory and its envelope cwd, so it protects the project, not home.
-export const Preflight = async ({ directory, worktree, client } = {}) => {
-  const root = worktree || directory || process.cwd()
-  // A global copy stands down when the project ships its own plugin file,
-  // so the gate runs exactly once from the project copy.
-  const ownPath = fileURLToPath(import.meta.url)
-  const projectPluginPath = join(root, ".agents", "plugin", "hooks.js")
-  const same =
-    process.platform === "win32"
-      ? resolve(ownPath).toLowerCase() === resolve(projectPluginPath).toLowerCase()
-      : resolve(ownPath) === resolve(projectPluginPath)
+// A part id in the runtime's own ascending shape: prefix, 12 hex digits of
+// millisecond time and a per-millisecond counter, then random base62.
+let lastStamp = 0
+let stampCounter = 0
 
-  if (!same && existsSync(projectPluginPath)) return {}
+const partID = () => {
+  const now = Date.now()
+
+  if (now !== lastStamp) {
+    lastStamp = now
+    stampCounter = 0
+  }
+
+  stampCounter++
+
+  const time = (BigInt(now) * 0x1000n + BigInt(stampCounter)).toString(16).padStart(12, "0").slice(-12)
+  const random = Array.from(randomBytes(PART_RANDOM_CHARS), (byte) => BASE62[byte % 62]).join("")
+
+  return PART_PREFIX + time + random
+}
+
+// The main-thread reminder, or "" when the hooks directory holds no
+// copilot/prompt_reminder.py or its constant is not in the expected shape.
+// Re-read on every call, like the hooks, so an update lands without a restart.
+const mainReminder = (root) => {
+  const dir = hooksDirectory(root)
+
+  if (!dir) return ""
+
+  try {
+    const source = readFileSync(join(dir, REMINDER_HOOK), "utf8").replace(/\r\n/g, "\n")
+    const match = REMINDER_CONSTANT.exec(source)
+
+    return match ? Array.from(match[1].matchAll(REMINDER_LITERAL), (literal) => literal[1]).join("") : ""
+  } catch {
+    return ""
+  }
+}
+
+// The per-prompt text for a placed session: SUBAGENT_TEXT for a child session,
+// the main-thread reminder for a root session, "" for a session that could not
+// be placed or a root session with no reminder to read.
+const promptText = async (root, place, sessionID) => {
+  const subagent = await place(sessionID)
+
+  if (subagent === true) return SUBAGENT_TEXT
+  if (subagent === false) return mainReminder(root)
+
+  return ""
+}
+
+// Adds the per-prompt text as a synthetic text part to a user message. The
+// runtime saves the parts after the handler returns and sends every text part
+// that is not `ignored` to the model, and a synthetic part stays out of the
+// visible transcript. A message that already carries the text, or that the
+// part cannot be tied to, gets nothing.
+const remind = async (root, input, output, place) => {
+  const parts = output?.parts
+  const sessionID = output?.message?.sessionID || input?.sessionID
+  const messageID = output?.message?.id || input?.messageID
+
+  if (!Array.isArray(parts) || !sessionID || !messageID) return
+
+  const text = await promptText(root, place, sessionID)
+
+  if (!text) return
+  if (parts.some((part) => part?.type === "text" && part.text === text)) return
+
+  parts.push({ id: partID(), sessionID, messageID, type: "text", text, synthetic: true })
+}
+
+// Inside a git repository `worktree` is the project root and `directory` only
+// the session's start folder, a subdirectory whenever the runtime was started
+// deeper in the tree. Anchoring on the root is what keeps .agents/hooks/
+// findable. Outside one, OpenCode 1.x and Kilo Code hand "/" as `worktree`, so
+// there the start folder is the project, as it is on Claude Code, Codex and
+// OpenCode 2.x. A hook taken from the global directory still runs with the
+// project root as its working directory and its envelope cwd, so it protects
+// the project, not home.
+// A global copy stands down when the project ships its own plugin file, so the
+// gate runs exactly once, from the project copy. Both paths are compared after
+// links are followed, so a ~/.agents linked to the global install is the same
+// file rather than a project copy, and a path that cannot be followed is
+// compared as written.
+const realPath = (path) => {
+  try {
+    return realpathSync(path)
+  } catch {
+    return resolve(path)
+  }
+}
+
+const standsDown = (root) => {
+  const ownPath = realPath(fileURLToPath(import.meta.url))
+  const projectPluginPath = join(root, ".agents", "plugin", "hooks.js")
+  const projectPath = realPath(projectPluginPath)
+  const same =
+    process.platform === "win32" ? ownPath.toLowerCase() === projectPath.toLowerCase() : ownPath === projectPath
+
+  return !same && existsSync(projectPluginPath)
+}
+
+// Whether `inner` is `outer` or sits below it, after links are followed.
+const holds = (outer, inner) => {
+  const path = relative(realPath(outer), realPath(inner))
+
+  return path === "" || (path !== ".." && !path.startsWith(".." + sep) && !isAbsolute(path))
+}
+
+// The OpenCode 1.x and Kilo Code project root: the worktree while it is a git
+// root holding the start folder, else the start folder.
+const projectRoot = (directory, worktree) => {
+  if (typeof directory !== "string" || !directory) return worktree || process.cwd()
+
+  const gitRoot = typeof worktree === "string" && worktree && existsSync(join(worktree, ".git"))
+
+  return gitRoot && holds(worktree, directory) ? worktree : directory
+}
+
+// Runs every discovered hook against one tool call and throws the first denial.
+const gate = async (root, call) => {
+  const hooks = discover(root)
+
+  // Nothing to ask, so nothing to build. This also keeps the session round
+  // trips out of a project that checked out no hooks.
+  if (hooks.length === 0) return
+
+  const python = await resolvePython(root)
+
+  if (!python) return
+
+  const { subagent, agent, text, tool, args } = await call()
+
+  // is_subagent is left out when the session could not be placed, which the
+  // gate reads as an unknown caller and allows.
+  const envelope = JSON.stringify({
+    contract: CONTRACT,
+    event: EVENT,
+    tool_name: tool ?? "",
+    tool_input: args ?? {},
+    agent_type: agent,
+    ...(subagent === null ? {} : { is_subagent: subagent }),
+    assistant_text: text,
+    cwd: root,
+  })
+
+  for (const hook of hooks) {
+    const message = denial(await run(python, root, hook, envelope), hook.name)
+
+    if (message) throw new Error(message)
+  }
+}
+
+// OpenCode 1.x and Kilo Code entry point.
+export const Preflight = async ({ directory, worktree, client } = {}) => {
+  const root = projectRoot(directory, worktree)
+
+  if (standsDown(root)) return {}
+
   const seen = new Map()
   const placed = new Map()
 
   return {
-    [TEXT_EVENT]: async (_input, output) => {
+    [MESSAGE_EVENT]: async (input, output) => {
       try {
-        if (typeof output?.text !== "string" || !output.text) return
-
-        output.text = await completeText(root, output.text)
+        await remind(root, input, output, (sessionID) => placeSession(client, placed, sessionID))
       } catch {
         return
       }
     },
 
-    [EVENT]: async (input, output) => {
-      const hooks = discover(root)
+    [TEXT_EVENT]: async (input, output) => {
+      try {
+        if (typeof output?.text !== "string" || !output.text) return
 
-      // Nothing to ask, so nothing to build. This also keeps the session round
-      // trips out of a project that checked out no hooks.
-      if (hooks.length === 0) return
+        const sessionID = typeof input?.sessionID === "string" ? input.sessionID : ""
 
-      const python = await resolvePython(root)
-
-      if (!python) return
-
-      const sessionID = typeof input?.sessionID === "string" ? input.sessionID : ""
-      const [subagent, messages] = await Promise.all([
-        placeSession(client, placed, sessionID),
-        sessionMessages(client, sessionID),
-      ])
-
-      // is_subagent is left out when the session could not be placed, which the
-      // gate reads as an unknown caller and allows.
-      const envelope = JSON.stringify({
-        contract: CONTRACT,
-        event: EVENT,
-        tool_name: input?.tool ?? "",
-        tool_input: output?.args ?? {},
-        agent_type: agentName(messages),
-        ...(subagent === null ? {} : { is_subagent: subagent }),
-        assistant_text: freshAssistantText(messages, seen, sessionID),
-        cwd: root,
-      })
-
-      for (const hook of hooks) {
-        const message = denial(await run(python, root, hook, envelope), hook.name)
-
-        if (message) throw new Error(message)
+        output.text = await completeText(root, output.text, () => placeSession(client, placed, sessionID))
+      } catch {
+        return
       }
     },
+
+    [EVENT]: async (input, output) =>
+      gate(root, async () => {
+        const sessionID = typeof input?.sessionID === "string" ? input.sessionID : ""
+        const [subagent, messages] = await Promise.all([
+          placeSession(client, placed, sessionID),
+          sessionMessages(client, sessionID),
+        ])
+
+        return {
+          subagent,
+          agent: agentName(messages),
+          text: subagent === true ? "" : freshAssistantText(messages, seen, sessionID),
+          tool: input?.tool,
+          args: output?.args,
+        }
+      }),
 
     [TODO_EVENT]: async (input, output) => {
       try {
@@ -484,4 +672,172 @@ export const Preflight = async ({ directory, worktree, client } = {}) => {
   }
 }
 
-export default Preflight
+// Newest assistant prose in an OpenCode 2.x session context, whose messages
+// carry `type` and `content` where 1.x carries `info.role` and `parts`.
+const lastAssistantTextV2 = (messages) => {
+  const list = Array.isArray(messages) ? messages : messages?.messages
+
+  for (let i = (list?.length ?? 0) - 1; i >= 0; i--) {
+    const message = list[i]
+
+    if (message?.type !== "assistant" && message?.role !== "assistant") continue
+
+    const parts = message.content ?? message.parts ?? []
+    const text = (Array.isArray(parts) ? parts : [])
+      .filter((part) => part?.type === "text" && typeof part.text === "string")
+      .map((part) => part.text)
+      .join("\n")
+
+    if (text.trim()) return text
+  }
+
+  return ""
+}
+
+// true for a child session, false for a root session, null when it could not be read.
+const placeSessionV2 = async (ctx, sessionID) => {
+  try {
+    const session = await ctx?.session?.get?.({ sessionID })
+
+    if (session?.id !== sessionID) return null
+
+    return typeof session.parentID === "string" && session.parentID !== ""
+  } catch {
+    return null
+  }
+}
+
+// placeSessionV2 behind a cache shared by every 2.x hook. A session's parent
+// never changes, so a definite answer is kept and a failed lookup is retried.
+const sessionPlacerV2 = (ctx) => {
+  const placed = new Map()
+
+  return async (sessionID) => {
+    if (!sessionID) return null
+    if (placed.has(sessionID)) return placed.get(sessionID)
+
+    const subagent = await placeSessionV2(ctx, sessionID)
+
+    if (subagent !== null) {
+      if (placed.size >= SESSION_CAP) placed.clear()
+      placed.set(sessionID, subagent)
+    }
+
+    return subagent
+  }
+}
+
+// The reply rules file for a project: its own copy when it ships one, else the
+// global install's, else null. OpenCode 2.x ignores the `instructions` key that
+// loads this file on 1.x and Kilo Code, so the 2.x entry point adds it itself.
+const replyRules = (root) => {
+  const own = join(root, REPLY_RULES)
+
+  if (existsSync(own)) return own
+
+  try {
+    const home = homedir()
+    const global = home ? join(home, ".config", "agents", "instructions", "reply-rules.md") : null
+
+    return global && existsSync(global) ? global : null
+  } catch {
+    return null
+  }
+}
+
+// Adds system parts on every model request and keeps the built-in prompt. A
+// session placed as a subagent gets SUBAGENT_TEXT alone, no reply rules,
+// because nobody reads its reply style and the rules cost tokens on every
+// request. A root session gets the reply rules, then the main-thread reminder,
+// the same per-prompt text 1.x and Kilo Code add through chat.message. A
+// session that could not be placed still gets the rules, and neither the
+// reminder nor the subagent text. Any failure adds nothing more.
+const addSessionContext = (root, place) => async (event) => {
+  try {
+    if (!Array.isArray(event?.system)) return
+
+    const subagent = await place(event?.sessionID)
+
+    if (subagent === true) {
+      event.system.push({ type: "text", text: SUBAGENT_TEXT })
+      return
+    }
+
+    const path = replyRules(root)
+
+    if (path) event.system.push({ type: "text", text: "Instructions from: " + path + "\n" + readFileSync(path, "utf8") })
+
+    const reminder = subagent === false ? mainReminder(root) : ""
+
+    if (reminder) event.system.push({ type: "text", text: reminder })
+  } catch {
+    return
+  }
+}
+
+// OpenCode 2.x entry point. Its only hook that can refuse anything is the tool
+// execute.before hook, so the gate and the reply checks all ride it. The
+// session context hook carries the reply rules and the main-thread reminder to
+// the main thread and the subagent text to a subagent. Reply rules and reply checks are for the main
+// thread only: a session placed as a subagent gets no rules and hands the hooks
+// no assistant text, so no reply check can block it. The gate itself still runs
+// for every session.
+const setup = async (ctx) => {
+  const root = ctx?.location?.project?.directory || ctx?.location?.directory || process.cwd()
+
+  if (standsDown(root)) return
+
+  // Loud stand-down: a host without the tool hook API would die on the
+  // first await below and the loader drops the failure quiet, so say so in
+  // the service log instead and register nothing.
+  if (typeof ctx?.tool?.hook !== "function" || typeof ctx?.session?.get !== "function") {
+    console.error(
+      `[${PLUGIN_ID}] setup stands down: host has no tool/session hooks ` +
+        `(tool.hook: ${typeof ctx?.tool?.hook}, session.get: ${typeof ctx?.session?.get})`,
+    )
+    return
+  }
+
+  const place = sessionPlacerV2(ctx)
+
+  try {
+    await ctx.session?.hook?.("context", addSessionContext(root, place))
+  } catch {
+    // Without the hook the rules are simply not added, which never blocks anything.
+  }
+
+  const seen = new Map()
+
+  await ctx.tool.hook("execute.before", async (event) =>
+    gate(root, async () => {
+      const sessionID = typeof event?.sessionID === "string" ? event.sessionID : ""
+      const subagent = await place(sessionID)
+      let messages = null
+
+      try {
+        messages = sessionID && subagent !== true ? await ctx.session.context({ sessionID }) : null
+      } catch {
+        messages = null
+      }
+
+      const text = lastAssistantTextV2(messages)
+      let fresh = ""
+
+      if (sessionID && text && seen.get(sessionID) !== text) {
+        if (seen.size >= SESSION_CAP) seen.clear()
+        seen.set(sessionID, text)
+        fresh = text
+      }
+
+      return {
+        subagent,
+        agent: typeof event?.agent === "string" ? event.agent : "",
+        text: fresh,
+        tool: event?.tool,
+        args: event?.input,
+      }
+    }),
+  )
+}
+
+export default { id: PLUGIN_ID, server: Preflight, setup }

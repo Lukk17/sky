@@ -34,11 +34,11 @@ entry, no host port.
 | `keycloak` | `quay.io/keycloak/keycloak:26.5.7` | 18080 | Mints the token the collection sends, imports the `sky` realm |
 | `floci` | `floci/floci:2.0.1` | 19070 | S3 compatible object store for the offer photo upload |
 | `kafka` | `confluentinc/cp-kafka:7.6.0` | none | Events from `sky-offer` and `sky-booking` to `sky-notify` |
-| `sky-booking` | built from `sky-booking/docker/Dockerfile` | none | Bookings, port 5555 inside the network |
-| `sky-offer` | built from `sky-offer/docker/Dockerfile` | none | Offers and photos, port 5552 inside the network |
-| `sky-message` | built from `sky-message/docker/Dockerfile` | none | Messages, port 5553 inside the network |
-| `sky-notify` | built from `sky-notify/docker/Dockerfile` | none | Notifications, port 5554 inside the network |
-| `sky-gateway` | built from `sky-gateway/docker/Dockerfile` | 15777 | The single entry point the collection calls |
+| `sky-booking` | built from `apps/backend/sky-booking/docker/Dockerfile` | none | Bookings, port 5555 inside the network |
+| `sky-offer` | built from `apps/backend/sky-offer/docker/Dockerfile` | none | Offers and photos, port 5552 inside the network |
+| `sky-message` | built from `apps/backend/sky-message/docker/Dockerfile` | none | Messages, port 5553 inside the network |
+| `sky-notify` | built from `apps/backend/sky-notify/docker/Dockerfile` | none | Notifications, port 5554 inside the network |
+| `sky-gateway` | built from `apps/backend/sky-gateway/docker/Dockerfile` | 15777 | The single entry point the collection calls |
 | `bruno` | `node:22.23.2-alpine` | none | Runs `bru run -r --env ci`, started on demand only |
 
 The published ports are bound to `127.0.0.1` and exist for poking at a stack that failed. Nothing in the run path
@@ -304,4 +304,4 @@ docker images --filter "reference=sky-*:e2e" --format "{{.ID}}" | xargs -r docke
 | [config/local-dev/local_README.md](local_README.md) | The developer stack: host PostgreSQL, Keycloak and object store, Compose and Gradle |
 | [config/keycloak/SETUP.md](../keycloak/SETUP.md) | Keycloak realm, import, certificate trust, users, tokens |
 | [config/k8s/local_README.md](../k8s/local_README.md) | Local Kubernetes cluster on k3d: create, deploy the charts, verify, tear down |
-| [docs/api/README.md](../../docs/api/README.md) | Bruno collection, its environments, and the OpenAPI specs |
+| [docs/api/README.md](../../docs/api/README.md) | Bruno collection, its environments, and the API contract |

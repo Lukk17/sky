@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts/sky-alerts.yaml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: sky-services
+    metrics_path: /actuator/prometheus
+    # Actuator Prometheus stays behind auth by design (401 on services, 302 on
+    # gateway when anonymous, pinned by SkySecurityDefaultsTest,
+    # SecurityPathsTest and SecurityConfigOidcProfileTest). Prometheus scrapes
+    # with a Keycloak client_credentials token for the existing confidential
+    # client sky-backend, so no endpoint is opened and no Java change is needed.
+    # Secret is the local-dev default also used by compose KEYCLOAK_CLIENT_SECRET.
+    oauth2:
+      client_id: 'sky-backend'
+      client_secret: 'dev-only-change-in-prod'
+      token_url: 'http://keycloak:8080/auth/realms/sky/protocol/openid-connect/token'
+    static_configs:
+      - targets:
+          - sky-booking:5555
+          - sky-offer:5552
+          - sky-message:5553
+          - sky-notify:5554
+          - sky-gateway:5777
+        labels:
+          stack: sky-local

@@ -1,5 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "external_directory": "allow",
+    "edit": "allow",
+    "bash": "allow",
+    "read": "allow"
+  },
   "instructions": [
     "AGENTS.md",
     ".agents/instructions/reply-rules.md"
@@ -7,14 +13,13 @@
   "plugin": [
     "./.agents/plugin/hooks.js"
   ],
+  "snapshot": false,
   "mcp": {
-    
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",
       "enabled": true
     },
-    
     "mongodb": {
       "type": "local",
       "command": [
@@ -27,7 +32,6 @@
       ],
       "enabled": true
     },
-    
     "grafana": {
       "type": "local",
       "command": [
@@ -39,7 +43,6 @@
       },
       "enabled": true
     },
-    
     "playwright": {
       "type": "local",
       "command": [
@@ -48,7 +51,6 @@
       ],
       "enabled": true
     },
-    
     "chrome-devtools": {
       "type": "local",
       "command": [
@@ -58,7 +60,6 @@
       ],
       "enabled": true
     },
-    
     "redis": {
       "type": "local",
       "command": [
@@ -71,7 +72,6 @@
       ],
       "enabled": true
     },
-    
     "sonarqube": {
       "type": "local",
       "command": [
@@ -92,7 +92,6 @@
       },
       "enabled": true
     },
-    
     "n8n": {
       "type": "local",
       "command": [

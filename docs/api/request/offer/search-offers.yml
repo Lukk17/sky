@@ -4,16 +4,11 @@ info:
   seq: 3
 
 http:
-  method: POST
-  url: "{{offerUrl}}/api/v1/search"
+  method: GET
+  url: "{{offerUrl}}/api/v1/search?term=Paris"
   headers:
-    - name: Content-Type
-      value: text/plain
     - name: Accept
       value: application/json
-  body:
-    type: text
-    data: Paris
 
 runtime:
   assertions:

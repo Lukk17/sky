@@ -16,6 +16,27 @@ const offer = {
   gallery: [],
 };
 
+function pageOf(content: unknown[]) {
+  return {
+    content,
+    totalElements: content.length,
+    totalPages: 1,
+    size: 20,
+    number: 0,
+    first: true,
+    last: true,
+    empty: content.length === 0,
+    numberOfElements: content.length,
+    pageable: {},
+    sort: {},
+  };
+}
+
+async function mockOffers(page, content: unknown[] = [offer]) {
+  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: pageOf(content) }));
+  await page.route(`**/api/v1/offers/${offerId}`, (route) => route.fulfill({ json: content[0] }));
+}
+
 async function mockLoggedOut(page) {
   await page.route('**/api/session', (route) => route.fulfill({ status: 401, json: {} }));
 }
@@ -26,7 +47,7 @@ async function mockLoggedIn(page, email: string) {
 
 test('clicking an offer card opens details without crashing', async ({ page }) => {
   await mockLoggedOut(page);
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
+  await mockOffers(page);
 
   await page.goto('/');
   await page.getByText('Grand Test Hotel').first().click();
@@ -37,11 +58,11 @@ test('clicking an offer card opens details without crashing', async ({ page }) =
 
 test('logged-out details never call secured bookings and prompt login', async ({ page }) => {
   await mockLoggedOut(page);
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
+  await mockOffers(page);
   let bookingsHit = false;
   await page.route('**/api/v1/user/bookings', (route) => {
     bookingsHit = true;
-    return route.fulfill({ json: [] });
+    return route.fulfill({ json: pageOf([]) });
   });
 
   await page.goto(`/offer-details?offerId=${offerId}`);
@@ -54,7 +75,7 @@ test('logged-out details never call secured bookings and prompt login', async ({
 
 test('offer details render from query param after reload (no service memory)', async ({ page }) => {
   await mockLoggedOut(page);
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
+  await mockOffers(page);
 
   await page.goto(`/offer-details?offerId=${offerId}`);
   await expect(page.getByRole('heading', { name: 'Grand Test Hotel' })).toBeVisible();
@@ -67,14 +88,14 @@ test('calendar shows red booked day and refreshes after booking without reload',
   const targetDate = `${now.getFullYear()}-${month}-${day}`;
   const fillDate = `${day}/${month}/${now.getFullYear()}`;
   await mockLoggedIn(page, 'guest@test.local');
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
+  await mockOffers(page);
   let bookingsCall = 0;
   await page.route('**/api/v1/user/bookings', (route) => {
     bookingsCall += 1;
     if (bookingsCall === 1) {
-      return route.fulfill({ json: [] });
+      return route.fulfill({ json: pageOf([]) });
     }
-    return route.fulfill({ json: [{ id: 1, offerId, bookedDate: targetDate, bookingUser: 'guest@test.local', ownerEmail: 'owner@test.local' }] });
+    return route.fulfill({ json: pageOf([{ id: 1, offerId, bookedDate: targetDate, bookingUser: 'guest@test.local', ownerEmail: 'owner@test.local' }]) });
   });
   await page.route('**/api/v1/bookings', async (route) => {
     if (route.request().method() === 'POST') {
@@ -98,7 +119,7 @@ test('calendar shows red booked day and refreshes after booking without reload',
 test('gallery renders cover plus arrows without thumbnails', async ({ page }) => {
   await mockLoggedOut(page);
   const withGallery = { ...offer, coverPhotoUrl: 'https://img.test/a.jpg', gallery: [{ id: 'p1', position: 0, url: 'https://img.test/a.jpg' }, { id: 'p2', position: 1, url: 'https://img.test/b.jpg' }] };
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [withGallery] }));
+  await mockOffers(page, [withGallery]);
   await page.goto(`/offer-details?offerId=${offerId}`);
   await expect(page.getByTestId('offer-gallery')).toBeVisible();
   await expect(page.getByTestId('offer-hero')).toHaveCount(0);
@@ -107,10 +128,10 @@ test('gallery renders cover plus arrows without thumbnails', async ({ page }) =>
 
 test('day click opens dialog with who plus price and cancel works', async ({ page }) => {
   await mockLoggedIn(page, 'owner@test.local');
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
+  await mockOffers(page);
   const now2 = new Date();
   const month2 = String(now2.getMonth() + 1).padStart(2, '0');
-  await page.route('**/api/v1/user/bookings', (route) => route.fulfill({ json: [{ id: 7, offerId, bookedDate: `${now2.getFullYear()}-${month2}-15`, bookingUser: 'guest@test.local', ownerEmail: 'owner@test.local' }] }));
+  await page.route('**/api/v1/user/bookings', (route) => route.fulfill({ json: pageOf([{ id: 7, offerId, bookedDate: `${now2.getFullYear()}-${month2}-15`, bookingUser: 'guest@test.local', ownerEmail: 'owner@test.local' }]) }));
   await page.route('**/api/v1/bookings/7', async (route) => {
     if (route.request().method() === 'DELETE') {
       return route.fulfill({ status: 204, body: '' });
@@ -128,7 +149,7 @@ test('day click opens dialog with who plus price and cancel works', async ({ pag
 
 test('login from details preserves return url with single encoding', async ({ page }) => {
   await mockLoggedOut(page);
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
+  await mockOffers(page);
   await page.goto(`/offer-details?offerId=${offerId}`);
   await page.evaluate(() => sessionStorage.clear());
   await page.getByTestId('booking-date').fill('20/11/2026');
@@ -148,8 +169,8 @@ test('duplicate booking date shows friendly taken message without console error'
       errors.push(msg.text());
     }
   });
-  await page.route('**/api/v1/offers', (route) => route.fulfill({ json: [offer] }));
-  await page.route('**/api/v1/user/bookings', (route) => route.fulfill({ json: [] }));
+  await mockOffers(page);
+  await page.route('**/api/v1/user/bookings', (route) => route.fulfill({ json: pageOf([]) }));
   await page.route('**/api/v1/bookings', async (route) => {
     if (route.request().method() === 'POST') {
       return route.fulfill({ status: 409, json: { title: 'Conflict' } });
@@ -158,7 +179,7 @@ test('duplicate booking date shows friendly taken message without console error'
   });
 
   await page.goto(`/offer-details?offerId=${offerId}`);
-  await page.getByTestId('booking-date').fill('01/11/2026');
+  await page.getByTestId('booking-date').fill('01/12/2026');
   await page.getByTestId('booking-submit').locator('button').click();
   await expect(page.getByTestId('booking-error')).toContainText('already taken');
   expect(errors.filter((t) => t.includes('ERROR') || t.includes('Error in'))).toEqual([]);

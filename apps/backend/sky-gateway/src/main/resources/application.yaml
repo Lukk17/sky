@@ -1,0 +1,275 @@
+sky-gateway:
+  booking-uri: ${BOOKING_URI:http://localhost:5555}
+  offer-uri: ${OFFER_URI:http://localhost:5552}
+  message-uri: ${MESSAGE_URI:http://localhost:5553}
+  notify-uri: ${NOTIFY_URI:http://localhost:5554}
+  keycloak-uri: ${KEYCLOAK_URI:http://localhost:8080}
+  s3-uri: ${S3_URI:http://localhost:4566}
+
+server:
+  port: ${GATEWAY_PORT:5777}
+  forward-headers-strategy: framework
+  reactive:
+    session:
+      cookie:
+        name: SESSION
+        http-only: true
+        secure: true
+        same-site: Lax
+
+spring:
+  application:
+    name: sky-gateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          trusted-proxies: '127\.0\.0\.1|localhost|::1|0:0:0:0:0:0:0:1|10\..*|172\.(1[6-9]|2[0-9]|3[01])\..*|192\.168\..*'
+          routes:
+            - id: booking-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/api/v1/bookings/**,/api/v1/user/bookings/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: offer-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/api/v1/offers/**,/api/v1/search,/api/v1/owner/offers/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: message-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/api/v1/messages/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: notify-route
+              uri: ${sky-gateway.notify-uri}
+              predicates:
+                - Path=/notifyWebsocket/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: keycloak-route
+              uri: ${sky-gateway.keycloak-uri}
+              predicates:
+                - Path=/auth/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: s3-route
+              uri: ${sky-gateway.s3-uri}
+              predicates:
+                - Path=/s3/**
+              filters:
+                - RewritePath=/s3(?<remaining>/?.*), $\{remaining}
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: booking-swagger-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/swagger-ui/**,/booking/swagger-ui.html
+              filters:
+                - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: booking-api-docs-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/v3/api-docs/**
+              filters:
+                - RewritePath=/booking/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+            - id: offer-swagger-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/swagger-ui/**,/offer/swagger-ui.html
+              filters:
+                - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: offer-api-docs-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/v3/api-docs/**
+              filters:
+                - RewritePath=/offer/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+            - id: message-swagger-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/swagger-ui/**,/msg/swagger-ui.html
+              filters:
+                - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+
+            - id: message-api-docs-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/v3/api-docs/**
+              filters:
+                - RewritePath=/msg/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus"
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: ${GATEWAY_DEBUG:INFO}
+        web: ${SPRING_DEBUG:INFO}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+server:
+  reactive:
+    session:
+      cookie:
+        secure: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "default,prod"
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:${KEYCLOAK_ISSUER_URI}/protocol/openid-connect/certs}
+      # No client.provider block here on purpose: the OIDC client registration is
+      # built statically by KeycloakClientRegistrationConfig, because discovery
+      # against issuer-uri cannot run at startup (the public issuer answers through
+      # this gateway's own /auth route, which is not listening yet) and would
+      # reject a document fetched in-network whose issuer names the public URL.
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: booking-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/api/v1/bookings/**,/api/v1/user/bookings/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+                - TokenRelay=
+
+            - id: offer-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/api/v1/offers/**,/api/v1/search,/api/v1/owner/offers/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+                - TokenRelay=
+
+            - id: message-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/api/v1/messages/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+                - TokenRelay=
+
+            - id: notify-route
+              uri: ${sky-gateway.notify-uri}
+              predicates:
+                - Path=/notifyWebsocket/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+                - TokenRelay=
+
+            - id: keycloak-route
+              uri: ${sky-gateway.keycloak-uri}
+              predicates:
+                - Path=/auth/**
+              filters:
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: s3-route
+              uri: ${sky-gateway.s3-uri}
+              predicates:
+                - Path=/s3/**
+              filters:
+                - RewritePath=/s3(?<remaining>/?.*), $\{remaining}
+                - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+                - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+
+            - id: booking-swagger-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/swagger-ui/**,/booking/swagger-ui.html
+              filters:
+                - RewritePath=/booking/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: booking-api-docs-route
+              uri: ${sky-gateway.booking-uri}
+              predicates:
+                - Path=/booking/v3/api-docs/**
+              filters:
+                - RewritePath=/booking/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=
+
+            - id: offer-swagger-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/swagger-ui/**,/offer/swagger-ui.html
+              filters:
+                - RewritePath=/offer/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: offer-api-docs-route
+              uri: ${sky-gateway.offer-uri}
+              predicates:
+                - Path=/offer/v3/api-docs/**
+              filters:
+                - RewritePath=/offer/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=
+
+            - id: message-swagger-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/swagger-ui/**,/msg/swagger-ui.html
+              filters:
+                - RewritePath=/msg/swagger-ui(?<remaining>/?.*), /swagger-ui$\{remaining}
+                - TokenRelay=
+
+            - id: message-api-docs-route
+              uri: ${sky-gateway.message-uri}
+              predicates:
+                - Path=/msg/v3/api-docs/**
+              filters:
+                - RewritePath=/msg/v3/api-docs(?<remaining>/?.*), /v3/api-docs$\{remaining}
+                - TokenRelay=
